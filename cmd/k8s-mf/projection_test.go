@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
+	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

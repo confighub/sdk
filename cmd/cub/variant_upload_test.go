@@ -4,9 +4,44 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+// TestCubBinaryPathIgnoresPATH is the regression test for runCub resolving its
+// child binary by name. It used to fall back to a "cub" on $PATH whenever the
+// running binary's basename was not exactly "cub", so a build at bin/cub-dev
+// would do its own work but hand every delegated step to whatever release was
+// installed. This test runs in precisely that shape: under `go test` the running
+// binary is cub.test.
+func TestCubBinaryPathIgnoresPATH(t *testing.T) {
+	self, err := os.Executable()
+	if err != nil {
+		t.Skip("os.Executable unavailable on this platform")
+	}
+	if filepath.Base(self) == "cub" {
+		t.Skip("running binary is itself named cub; the $PATH fallback is unobservable here")
+	}
+
+	// A decoy cub, first on $PATH. The old resolution would pick this over the
+	// running binary; the current one must not look for it at all.
+	dir := t.TempDir()
+	decoy := filepath.Join(dir, "cub")
+	if err := os.WriteFile(decoy, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	got := cubBinaryPath()
+	if got != self {
+		t.Errorf("cubBinaryPath() = %q, want the running binary %q", got, self)
+	}
+	if got == "cub" || got == decoy {
+		t.Errorf("cubBinaryPath() = %q: resolved via $PATH, so delegated work would run a different build", got)
+	}
+}
 
 func TestUploadSourceDescription(t *testing.T) {
 	tests := []struct {

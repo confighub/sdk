@@ -27,16 +27,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/confighub/sdk/bridge-impl/argocd"
-	argocdrenderer "github.com/confighub/sdk/bridge-impl/argocd-renderer"
-	"github.com/confighub/sdk/bridge-impl/confighub"
-	"github.com/confighub/sdk/bridge-impl/configmap"
-	"github.com/confighub/sdk/bridge-impl/flux"
-	fluxrenderer "github.com/confighub/sdk/bridge-impl/flux-renderer"
-	"github.com/confighub/sdk/bridge-impl/kubernetes"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/worker/lib"
 	"github.com/confighub/sdk/core/workerapi"
 	funcimpl "github.com/confighub/sdk/function-impl"
@@ -49,13 +41,11 @@ var rootCmd = &cobra.Command{
 	Use:   "cub-worker-run [<provider-types>]",
 	Args:  cobra.MaximumNArgs(1),
 	Short: "Start a worker process",
-	Long: `Start a worker process to serve one or more supported provider types.
+	Long: `Start a worker process to execute functions for one or more provider types.
 
-Each ProviderType corresponds to one or more ToolchainTypes.
-For example, the "Kubernetes" provider type corresponds to the Kubernetes/YAML ToolchainType
-
-Some ToolchainTypes are supported by multiple ProviderTypes, and some ProviderTypes support
-multiple ToolchainTypes.
+Each ProviderType corresponds to one or more ToolchainTypes, which is what selects
+the function handlers the worker registers. For example, the "Kubernetes" provider
+type corresponds to the Kubernetes/YAML ToolchainType.
 
 The available ProviderTypes are:
 
@@ -89,8 +79,6 @@ Optional environment variables:
 - CONFIGHUB_WORKER_FUNCTIONS: Comma-separated list of additional function names to register (e.g., "vet-kyverno-server", "vet-opa-gatekeeper")
 
 - CONFIGHUB_URL: The URL (scheme and host) to call the ConfigHub API. Defaults to ` + defaultConfighubURL + `
-- CONFIGHUB_WORKER_PORT: The port for the worker's HTTP2 connection to ConfigHub. Defaults to ` + defaultWorkerPort + `
-- CONFIGHUB_WORKER_TRANSPORT: Wire protocol used to talk to ConfigHub. "long-poll" (default) uses HTTP long-polling on the main API port and needs no separate worker port. "http2-stream" is the deprecated h2c stream; the server will stop accepting it.
 - CONFIGHUB_WORKER_HTTP_SERVER_PORT: When set, starts a local HTTP server on this port. Exposes /internal/metrics (Prometheus), /internal/pprof, /internal/ok (liveness), and /internal/ready (readiness). When unset, no HTTP server is started.
 - CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT: The amount of time to allow the HTTP server to shutdown, default is 5 seconds
 
@@ -110,7 +98,6 @@ const (
 	defaultConfighubHost             = "hub.confighub.com"
 	defaultConfighubURL              = defaultConfighubScheme + "://" + defaultConfighubHost
 	defaultMainPort                  = "443"
-	defaultWorkerPort                = "443"
 	defaultHTTPServerShutdownTimeout = 5 * time.Second
 )
 
@@ -246,11 +233,11 @@ func init() {
 	}
 	rootArgs.normalizeURL()
 
-	// Default provider types: every built-in bridge worker, comma-separated.
+	// Default provider types: every known provider, comma-separated.
 	// Sort for deterministic flag-default output (relevant to "docgen command").
 	if rootArgs.WorkerProviderTypes == "" {
 		var providers []string
-		for wt := range availableBridgeWorkers {
+		for wt := range providerToolchainTypes {
 			providers = append(providers, wt)
 		}
 		sort.Strings(providers)
@@ -262,7 +249,6 @@ func init() {
 	// overrides the corresponding environment variable.
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.ConfigHubURL, "url", "u", rootArgs.ConfigHubURL, "ConfigHub Server URL (CONFIGHUB_URL)")
 	rootCmd.PersistentFlags().StringVar(&rootArgs.MainPort, "main-port", rootArgs.MainPort, "ConfigHub Main Port (extracted from CONFIGHUB_URL by default)")
-	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerPort, "worker-port", "p", rootArgs.WorkerPort, "ConfigHub Worker Port (CONFIGHUB_WORKER_PORT)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerID, "worker-id", "w", rootArgs.WorkerID, "Worker ID (CONFIGHUB_WORKER_ID)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerSecret, "worker-secret", "s", rootArgs.WorkerSecret, "Worker Secret (CONFIGHUB_WORKER_SECRET)")
 	rootCmd.PersistentFlags().StringVarP(&rootArgs.WorkerProviderTypes, "provider-types", "t", rootArgs.WorkerProviderTypes, "Comma-separated list of provider types (CONFIGHUB_WORKER_PROVIDER_TYPES)")
@@ -279,18 +265,6 @@ const (
 	LowerProviderTypeArgoCDRenderer    = "argocdrenderer"
 	LowerProviderTypeArgoCDOCI         = "argocdoci"
 )
-
-// Note: ConfigHub bridge worker needs to be initialized with a client in rootRunE
-
-var availableBridgeWorkers = map[string]api.BridgeWorker{
-	LowerProviderTypeConfigHub:         confighub.NewConfigHubBridgeWorker(),
-	LowerProviderTypeKubernetes:        kubernetes.NewKubernetesBridgeWorker(),
-	LowerProviderTypeFluxRenderer:      fluxrenderer.NewFluxRendererWorker(),
-	LowerProviderTypeConfigMapRenderer: configmap.NewConfigMapBridgeWorker(),
-	LowerProviderTypeArgoCDRenderer:    argocdrenderer.NewArgoCDRendererWorker(),
-	// ArgoCDOCI worker is initialized in rootRunE with credentials (like ConfigHub worker)
-	LowerProviderTypeArgoCDOCI: nil, // placeholder, initialized in rootRunE
-}
 
 func rootPreRunE(cmd *cobra.Command, args []string) error {
 	var missing []string
@@ -403,71 +377,16 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		workerProviderTypesStr = strings.ToLower(args[0])
 	}
 
-	// Initialize frontdoor client
-	frontdoorClient := lib.NewWorkerFrontdoorClient(rootArgs.ConfigHubURL, rootArgs.MainPort, rootArgs.WorkerID, rootArgs.WorkerSecret)
-	if frontdoorClient == nil {
-		return errors.New("frontdoor client initialization failed")
-	}
-
 	// Split the provider types string by comma
 	providerTypes := strings.Split(workerProviderTypesStr, ",")
 
 	// Parse and validate worker functions before creating the executor
 	workerFunctions := parseWorkerFunctions()
 
-	// Initialize appropriate workers based on the input
-	bridgeDispatcher := lib.NewBridgeDispatcher()
-
-	// For multiple provider types or explicitly using generic worker, use dispatchers
-	log.FromContext(context.Background()).Info("Using dispatcher pattern for multi-provider/multi-toolchain support with unit-level serialization")
-
-	// Process each provider type and register with dispatchers
+	// Validate the requested provider types.
 	for _, lowerProviderType := range providerTypes {
-		// Register bridge worker based on provider type
-		var directBridgeWorker api.BridgeWorker
-		var ok bool
-
-		// Handle workers that need credentials at construction time
-		if lowerProviderType == LowerProviderTypeArgoCDOCI {
-			directBridgeWorker = argocd.NewArgoCDOCIWorker(rootArgs.WorkerID, rootArgs.WorkerSecret)
-			ok = true
-		} else if lowerProviderType == LowerProviderTypeFluxOCI {
-			directBridgeWorker = flux.NewFluxOCIWorker(rootArgs.WorkerID, rootArgs.WorkerSecret)
-			ok = true
-		} else {
-			directBridgeWorker, ok = availableBridgeWorkers[lowerProviderType]
-			if !ok {
-				return fmt.Errorf("unknown bridge provider type %s", lowerProviderType)
-			}
-		}
-
-		// Get toolchain types and provider type from the bridge worker itself
-		bridgeID := directBridgeWorker.ID()
-		toolchainTypes := bridgeID.ToolchainTypes
-		providerType := bridgeID.ProviderType
-		if len(toolchainTypes) == 0 || providerType == "" {
-			return fmt.Errorf("could not determine toolchain/provider for provider type %s", providerType)
-		}
-
-		// Handle ConfigHub worker specially - it needs authentication
-		if lowerProviderType == LowerProviderTypeConfigHub {
-			configHubWorker, _ := directBridgeWorker.(*confighub.ConfigHubBridgeWorker)
-			if configHubWorker == nil {
-				ok = false
-			} else {
-				err := configHubWorker.Init(frontdoorClient)
-				if err != nil {
-					return err
-				}
-			}
-		}
-
-		// Register bridges directly
-		for _, toolchainType := range toolchainTypes {
-			bridgeDispatcher.RegisterWorker(toolchainType, providerType, directBridgeWorker)
-			log.FromContext(context.Background()).Info("Registered bridge worker",
-				"toolchainType", toolchainType,
-				"providerType", providerType)
+		if _, ok := providerToolchainTypes[lowerProviderType]; !ok {
+			return fmt.Errorf("unknown provider type %s", lowerProviderType)
 		}
 	}
 
@@ -488,10 +407,7 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		// For now, let's proceed with the potentially malformed URL, assuming init handled basics
 	}
 
-	// Two URLs:
-	//   - h2c stream transport needs the worker-port URL (separate h2c port)
-	//   - long-poll transport needs the main API URL (no port switch)
-	streamURL := rootArgs.ConfigHubURL
+	// The worker long-polls the main API port; there is no separate worker port.
 	mainURL := rootArgs.ConfigHubURL
 
 	if err == nil { // Only proceed if parsing was successful
@@ -501,21 +417,8 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		} else if parsedURL.Scheme == "" {
 			log.FromContext(ctx).Info("URL scheme is missing, cannot reliably reconstruct URL with new port", "url", rootArgs.ConfigHubURL)
 		} else {
-			streamURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.WorkerPort)
 			mainURL = fmt.Sprintf("%s://%s:%s", parsedURL.Scheme, hostname, rootArgs.MainPort)
 		}
-	}
-
-	transportType := lib.TransportType(rootArgs.WorkerTransport)
-	if transportType == "" {
-		// Belt and braces: the args default covers an unset variable, this covers
-		// one set to the empty string (e.g. an env passthrough that always writes
-		// the key). Long-poll is the only transport the server will keep serving.
-		transportType = lib.TransportLongPoll
-	}
-	finalURL := streamURL
-	if transportType == lib.TransportLongPoll {
-		finalURL = mainURL
 	}
 
 	metricsProvider, err := lib.NewPrometheusProvider()
@@ -525,13 +428,11 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 
 	metricsMeter := metricsProvider.Meter("confighub-worker")
 
-	w := lib.New(finalURL,
+	w := lib.New(mainURL,
 		rootArgs.WorkerID,
 		rootArgs.WorkerSecret).
-		WithBridgeWorker(bridgeDispatcher).
 		WithFunctionExecutor(newFunctionExecutor(providerTypes, workerFunctions)).
-		WithMetricsMeter(metricsMeter).
-		WithTransport(transportType)
+		WithMetricsMeter(metricsMeter)
 
 	var httpServer *echo.Echo
 	if rootArgs.HTTPServerPort != "" {
@@ -563,11 +464,11 @@ func rootRunE(cmd *cobra.Command, args []string) error {
 		time.Sleep(time.Duration(rootArgs.GracePeriodDelay) * time.Second)
 	}
 
-	// Wait for all pending operations to complete first
-	// This ensures Apply/Destroy/etc operations fully complete including sending final status
+	// Wait for all pending operations to complete first, so in-flight function
+	// invocations finish and send their final status.
 	w.WaitForPendingOperations()
 
-	// Now cancel context to stop accepting new work and close SSE stream
+	// Now cancel context to stop accepting new work and end the poll loop
 	cancel()
 
 	if httpServer != nil {

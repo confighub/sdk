@@ -36,9 +36,6 @@ type ConfigHubWorkerArgs struct {
 	WorkerFunctions     string `env:"CONFIGHUB_WORKER_FUNCTIONS" json:"CONFIGHUB_WORKER_FUNCTIONS,omitempty" description:"Comma-separated list of additional worker function names to register (e.g. \"vet-kyverno-server,vet-opa-gatekeeper\")."`
 
 	ConfigHubURL string `env:"CONFIGHUB_URL, default=https://hub.confighub.com" json:"CONFIGHUB_URL" description:"Base URL (scheme and host) of the ConfigHub API."`
-	WorkerPort   string `env:"CONFIGHUB_WORKER_PORT, default=443" json:"CONFIGHUB_WORKER_PORT" description:"Port for the worker's HTTP/2 connection to ConfigHub. Only used when CONFIGHUB_WORKER_TRANSPORT is \"http2-stream\", which is deprecated; long-poll uses the main API port."`
-
-	WorkerTransport string `env:"CONFIGHUB_WORKER_TRANSPORT, default=long-poll" json:"CONFIGHUB_WORKER_TRANSPORT,omitempty" description:"Wire protocol used to talk to ConfigHub. \"long-poll\" (default) uses HTTP long-polling on the main API port and needs no separate worker port. \"http2-stream\" is the deprecated h2c stream; the server will stop accepting it."`
 
 	HTTPServerPort                string `env:"CONFIGHUB_WORKER_HTTP_SERVER_PORT" json:"CONFIGHUB_WORKER_HTTP_SERVER_PORT,omitempty" description:"Port for the worker's local HTTP server (Prometheus metrics, pprof, /internal/ok and /internal/ready). When unset, the HTTP server is not started."`
 	ServerShutdownTimeoutSeconds  int    `env:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT, default=5" json:"CONFIGHUB_WORKER_SERVER_SHUTDOWN_TIMEOUT" description:"Number of seconds the local HTTP server is given to shut down gracefully."`

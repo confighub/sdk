@@ -20,18 +20,9 @@ const (
 
 // Defines values for ActionResultType.
 const (
-	ActionResultTypeApplyCompleted    ActionResultType = "ApplyCompleted"
-	ActionResultTypeApplyFailed       ActionResultType = "ApplyFailed"
-	ActionResultTypeApplyWaitFailed   ActionResultType = "ApplyWaitFailed"
-	ActionResultTypeDestroyCompleted  ActionResultType = "DestroyCompleted"
-	ActionResultTypeDestroyFailed     ActionResultType = "DestroyFailed"
-	ActionResultTypeDestroyWaitFailed ActionResultType = "DestroyWaitFailed"
-	ActionResultTypeImportCompleted   ActionResultType = "ImportCompleted"
-	ActionResultTypeImportFailed      ActionResultType = "ImportFailed"
-	ActionResultTypeNone              ActionResultType = "None"
-	ActionResultTypeRefreshAndDrifted ActionResultType = "RefreshAndDrifted"
-	ActionResultTypeRefreshAndNoDrift ActionResultType = "RefreshAndNoDrift"
-	ActionResultTypeRefreshFailed     ActionResultType = "RefreshFailed"
+	ActionResultTypeFunctionInvocationCompleted ActionResultType = "FunctionInvocationCompleted"
+	ActionResultTypeFunctionInvocationFailed    ActionResultType = "FunctionInvocationFailed"
+	ActionResultTypeNone                        ActionResultType = "None"
 )
 
 // Defines values for ActionStatusType.
@@ -48,13 +39,11 @@ const (
 
 // Defines values for ActionType.
 const (
-	Apply     ActionType = "Apply"
-	Destroy   ActionType = "Destroy"
-	Finalize  ActionType = "Finalize"
-	Heartbeat ActionType = "Heartbeat"
-	Import    ActionType = "Import"
-	NA        ActionType = "N/A"
-	Refresh   ActionType = "Refresh"
+	Apply           ActionType = "Apply"
+	Cancel          ActionType = "Cancel"
+	InvokeFunctions ActionType = "InvokeFunctions"
+	ListFunctions   ActionType = "ListFunctions"
+	NA              ActionType = "N/A"
 )
 
 // Defines values for MutationType.
@@ -167,7 +156,7 @@ type ApiInfo struct {
 	// Version Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds.
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
 
-	// WorkerPort Port number for the worker to connect to the server.
+	// WorkerPort Deprecated and always empty. Workers connect over long polling on the main API port; there is no separate worker port.
 	WorkerPort string `json:"WorkerPort,omitempty" yaml:"WorkerPort,omitempty"`
 }
 
@@ -681,12 +670,6 @@ type ErrorMetadata struct {
 	Items []ErrorItem `json:"Items,omitempty" yaml:"Items,omitempty"`
 }
 
-// EventMessage defines model for EventMessage.
-type EventMessage struct {
-	Data  *string `json:"Data,omitempty" yaml:"Data,omitempty"`
-	Event *string `json:"Event,omitempty" yaml:"Event,omitempty"`
-}
-
 // ExtendedAttribute defines model for ExtendedAttribute.
 type ExtendedAttribute struct {
 	// Attribute Defines a dynamic configuration attribute that registers getter and setter functions
@@ -1173,8 +1156,7 @@ type ExtendedUnit struct {
 	// responsible for handling this. Revisions store historical copies of the configuration data.
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
-	Unit       *Unit       `json:"Unit,omitempty" yaml:"Unit,omitempty"`
-	UnitStatus *UnitStatus `json:"UnitStatus,omitempty" yaml:"UnitStatus,omitempty"`
+	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
 	// UpstreamSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	UpstreamSpace *Space `json:"UpstreamSpace,omitempty" yaml:"UpstreamSpace,omitempty"`
@@ -1496,32 +1478,6 @@ type FunctionWorkerInfo struct {
 
 	// ToolchainTypes Supported ToolchainTypes
 	ToolchainTypes []string `json:"ToolchainTypes" yaml:"ToolchainTypes"`
-}
-
-// ImportFilter defines model for ImportFilter.
-type ImportFilter struct {
-	// Operator Operator specifies how to apply the filter (include, exclude, equals, contains, matches)
-	Operator string `json:"Operator,omitempty" yaml:"Operator,omitempty"`
-
-	// Type Type specifies the filter type (namespace, label, resource_type, etc.)
-	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
-
-	// Values Values specifies the filter values
-	Values []string `json:"Values,omitempty" yaml:"Values,omitempty"`
-}
-
-// ImportOptions defines model for ImportOptions.
-type ImportOptions map[string]interface{}
-
-// ImportRequest defines model for ImportRequest.
-type ImportRequest struct {
-	// Filters List of ImportFilter expression clauses. Mutually exclusive with Where.
-	Filters          []ImportFilter    `json:"Filters,omitempty" yaml:"Filters,omitempty"`
-	Options          *ImportOptions    `json:"Options,omitempty" yaml:"Options,omitempty"`
-	ResourceInfoList *ResourceInfoList `json:"ResourceInfoList,omitempty" yaml:"ResourceInfoList,omitempty"`
-
-	// Where Where specifies a unified resource filter expression for import resources and options. It uses SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types.
-	Where string `json:"Where,omitempty" yaml:"Where,omitempty"`
 }
 
 // Invocation Defines a function invocation.
@@ -2229,9 +2185,6 @@ type ResourceInfo struct {
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 }
 
-// ResourceInfoList defines model for ResourceInfoList.
-type ResourceInfoList = []ResourceInfo
-
 // ResourceInfoType2 defines model for ResourceInfoType2.
 type ResourceInfoType2 struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
@@ -2288,30 +2241,6 @@ type ResourceStatus struct {
 
 // ResourceStatusMap defines model for ResourceStatusMap.
 type ResourceStatusMap map[string]ResourceStatus
-
-// ResourceStatusSummary defines model for ResourceStatusSummary.
-type ResourceStatusSummary struct {
-	// Failed Number of resources with Readiness=Failed
-	Failed int `json:"Failed,omitempty" yaml:"Failed,omitempty"`
-
-	// FirstUpdatedAt Earliest UpdatedAt timestamp across all resources
-	FirstUpdatedAt time.Time `json:"FirstUpdatedAt" yaml:"FirstUpdatedAt"`
-
-	// LastUpdatedAt Most recent UpdatedAt timestamp across all resources
-	LastUpdatedAt time.Time `json:"LastUpdatedAt" yaml:"LastUpdatedAt"`
-
-	// Progressing Number of resources with Readiness=InProgress
-	Progressing int `json:"Progressing,omitempty" yaml:"Progressing,omitempty"`
-
-	// Ready Number of resources with Readiness=Ready
-	Ready int `json:"Ready,omitempty" yaml:"Ready,omitempty"`
-
-	// Synced Number of resources with SyncStatus=Synced
-	Synced int `json:"Synced,omitempty" yaml:"Synced,omitempty"`
-
-	// Total Total number of resources in the unit
-	Total int `json:"Total,omitempty" yaml:"Total,omitempty"`
-}
 
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
 type ResourceTypePathsEntry struct {
@@ -3289,17 +3218,9 @@ type UnitEvent struct {
 
 // UnitExtended defines model for UnitExtended.
 type UnitExtended struct {
-	Action                *ActionType            `json:"Action,omitempty" yaml:"Action,omitempty"`
-	ActionResult          *ActionResultType      `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
-	ActionStartedAt       time.Time              `json:"ActionStartedAt" yaml:"ActionStartedAt"`
-	ActionTerminatedAt    time.Time              `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
-	ApprovedByUsers       []string               `json:"ApprovedByUsers" yaml:"ApprovedByUsers"`
-	Drift                 string                 `json:"Drift,omitempty" yaml:"Drift,omitempty"`
-	FromLinks             []Link                 `json:"FromLinks" yaml:"FromLinks"`
-	ResourceStatusSummary *ResourceStatusSummary `json:"ResourceStatusSummary,omitempty" yaml:"ResourceStatusSummary,omitempty"`
-	Status                string                 `json:"Status,omitempty" yaml:"Status,omitempty"`
-	SyncStatus            string                 `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
-	ToLinks               []Link                 `json:"ToLinks" yaml:"ToLinks"`
+	ApprovedByUsers []string `json:"ApprovedByUsers" yaml:"ApprovedByUsers"`
+	FromLinks       []Link   `json:"FromLinks" yaml:"FromLinks"`
+	ToLinks         []Link   `json:"ToLinks" yaml:"ToLinks"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
@@ -3326,18 +3247,6 @@ type UnitPredicatesRequest struct {
 type UnitPredicatesResponse struct {
 	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
-}
-
-// UnitStatus defines model for UnitStatus.
-type UnitStatus struct {
-	Action                *ActionType            `json:"Action,omitempty" yaml:"Action,omitempty"`
-	ActionResult          *ActionResultType      `json:"ActionResult,omitempty" yaml:"ActionResult,omitempty"`
-	ActionStartedAt       time.Time              `json:"ActionStartedAt" yaml:"ActionStartedAt"`
-	ActionTerminatedAt    time.Time              `json:"ActionTerminatedAt" yaml:"ActionTerminatedAt"`
-	Drift                 string                 `json:"Drift,omitempty" yaml:"Drift,omitempty"`
-	ResourceStatusSummary *ResourceStatusSummary `json:"ResourceStatusSummary,omitempty" yaml:"ResourceStatusSummary,omitempty"`
-	Status                string                 `json:"Status,omitempty" yaml:"Status,omitempty"`
-	SyncStatus            string                 `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
 }
 
 // UnitTagRequest defines model for UnitTagRequest.
@@ -9130,34 +9039,10 @@ type UpdateUnitParams struct {
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 }
 
-// ApplyUnitParams defines parameters for ApplyUnit.
-type ApplyUnitParams struct {
-	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
-	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
-
-	// DryRun Dry run mode - validates which units would be applied without executing
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-
-	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
-	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
-}
-
 // ApproveUnitParams defines parameters for ApproveUnit.
 type ApproveUnitParams struct {
 	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
-}
-
-// DestroyUnitParams defines parameters for DestroyUnit.
-type DestroyUnitParams struct {
-	// DryRun Dry run mode - validates which units would be destroyed without executing
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
-// ImportUnitParams defines parameters for ImportUnit.
-type ImportUnitParams struct {
-	// DryRun Dry run mode - returns import data in the operation/action
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
@@ -9268,15 +9153,6 @@ type GetExtendedMutationParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-}
-
-// RefreshUnitParams defines parameters for RefreshUnit.
-type RefreshUnitParams struct {
-	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-
-	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
-	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // ListExtendedResourcesParams defines parameters for ListExtendedResources.
@@ -11709,95 +11585,6 @@ type BulkCreateUnitsParams struct {
 	IncludeOutgoingLinksWhere *string `form:"include_outgoing_links_where,omitempty" json:"include_outgoing_links_where,omitempty" yaml:"include_outgoing_links_where,omitempty"`
 }
 
-// BulkApplyUnitsParams defines parameters for BulkApplyUnits.
-type BulkApplyUnitsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-	//
-	// The whole string must be query-encoded.
-	Where string `form:"where" json:"where" yaml:"where"`
-
-	// Filter UUID of a Filter entity to apply to the Unit list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (Unit).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for Unit.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// DryRun Dry run mode - validates which units would be applied without executing
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-
-	// Revision Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
-	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
-
-	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
-	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
-}
-
 // BulkApproveUnitsParams defines parameters for BulkApproveUnits.
 type BulkApproveUnitsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -11959,175 +11746,6 @@ type BulkCancelUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-}
-
-// BulkDestroyUnitsParams defines parameters for BulkDestroyUnits.
-type BulkDestroyUnitsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-	//
-	// The whole string must be query-encoded.
-	Where string `form:"where" json:"where" yaml:"where"`
-
-	// Filter UUID of a Filter entity to apply to the Unit list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (Unit).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for Unit.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// DryRun Dry run mode - validates which units would be destroyed without executing
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-}
-
-// BulkRefreshUnitsParams defines parameters for BulkRefreshUnits.
-type BulkRefreshUnitsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-	//
-	// The whole string must be query-encoded.
-	Where string `form:"where" json:"where" yaml:"where"`
-
-	// Filter UUID of a Filter entity to apply to the Unit list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (Unit).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for Unit.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// DryRun Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit
-	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
-
-	// DriftMode Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used.
-	DriftMode *string `form:"drift_mode,omitempty" json:"drift_mode,omitempty" yaml:"drift_mode,omitempty"`
 }
 
 // BulkTagUnitsParams defines parameters for BulkTagUnits.
@@ -12890,9 +12508,6 @@ type BulkCreateAttributesApplicationMergePatchPlusJSONRequestBody BulkCreateAttr
 // BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchBridgeWorkers for application/merge-patch+json ContentType.
 type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody
 
-// CreateActionResultJSONRequestBody defines body for CreateActionResult for application/json ContentType.
-type CreateActionResultJSONRequestBody = ActionResult
-
 // UserCreateActionResultJSONRequestBody defines body for UserCreateActionResult for application/json ContentType.
 type UserCreateActionResultJSONRequestBody = ActionResult
 
@@ -13039,9 +12654,6 @@ type PatchUnitApplicationMergePatchPlusJSONRequestBody PatchUnitApplicationMerge
 
 // UpdateUnitJSONRequestBody defines body for UpdateUnit for application/json ContentType.
 type UpdateUnitJSONRequestBody = Unit
-
-// ImportUnitJSONRequestBody defines body for ImportUnit for application/json ContentType.
-type ImportUnitJSONRequestBody = ImportRequest
 
 // SetUnitPredicatesJSONRequestBody defines body for SetUnitPredicates for application/json ContentType.
 type SetUnitPredicatesJSONRequestBody = UnitPredicatesRequest

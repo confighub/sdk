@@ -74,7 +74,7 @@ Examples:
   cub unit tree --columns
 
   # Show hybrid view with custom columns for link relationships
-  cub unit tree --edge link --columns UnitStatus.Status,UpgradeNeeded,Unit.Labels.Environment
+  cub unit tree --edge link --columns UpgradeNeeded,UnreleasedChanges,Unit.Labels.Environment
 
   # Show clone tree for specific units
   cub unit tree --where "Labels.environment = 'production'"
@@ -86,10 +86,10 @@ Examples:
   cub unit tree --space "*"
 
   # Show link tree across all spaces with custom columns
-  cub unit tree --edge link --space "*" --columns Space.Slug,UnitStatus.Status
+  cub unit tree --edge link --space "*" --columns Space.Slug,UnreleasedChanges
 
   # Show space-based tree across all spaces
-  cub unit tree --node space --space "*" --columns UnitStatus.Status
+  cub unit tree --node space --space "*" --columns UnreleasedChanges
 
   # Explicitly specify clone edge type
   cub unit tree --edge clone
@@ -533,7 +533,7 @@ func displayTreeNode(node *UnitTreeNode, prefix string, isLast bool, withColumns
 // getTreeColumns returns the columns to display for tree view
 func getTreeColumns() []string {
 	// Default columns for tree view (using same as unit list)
-	defaultTreeColumns := []string{"UnitStatus.Status", "UpgradeNeeded", "UnreleasedChanges", "Unit.ApplyGates"}
+	defaultTreeColumns := []string{"UpgradeNeeded", "UnreleasedChanges", "Unit.ApplyGates"}
 
 	if cols := effectiveColumns(); len(cols) > 0 {
 		custom := make([]string, len(cols))

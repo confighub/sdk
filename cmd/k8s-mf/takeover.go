@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
+	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"

@@ -18,7 +18,7 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
+	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
 	"github.com/confighub/sdk/configkit/k8skit"
 	funcapi "github.com/confighub/sdk/core/function/api"
 	"k8s.io/apimachinery/pkg/api/resource"

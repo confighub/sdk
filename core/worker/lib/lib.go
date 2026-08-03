@@ -25,9 +25,7 @@ type Worker struct {
 	confighubURL     string
 	workerId         string
 	workerSecret     string
-	bridgeWorker     api.BridgeWorker
 	functionExecutor executor.FunctionExecutor
-	transportType    TransportType
 	// client is set in Start; reads from probe handlers may race with that
 	// assignment, so use atomic.Pointer for safe publication.
 	client       atomic.Pointer[workerClient]
@@ -36,17 +34,11 @@ type Worker struct {
 
 func New(url, id, secret string) *Worker {
 	return &Worker{
-		confighubURL:  url,
-		workerId:      id,
-		workerSecret:  secret,
-		metricsMeter:  noop.Meter{},
-		transportType: TransportLongPoll,
+		confighubURL: url,
+		workerId:     id,
+		workerSecret: secret,
+		metricsMeter: noop.Meter{},
 	}
-}
-
-func (b *Worker) WithBridgeWorker(bridgeWorker api.BridgeWorker) *Worker {
-	b.bridgeWorker = bridgeWorker
-	return b
 }
 
 func (b *Worker) WithFunctionExecutor(functionExecutor executor.FunctionExecutor) *Worker {
@@ -56,18 +48,6 @@ func (b *Worker) WithFunctionExecutor(functionExecutor executor.FunctionExecutor
 
 func (b *Worker) WithMetricsMeter(meter metric.Meter) *Worker {
 	b.metricsMeter = meter
-	return b
-}
-
-// WithTransport selects the wire protocol used to talk to the ConfigHub
-// server. Default is TransportLongPoll, which uses HTTP long-polling on the
-// main API port. TransportHTTP2Stream selects the deprecated h2c stream; the
-// server will stop accepting it.
-func (b *Worker) WithTransport(kind TransportType) *Worker {
-	if kind == "" {
-		kind = TransportLongPoll
-	}
-	b.transportType = kind
 	return b
 }
 
@@ -104,10 +84,8 @@ func (b *Worker) Start(ctx context.Context) error {
 		b.confighubURL,
 		b.workerId,
 		b.workerSecret,
-		b.bridgeWorker,
 		b.functionExecutor,
 		b.metricsMeter,
-		b.transportType,
 	)
 	b.client.Store(client)
 
@@ -131,7 +109,6 @@ func (b *Worker) Start(ctx context.Context) error {
 	}
 	log.Printf("Starting worker with ID: %s", b.workerId)
 	log.Printf("Starting worker with Token: %s...", b.workerSecret[:8])
-	log.Printf("Worker transport: %s", b.transportType)
 	if err := client.Start(subCtx); err != nil {
 		log.Printf("Error starting worker: %v", err)
 		return err

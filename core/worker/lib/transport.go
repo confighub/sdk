@@ -7,23 +7,8 @@ import (
 	"context"
 )
 
-// TransportType selects the wire protocol the worker uses to talk to the
-// ConfigHub server.
-//
-// TransportHTTP2Stream uses the long-lived h2c stream that ships in v1 and is
-// the default; its implementation lives inline in workerClient (client.go).
-// TransportLongPoll uses HTTP long-polling on the main API port, implemented
-// by longPollTransport (transport_long_poll.go).
-type TransportType string
-
-const (
-	TransportHTTP2Stream TransportType = "http2-stream"
-	TransportLongPoll    TransportType = "long-poll"
-)
-
-// eventDispatcher is implemented by workerClient. The long-poll transport
-// calls it when events arrive from the server and when the connection state
-// changes.
+// eventDispatcher is implemented by workerClient. The transport calls it when
+// events arrive from the server and when the connection state changes.
 type eventDispatcher interface {
 	// DispatchEvent hands an event off to the queue manager / watcher
 	// dispatch. The transport calls this once per inbound event after

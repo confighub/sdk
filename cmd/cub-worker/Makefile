@@ -4,8 +4,7 @@ OS?=$(shell go env GOOS)
 ARCH?=$(shell go env GOARCH)
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
-BINARY_DIR=../../bin
-# Use abspath so the output path survives the cd into cmd/cub-worker
+BINARY_DIR=../../../bin
 WORKER_CMD?=$(BINARY_DIR)/cub-worker-run
 WORKER_CMD_ABS=$(abspath $(WORKER_CMD))
 VERSION?=
@@ -29,9 +28,9 @@ clean:
 cub-worker-run:
 	@mkdir -p $(BINARY_DIR)
 ifdef RELEASE
-	cd ../cmd/cub-worker && $(GOBUILD) $(LDFLAGS) -v -o $(abspath $(BINARY_DIR))/cub-worker-run-${OS}-${ARCH} .
+	$(GOBUILD) $(LDFLAGS) -v -o $(abspath $(BINARY_DIR))/cub-worker-run-${OS}-${ARCH} .
 else
-	cd ../cmd/cub-worker && $(GOBUILD) $(LDFLAGS) -v -o $(WORKER_CMD_ABS) .
+	$(GOBUILD) $(LDFLAGS) -v -o $(WORKER_CMD_ABS) .
 endif
 
 all: cub-worker-run

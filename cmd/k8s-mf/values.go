@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/bridge-impl/kubernetes/mfclass"
+	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"

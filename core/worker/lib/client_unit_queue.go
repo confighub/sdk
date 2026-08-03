@@ -287,28 +287,6 @@ func (u *UnitQueueManager) processQueue(q *unitQueue, queueType QueueType) {
 	}
 }
 
-// QueueBridgeEvent enqueues a bridge worker event to be processed serially for its unit
-func (u *UnitQueueManager) QueueBridgeEvent(ctx context.Context, event api.BridgeWorkerEventRequest, handler func(api.BridgeWorkerEventRequest)) {
-	unitID := event.Payload.UnitID.String()
-	q := u.getOrCreateQueue(unitID, BridgeQueueType, ctx)
-
-	select {
-	case <-ctx.Done():
-		log.Printf("Context cancelled, not queuing bridge event for unit %s", unitID)
-		return
-	case q.events <- queuedEvent{
-		event: event,
-		ctx:   ctx,
-		handler: func() {
-			handler(event)
-		},
-	}:
-		log.Printf("Queued bridge event for unit %s, action %s", unitID, event.Action)
-	default:
-		log.Printf("Bridge queue full for unit %s, dropping bridge event", unitID)
-	}
-}
-
 // QueueFunctionEvent enqueues a function worker event to be processed serially for its unit
 func (u *UnitQueueManager) QueueFunctionEvent(ctx context.Context, event api.FunctionWorkerEventRequest, handler func(api.FunctionWorkerEventRequest)) {
 	unitID := event.Payload.InvocationRequest.UnitID.String()
@@ -666,22 +644,6 @@ func (u *UnitQueueManager) CancelOperation(operationID uuid.UUID) bool {
 	return false
 }
 
-// GetRunningOperationByID looks up a running operation by its operation ID
-// Returns the running operation info if found, nil otherwise
-// This iterates over all running operations since they are keyed by unitID:category
-func (u *UnitQueueManager) GetRunningOperationByID(operationID uuid.UUID) *runningOperation {
-	var found *runningOperation
-	u.runningOperations.Range(func(key, value interface{}) bool {
-		op := value.(*runningOperation)
-		if op.operationID == operationID {
-			found = op
-			return false // stop iteration
-		}
-		return true // continue iteration
-	})
-	return found
-}
-
 // =============================================================================
 // Override Operations
 // =============================================================================
@@ -689,76 +651,3 @@ func (u *UnitQueueManager) GetRunningOperationByID(operationID uuid.UUID) *runni
 // When a new Apply/Destroy operation starts, it checks for and cancels any
 // running same-type operation (Apply overrides Apply, Destroy overrides Destroy).
 // Uses CancelOperation internally to trigger the actual cancellation.
-
-// makeRunningOperationKey creates a key for tracking running operations per unit per category
-// Returns empty string for non-overrideable actions
-// Note: Apply and WatchForApply share "apply" category (same operation flow)
-//
-//	Destroy and WatchForDestroy share "destroy" category (same operation flow)
-func makeRunningOperationKey(unitID uuid.UUID, action api.ActionType) string {
-	switch action {
-	case api.ActionApply, api.ActionDestroy:
-		return unitID.String() + ":" + strings.ToLower(string(action))
-	default:
-		return ""
-	}
-}
-
-// SetRunningOperation registers an operation as currently running for a unit/category
-// This enables automatic override detection for same-type operations
-func (u *UnitQueueManager) SetRunningOperation(unitID, spaceID, operationID uuid.UUID, action api.ActionType, revisionNum int64) {
-	key := makeRunningOperationKey(unitID, action)
-	if key == "" {
-		return // Not an overrideable action
-	}
-
-	op := &runningOperation{
-		operationID: operationID,
-		unitID:      unitID,
-		spaceID:     spaceID,
-		action:      action,
-		startedAt:   time.Now(),
-		revisionNum: revisionNum,
-		status:      api.ActionStatusNone, // Initialize to None (running/not terminal)
-	}
-	u.runningOperations.Store(key, op)
-	log.Printf("Registered running %s operation %s for unit %s (revision %d)", action, operationID, unitID, revisionNum)
-}
-
-// ClearRunningOperation removes the running operation tracking for a unit/category
-// Only removes if the operationID matches (prevents removing a replacement operation)
-func (u *UnitQueueManager) ClearRunningOperation(unitID uuid.UUID, action api.ActionType, operationID uuid.UUID) {
-	key := makeRunningOperationKey(unitID, action)
-	if key == "" {
-		return
-	}
-
-	// Only clear if this operation is still the current one
-	if val, ok := u.runningOperations.Load(key); ok {
-		running := val.(*runningOperation)
-		if running.operationID == operationID {
-			u.runningOperations.Delete(key)
-			log.Printf("Cleared running %s operation %s for unit %s", action, operationID, unitID)
-		}
-	}
-}
-
-// GetAndCancelRunningOperation checks for and cancels a running same-type operation
-// Returns the cancelled operation info and true if one was found and cancelled
-// Returns nil and false if no conflicting operation was running
-func (u *UnitQueueManager) GetAndCancelRunningOperation(unitID uuid.UUID, action api.ActionType) (*runningOperation, bool) {
-	key := makeRunningOperationKey(unitID, action)
-	if key == "" {
-		return nil, false // Not an overrideable action
-	}
-
-	if val, ok := u.runningOperations.Load(key); ok {
-		running := val.(*runningOperation)
-		// Cancel the running operation
-		if u.CancelOperation(running.operationID) {
-			log.Printf("🔄 Overriding running %s operation %s for unit %s", running.action, running.operationID, unitID)
-			return running, true
-		}
-	}
-	return nil, false
-}

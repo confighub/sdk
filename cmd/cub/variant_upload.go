@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"text/template"
 
@@ -562,20 +561,34 @@ func recordExternalSource(spaceSlug string, refs, digests []string, granularity,
 	return nil
 }
 
+// cubBinaryPath returns the binary that runCub should invoke: this same running
+// executable, wherever it lives and whatever it is called.
+//
+// It deliberately never consults $PATH for a binary named "cub". Resolving by
+// name means a locally built or renamed binary delegates half its work to some
+// other cub that happens to be installed — a `bin/cub-dev` doing its own space
+// creation but handing unit creation to last month's release. The resulting
+// version skew is invisible at the call site and surfaces as behaviour that
+// looks like the server's.
+//
+// The bare "cub" it returns when os.Executable fails is the sole exception, and
+// the only case where no self-reference is available at all: that call fails
+// only where the OS cannot report the running binary, and resolving through
+// $PATH there beats refusing to run. This function always returns something
+// runnable, so callers never have to decide what an unresolved binary means.
+func cubBinaryPath() string {
+	bin, err := os.Executable()
+	if err != nil || bin == "" {
+		return "cub"
+	}
+	return bin
+}
+
 // runCub executes the cub binary (this same CLI) as a subprocess, streaming its
 // output. Side effects go through cub so this command reuses its create/link
 // semantics without re-implementing them.
 func runCub(args ...string) error {
-	bin, err := os.Executable()
-	if err != nil || bin == "" {
-		bin = "cub"
-	}
-	if p := filepath.Base(bin); p != "cub" {
-		if _, lookErr := exec.LookPath("cub"); lookErr == nil {
-			bin = "cub"
-		}
-	}
-	c := exec.Command(bin, args...)
+	c := exec.Command(cubBinaryPath(), args...)
 	c.Stdout = os.Stdout
 	c.Stderr = os.Stderr
 	if err := c.Run(); err != nil {

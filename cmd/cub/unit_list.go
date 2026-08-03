@@ -77,8 +77,7 @@ Available columns (prefixed with Unit.):
 
 Example extended available columns (not exhaustive):
 
-  - Basic: Space.Slug, Target.Slug
-  - Status: UnitStatus.Status`
+  - Basic: Space.Slug, Target.Slug`
 
 	agentContext := `Essential for discovering and filtering units in ConfigHub.
 
@@ -174,20 +173,6 @@ var unitCustomColumns = map[string]func(interface{}) string{
 	// aliases (see dynamic_columns.go), so this has to be a second entry rather
 	// than an entry in unitAliases.
 	"UnappliedChanges": unreleasedChangesColumn,
-	"ResourceStatus": func(obj interface{}) string {
-		if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
-			if extendedUnit.UnitStatus != nil && extendedUnit.UnitStatus.ResourceStatusSummary != nil {
-				summary := extendedUnit.UnitStatus.ResourceStatusSummary
-				if summary.Failed > 0 {
-					return fmt.Sprintf("%d/%d Ready, %d Failed", summary.Ready, summary.Total, summary.Failed)
-				}
-				if summary.Total > 0 {
-					return fmt.Sprintf("%d/%d Ready", summary.Ready, summary.Total)
-				}
-			}
-		}
-		return ""
-	},
 }
 
 // unreleasedChangesColumn reports whether a Unit has changes that have not been
@@ -209,7 +194,6 @@ var unitCustomColumnDependencies = map[string][]string{
 	"UpgradeNeeded":     {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
 	"UnreleasedChanges": {"HeadRevisionNum", "LastAppliedRevisionNum"},
 	"UnappliedChanges":  {"HeadRevisionNum", "LastAppliedRevisionNum"},
-	"ResourceStatus":    {"UnitStatus.ResourceStatusSummary"},
 }
 
 func init() {

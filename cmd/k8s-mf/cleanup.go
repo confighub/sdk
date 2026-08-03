@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/confighub/sdk/bridge-impl/kubernetes/cleanup"
+	"github.com/confighub/sdk/cmd/k8s-mf/cleanup"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )

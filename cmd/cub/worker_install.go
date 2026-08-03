@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -315,8 +314,7 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	// Build the dynamic env vars for the worker container.
 	envMap := map[string]string{
-		"CONFIGHUB_URL":         contextManager.ActiveContext().Coordinate.ServerURL,
-		"CONFIGHUB_WORKER_PORT": os.Getenv("CONFIGHUB_WORKER_PORT"),
+		"CONFIGHUB_URL": contextManager.ActiveContext().Coordinate.ServerURL,
 	}
 	if workerInstallArgs.workerProviderTypes != "" {
 		envMap["CONFIGHUB_WORKER_PROVIDER_TYPES"] = workerInstallArgs.workerProviderTypes

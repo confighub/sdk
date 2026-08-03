@@ -35,7 +35,7 @@ clean:
 
 # Sibling modules that contain tests
 CORE_MODULES = ./core 
-TEST_MODULES = ./function-impl ./bridge-impl ./worker-function-impl \
+TEST_MODULES = ./function-impl ./worker-function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit \
@@ -115,8 +115,8 @@ ifndef CI
 endif
 
 .PHONY: build-worker
-build-worker: ## Build bridge worker
-	$(MAKE) -C ./bridge-impl BINARY_DIR=../bin all
+build-worker: ## Build the worker
+	$(MAKE) -C ./cmd/cub-worker BINARY_DIR=../../bin all
 
 .PHONY: build-modules
 build-modules: ## Build modules

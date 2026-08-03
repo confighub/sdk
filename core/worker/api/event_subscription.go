@@ -11,8 +11,8 @@ import (
 )
 
 // ConfigHub's event-log vocabulary (the EventType values, such as
-// "apply.completed" and "release.published") is open-ended and owned by the
-// server, so the SDK deliberately does not enumerate it — mirroring the API
+// "release.published") is open-ended and owned by the server, so the SDK
+// deliberately does not enumerate it — mirroring the API
 // spec, where EventType is an unconstrained string. A bot names the event types
 // it cares about itself, the same way it would name one the SDK has never heard
 // of.
@@ -33,9 +33,9 @@ type EventSubscription struct {
 	// resume to work. A worker with a single subscription uses a constant.
 	Name string `description:"Stable per-worker subscription name; the server keys the delivery cursor on it, so it must be identical across reconnects."`
 
-	// EventTypes are the event types to receive, for example "apply.completed"
-	// or "release.published". Empty means every type.
-	EventTypes []string `json:",omitempty" description:"Event types to receive, e.g. \"apply.completed\", \"release.published\". Empty means every type."`
+	// EventTypes are the event types to receive, for example
+	// "release.published". Empty means every type.
+	EventTypes []string `json:",omitempty" description:"Event types to receive, e.g. \"release.published\". Empty means every type."`
 
 	// SpaceID optionally scopes delivery to one Space (UUID string). Empty means
 	// any Space.
@@ -60,7 +60,7 @@ type EventLogEntry struct {
 	// has handled through here resumes after it.
 	CursorID int64 `description:"Monotonic cursor of this event in the log."`
 
-	// EventType is the fact's type, for example "apply.completed".
+	// EventType is the fact's type, for example "release.published".
 	EventType string `description:"The event type."`
 
 	// SubjectEntityType is the entity type the event is about, for example

@@ -202,21 +202,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['BridgeWorker'],
       }),
-      createActionResult: build.mutation<
-        CreateActionResultApiResponse,
-        CreateActionResultApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/bridge_worker/${queryArg.bridgeWorkerId}/action_result`,
-          method: 'POST',
-          body: queryArg.actionResult,
-        }),
-        invalidatesTags: ['BridgeWorker'],
-      }),
-      getSelf: build.query<GetSelfApiResponse, GetSelfApiArg>({
-        query: (queryArg) => ({ url: `/bridge_worker/${queryArg.bridgeWorkerId}/me` }),
-        providesTags: ['BridgeWorker'],
-      }),
       listQueuedOperations: build.query<
         ListQueuedOperationsApiResponse,
         ListQueuedOperationsApiArg
@@ -239,16 +224,6 @@ const injectedRtkApi = api
           providesTags: ['QueuedOperation'],
         },
       ),
-      streamBridgeWorker: build.mutation<
-        StreamBridgeWorkerApiResponse,
-        StreamBridgeWorkerApiArg
-      >({
-        query: (queryArg) => ({
-          url: `/bridge_worker/${queryArg.bridgeWorkerId}/stream`,
-          method: 'POST',
-        }),
-        invalidatesTags: ['BridgeWorker'],
-      }),
       userCreateActionResult: build.mutation<
         UserCreateActionResultApiResponse,
         UserCreateActionResultApiArg
@@ -1559,18 +1534,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
-      applyUnit: build.mutation<ApplyUnitApiResponse, ApplyUnitApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/apply`,
-          method: 'POST',
-          params: {
-            revision: queryArg.revision,
-            dry_run: queryArg.dryRun,
-            drift_mode: queryArg.driftMode,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       approveUnit: build.mutation<ApproveUnitApiResponse, ApproveUnitApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/approve`,
@@ -1587,32 +1550,11 @@ const injectedRtkApi = api
         }),
         providesTags: ['Unit'],
       }),
-      destroyUnit: build.mutation<DestroyUnitApiResponse, DestroyUnitApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/destroy`,
-          method: 'POST',
-          params: {
-            dry_run: queryArg.dryRun,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       getUnitExtended: build.query<GetUnitExtendedApiResponse, GetUnitExtendedApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/extended`,
         }),
         providesTags: ['Unit'],
-      }),
-      importUnit: build.mutation<ImportUnitApiResponse, ImportUnitApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/import`,
-          method: 'POST',
-          body: queryArg.importRequest,
-          params: {
-            dry_run: queryArg.dryRun,
-          },
-        }),
-        invalidatesTags: ['Unit'],
       }),
       downloadUnitLiveData: build.query<
         DownloadUnitLiveDataApiResponse,
@@ -1671,17 +1613,6 @@ const injectedRtkApi = api
           invalidatesTags: ['Unit'],
         },
       ),
-      refreshUnit: build.mutation<RefreshUnitApiResponse, RefreshUnitApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/refresh`,
-          method: 'POST',
-          params: {
-            dry_run: queryArg.dryRun,
-            drift_mode: queryArg.driftMode,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       listExtendedResources: build.query<
         ListExtendedResourcesApiResponse,
         ListExtendedResourcesApiArg
@@ -2114,22 +2045,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
-      bulkApplyUnits: build.mutation<BulkApplyUnitsApiResponse, BulkApplyUnitsApiArg>({
-        query: (queryArg) => ({
-          url: `/unit/apply`,
-          method: 'POST',
-          params: {
-            where: queryArg.where,
-            filter: queryArg.filter,
-            contains: queryArg.contains,
-            include: queryArg.include,
-            dry_run: queryArg.dryRun,
-            revision: queryArg.revision,
-            drift_mode: queryArg.driftMode,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       bulkApproveUnits: build.mutation<BulkApproveUnitsApiResponse, BulkApproveUnitsApiArg>({
         query: (queryArg) => ({
           url: `/unit/approve`,
@@ -2153,35 +2068,6 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
-      bulkDestroyUnits: build.mutation<BulkDestroyUnitsApiResponse, BulkDestroyUnitsApiArg>({
-        query: (queryArg) => ({
-          url: `/unit/destroy`,
-          method: 'POST',
-          params: {
-            where: queryArg.where,
-            filter: queryArg.filter,
-            contains: queryArg.contains,
-            include: queryArg.include,
-            dry_run: queryArg.dryRun,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
-      bulkRefreshUnits: build.mutation<BulkRefreshUnitsApiResponse, BulkRefreshUnitsApiArg>({
-        query: (queryArg) => ({
-          url: `/unit/refresh`,
-          method: 'POST',
-          params: {
-            where: queryArg.where,
-            filter: queryArg.filter,
-            contains: queryArg.contains,
-            include: queryArg.include,
-            dry_run: queryArg.dryRun,
-            drift_mode: queryArg.driftMode,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -3281,25 +3167,6 @@ export type BulkPatchBridgeWorkersApiArg = {
     Version?: number | null;
   };
 };
-export type CreateActionResultApiResponse = /** status 200 OK */ string;
-export type CreateActionResultApiArg = {
-  /** Unique identifier for a bridge_worker_id */
-  bridgeWorkerId: string;
-  actionResult: ActionResult;
-};
-export type GetSelfApiResponse =
-  /** status 200 BridgeWorker represents a bridge worker in ConfigHub.
-A bridge worker is a worker program that connects ConfigHub to external systems and targets.
-It acts as a bridge between ConfigHub and the infrastructure where configurations need
-to be applied. Bridge workers are responsible for executing configuration changes on
-remote targets and reporting status back to ConfigHub.
-When starting a bridge worker program, both the BridgeWorkerID and Secret are
-required for authentication with the ConfigHub server. These credentials allow the
-bridge worker to establish a secure connection and receive configuration actions. */ BridgeWorkerRead;
-export type GetSelfApiArg = {
-  /** Unique identifier for a bridge_worker_id */
-  bridgeWorkerId: string;
-};
 export type ListQueuedOperationsApiResponse = /** status 200 OK */ QueuedOperation[];
 export type ListQueuedOperationsApiArg = {
   /** Unique identifier for a bridge_worker_id */
@@ -3379,11 +3246,6 @@ export type GetQueuedOperationApiArg = {
   bridgeWorkerId: string;
   /** Unique identifier for a queued_operation_id */
   queuedOperationId: string;
-};
-export type StreamBridgeWorkerApiResponse = /** status 200 OK */ EventMessage;
-export type StreamBridgeWorkerApiArg = {
-  /** Unique identifier for a bridge_worker_id */
-  bridgeWorkerId: string;
 };
 export type UserCreateActionResultApiResponse = /** status 200 OK */ string;
 export type UserCreateActionResultApiArg = {
@@ -8221,24 +8083,6 @@ export type UpdateUnitApiArg = {
   subgroup?: string;
   unit: Unit;
 };
-export type ApplyUnitApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ QueuedOperation;
-export type ApplyUnitApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-  /** Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
-  revision?: string;
-  /** Dry run mode - validates which units would be applied without executing */
-  dryRun?: boolean;
-  /** Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used. */
-  driftMode?: string;
-};
 export type ApproveUnitApiResponse = /** status 200 OK */ ApproveResponseRead;
 export type ApproveUnitApiArg = {
   /** Unique identifier for a space_id */
@@ -8255,41 +8099,12 @@ export type DownloadUnitDataApiArg = {
   /** Unique identifier for a unit_id */
   unitId: string;
 };
-export type DestroyUnitApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ QueuedOperation;
-export type DestroyUnitApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-  /** Dry run mode - validates which units would be destroyed without executing */
-  dryRun?: boolean;
-};
 export type GetUnitExtendedApiResponse = /** status 200 OK */ UnitExtendedRead;
 export type GetUnitExtendedApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
-};
-export type ImportUnitApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ QueuedOperation;
-export type ImportUnitApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-  /** Dry run mode - returns import data in the operation/action */
-  dryRun?: boolean;
-  importRequest: ImportRequest;
 };
 export type DownloadUnitLiveDataApiResponse = /** status 200 OK */ string;
 export type DownloadUnitLiveDataApiArg = {
@@ -8425,22 +8240,6 @@ export type SetUnitPredicatesApiArg = {
   /** Unique identifier for a unit_id */
   unitId: string;
   unitPredicatesRequest: UnitPredicatesRequest;
-};
-export type RefreshUnitApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ QueuedOperation;
-export type RefreshUnitApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-  /** Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit */
-  dryRun?: boolean;
-  /** Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used. */
-  driftMode?: string;
 };
 export type ListExtendedResourcesApiResponse = /** status 200 OK */ ExtendedResourceRead[];
 export type ListExtendedResourcesApiArg = {
@@ -10822,90 +10621,6 @@ export type BulkCreateUnitsApiArg = {
     Version?: number | null;
   };
 };
-export type BulkApplyUnitsApiResponse = /** status 200 OK */
-  | UnitActionResponse[]
-  | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
-export type BulkApplyUnitsApiArg = {
-  /** The specified string is an expression for the purpose of filtering
-    the list of Units returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-    
-    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-    
-    The whole string must be query-encoded. */
-  where: string;
-  /** UUID of a Filter entity to apply to the Unit list.
-    
-    The Filter must be in the same Organization as the user credentials.
-    
-    The Filter's From field must match the entity type being filtered (Unit).
-    
-    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-    
-    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-    
-    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
-  filter?: string;
-  /** Free text search that approximately matches the specified string against string fields and map keys/values.
-    
-    The search is case-insensitive and uses pattern matching to find entities containing the text.
-    
-    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-    
-    For map fields (like Labels and Annotations), the search matches both map keys and values.
-    
-    The search uses OR logic across all searchable fields, so matching any field will return the entity.
-    
-    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-    
-    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-    
-    The whole string must be query-encoded. */
-  contains?: string;
-  /** Include clause for expanding related entities in the response for Unit.
-    The attribute names are case-sensitive, PascalCase, and
-    expected in a comma-separated list format as in the JSON encoding.
-    
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-    
-    The whole string must be query-encoded. */
-  include?: string;
-  /** Dry run mode - validates which units would be applied without executing */
-  dryRun?: boolean;
-  /** Revision to apply (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
-  revision?: string;
-  /** Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used. */
-  driftMode?: string;
-};
 export type BulkApproveUnitsApiResponse = /** status 200 OK */
   | ApproveResponseRead[]
   | /** status 207 Multi-Status: Mixed success and failure results */ ApproveResponseRead[];
@@ -11063,168 +10778,6 @@ export type BulkCancelUnitsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
-};
-export type BulkDestroyUnitsApiResponse = /** status 200 OK */
-  | UnitActionResponse[]
-  | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
-export type BulkDestroyUnitsApiArg = {
-  /** The specified string is an expression for the purpose of filtering
-    the list of Units returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-    
-    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-    
-    The whole string must be query-encoded. */
-  where: string;
-  /** UUID of a Filter entity to apply to the Unit list.
-    
-    The Filter must be in the same Organization as the user credentials.
-    
-    The Filter's From field must match the entity type being filtered (Unit).
-    
-    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-    
-    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-    
-    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
-  filter?: string;
-  /** Free text search that approximately matches the specified string against string fields and map keys/values.
-    
-    The search is case-insensitive and uses pattern matching to find entities containing the text.
-    
-    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-    
-    For map fields (like Labels and Annotations), the search matches both map keys and values.
-    
-    The search uses OR logic across all searchable fields, so matching any field will return the entity.
-    
-    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-    
-    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-    
-    The whole string must be query-encoded. */
-  contains?: string;
-  /** Include clause for expanding related entities in the response for Unit.
-    The attribute names are case-sensitive, PascalCase, and
-    expected in a comma-separated list format as in the JSON encoding.
-    
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-    
-    The whole string must be query-encoded. */
-  include?: string;
-  /** Dry run mode - validates which units would be destroyed without executing */
-  dryRun?: boolean;
-};
-export type BulkRefreshUnitsApiResponse = /** status 200 OK */
-  | UnitActionResponse[]
-  | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
-export type BulkRefreshUnitsApiArg = {
-  /** The specified string is an expression for the purpose of filtering
-    the list of Units returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
-    
-    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
-    
-    The whole string must be query-encoded. */
-  where: string;
-  /** UUID of a Filter entity to apply to the Unit list.
-    
-    The Filter must be in the same Organization as the user credentials.
-    
-    The Filter's From field must match the entity type being filtered (Unit).
-    
-    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-    
-    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-    
-    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
-  filter?: string;
-  /** Free text search that approximately matches the specified string against string fields and map keys/values.
-    
-    The search is case-insensitive and uses pattern matching to find entities containing the text.
-    
-    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-    
-    For map fields (like Labels and Annotations), the search matches both map keys and values.
-    
-    The search uses OR logic across all searchable fields, so matching any field will return the entity.
-    
-    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-    
-    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-    
-    The whole string must be query-encoded. */
-  contains?: string;
-  /** Include clause for expanding related entities in the response for Unit.
-    The attribute names are case-sensitive, PascalCase, and
-    expected in a comma-separated list format as in the JSON encoding.
-    
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-    
-    The whole string must be query-encoded. */
-  include?: string;
-  /** Dry run mode - returns refresh data in the operation/action and updates LiveData and LiveState in the unit */
-  dryRun?: boolean;
-  /** Drift reconciliation mode. Valid values: OnDemand, ContinuousApply, ContinuousRefresh. If not specified, the current value on the Unit is used. */
-  driftMode?: string;
 };
 export type BulkTagUnitsApiResponse = /** status 200 OK */
   | UnitTagResponse[]
@@ -12712,75 +12265,7 @@ export type BridgeWorkerCreateOrUpdateResponseRead = {
   BridgeWorker?: BridgeWorkerRead;
   Error?: ResponseError;
 };
-export type ActionType =
-  | 'Apply'
-  | 'Destroy'
-  | 'Finalize'
-  | 'Heartbeat'
-  | 'Import'
-  | 'N/A'
-  | 'Refresh';
-export type ResourceStatus = {
-  /** Human-readable status details or error message */
-  Message?: string;
-  /** Health state from kstatus (Ready, InProgress, Failed, Unknown) */
-  Readiness?: string;
-  /** Whether config was pushed to the target (Synced or NotSynced) */
-  SyncStatus?: string;
-  /** Timestamp when this resource status was last updated */
-  UpdatedAt?: string;
-};
-export type ResourceStatusMap = {
-  [key: string]: ResourceStatus;
-};
-export type ActionResultType =
-  | 'ApplyFailed'
-  | 'ApplyWaitFailed'
-  | 'ApplyCompleted'
-  | 'DestroyCompleted'
-  | 'DestroyWaitFailed'
-  | 'DestroyFailed'
-  | 'ImportCompleted'
-  | 'ImportFailed'
-  | 'RefreshAndDrifted'
-  | 'RefreshAndNoDrift'
-  | 'RefreshFailed'
-  | 'None';
-export type ActionStatusType =
-  | 'None'
-  | 'Pending'
-  | 'Submitted'
-  | 'Progressing'
-  | 'Completed'
-  | 'Failed'
-  | 'Canceled'
-  | 'Aborted';
-export type ActionResult = {
-  Action?: ActionType;
-  /** Additional state used by the Bridge */
-  BridgeState?: string;
-  /** Updated configuration Data of the Unit (for refresh and import) */
-  Data?: string;
-  /** Warning or error messages to surface to the user */
-  ErrorMessages?: string[];
-  /** Live Data corresponding to the Unit (for inventory and drift detection) */
-  LiveData?: string;
-  /** Live State corresponding to the Unit (for status determination) */
-  LiveState?: string;
-  Message?: string;
-  /** UUID of the operation corresponding to the action request */
-  QueuedOperationID?: string;
-  ResourceStatuses?: ResourceStatusMap;
-  Result?: ActionResultType;
-  RevisionNum?: number;
-  /** UUID of the Space of the Unit on which the action is performed */
-  SpaceID?: string;
-  StartedAt?: string;
-  Status?: ActionStatusType;
-  TerminatedAt?: string | null;
-  /** UUID of the Unit on which the action is performed */
-  UnitID?: string;
-};
+export type ActionType = 'N/A' | 'Cancel' | 'InvokeFunctions' | 'ListFunctions' | 'Apply';
 export type QueuedOperation = {
   Action?: ActionType;
   BridgeState?: string;
@@ -12840,9 +12325,57 @@ export type QueuedOperation = {
     The value read must be sent in calls to Update. */
   Version?: number;
 };
-export type EventMessage = {
+export type ResourceStatus = {
+  /** Human-readable status details or error message */
+  Message?: string;
+  /** Health state from kstatus (Ready, InProgress, Failed, Unknown) */
+  Readiness?: string;
+  /** Whether config was pushed to the target (Synced or NotSynced) */
+  SyncStatus?: string;
+  /** Timestamp when this resource status was last updated */
+  UpdatedAt?: string;
+};
+export type ResourceStatusMap = {
+  [key: string]: ResourceStatus;
+};
+export type ActionResultType =
+  | 'None'
+  | 'FunctionInvocationCompleted'
+  | 'FunctionInvocationFailed';
+export type ActionStatusType =
+  | 'None'
+  | 'Pending'
+  | 'Submitted'
+  | 'Progressing'
+  | 'Completed'
+  | 'Failed'
+  | 'Canceled'
+  | 'Aborted';
+export type ActionResult = {
+  Action?: ActionType;
+  /** Additional state used by the Bridge */
+  BridgeState?: string;
+  /** Updated configuration Data of the Unit (for refresh and import) */
   Data?: string;
-  Event?: string;
+  /** Warning or error messages to surface to the user */
+  ErrorMessages?: string[];
+  /** Live Data corresponding to the Unit (for inventory and drift detection) */
+  LiveData?: string;
+  /** Live State corresponding to the Unit (for status determination) */
+  LiveState?: string;
+  Message?: string;
+  /** UUID of the operation corresponding to the action request */
+  QueuedOperationID?: string;
+  ResourceStatuses?: ResourceStatusMap;
+  Result?: ActionResultType;
+  RevisionNum?: number;
+  /** UUID of the Space of the Unit on which the action is performed */
+  SpaceID?: string;
+  StartedAt?: string;
+  Status?: ActionStatusType;
+  TerminatedAt?: string | null;
+  /** UUID of the Unit on which the action is performed */
+  UnitID?: string;
 };
 export type ChangeSet = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -13242,7 +12775,7 @@ export type ApiInfoRead = {
   TokenExchangeEndpoint?: string;
   /** Semantic version of the server (e.g. v1.2.3), or 'dev' for development builds. */
   Version?: string;
-  /** Port number for the worker to connect to the server. */
+  /** Deprecated and always empty. Workers connect over long polling on the main API port; there is no separate worker port. */
   WorkerPort?: string;
 };
 export type Invocation = {
@@ -14938,32 +14471,6 @@ export type UnitEventRead = {
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
 };
-export type ResourceStatusSummary = {
-  /** Number of resources with Readiness=Failed */
-  Failed?: number;
-  /** Earliest UpdatedAt timestamp across all resources */
-  FirstUpdatedAt?: string | null;
-  /** Most recent UpdatedAt timestamp across all resources */
-  LastUpdatedAt?: string | null;
-  /** Number of resources with Readiness=InProgress */
-  Progressing?: number;
-  /** Number of resources with Readiness=Ready */
-  Ready?: number;
-  /** Number of resources with SyncStatus=Synced */
-  Synced?: number;
-  /** Total number of resources in the unit */
-  Total?: number;
-};
-export type UnitStatus = {
-  Action?: ActionType;
-  ActionResult?: ActionResultType;
-  ActionStartedAt?: string | null;
-  ActionTerminatedAt?: string | null;
-  Drift?: string;
-  ResourceStatusSummary?: ResourceStatusSummary;
-  Status?: string;
-  SyncStatus?: string;
-};
 export type ExtendedUnit = {
   /** the users that have approved the latest revision of the config data. */
   ApprovedBy?: User[];
@@ -14981,7 +14488,6 @@ export type ExtendedUnit = {
   Space?: Space;
   Target?: Target;
   Unit?: Unit;
-  UnitStatus?: UnitStatus;
   UpstreamSpace?: Space;
   UpstreamUnit?: Unit;
   View?: View;
@@ -15004,7 +14510,6 @@ export type ExtendedUnitRead = {
   Space?: SpaceRead;
   Target?: TargetRead;
   Unit?: UnitRead;
-  UnitStatus?: UnitStatus;
   UpstreamSpace?: SpaceRead;
   UpstreamUnit?: UnitRead;
   View?: ViewRead;
@@ -15021,52 +14526,16 @@ export type ApproveResponseRead = {
   Unit?: UnitRead;
 };
 export type UnitExtended = {
-  Action?: ActionType;
-  ActionResult?: ActionResultType;
-  ActionStartedAt?: string | null;
-  ActionTerminatedAt?: string | null;
   ApprovedByUsers?: string[] | null;
-  Drift?: string;
   FromLinks?: Link[] | null;
-  ResourceStatusSummary?: ResourceStatusSummary;
-  Status?: string;
-  SyncStatus?: string;
   ToLinks?: Link[] | null;
   Unit?: Unit;
 };
 export type UnitExtendedRead = {
-  Action?: ActionType;
-  ActionResult?: ActionResultType;
-  ActionStartedAt?: string | null;
-  ActionTerminatedAt?: string | null;
   ApprovedByUsers?: string[] | null;
-  Drift?: string;
   FromLinks?: LinkRead[] | null;
-  ResourceStatusSummary?: ResourceStatusSummary;
-  Status?: string;
-  SyncStatus?: string;
   ToLinks?: LinkRead[] | null;
   Unit?: UnitRead;
-};
-export type ImportFilter = {
-  /** Operator specifies how to apply the filter (include, exclude, equals, contains, matches) */
-  Operator?: string;
-  /** Type specifies the filter type (namespace, label, resource_type, etc.) */
-  Type?: string;
-  /** Values specifies the filter values */
-  Values?: string[];
-};
-export type ImportOptions = {
-  [key: string]: any;
-};
-export type ResourceInfoList = ResourceInfo[];
-export type ImportRequest = {
-  /** List of ImportFilter expression clauses. Mutually exclusive with Where. */
-  Filters?: ImportFilter[];
-  Options?: ImportOptions;
-  ResourceInfoList?: ResourceInfoList;
-  /** Where specifies a unified resource filter expression for import resources and options. It uses SQL-inspired syntax, similar to the where-filter function. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. Kubernetes-specific filters include import.include_system for system namespaces like kube-system, import.include_cluster for cluster-scoped resources like ClusterRole, and import.include_custom for custom resource types. */
-  Where?: string;
 };
 export type ExtendedMutation = {
   Error?: ResponseError;
@@ -15262,14 +14731,10 @@ export const {
   useListAllBridgeWorkersQuery,
   useLazyListAllBridgeWorkersQuery,
   useBulkPatchBridgeWorkersMutation,
-  useCreateActionResultMutation,
-  useGetSelfQuery,
-  useLazyGetSelfQuery,
   useListQueuedOperationsQuery,
   useLazyListQueuedOperationsQuery,
   useGetQueuedOperationQuery,
   useLazyGetQueuedOperationQuery,
-  useStreamBridgeWorkerMutation,
   useUserCreateActionResultMutation,
   useBulkDeleteChangeSetsMutation,
   useListAllChangeSetsQuery,
@@ -15427,14 +14892,11 @@ export const {
   useLazyGetUnitQuery,
   usePatchUnitMutation,
   useUpdateUnitMutation,
-  useApplyUnitMutation,
   useApproveUnitMutation,
   useDownloadUnitDataQuery,
   useLazyDownloadUnitDataQuery,
-  useDestroyUnitMutation,
   useGetUnitExtendedQuery,
   useLazyGetUnitExtendedQuery,
-  useImportUnitMutation,
   useDownloadUnitLiveDataQuery,
   useLazyDownloadUnitLiveDataQuery,
   useDownloadUnitLiveStateQuery,
@@ -15444,7 +14906,6 @@ export const {
   useGetExtendedMutationQuery,
   useLazyGetExtendedMutationQuery,
   useSetUnitPredicatesMutation,
-  useRefreshUnitMutation,
   useListExtendedResourcesQuery,
   useLazyListExtendedResourcesQuery,
   useGetExtendedResourceQuery,
@@ -15490,11 +14951,8 @@ export const {
   useLazyListAllUnitsQuery,
   useBulkPatchUnitsMutation,
   useBulkCreateUnitsMutation,
-  useBulkApplyUnitsMutation,
   useBulkApproveUnitsMutation,
   useBulkCancelUnitsMutation,
-  useBulkDestroyUnitsMutation,
-  useBulkRefreshUnitsMutation,
   useBulkTagUnitsMutation,
   useListAllUnitActionsQuery,
   useLazyListAllUnitActionsQuery,

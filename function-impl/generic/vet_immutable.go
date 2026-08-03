@@ -27,7 +27,7 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 					DataType:      api.DataTypeString,
 				},
 			},
-			OtherDataExpected: []api.OtherDataSource{"LiveRevisionNum"},
+			OtherDataExpected: []api.OtherDataSource{"LastAppliedRevisionNum"},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if no immutable fields were changed, false otherwise",
@@ -38,7 +38,7 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 			Validating:            true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Validates that immutable fields have not been changed compared to the live revision data provided via OtherData. If no OtherData is present (e.g., the unit has never been applied), validation passes.",
+			Description:           "Validates that immutable fields have not been changed compared to the baseline revision data provided via OtherData. If no OtherData is present (e.g., the unit has never been published), validation passes.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -61,8 +61,32 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 	}
 }
 
+// baselineFromOtherData picks the revision to compare against out of the OtherData
+// the caller supplied. The baseline used to be the live revision and the key was
+// hardcoded to "LiveRevisionNum"; nothing advances LiveRevisionNum since the bridge
+// sunset, so a caller now names the reference point itself — LastAppliedRevisionNum
+// (which publishing a Release advances), Before:HeadRevisionNum, or LiveRevisionNum
+// on a Unit with history. Anything the caller names is honoured; the known keys are
+// only a preference order for the ambiguous multi-source case.
+func baselineFromOtherData(parsedOtherData map[api.OtherDataSource]gaby.Container) (gaby.Container, bool) {
+	if len(parsedOtherData) == 1 {
+		for _, data := range parsedOtherData {
+			return data, true
+		}
+	}
+	for _, source := range []api.OtherDataSource{"LastAppliedRevisionNum", "LiveRevisionNum", "PreviousLiveRevisionNum", "HeadRevisionNum"} {
+		if data, ok := parsedOtherData[source]; ok {
+			return data, true
+		}
+		if data, ok := parsedOtherData[api.OtherDataSource("Before:"+source)]; ok {
+			return data, true
+		}
+	}
+	return nil, false
+}
+
 // GenericVetImmutable validates that immutable fields have not been changed between the
-// current data and the live revision data provided via OtherData. It compares values at
+// current data and the baseline revision data provided via OtherData. It compares values at
 // all paths registered under the specified attribute name.
 func GenericVetImmutable(
 	resourceProvider yamlkit.ResourceProvider,
@@ -77,7 +101,7 @@ func GenericVetImmutable(
 	if len(parsedOtherData) == 0 {
 		return api.ValidationResultTrue, nil
 	}
-	liveData, ok := parsedOtherData["LiveRevisionNum"]
+	liveData, ok := baselineFromOtherData(parsedOtherData)
 	if !ok || liveData == nil {
 		return api.ValidationResultTrue, nil
 	}

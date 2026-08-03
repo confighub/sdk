@@ -41,64 +41,31 @@ type ActionResultType string
 
 // Drift values
 const (
-	ActionResultNone              ActionResultType = "None"
-	ActionResultApplyCompleted    ActionResultType = "ApplyCompleted"
-	ActionResultApplySynced       ActionResultType = "ApplySynced" // Config pushed to target, waiting for resources to be ready
-	ActionResultApplyStuck        ActionResultType = "ApplyStuck"  // Waiting for readiness, but no progress observed for a while
-	ActionResultApplyFailed       ActionResultType = "ApplyFailed"
-	ActionResultApplyWaitFailed   ActionResultType = "ApplyWaitFailed"
-	ActionResultDestroyCompleted  ActionResultType = "DestroyCompleted"
-	ActionResultDestroyFailed     ActionResultType = "DestroyFailed"
-	ActionResultDestroyWaitFailed ActionResultType = "DestroyWaitFailed"
-	ActionResultRefreshFailed     ActionResultType = "RefreshFailed"
-	ActionResultRefreshAndDrifted ActionResultType = "RefreshAndDrifted"
-	ActionResultRefreshAndNoDrift ActionResultType = "RefreshAndNoDrift"
-	ActionResultImportCompleted   ActionResultType = "ImportCompleted"
-	ActionResultImportFailed      ActionResultType = "ImportFailed"
+	ActionResultNone ActionResultType = "None"
 
 	ActionResultFunctionInvocationCompleted ActionResultType = "FunctionInvocationCompleted"
 	ActionResultFunctionInvocationFailed    ActionResultType = "FunctionInvocationFailed"
-
-	// ActionResultHeartbeatNotReady is set by the worker on a heartbeat response
-	// when the worker is connected and responding but is under resource pressure
-	// (e.g., low memory) and should not be sent additional work. The Message field
-	// describes the cause. This is a structured signal so callers don't have to
-	// infer condition from a free-form Message string.
-	ActionResultHeartbeatNotReady ActionResultType = "HeartbeatNotReady"
 )
 
 var ValidActionResult = map[ActionResultType]bool{
 	ActionResultNone:                        true,
-	ActionResultApplyCompleted:              true,
-	ActionResultApplySynced:                 true,
-	ActionResultApplyStuck:                  true,
-	ActionResultApplyFailed:                 true,
-	ActionResultApplyWaitFailed:             true,
-	ActionResultDestroyCompleted:            true,
-	ActionResultDestroyFailed:               true,
-	ActionResultDestroyWaitFailed:           true,
-	ActionResultRefreshFailed:               true,
-	ActionResultRefreshAndDrifted:           true,
-	ActionResultRefreshAndNoDrift:           true,
-	ActionResultImportCompleted:             true,
-	ActionResultImportFailed:                true,
 	ActionResultFunctionInvocationCompleted: true,
 	ActionResultFunctionInvocationFailed:    true,
-	ActionResultHeartbeatNotReady:           true,
 }
 
 type ActionType string
 
 // Action values
 const (
-	ActionNA        ActionType = "N/A"
-	ActionApply     ActionType = "Apply"
-	ActionDestroy   ActionType = "Destroy"
-	ActionRefresh   ActionType = "Refresh"
-	ActionImport    ActionType = "Import"
-	ActionFinalize  ActionType = "Finalize"
-	ActionHeartbeat ActionType = "Heartbeat"
-	ActionCancel    ActionType = "Cancel"
+	ActionNA     ActionType = "N/A"
+	ActionCancel ActionType = "Cancel"
+
+	// ActionApply is no longer performed — nothing applies configuration since
+	// the bridge sunset. The constant remains because historical UnitActions and
+	// UnitEvents carry it, and a Link that sources its data from LiveState
+	// resolves against the last completed Apply. It is deliberately absent from
+	// ValidAction: it can be read, not submitted.
+	ActionApply ActionType = "Apply"
 
 	ActionInvokeFunctions ActionType = "InvokeFunctions"
 	ActionListFunctions   ActionType = "ListFunctions"
@@ -106,12 +73,6 @@ const (
 
 var ValidAction = map[ActionType]bool{
 	ActionNA:              true,
-	ActionApply:           true,
-	ActionDestroy:         true,
-	ActionRefresh:         true,
-	ActionImport:          true,
-	ActionFinalize:        true,
-	ActionHeartbeat:       true,
 	ActionCancel:          true,
 	ActionInvokeFunctions: true,
 	ActionListFunctions:   true,

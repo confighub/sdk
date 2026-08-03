@@ -45,6 +45,19 @@ func resolveContextOverride() (name, source string) {
 // context manager, recording its source for display. A named-but-missing context
 // is a hard error rather than a silent fallback, so commands never run against an
 // unexpected context.
+//
+// The override is also exported as $CUB_CONTEXT so that child cub processes
+// resolve the same context. Several commands delegate work by running cub again
+// (runCub: `cub variant upload`, `cub variant create`, `cub cluster up`), and a
+// child is a fresh process that re-resolves the context from scratch. --context
+// lives only in this process's memory, so without exporting it the child falls
+// back to the persisted current context and silently operates somewhere else —
+// which for a command that mixes delegated work with its own API calls means
+// writing to two contexts at once. Exporting mirrors what --debug already does
+// with $CONFIGHUB_DEBUG above, and covers plugins for free.
+//
+// Only an actual override is exported. With none, parent and child both resolve
+// the persisted current context and already agree.
 func applyContextOverride() error {
 	name, source := resolveContextOverride()
 	if name == "" {
@@ -54,6 +67,11 @@ func applyContextOverride() error {
 		return fmt.Errorf("%s: %w", source, err)
 	}
 	activeContextOverrideSource = source
+	// resolveContextOverride reads $CUB_CONTEXT, but only ever before this point
+	// (globalPreRun runs once), so setting it here cannot feed back into it.
+	if err := os.Setenv("CUB_CONTEXT", name); err != nil {
+		return fmt.Errorf("export CUB_CONTEXT for child cub processes: %w", err)
+	}
 	return nil
 }
 

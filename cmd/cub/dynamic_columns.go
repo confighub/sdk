@@ -414,13 +414,6 @@ func buildSelectList(entity string, columnsSpec []string, include string, defaul
 				parts := strings.Split(actualCol, ".")
 				if fieldIsMap(parts[0]) {
 					actualCol = parts[0]
-				} else if len(parts) > 1 {
-					// This is an included relationship field (Space.Slug, Target.Slug, etc.)
-					// Keep full actualCol.
-					// TODO: Except for UnitStatus, which is synthetic. Fix this.
-					if parts[0] == "UnitStatus" {
-						continue
-					}
 				}
 			} else if strings.Contains(actualCol, "Count") {
 				// This is a summary field

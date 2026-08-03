@@ -112,7 +112,6 @@ type longPollTransport struct {
 	workerID     string
 	workerSecret string
 
-	bridgeWorker     api.BridgeWorker
 	functionExecutor executor.FunctionExecutor
 
 	httpClient *http.Client
@@ -140,7 +139,6 @@ type longPollTransport struct {
 
 func newLongPollTransport(
 	serverURL, workerID, workerSecret string,
-	bridgeWorker api.BridgeWorker,
 	functionExecutor executor.FunctionExecutor,
 	dispatcher eventDispatcher,
 ) *longPollTransport {
@@ -148,7 +146,6 @@ func newLongPollTransport(
 		mainURL:          serverURL,
 		workerID:         workerID,
 		workerSecret:     workerSecret,
-		bridgeWorker:     bridgeWorker,
 		functionExecutor: functionExecutor,
 		httpClient:       &http.Client{}, // no special transport — plain HTTP
 		dispatcher:       dispatcher,
@@ -210,19 +207,12 @@ func (t *longPollTransport) Run(ctx context.Context) error {
 		t.setClaim(token, ttl)
 		log.Printf("[INFO] long-poll claim acquired token=%s ttl=%v", token, ttl)
 
-		// First successful claim: publish ProvidedInfo and register
-		// targets. Doing this *after* the claim guarantees we are the
-		// active worker before mutating shared state.
+		// First successful claim: publish ProvidedInfo. Doing this
+		// *after* the claim guarantees we are the active worker before
+		// mutating shared state.
 		if !registered {
 			if err := t.registerWorkerInfo(ctx); err != nil {
 				return fmt.Errorf("long-poll: register worker info: %w", err)
-			}
-			if err := t.registerAvailableTargets(ctx); err != nil {
-				// Best-effort — operators can create targets out-of-band,
-				// and an error here typically means "target already exists
-				// with a conflicting shape" which the worker can't auto-
-				// resolve. Don't fail Run.
-				log.Printf("[WARN] long-poll: target registration had errors (continuing): %v", err)
 			}
 			registered = true
 			log.Printf("[INFO] long-poll registration complete")
@@ -250,163 +240,6 @@ func (t *longPollTransport) Run(ctx context.Context) error {
 			log.Printf("[WARN] long-poll: poll loop ended: %v. Re-acquiring claim.", err)
 		}
 	}
-}
-
-// registerAvailableTargets walks the worker's BridgeWorkerInfo.AvailableTargets
-// and POSTs each (or PATCHes if it already exists) to the standard /target
-// endpoint. The SSE counterpart registers targets server-side as part of the
-// stream handshake; the two paths intentionally diverge on how an existing
-// Target is updated (see comment on the PATCH branch in upsertTarget below).
-// Auto-target updates are slated for removal, so we are not chasing byte-exact
-// parity.
-//
-// This is best-effort: errors on individual targets are logged but don't fail
-// bootstrap. AvailableTargets without a Name are skipped (their existence in
-// ProvidedInfo is just a way to publish a BridgeHandle).
-func (t *longPollTransport) registerAvailableTargets(ctx context.Context) error {
-	bridgeWorkerInfo := t.bridgeWorker.Info(api.InfoOptions{WorkerSlug: t.workerSlug})
-
-	type bridgeKey struct {
-		compatibleProvider api.ProviderType
-		bridgeHandle       string
-	}
-	compatibleConfigTypes := map[bridgeKey][]api.ConfigType{}
-	for _, ct := range bridgeWorkerInfo.SupportedConfigTypes {
-		if ct == nil || ct.CompatibleBridge == "" {
-			continue
-		}
-		seen := map[string]bool{}
-		for _, at := range ct.AvailableTargets {
-			if at.BridgeHandle == "" || seen[at.BridgeHandle] {
-				continue
-			}
-			seen[at.BridgeHandle] = true
-			k := bridgeKey{compatibleProvider: ct.CompatibleBridge, bridgeHandle: at.BridgeHandle}
-			compatibleConfigTypes[k] = append(compatibleConfigTypes[k], ct.ConfigType)
-		}
-	}
-
-	var firstErr error
-	for _, ct := range bridgeWorkerInfo.SupportedConfigTypes {
-		if ct == nil {
-			continue
-		}
-		for _, at := range ct.AvailableTargets {
-			if at.Name == "" {
-				continue
-			}
-			k := bridgeKey{compatibleProvider: ct.ProviderType, bridgeHandle: at.BridgeHandle}
-			if err := t.upsertTarget(ctx, ct, at, compatibleConfigTypes[k]); err != nil {
-				log.Printf("[WARN] long-poll: failed to upsert target %s: %v", at.Name, err)
-				if firstErr == nil {
-					firstErr = err
-				}
-			}
-		}
-	}
-	return firstErr
-}
-
-// targetUpsertBody mirrors the fields of goclientnew.Target the server expects
-// on POST/PATCH. We use plain map[string]any rather than the generated client
-// to keep the long-poll transport self-contained.
-type targetUpsertBody struct {
-	Slug           string                 `json:"Slug"`
-	DisplayName    string                 `json:"DisplayName"`
-	BridgeHandle   string                 `json:"BridgeHandle,omitempty"`
-	BridgeWorkerID uuid.UUID              `json:"BridgeWorkerID"`
-	ProviderType   api.ProviderType       `json:"ProviderType"`
-	ToolchainType  any                    `json:"ToolchainType"`
-	LiveStateType  any                    `json:"LiveStateType,omitempty"`
-	Parameters     string                 `json:"Parameters,omitempty"`
-	ConfigTypes    []targetConfigTypeBody `json:"ConfigTypes,omitempty"`
-}
-
-type targetConfigTypeBody struct {
-	ProviderType  api.ProviderType `json:"ProviderType,omitempty"`
-	ToolchainType any              `json:"ToolchainType,omitempty"`
-	LiveStateType any              `json:"LiveStateType,omitempty"`
-}
-
-func (t *longPollTransport) upsertTarget(
-	ctx context.Context,
-	ct *api.SupportedConfigType,
-	availableTarget api.Target,
-	compatibleConfigTypes []api.ConfigType,
-) error {
-	jsonParams, err := json.Marshal(availableTarget.Params)
-	if err != nil {
-		return fmt.Errorf("marshal target params: %w", err)
-	}
-	body := targetUpsertBody{
-		Slug:           availableTarget.Name,
-		DisplayName:    availableTarget.Name,
-		BridgeHandle:   availableTarget.BridgeHandle,
-		BridgeWorkerID: t.workerUUID(),
-		ProviderType:   ct.ProviderType,
-		ToolchainType:  ct.ToolchainType,
-		LiveStateType:  ct.LiveStateType,
-		Parameters:     string(jsonParams),
-	}
-	for _, cct := range compatibleConfigTypes {
-		body.ConfigTypes = append(body.ConfigTypes, targetConfigTypeBody{
-			ProviderType:  cct.ProviderType,
-			ToolchainType: cct.ToolchainType,
-			LiveStateType: cct.LiveStateType,
-		})
-	}
-	payload, err := json.Marshal(body)
-	if err != nil {
-		return fmt.Errorf("marshal target body: %w", err)
-	}
-
-	// Try POST first; on 409 (slug already exists), fall back to PATCH.
-	createURL := fmt.Sprintf("%s/api/space/%s/target", t.mainURL, t.spaceID)
-	status, respBody, err := t.doJSON(ctx, http.MethodPost, createURL, "application/json", payload)
-	if err != nil {
-		return err
-	}
-	if status == http.StatusOK || status == http.StatusCreated {
-		return nil
-	}
-	if status != http.StatusConflict {
-		return fmt.Errorf("POST target status %d: %s", status, string(respBody))
-	}
-
-	// Conflict — narrow PATCH so we only refresh the fields that an operator
-	// is unlikely to have hand-edited. Specifically: leave Parameters,
-	// ConfigTypes, ProviderType, ToolchainType, and LiveStateType alone. We
-	// do refresh BridgeHandle and BridgeWorkerID so the existing target keeps
-	// pointing at *this* worker, and DisplayName so a slug-only target gains
-	// a display name. NOTE: This intentionally diverges from the SSE auto-
-	// target merge in HandleStream's updateWorkerData (which mutates more
-	// fields with an existing-params-wins merge). We're not aiming for byte-
-	// exact parity — auto-target updates are slated for removal, and the
-	// narrower PATCH is closer to the desired end-state where target shape
-	// is operator-managed and not something a worker rewrites on every
-	// reconnect.
-	// NOTE: (jesperfj) Claude made these choices when I told it to get as close
-	// to the SSE transport behavior as possible but also that worker-created
-	// targets will probably go away (or change). We can tweak as needed to fix
-	// compatibility issues as we see them.
-	patch := map[string]any{
-		"BridgeHandle":   availableTarget.BridgeHandle,
-		"BridgeWorkerID": t.workerUUID(),
-		"DisplayName":    availableTarget.Name,
-	}
-	patchPayload, err := json.Marshal(patch)
-	if err != nil {
-		return fmt.Errorf("marshal target patch: %w", err)
-	}
-	patchURL := fmt.Sprintf("%s/api/space/%s/target/%s", t.mainURL, t.spaceID, availableTarget.Name)
-	pstatus, pbody, err := t.doJSON(ctx, http.MethodPatch, patchURL, "application/merge-patch+json", patchPayload)
-	if err != nil {
-		return err
-	}
-	if pstatus != http.StatusOK && pstatus != http.StatusNoContent {
-		return fmt.Errorf("PATCH target status %d: %s", pstatus, string(pbody))
-	}
-	return nil
 }
 
 // workerUUID parses the worker ID once. Bootstrap will already have populated
@@ -451,16 +284,12 @@ func (t *longPollTransport) doJSON(ctx context.Context, method, url, contentType
 }
 
 // registerWorkerInfo PATCHes the standard bridge_worker resource with the
-// worker's WorkerInfo (as ProvidedInfo). The server uses this to register
-// functions (and, for SSE, also auto-create Targets — long-poll creates
-// targets explicitly via the standard /target endpoint, see
-// registerAvailableTargets).
+// worker's WorkerInfo (as ProvidedInfo). The server uses this to register the
+// functions the worker can execute.
 //
 // Uses RFC 7396 application/merge-patch+json so unrelated fields aren't
 // touched.
 func (t *longPollTransport) registerWorkerInfo(ctx context.Context) error {
-	bridgeWorkerInfo := t.bridgeWorker.Info(api.InfoOptions{WorkerSlug: t.workerSlug})
-
 	var functionWorkerInfo api.FunctionWorkerInfo
 	if t.functionExecutor != nil {
 		functionWorkerInfo = t.functionExecutor.Info()
@@ -468,7 +297,6 @@ func (t *longPollTransport) registerWorkerInfo(ctx context.Context) error {
 
 	patch := map[string]any{
 		"ProvidedInfo": api.WorkerInfo{
-			BridgeWorkerInfo:   bridgeWorkerInfo,
 			FunctionWorkerInfo: functionWorkerInfo,
 		},
 	}
@@ -875,7 +703,7 @@ func (t *longPollTransport) SendResult(result *api.ActionResult) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal result: %v", err)
 	}
-	if result.Action != api.ActionHeartbeat {
+	{
 		logResult := *result
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
 		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
@@ -910,15 +738,13 @@ func (t *longPollTransport) SendResult(result *api.ActionResult) error {
 
 		resp, err := t.httpClient.Do(req)
 		if err != nil {
-			if result.Action != api.ActionHeartbeat {
-				log.Printf("[WARN] long-poll: PATCH result attempt #%d failed: %v - will retry", attempt, err)
-			}
+			log.Printf("[WARN] long-poll: PATCH result attempt #%d failed: %v - will retry", attempt, err)
 			return nil, err
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
-			if attempt > 1 && result.Action != api.ActionHeartbeat {
+			if attempt > 1 {
 				log.Printf("[INFO] long-poll: PATCH result succeeded after %d attempts", attempt)
 			}
 			return nil, nil
@@ -937,7 +763,7 @@ func (t *longPollTransport) SendResult(result *api.ActionResult) error {
 		if resp.StatusCode >= 400 && resp.StatusCode < 500 && resp.StatusCode != http.StatusConflict {
 			return nil, backoff.Permanent(fmt.Errorf("server returned status %d: %s, body: %s", resp.StatusCode, resp.Status, string(body)))
 		}
-		if result.Action != api.ActionHeartbeat {
+		{
 			log.Printf("[WARN] long-poll: PATCH result attempt #%d returned %d - will retry", attempt, resp.StatusCode)
 		}
 		return nil, fmt.Errorf("server returned status %d: %s", resp.StatusCode, resp.Status)
@@ -998,7 +824,7 @@ func (t *longPollTransport) SendResultOnce(result *api.ActionResult) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal result: %v", err)
 	}
-	if result.Action != api.ActionHeartbeat {
+	{
 		logResult := *result
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
 		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
