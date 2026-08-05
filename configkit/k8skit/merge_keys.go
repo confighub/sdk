@@ -14,9 +14,24 @@ import (
 // Path is the dot-separated path to the array field (gaby dot syntax).
 // Wildcards (*) represent any array index within the path.
 // Key is the field name within array items used as the merge key.
+//
+// ExtraKeys names the remaining fields of a composite key, for the arrays Kubernetes
+// declares with more than one x-kubernetes-list-map-key: a container port is identified by
+// its number and its protocol, and a topology spread constraint by its topology key and
+// its whenUnsatisfiable. Two elements that agree on Key alone but differ in an ExtraKey
+// are different elements, and matching them would merge one into the other.
 type MergeKeyField struct {
-	Path string
-	Key  string
+	Path      string
+	Key       string
+	ExtraKeys []string
+}
+
+// Keys returns the full key list, Key first.
+func (f MergeKeyField) Keys() []string {
+	if len(f.ExtraKeys) == 0 {
+		return []string{f.Key}
+	}
+	return append([]string{f.Key}, f.ExtraKeys...)
 }
 
 // StrategicMergeKeyFields maps resource types to their strategic merge patch key fields,
@@ -63,7 +78,7 @@ var StrategicMergeKeyFields = map[api.ResourceType][]MergeKeyField{
 	// Services
 	// -------------------------------------------------------------------------
 	api.ResourceType("v1/Service"): {
-		{Path: "spec.ports", Key: "port"},
+		{Path: "spec.ports", Key: "port", ExtraKeys: []string{"protocol"}},
 	},
 
 	// -------------------------------------------------------------------------
@@ -100,24 +115,24 @@ var StrategicMergeKeyFields = map[api.ResourceType][]MergeKeyField{
 var PodSpecMergeKeyFields = []MergeKeyField{
 	{Path: "containers", Key: "name"},
 	{Path: "containers.*.env", Key: "name"},
-	{Path: "containers.*.ports", Key: "containerPort"},
+	{Path: "containers.*.ports", Key: "containerPort", ExtraKeys: []string{"protocol"}},
 	{Path: "containers.*.volumeDevices", Key: "devicePath"},
 	{Path: "containers.*.volumeMounts", Key: "mountPath"},
 	{Path: "ephemeralContainers", Key: "name"},
 	{Path: "ephemeralContainers.*.env", Key: "name"},
-	{Path: "ephemeralContainers.*.ports", Key: "containerPort"},
+	{Path: "ephemeralContainers.*.ports", Key: "containerPort", ExtraKeys: []string{"protocol"}},
 	{Path: "ephemeralContainers.*.volumeDevices", Key: "devicePath"},
 	{Path: "ephemeralContainers.*.volumeMounts", Key: "mountPath"},
 	{Path: "hostAliases", Key: "ip"},
 	{Path: "imagePullSecrets", Key: "name"},
 	{Path: "initContainers", Key: "name"},
 	{Path: "initContainers.*.env", Key: "name"},
-	{Path: "initContainers.*.ports", Key: "containerPort"},
+	{Path: "initContainers.*.ports", Key: "containerPort", ExtraKeys: []string{"protocol"}},
 	{Path: "initContainers.*.volumeDevices", Key: "devicePath"},
 	{Path: "initContainers.*.volumeMounts", Key: "mountPath"},
 	{Path: "resourceClaims", Key: "name"},
 	{Path: "schedulingGates", Key: "name"},
-	{Path: "topologySpreadConstraints", Key: "topologyKey"},
+	{Path: "topologySpreadConstraints", Key: "topologyKey", ExtraKeys: []string{"whenUnsatisfiable"}},
 	{Path: "volumes", Key: "name"},
 }
 
@@ -139,7 +154,7 @@ var WorkloadMergeKeyFields = map[api.ResourceType]string{
 
 // mergeKeyLookup maps a resource type to a map of normalized path patterns to merge keys.
 // Path patterns have numeric indices replaced with * for matching.
-type mergeKeyLookup map[api.ResourceType]map[string]string
+type mergeKeyLookup map[api.ResourceType]map[string][]string
 
 // numericSegmentRegexp matches one or more digits (a numeric array index).
 var numericSegmentRegexp = regexp.MustCompile(`^[0-9]+$`)
@@ -161,17 +176,17 @@ func normalizeMergeKeyPath(path string) string {
 func buildMergeKeyLookup() mergeKeyLookup {
 	lookup := make(mergeKeyLookup)
 
-	addEntry := func(resourceType api.ResourceType, path, key string) {
+	addEntry := func(resourceType api.ResourceType, path string, keys []string) {
 		if lookup[resourceType] == nil {
-			lookup[resourceType] = make(map[string]string)
+			lookup[resourceType] = make(map[string][]string)
 		}
-		lookup[resourceType][path] = key
+		lookup[resourceType][path] = keys
 	}
 
 	// Add per-resource-type fields (including universal "*")
 	for resourceType, fields := range StrategicMergeKeyFields {
 		for _, field := range fields {
-			addEntry(resourceType, field.Path, field.Key)
+			addEntry(resourceType, field.Path, field.Keys())
 		}
 	}
 
@@ -179,7 +194,7 @@ func buildMergeKeyLookup() mergeKeyLookup {
 	for resourceType, prefix := range WorkloadMergeKeyFields {
 		for _, field := range PodSpecMergeKeyFields {
 			fullPath := prefix + "." + field.Path
-			addEntry(resourceType, fullPath, field.Key)
+			addEntry(resourceType, fullPath, field.Keys())
 		}
 	}
 
@@ -189,26 +204,26 @@ func buildMergeKeyLookup() mergeKeyLookup {
 // k8sMergeKeyLookup is the singleton lookup table, built once at init time.
 var k8sMergeKeyLookup = buildMergeKeyLookup()
 
-// MergeKeyForPath returns the merge key field name for the given K8s resource type
+// MergeKeysForPath returns the merge key field names for the given K8s resource type
 // and array path. The path may use numeric indices or wildcards; numeric indices
-// are normalized to wildcards for lookup. Returns ("", false) if no merge key
+// are normalized to wildcards for lookup. Returns (nil, false) if no merge key
 // is defined for the path.
-func (rp *K8sResourceProviderType) MergeKeyForPath(resourceType api.ResourceType, path string) (string, bool) {
+func (rp *K8sResourceProviderType) MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool) {
 	normalized := normalizeMergeKeyPath(path)
 
 	// Check resource-type-specific entries first
 	if typeMap, ok := k8sMergeKeyLookup[resourceType]; ok {
-		if key, ok := typeMap[normalized]; ok {
-			return key, true
+		if keys, ok := typeMap[normalized]; ok {
+			return keys, true
 		}
 	}
 
 	// Check universal entries (ResourceType "*")
 	if universalMap, ok := k8sMergeKeyLookup[api.ResourceType("*")]; ok {
-		if key, ok := universalMap[normalized]; ok {
-			return key, true
+		if keys, ok := universalMap[normalized]; ok {
+			return keys, true
 		}
 	}
 
-	return "", false
+	return nil, false
 }

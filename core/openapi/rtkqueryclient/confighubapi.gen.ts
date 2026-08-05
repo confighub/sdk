@@ -695,7 +695,7 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
             view: queryArg.view,
             raw_data: queryArg.rawData,
           },
@@ -713,7 +713,8 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
+            distinct_on: queryArg.distinctOn,
           },
         }),
         providesTags: ['Revision'],
@@ -1499,7 +1500,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
-            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
+            merge_enable_subtraction: queryArg.mergeEnableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1524,7 +1525,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
-            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
+            merge_enable_subtraction: queryArg.mergeEnableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -1541,6 +1542,17 @@ const injectedRtkApi = api
           params: {
             revision: queryArg.revision,
           },
+        }),
+        invalidatesTags: ['Unit'],
+      }),
+      resolveUnitConflicts: build.mutation<
+        ResolveUnitConflictsApiResponse,
+        ResolveUnitConflictsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/conflicts`,
+          method: 'POST',
+          body: queryArg.unitConflictsRequest,
         }),
         invalidatesTags: ['Unit'],
       }),
@@ -1627,7 +1639,7 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
             view: queryArg.view,
             raw_data: queryArg.rawData,
           },
@@ -1645,7 +1657,7 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
             view: queryArg.view,
             raw_data: queryArg.rawData,
           },
@@ -1666,7 +1678,7 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
           },
         }),
         providesTags: ['Revision'],
@@ -1682,7 +1694,7 @@ const injectedRtkApi = api
             select: queryArg.select,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
           },
         }),
         providesTags: ['Revision'],
@@ -1722,7 +1734,7 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
           },
         }),
         providesTags: ['UnitEvent'],
@@ -1733,7 +1745,7 @@ const injectedRtkApi = api
           params: {
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
           },
         }),
         providesTags: ['UnitEvent'],
@@ -2014,7 +2026,7 @@ const injectedRtkApi = api
             merge_base: queryArg.mergeBase,
             merge_end: queryArg.mergeEnd,
             merge_external_source: queryArg.mergeExternalSource,
-            merge_disable_subtraction: queryArg.mergeDisableSubtraction,
+            merge_enable_subtraction: queryArg.mergeEnableSubtraction,
             where_mutation: queryArg.whereMutation,
             filter_mutation: queryArg.filterMutation,
             tag: queryArg.tag,
@@ -2108,7 +2120,8 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             limit: queryArg.limit,
             offset: queryArg.offset,
-            orderby: queryArg.orderby,
+            order_by: queryArg.orderBy,
+            distinct_on: queryArg.distinctOn,
           },
         }),
         providesTags: ['UnitEvent'],
@@ -2644,7 +2657,7 @@ export type ListAllAttributesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -3058,7 +3071,7 @@ export type ListAllBridgeWorkersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -3407,7 +3420,7 @@ export type ListAllChangeSetsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -3817,7 +3830,7 @@ export type ListAllFiltersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -4174,7 +4187,7 @@ export type InvokeFunctionsOnOrgApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -4363,7 +4376,7 @@ export type ListAllInvocationsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -4674,7 +4687,7 @@ export type BulkDeleteLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4750,7 +4763,7 @@ export type SearchListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4795,7 +4808,7 @@ export type SearchListLinksApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -4835,7 +4848,7 @@ export type BulkPatchLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     filter
     
@@ -4900,7 +4913,7 @@ export type BulkPatchLinksApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
-    MergeDisableSubtraction?: boolean | null;
+    MergeEnableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -4952,7 +4965,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to select source links to copy
     
@@ -5003,7 +5016,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
     
@@ -5040,7 +5053,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
     
@@ -5069,7 +5082,7 @@ export type BulkCreateLinksApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
-    MergeDisableSubtraction?: boolean | null;
+    MergeEnableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -5186,7 +5199,7 @@ export type ListOrganizationsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5220,7 +5233,7 @@ export type GetOrganizationApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5403,7 +5416,7 @@ export type ListAllReleasesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5488,26 +5501,26 @@ export type ListAllResourcesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
   /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
   view?: string;
   /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
@@ -5546,7 +5559,7 @@ export type ListAllRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -5593,26 +5606,34 @@ export type ListAllRevisionsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
+  /** Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+    
+    Supported values: Unit, Off.
+    
+    If not specified, results are restricted to at most one row per Unit.
+    
+    Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
+  distinctOn?: 'Unit' | 'Off';
 };
 export type ListSpacesApiResponse = /** status 200 OK */ ExtendedSpaceRead[];
 export type ListSpacesApiArg = {
@@ -5692,7 +5713,7 @@ export type ListSpacesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5731,7 +5752,7 @@ export type GetSpaceApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5865,7 +5886,7 @@ export type ListAttributesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -5907,7 +5928,7 @@ export type GetAttributeApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6042,7 +6063,7 @@ export type ListBridgeWorkersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6088,7 +6109,7 @@ export type GetBridgeWorkerApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6260,7 +6281,7 @@ export type ListChangeSetsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6299,7 +6320,7 @@ export type GetChangeSetApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6424,7 +6445,7 @@ export type ListFiltersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6466,7 +6487,7 @@ export type GetFilterApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6610,7 +6631,7 @@ export type InvokeFunctionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -6722,7 +6743,7 @@ export type ListInvocationsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6761,7 +6782,7 @@ export type GetInvocationApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6851,7 +6872,7 @@ export type ListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6896,7 +6917,7 @@ export type ListLinksApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6939,7 +6960,7 @@ export type GetLinkApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -6980,7 +7001,7 @@ export type PatchLinkApiArg = {
     Labels?: {
       [key: string]: string | null;
     } | null;
-    MergeDisableSubtraction?: boolean | null;
+    MergeEnableSubtraction?: boolean | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToSpaceID?: string | null;
@@ -7090,7 +7111,7 @@ export type ListExtendedReleasesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7128,7 +7149,7 @@ export type GetExtendedReleaseApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7223,7 +7244,7 @@ export type ListTagsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7262,7 +7283,7 @@ export type GetTagApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7386,7 +7407,7 @@ export type ListTargetsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7425,7 +7446,7 @@ export type GetTargetApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7571,7 +7592,7 @@ export type ListTriggersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7618,7 +7639,7 @@ export type GetTriggerApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7732,7 +7753,7 @@ export type ListUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -7779,7 +7800,7 @@ export type ListUnitsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7848,7 +7869,7 @@ export type GetUnitApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -7891,8 +7912,8 @@ export type PatchUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
-  mergeDisableSubtraction?: boolean;
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -8024,8 +8045,8 @@ export type UpdateUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
-  mergeDisableSubtraction?: boolean;
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -8091,6 +8112,14 @@ export type ApproveUnitApiArg = {
   unitId: string;
   /** Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
   revision?: string;
+};
+export type ResolveUnitConflictsApiResponse = /** status 200 OK */ UnitConflictsResponse;
+export type ResolveUnitConflictsApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  unitConflictsRequest: UnitConflictsRequest;
 };
 export type DownloadUnitDataApiResponse = /** status 200 OK */ string;
 export type DownloadUnitDataApiArg = {
@@ -8202,7 +8231,7 @@ export type ListExtendedMutationsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -8226,7 +8255,7 @@ export type GetExtendedMutationApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -8325,26 +8354,26 @@ export type ListExtendedResourcesApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
   /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
   view?: string;
   /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
@@ -8369,26 +8398,26 @@ export type GetExtendedResourceApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
   /** UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function. */
   view?: string;
   /** Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection. */
@@ -8433,7 +8462,7 @@ export type ListExtendedRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
     To list a tagged Revision use `Tags ? '<tag-id>'`.
     
@@ -8480,26 +8509,26 @@ export type ListExtendedRevisionsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
 };
 export type GetExtendedRevisionApiResponse = /** status 200 OK */ ExtendedRevisionRead;
 export type GetExtendedRevisionApiArg = {
@@ -8520,26 +8549,26 @@ export type GetExtendedRevisionApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
-  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
   /** Unique identifier for a revision_id */
   revisionId: string;
 };
@@ -8705,22 +8734,22 @@ export type ListUnitEventsApiArg = {
     
     The whole string must be query-encoded. */
   contains?: string;
-  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
 };
 export type GetUnitEventApiResponse =
   /** status 200 UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
@@ -8735,22 +8764,22 @@ export type GetUnitEventApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
-  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
   /** Unique identifier for a unit_event_id */
   unitEventId: string;
 };
@@ -8834,7 +8863,7 @@ export type ListViewsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -8872,7 +8901,7 @@ export type GetViewApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -9074,7 +9103,7 @@ export type ListAllTagsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -9482,7 +9511,7 @@ export type ListAllTargetsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -9757,7 +9786,7 @@ export type ListAllTriggersApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -10080,7 +10109,7 @@ export type BulkDeleteUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10156,7 +10185,7 @@ export type ListAllUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10203,7 +10232,7 @@ export type ListAllUnitsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -10255,7 +10284,7 @@ export type BulkPatchUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10313,8 +10342,8 @@ export type BulkPatchUnitsApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
-  mergeDisableSubtraction?: boolean;
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
     It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -10445,7 +10474,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10575,7 +10604,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
     
     Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
     
@@ -10656,7 +10685,7 @@ export type BulkApproveUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10736,7 +10765,7 @@ export type BulkCancelUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10814,7 +10843,7 @@ export type BulkTagUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
     
@@ -10989,22 +11018,30 @@ export type ListAllUnitEventsApiArg = {
     
     The whole string must be query-encoded. */
   contains?: string;
-  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. */
+  /** Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
   limit?: number;
   /** Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
   offset?: number;
-  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+  /** Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
     
-    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
     Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
     
-    Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
     If not specified, results are returned in the database's default order.
     
     The whole string must be query-encoded. */
-  orderby?: string;
+  orderBy?: string;
+  /** Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+    
+    Supported values: Unit, Off.
+    
+    If not specified, results are restricted to at most one row per Unit.
+    
+    Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
+  distinctOn?: 'Unit' | 'Off';
 };
 export type ListUsersApiResponse = /** status 200 OK */ UserRead[];
 export type ListUsersApiArg = {
@@ -11231,7 +11268,7 @@ export type ListAllViewsApiArg = {
     expected in a comma-separated list format as in the JSON encoding.
     If not specified, all fields are returned.
     Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-    Fields used in where and contains filters are also automatically included.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
     Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
     The whole string must be query-encoded. */
   select?: string;
@@ -12737,6 +12774,8 @@ export type FunctionInvocationsRequest = {
   /** ChangeDescription is a description of the change being made, if any. */
   ChangeDescription?: string;
   FunctionInvocations?: FunctionInvocationList;
+  /** Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them */
+  IncludeConflicts?: boolean;
   /** Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored. */
   Invocations?: Uuid[];
   /** NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error. */
@@ -12896,6 +12935,18 @@ export type InvocationCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Invocation?: InvocationRead;
 };
+export type MutationConflict = {
+  /** Path of the mutation; empty for resource-level conflicts */
+  Path?: string;
+  /** Why the mutation was dropped */
+  Reason?: string;
+  Resource?: ResourceInfo;
+  Source?: MutationInfo;
+  Target?: MutationInfo;
+  /** ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve) */
+  UnitID?: string;
+};
+export type MutationConflictList = MutationConflict[];
 export type Unit = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -12903,6 +12954,7 @@ export type Unit = {
   };
   /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
   ChangeSetID?: string;
+  Conflicts?: MutationConflictList;
   /** The full configuration data for this unit. The maximum size is 67108864 bytes. */
   Data?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
@@ -13041,6 +13093,7 @@ export type UnitRead = {
   BridgeWorkerID?: string;
   /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
   ChangeSetID?: string;
+  Conflicts?: MutationConflictList;
   /** Deprecated: Use DataHash instead. The CRC32 hash of the configuration data. */
   ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -13212,8 +13265,8 @@ export type Link = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
-  /** Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links. */
-  MergeDisableSubtraction?: boolean;
+  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
+  MergeEnableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Unique URL-safe identifier for the entity. */
@@ -13279,8 +13332,8 @@ export type LinkRead = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
-  /** Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links. */
-  MergeDisableSubtraction?: boolean;
+  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
+  MergeEnableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   /** Unique URL-safe identifier for the entity. */
@@ -13869,6 +13922,7 @@ export type Revision = {
   ApprovedBy?: Uuid[];
   /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
   ChangeSetID?: string;
+  Conflicts?: MutationConflictList;
   /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
   ContentHash?: number;
   /** The full configuration data for this unit at this revision. */
@@ -13920,6 +13974,7 @@ export type RevisionRead = {
   ApprovedBy?: Uuid[];
   /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
   ChangeSetID?: string;
+  Conflicts?: MutationConflictList;
   /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
   ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -14525,6 +14580,28 @@ export type ApproveResponseRead = {
   Message?: string;
   Unit?: UnitRead;
 };
+export type UnitConflictsResponse = {
+  /** Number of conflicts whose withheld change was applied */
+  Applied?: number;
+  Conflicts?: MutationConflictList;
+  /** Number of conflicts dropped without changing the configuration data */
+  Dismissed?: number;
+  Error?: ResponseError;
+};
+export type UnitConflictSelector = {
+  /** Match conflicts at this path; empty matches any path, including resource-level conflicts */
+  Path?: string;
+  /** Match conflicts dropped for this reason: Subtracted, DeleteShadowed, PredicateFiltered, or UnresolvedPath; empty matches any reason */
+  Reason?: string;
+  /** Match conflicts on this resource; empty matches any resource */
+  ResourceName?: string;
+};
+export type UnitConflictsRequest = {
+  /** Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data */
+  Action?: string;
+  /** Which outstanding conflicts to act on. Empty acts on all of them. */
+  Select?: UnitConflictSelector[];
+};
 export type UnitExtended = {
   ApprovedByUsers?: string[] | null;
   FromLinks?: Link[] | null;
@@ -14673,18 +14750,6 @@ export type TriggerCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Trigger?: TriggerRead;
 };
-export type MutationConflict = {
-  /** Path of the mutation; empty for resource-level conflicts */
-  Path?: string;
-  /** Why the mutation was dropped */
-  Reason?: string;
-  Resource?: ResourceInfo;
-  Source?: MutationInfo;
-  Target?: MutationInfo;
-  /** ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve) */
-  UnitID?: string;
-};
-export type MutationConflictList = MutationConflict[];
 export type UnitCreateOrUpdateResponse = {
   Conflicts?: MutationConflictList;
   Error?: ResponseError;
@@ -14893,6 +14958,7 @@ export const {
   usePatchUnitMutation,
   useUpdateUnitMutation,
   useApproveUnitMutation,
+  useResolveUnitConflictsMutation,
   useDownloadUnitDataQuery,
   useLazyDownloadUnitDataQuery,
   useGetUnitExtendedQuery,

@@ -38,6 +38,14 @@ type FunctionContext struct {
 	PreviousContentHash RevisionHash            `description:"Deprecated: Use PreviousDataHash instead. crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
 	PreviousDataHash    DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 	ApprovedBy          []string                `description:"Usernames of users that have approved this revision of the configuration data"`
+
+	// Conflicts are the Unit's outstanding merge conflicts — the parts of a merge's patch
+	// that were not applied. Populated only when the invocation asks for them with
+	// FunctionInvocationOptions.IncludeConflicts, and empty when the Unit has none, so an
+	// ordinary invocation carries nothing extra. A validating function reads them to
+	// decide whether an unresolved merge should block apply; an argument's template or CEL
+	// expression can reach them as {{.Conflicts}} / functionContext.Conflicts.
+	Conflicts MutationConflictList `json:",omitempty" description:"The Unit's outstanding merge conflicts; present only when the invocation asked for them"`
 }
 
 // InstanceString returns a string that uniquely identifies the configuration Unit and,
@@ -124,6 +132,13 @@ type FunctionInvocationOptions struct {
 
 	// Options passed to individual function implementations, translated to FunctionOptions.
 	WhereResource string `json:",omitempty" description:"If non-empty, restrict which resources functions operate on using ConfigHub metadata path expressions (ConfigHub.ResourceName, ConfigHub.ResourceNameWithoutScope, ConfigHub.ResourceType, ConfigHub.ResourceCategory)"`
+
+	// IncludeConflicts asks the server to put the Unit's outstanding merge conflicts into
+	// the FunctionContext, where a function can read them directly or an argument's
+	// template/CEL expression can reference them. Off by default: the conflicts are
+	// unbounded in a way the rest of the context is not, and no ordinary invocation needs
+	// them.
+	IncludeConflicts bool `json:",omitempty" description:"Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them"`
 }
 
 // FunctionOptions contains options that affect how functions operate on resources that need to be

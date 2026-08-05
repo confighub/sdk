@@ -195,8 +195,12 @@ func TestMergeKeyForPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			key, found := rp.MergeKeyForPath(tt.resourceType, tt.path)
+			keys, found := rp.MergeKeysForPath(tt.resourceType, tt.path)
 			assert.Equal(t, tt.wantFound, found, "found mismatch")
+			key := ""
+			if len(keys) > 0 {
+				key = keys[0]
+			}
 			assert.Equal(t, tt.wantKey, key, "key mismatch")
 		})
 	}
@@ -230,29 +234,30 @@ func TestBuildMergeKeyLookup(t *testing.T) {
 	// Verify universal entries exist
 	universalMap, ok := lookup[api.ResourceType("*")]
 	assert.True(t, ok, "universal entries should exist")
-	assert.Equal(t, "uid", universalMap["metadata.ownerReferences"])
+	assert.Equal(t, []string{"uid"}, universalMap["metadata.ownerReferences"])
 
 	// Verify Deployment has pod spec entries
 	deployMap, ok := lookup[api.ResourceType("apps/v1/Deployment")]
 	assert.True(t, ok, "Deployment entries should exist")
-	assert.Equal(t, "name", deployMap["spec.template.spec.containers"])
-	assert.Equal(t, "name", deployMap["spec.template.spec.containers.*.env"])
-	assert.Equal(t, "containerPort", deployMap["spec.template.spec.containers.*.ports"])
-	assert.Equal(t, "name", deployMap["spec.template.spec.volumes"])
+	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.containers"])
+	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.containers.*.env"])
+	assert.Equal(t, []string{"containerPort", "protocol"}, deployMap["spec.template.spec.containers.*.ports"],
+		"a container port is identified by its number and its protocol")
+	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.volumes"])
 
 	// Verify Pod has different prefix
 	podMap, ok := lookup[api.ResourceType("v1/Pod")]
 	assert.True(t, ok, "Pod entries should exist")
-	assert.Equal(t, "name", podMap["spec.containers"])
-	assert.Equal(t, "name", podMap["spec.containers.*.env"])
+	assert.Equal(t, []string{"name"}, podMap["spec.containers"])
+	assert.Equal(t, []string{"name"}, podMap["spec.containers.*.env"])
 
 	// Verify CronJob has deep prefix
 	cronMap, ok := lookup[api.ResourceType("batch/v1/CronJob")]
 	assert.True(t, ok, "CronJob entries should exist")
-	assert.Equal(t, "name", cronMap["spec.jobTemplate.spec.template.spec.containers"])
+	assert.Equal(t, []string{"name"}, cronMap["spec.jobTemplate.spec.template.spec.containers"])
 
 	// Verify Service has its own entries
 	svcMap, ok := lookup[api.ResourceType("v1/Service")]
 	assert.True(t, ok, "Service entries should exist")
-	assert.Equal(t, "port", svcMap["spec.ports"])
+	assert.Equal(t, []string{"port", "protocol"}, svcMap["spec.ports"])
 }

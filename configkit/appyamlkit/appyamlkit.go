@@ -28,8 +28,8 @@ func NewAppConfigYAMLResourceProvider() *AppConfigYAMLResourceProviderType {
 	}
 }
 
-func (*AppConfigYAMLResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*AppConfigYAMLResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*AppConfigYAMLResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

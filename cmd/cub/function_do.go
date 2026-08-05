@@ -146,6 +146,7 @@ var dryRun bool
 var functionTriggerIdentifiers []string
 var functionInvocationIdentifiers []string
 var updateApplyGates bool
+var functionIncludeConflicts bool
 var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
@@ -181,6 +182,7 @@ func init() {
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
+	functionDoCmd.Flags().BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
 	enableWhereFlag(functionDoCmd)
 	enableFilterFlag(functionDoCmd)
 	addStandardDisplayFlags(functionDoCmd)
@@ -211,6 +213,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.ChangeDescription = changeDescription
 	req.UpdateApplyGates = updateApplyGates
 	req.WhereResource = whereResource
+	req.IncludeConflicts = functionIncludeConflicts
 	if functionLiveStateType != "" {
 		req.OnLiveState = true
 		req.ToolchainType = functionLiveStateType

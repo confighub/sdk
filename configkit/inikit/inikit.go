@@ -35,8 +35,8 @@ func NewINIResourceProvider() *INIResourceProviderType {
 	}
 }
 
-func (*INIResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*INIResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*INIResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

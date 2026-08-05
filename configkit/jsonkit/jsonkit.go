@@ -32,8 +32,8 @@ func NewJSONResourceProvider() *JSONResourceProviderType {
 	}
 }
 
-func (*JSONResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*JSONResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*JSONResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

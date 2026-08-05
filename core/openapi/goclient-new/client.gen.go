@@ -579,6 +579,11 @@ type ClientInterface interface {
 	// ApproveUnit request
 	ApproveUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ApproveUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ResolveUnitConflictsWithBody request with any body
+	ResolveUnitConflictsWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ResolveUnitConflicts(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// DownloadUnitData request
 	DownloadUnitData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -2902,6 +2907,30 @@ func (c *Client) UpdateUnit(ctx context.Context, spaceId openapi_types.UUID, uni
 
 func (c *Client) ApproveUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ApproveUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewApproveUnitRequest(c.Server, spaceId, unitId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ResolveUnitConflictsWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveUnitConflictsRequestWithBody(c.Server, spaceId, unitId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ResolveUnitConflicts(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewResolveUnitConflictsRequest(c.Server, spaceId, unitId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -8479,9 +8508,9 @@ func NewListAllResourcesRequest(server string, params *ListAllResourcesParams) (
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8672,9 +8701,25 @@ func NewListAllRevisionsRequest(server string, params *ListAllRevisionsParams) (
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DistinctOn != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "distinct_on", runtime.ParamLocationQuery, *params.DistinctOn); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14506,9 +14551,9 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
-		if params.MergeDisableSubtraction != nil {
+		if params.MergeEnableSubtraction != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_enable_subtraction", runtime.ParamLocationQuery, *params.MergeEnableSubtraction); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14806,9 +14851,9 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 
 		}
 
-		if params.MergeDisableSubtraction != nil {
+		if params.MergeEnableSubtraction != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_enable_subtraction", runtime.ParamLocationQuery, *params.MergeEnableSubtraction); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14974,6 +15019,60 @@ func NewApproveUnitRequest(server string, spaceId openapi_types.UUID, unitId ope
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewResolveUnitConflictsRequest calls the generic ResolveUnitConflicts builder with application/json body
+func NewResolveUnitConflictsRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewResolveUnitConflictsRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
+}
+
+// NewResolveUnitConflictsRequestWithBody generates requests for ResolveUnitConflicts with any type of body
+func NewResolveUnitConflictsRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/conflicts", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -15557,9 +15656,9 @@ func NewListExtendedResourcesRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15723,9 +15822,9 @@ func NewGetExtendedResourceRequest(server string, spaceId openapi_types.UUID, un
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15930,9 +16029,9 @@ func NewListExtendedRevisionsRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16064,9 +16163,9 @@ func NewGetExtendedRevisionRequest(server string, spaceId openapi_types.UUID, un
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16398,9 +16497,9 @@ func NewListUnitEventsRequest(server string, spaceId openapi_types.UUID, unitId 
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16500,9 +16599,9 @@ func NewGetUnitEventRequest(server string, spaceId openapi_types.UUID, unitId op
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -18831,9 +18930,9 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
-		if params.MergeDisableSubtraction != nil {
+		if params.MergeEnableSubtraction != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_disable_subtraction", runtime.ParamLocationQuery, *params.MergeDisableSubtraction); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_enable_subtraction", runtime.ParamLocationQuery, *params.MergeEnableSubtraction); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -19665,9 +19764,25 @@ func NewListAllUnitEventsRequest(server string, params *ListAllUnitEventsParams)
 
 		}
 
-		if params.Orderby != nil {
+		if params.OrderBy != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "orderby", runtime.ParamLocationQuery, *params.Orderby); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DistinctOn != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "distinct_on", runtime.ParamLocationQuery, *params.DistinctOn); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20861,6 +20976,11 @@ type ClientWithResponsesInterface interface {
 
 	// ApproveUnitWithResponse request
 	ApproveUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ApproveUnitParams, reqEditors ...RequestEditorFn) (*ApproveUnitResponse, error)
+
+	// ResolveUnitConflictsWithBodyWithResponse request with any body
+	ResolveUnitConflictsWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResolveUnitConflictsResponse, error)
+
+	ResolveUnitConflictsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveUnitConflictsResponse, error)
 
 	// DownloadUnitDataWithResponse request
 	DownloadUnitDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitDataResponse, error)
@@ -24681,6 +24801,35 @@ func (r ApproveUnitResponse) StatusCode() int {
 	return 0
 }
 
+type ResolveUnitConflictsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnitConflictsResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ResolveUnitConflictsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ResolveUnitConflictsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DownloadUnitDataResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -27634,6 +27783,23 @@ func (c *ClientWithResponses) ApproveUnitWithResponse(ctx context.Context, space
 		return nil, err
 	}
 	return ParseApproveUnitResponse(rsp)
+}
+
+// ResolveUnitConflictsWithBodyWithResponse request with arbitrary body returning *ResolveUnitConflictsResponse
+func (c *ClientWithResponses) ResolveUnitConflictsWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ResolveUnitConflictsResponse, error) {
+	rsp, err := c.ResolveUnitConflictsWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveUnitConflictsResponse(rsp)
+}
+
+func (c *ClientWithResponses) ResolveUnitConflictsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body ResolveUnitConflictsJSONRequestBody, reqEditors ...RequestEditorFn) (*ResolveUnitConflictsResponse, error) {
+	rsp, err := c.ResolveUnitConflicts(ctx, spaceId, unitId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseResolveUnitConflictsResponse(rsp)
 }
 
 // DownloadUnitDataWithResponse request returning *DownloadUnitDataResponse
@@ -37515,6 +37681,81 @@ func ParseApproveUnitResponse(rsp *http.Response) (*ApproveUnitResponse, error) 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest ApproveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseResolveUnitConflictsResponse parses an HTTP response from a ResolveUnitConflictsWithResponse call
+func ParseResolveUnitConflictsResponse(rsp *http.Response) (*ResolveUnitConflictsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ResolveUnitConflictsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitConflictsResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

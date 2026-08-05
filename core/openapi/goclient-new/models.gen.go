@@ -83,6 +83,18 @@ const (
 	UnitActionStatusProgressing  UnitActionStatus = "Progressing"
 )
 
+// Defines values for ListAllRevisionsParamsDistinctOn.
+const (
+	ListAllRevisionsParamsDistinctOnOff  ListAllRevisionsParamsDistinctOn = "Off"
+	ListAllRevisionsParamsDistinctOnUnit ListAllRevisionsParamsDistinctOn = "Unit"
+)
+
+// Defines values for ListAllUnitEventsParamsDistinctOn.
+const (
+	ListAllUnitEventsParamsDistinctOnOff  ListAllUnitEventsParamsDistinctOn = "Off"
+	ListAllUnitEventsParamsDistinctOnUnit ListAllUnitEventsParamsDistinctOn = "Unit"
+)
+
 // ActionResult defines model for ActionResult.
 type ActionResult struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
@@ -1316,6 +1328,9 @@ type FunctionInvocationsRequest struct {
 	ChangeDescription   string                  `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
 	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
+	// IncludeConflicts Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them
+	IncludeConflicts bool `json:"IncludeConflicts,omitempty" yaml:"IncludeConflicts,omitempty"`
+
 	// Invocations Invocations is a list of Invocation IDs to execute. The invocations must be within the same Organization. Invocations will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
 	Invocations []UUID `json:"Invocations,omitempty" yaml:"Invocations,omitempty"`
 
@@ -1614,8 +1629,8 @@ type Link struct {
 	// LinkID Unique identifier for a Link.
 	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
 
-	// MergeDisableSubtraction Disables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the merge subtracts the downstream Unit's local differences from the source patch so they survive the merge. When true, the source patch is applied without subtraction and downstream overrides are preserved only via stored Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit and MergeUnits Links.
-	MergeDisableSubtraction bool `json:"MergeDisableSubtraction,omitempty" yaml:"MergeDisableSubtraction,omitempty"`
+	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links.
+	MergeEnableSubtraction bool `json:"MergeEnableSubtraction,omitempty" yaml:"MergeEnableSubtraction,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2301,7 +2316,8 @@ type Revision struct {
 	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets.
-	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	ChangeSetID *openapi_types.UUID   `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of this revision's data.
 	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
@@ -2920,7 +2936,8 @@ type Unit struct {
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
-	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	ChangeSetID *openapi_types.UUID   `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of the configuration data.
 	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
@@ -3135,6 +3152,38 @@ type UnitActionResponse struct {
 	// to each UnitAction.
 	Action *QueuedOperation `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error  *ResponseError   `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
+// UnitConflictSelector defines model for UnitConflictSelector.
+type UnitConflictSelector struct {
+	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Reason Match conflicts dropped for this reason: Subtracted, DeleteShadowed, PredicateFiltered, or UnresolvedPath; empty matches any reason
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+
+	// ResourceName Match conflicts on this resource; empty matches any resource
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+}
+
+// UnitConflictsRequest defines model for UnitConflictsRequest.
+type UnitConflictsRequest struct {
+	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// Select Which outstanding conflicts to act on. Empty acts on all of them.
+	Select []UnitConflictSelector `json:"Select,omitempty" yaml:"Select,omitempty"`
+}
+
+// UnitConflictsResponse defines model for UnitConflictsResponse.
+type UnitConflictsResponse struct {
+	// Applied Number of conflicts whose withheld change was applied
+	Applied   int                   `json:"Applied,omitempty" yaml:"Applied,omitempty"`
+	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+
+	// Dismissed Number of conflicts dropped without changing the configuration data
+	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
+	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
@@ -3881,7 +3930,7 @@ type ListAllAttributesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -4312,7 +4361,7 @@ type ListAllBridgeWorkersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -4653,7 +4702,7 @@ type ListAllChangeSetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -5082,7 +5131,7 @@ type ListAllFiltersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -5455,7 +5504,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -5654,7 +5703,7 @@ type ListAllInvocationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -5984,7 +6033,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -6064,7 +6113,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6113,7 +6162,7 @@ type SearchListLinksParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -6137,8 +6186,8 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
+	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -6190,7 +6239,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// filter
 	//
@@ -6258,8 +6307,8 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
+	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -6311,7 +6360,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6365,7 +6414,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6403,7 +6452,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -6496,7 +6545,7 @@ type ListOrganizationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -6524,7 +6573,7 @@ type GetOrganizationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -6681,7 +6730,7 @@ type ListAllReleasesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -6771,29 +6820,29 @@ type ListAllResourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -6835,7 +6884,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -6886,30 +6935,42 @@ type ListAllRevisionsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+	//
+	// Supported values: Unit, Off.
+	//
+	// If not specified, results are restricted to at most one row per Unit.
+	//
+	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+	DistinctOn *ListAllRevisionsParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
+
+// ListAllRevisionsParamsDistinctOn defines parameters for ListAllRevisions.
+type ListAllRevisionsParamsDistinctOn string
 
 // ListSpacesParams defines parameters for ListSpaces.
 type ListSpacesParams struct {
@@ -6993,7 +7054,7 @@ type ListSpacesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7033,7 +7094,7 @@ type GetSpaceParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7163,7 +7224,7 @@ type ListAttributesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7191,7 +7252,7 @@ type GetAttributeParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7305,7 +7366,7 @@ type ListBridgeWorkersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7333,7 +7394,7 @@ type GetBridgeWorkerParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7446,7 +7507,7 @@ type ListChangeSetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7474,7 +7535,7 @@ type GetChangeSetParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7584,7 +7645,7 @@ type ListFiltersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7618,7 +7679,7 @@ type GetFilterParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7746,7 +7807,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -7867,7 +7928,7 @@ type ListInvocationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7895,7 +7956,7 @@ type GetInvocationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -7970,7 +8031,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8019,7 +8080,7 @@ type ListLinksParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8047,7 +8108,7 @@ type GetLinkParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8071,8 +8132,8 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                  *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeDisableSubtraction *bool               `json:"MergeDisableSubtraction" yaml:"MergeDisableSubtraction"`
+	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -8179,7 +8240,7 @@ type ListExtendedReleasesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8201,7 +8262,7 @@ type GetExtendedReleaseParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8289,7 +8350,7 @@ type ListTagsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8317,7 +8378,7 @@ type GetTagParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8426,7 +8487,7 @@ type ListTargetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8454,7 +8515,7 @@ type GetTargetParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8587,7 +8648,7 @@ type ListTriggersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8615,7 +8676,7 @@ type GetTriggerParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8698,7 +8759,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8749,7 +8810,7 @@ type ListUnitsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8804,7 +8865,7 @@ type GetUnitParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -8882,8 +8943,8 @@ type PatchUnitParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
-	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -8975,8 +9036,8 @@ type UpdateUnitParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
-	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -9127,7 +9188,7 @@ type ListExtendedMutationsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -9149,7 +9210,7 @@ type GetExtendedMutationParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -9239,29 +9300,29 @@ type ListExtendedResourcesParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -9286,29 +9347,29 @@ type GetExtendedResourceParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -9350,7 +9411,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -9401,29 +9462,29 @@ type ListExtendedRevisionsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 }
 
 // GetExtendedRevisionParams defines parameters for GetExtendedRevision.
@@ -9442,29 +9503,29 @@ type GetExtendedRevisionParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 }
 
 // ListUnitActionsParams defines parameters for ListUnitActions.
@@ -9604,46 +9665,46 @@ type ListUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 }
 
 // GetUnitEventParams defines parameters for GetUnitEvent.
 type GetUnitEventParams struct {
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 }
 
 // ListViewsParams defines parameters for ListViews.
@@ -9728,7 +9789,7 @@ type ListViewsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -9756,7 +9817,7 @@ type GetViewParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -9949,7 +10010,7 @@ type ListAllTagsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10376,7 +10437,7 @@ type ListAllTargetsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10656,7 +10717,7 @@ type ListAllTriggersParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -10996,7 +11057,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11076,7 +11137,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11127,7 +11188,7 @@ type ListAllUnitsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -11227,7 +11288,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11297,8 +11358,8 @@ type BulkPatchUnitsParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeDisableSubtraction Disable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), a cross-unit merge subtracts the target's local differences from the source patch so they survive; set true to apply the source patch without subtraction, relying on stored Mutation Predicate values to preserve overrides. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
-	MergeDisableSubtraction *bool `form:"merge_disable_subtraction,omitempty" json:"merge_disable_subtraction,omitempty" yaml:"merge_disable_subtraction,omitempty"`
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
 	// the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -11437,7 +11498,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11577,7 +11638,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//
@@ -11618,7 +11679,7 @@ type BulkApproveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11701,7 +11762,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11781,7 +11842,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11965,25 +12026,37 @@ type ListAllUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned.
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
-	// Orderby Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
 	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
-	// Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
 	// If not specified, results are returned in the database's default order.
 	//
 	// The whole string must be query-encoded.
-	Orderby *string `form:"orderby,omitempty" json:"orderby,omitempty" yaml:"orderby,omitempty"`
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// DistinctOn Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+	//
+	// Supported values: Unit, Off.
+	//
+	// If not specified, results are restricted to at most one row per Unit.
+	//
+	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+	DistinctOn *ListAllUnitEventsParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
 }
+
+// ListAllUnitEventsParamsDistinctOn defines parameters for ListAllUnitEvents.
+type ListAllUnitEventsParamsDistinctOn string
 
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
@@ -12214,7 +12287,7 @@ type ListAllViewsParams struct {
 	// expected in a comma-separated list format as in the JSON encoding.
 	// If not specified, all fields are returned.
 	// Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-	// Fields used in where and contains filters are also automatically included.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
@@ -12654,6 +12727,9 @@ type PatchUnitApplicationMergePatchPlusJSONRequestBody PatchUnitApplicationMerge
 
 // UpdateUnitJSONRequestBody defines body for UpdateUnit for application/json ContentType.
 type UpdateUnitJSONRequestBody = Unit
+
+// ResolveUnitConflictsJSONRequestBody defines body for ResolveUnitConflicts for application/json ContentType.
+type ResolveUnitConflictsJSONRequestBody = UnitConflictsRequest
 
 // SetUnitPredicatesJSONRequestBody defines body for SetUnitPredicates for application/json ContentType.
 type SetUnitPredicatesJSONRequestBody = UnitPredicatesRequest

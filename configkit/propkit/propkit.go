@@ -28,8 +28,8 @@ func NewPropertiesResourceProvider() *PropertiesResourceProviderType {
 	}
 }
 
-func (*PropertiesResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*PropertiesResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*PropertiesResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

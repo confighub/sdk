@@ -177,21 +177,21 @@ Important: Only one of config-file, --restore, --upgrade, or --merge-source (wit
 }
 
 var (
-	changeDescription   string
-	restore             string
-	resolve             string
-	isUpgrade           bool
-	isPatch             bool
-	changesetSlug       string
-	providerType        string
-	mergeSource             string
-	mergeBase               string
-	mergeEnd                string
-	mergeExternalSource     string
-	mergeDisableSubtraction bool
-	whereMutation           string
-	filterMutation          string
-	tag                     string
+	changeDescription      string
+	restore                string
+	resolve                string
+	isUpgrade              bool
+	isPatch                bool
+	changesetSlug          string
+	providerType           string
+	mergeSource            string
+	mergeBase              string
+	mergeEnd               string
+	mergeExternalSource    string
+	mergeEnableSubtraction bool
+	whereMutation          string
+	filterMutation         string
+	tag                    string
 )
 
 func init() {
@@ -211,7 +211,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
-	unitUpdateCmd.Flags().BoolVar(&mergeDisableSubtraction, "merge-disable-subtraction", false, "disable the subtraction (override-preservation) step of --upgrade and --merge-source; overrides are then preserved only via stored mutation predicates (no effect on --merge-source Self)")
+	unitUpdateCmd.Flags().BoolVar(&mergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the target's local differences from the patch during --upgrade and --merge-source, on top of the stored mutation predicates that preserve overrides by default (no effect on --merge-source Self)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
 	enableOptionFlag(unitUpdateCmd)
 	enableWhereFlag(unitUpdateCmd)
@@ -510,8 +510,8 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
 	}
-	if mergeDisableSubtraction {
-		newParams.MergeDisableSubtraction = &mergeDisableSubtraction
+	if mergeEnableSubtraction {
+		newParams.MergeEnableSubtraction = &mergeEnableSubtraction
 	}
 
 	if restore != "" {
@@ -656,19 +656,11 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Display mutations if requested
 	if shouldDisplayMutations() {
 		tprintRaw("")
-		// Build description of the update operation
-		updateDesc := "PatchUnit"
-		if restore != "" {
-			updateDesc = "restore to " + restore
-		} else if isUpgrade {
-			updateDesc = "upgrade"
-		} else if mergeSource != "" {
-			updateDesc = "merge from " + mergeSource
-		} else if resolve != "" {
-			updateDesc = "resolve " + resolve
-		} else if len(args) > 1 {
-			updateDesc = "update from " + args[1]
+		configFile := ""
+		if len(args) > 1 {
+			configFile = args[1]
 		}
+		updateDesc := unitUpdateChangeDescription(configFile)
 		if restore != "" {
 			// Restore snapshots the revision's MutationSources onto the unit
 			// (same indices as the restored revision), so the usual split
@@ -693,6 +685,26 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+// unitUpdateChangeDescription describes the update operation that produced the
+// new mutations, for the "New changes from ..." header. configFile is the
+// positional config-file argument, if any.
+func unitUpdateChangeDescription(configFile string) string {
+	switch {
+	case restore != "":
+		return "restore to " + restore
+	case isUpgrade:
+		return "upgrade"
+	case mergeSource != "":
+		return "merge from " + mergeSource
+	case resolve != "":
+		return "resolve " + resolve
+	case configFile != "":
+		return "update from " + configFile
+	default:
+		return "PatchUnit"
+	}
 }
 
 func runBulkUnitUpdate() error {
@@ -876,11 +888,21 @@ func runBulkUnitUpdate() error {
 	if isUpgrade {
 		params.Upgrade = &isUpgrade
 	}
+	if mergeEnableSubtraction {
+		params.MergeEnableSubtraction = &mergeEnableSubtraction
+	}
 
 	if tag != "" {
 		tagID, err := parseTagSlug(tag)
 		failOnError(err)
 		params.Tag = &tagID
+	}
+
+	// Save prior unit state so mutation display can tell new changes from prior ones.
+	// Restore additionally needs the pre-update data to compute its diff.
+	var priorUnits map[string]priorUnitInfo
+	if shouldDisplayMutations() {
+		priorUnits = savePriorUnitInfoFromWhereWithData(effectiveWhere, restore != "")
 	}
 
 	// Call the bulk patch API (organization-level API that can be constrained by SpaceID in WHERE clause)
@@ -909,7 +931,14 @@ func runBulkUnitUpdate() error {
 		return fmt.Errorf("unexpected response from bulk patch API")
 	}
 
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "update", "")
+	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "update", "")
+
+	// Display mutations if requested, for the units that were updated successfully
+	if shouldDisplayMutations() {
+		displayMutationsForBulkUnitUpdate(responses, priorUnits, restore != "", unitUpdateChangeDescription(""))
+	}
+
+	return bulkErr
 }
 
 func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclientnew.UpdateUnitParams) (*goclientnew.Unit, error) {
@@ -933,7 +962,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.MergeBase = updateParams.MergeBase
 	patchParams.MergeEnd = updateParams.MergeEnd
 	patchParams.MergeExternalSource = updateParams.MergeExternalSource
-	patchParams.MergeDisableSubtraction = updateParams.MergeDisableSubtraction
+	patchParams.MergeEnableSubtraction = updateParams.MergeEnableSubtraction
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag

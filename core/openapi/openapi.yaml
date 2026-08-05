@@ -964,7 +964,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -1818,7 +1818,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -2611,7 +2611,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -3436,7 +3436,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -4219,7 +4219,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -4685,7 +4685,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -5350,7 +5350,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5515,7 +5515,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -5580,7 +5580,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -5672,7 +5672,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           filter
 
@@ -5809,7 +5809,7 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                MergeDisableSubtraction:
+                MergeEnableSubtraction:
                   description: ""
                   nullable: true
                   type: boolean
@@ -5972,7 +5972,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to select source links to copy
 
@@ -6038,7 +6038,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -6080,7 +6080,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -6167,7 +6167,7 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                MergeDisableSubtraction:
+                MergeEnableSubtraction:
                   description: ""
                   nullable: true
                   type: boolean
@@ -6684,7 +6684,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -6901,7 +6901,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, OrganizationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -7481,7 +7481,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -7641,7 +7641,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -7650,11 +7650,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Resource entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Resource entities to skip before returning results.
@@ -7667,19 +7669,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -7749,8 +7751,12 @@ paths:
       - Resource
   /revision:
     get:
-      description: Retrieves a list of Revisions across spaces in the Organization,
-        returning at most one revision per unit
+      description: Retrieves a list of Revisions across spaces in the Organization.
+        By default, returns at most one revision per unit (the most recent). Set `distinct_on=Off`
+        to receive every matching revision instead, undeduped -- paginate with `limit`/`offset`
+        to walk the full result set (`distinct_on=Off` requires an explicit `limit`
+        and a non-empty `where` or `filter`, since without deduplication or a filter
+        there is nothing bounding the result set)
       operationId: ListAllRevisions
       parameters:
       - description: |-
@@ -7785,7 +7791,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -7852,7 +7858,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -7861,11 +7867,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Revision entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Revision entities to skip before returning results.
@@ -7878,21 +7886,37 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
+          type: string
+      - description: |-
+          Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+
+          Supported values: Unit, Off.
+
+          If not specified, results are restricted to at most one row per Unit.
+
+          Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+        in: query
+        name: distinct_on
+        required: false
+        schema:
+          enum:
+          - Unit
+          - "Off"
           type: string
       responses:
         "200":
@@ -8044,7 +8068,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -8284,7 +8308,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, SpaceID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -8683,7 +8707,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -8925,7 +8949,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, AttributeID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -9320,7 +9344,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -9566,7 +9590,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, BridgeWorkerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -10135,7 +10159,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -10373,7 +10397,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ChangeSetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -10738,7 +10762,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -10990,7 +11014,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, FilterID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -11469,7 +11493,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -11765,7 +11789,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -12003,7 +12027,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, InvocationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -12337,7 +12361,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           The whole string must be query-encoded.
         in: query
@@ -12402,7 +12426,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -12645,7 +12669,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, LinkID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -12800,7 +12824,7 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                MergeDisableSubtraction:
+                MergeEnableSubtraction:
                   description: ""
                   nullable: true
                   type: boolean
@@ -13109,7 +13133,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -13353,7 +13377,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ReleaseID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -13608,7 +13632,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -13847,7 +13871,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -14210,7 +14234,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -14453,7 +14477,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -14900,7 +14924,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -15147,7 +15171,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -15530,7 +15554,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -15597,7 +15621,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -15948,7 +15972,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -16110,14 +16134,14 @@ paths:
         required: false
         schema:
           type: string
-      - description: Disable the subtraction (override-preservation) step of upgrade
-          and merge_source. By default (false), a cross-unit merge subtracts the target's
-          local differences from the source patch so they survive; set true to apply
-          the source patch without subtraction, relying on stored Mutation Predicate
-          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+      - description: Enable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), the source patch is applied without
+          subtraction and the target's local differences are preserved by the stored
+          Mutation Predicate values; set true to additionally subtract the target's
+          local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
-        name: merge_disable_subtraction
+        name: merge_enable_subtraction
         required: false
         schema:
           type: boolean
@@ -16474,14 +16498,14 @@ paths:
         required: false
         schema:
           type: string
-      - description: Disable the subtraction (override-preservation) step of upgrade
-          and merge_source. By default (false), a cross-unit merge subtracts the target's
-          local differences from the source patch so they survive; set true to apply
-          the source patch without subtraction, relying on stored Mutation Predicate
-          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+      - description: Enable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), the source patch is applied without
+          subtraction and the target's local differences are preserved by the stored
+          Mutation Predicate values; set true to additionally subtract the target's
+          local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
-        name: merge_disable_subtraction
+        name: merge_enable_subtraction
         required: false
         schema:
           type: boolean
@@ -16719,6 +16743,85 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Approve a unit configuration
+      tags:
+      - Unit
+  /space/{space_id}/unit/{unit_id}/conflicts:
+    post:
+      description: Act on the parts of the last merge's patch that were not applied.
+        Apply replays the withheld change with every path eligible; Dismiss drops
+        it without changing the configuration data. Either way the selected conflicts
+        leave the Unit's outstanding set. Requires Edit permission.
+      operationId: ResolveUnitConflicts
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitConflictsRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitConflictsResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Apply or dismiss a unit's outstanding merge conflicts
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/data:
@@ -17097,7 +17200,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17191,7 +17294,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, MutationID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17255,7 +17358,7 @@ paths:
   /space/{space_id}/unit/{unit_id}/predicates:
     post:
       description: Set Predicate values on the unit's MutationSources, controlling
-        which paths a merge may overwrite when subtraction is disabled or no WhereMutation
+        which paths a merge may overwrite when subtraction is disabled and no WhereMutation
         is supplied. Creates a new revision only if the predicates actually change.
         Requires Edit permission.
       operationId: SetUnitPredicates
@@ -17449,7 +17552,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17458,11 +17561,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Resource entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Resource entities to skip before returning results.
@@ -17475,19 +17580,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -17593,7 +17698,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ResourceID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17602,11 +17707,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Resource entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Resource entities to skip before returning results.
@@ -17619,19 +17726,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Resource results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -17755,7 +17862,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -17822,7 +17929,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17831,11 +17938,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Revision entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Revision entities to skip before returning results.
@@ -17848,19 +17957,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -17950,7 +18059,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -17959,11 +18068,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of Revision entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of Revision entities to skip before returning results.
@@ -17976,19 +18087,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort Revision results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -18438,11 +18549,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of UnitEvent entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of UnitEvent entities to skip before returning results.
@@ -18455,19 +18568,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -18539,11 +18652,13 @@ paths:
           format: uuid
           type: string
       - description: Maximum number of UnitEvent entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of UnitEvent entities to skip before returning results.
@@ -18556,19 +18671,19 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
           type: string
@@ -18741,7 +18856,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -18979,7 +19094,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -19524,7 +19639,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TagID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -20339,7 +20454,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TargetID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -20932,7 +21047,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, TriggerID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -21642,7 +21757,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -21814,7 +21929,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -21881,7 +21996,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -22040,7 +22155,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -22176,14 +22291,14 @@ paths:
         required: false
         schema:
           type: string
-      - description: Disable the subtraction (override-preservation) step of upgrade
-          and merge_source. By default (false), a cross-unit merge subtracts the target's
-          local differences from the source patch so they survive; set true to apply
-          the source patch without subtraction, relying on stored Mutation Predicate
-          values to preserve overrides. Has no effect on a self merge (merge_source=Self),
+      - description: Enable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), the source patch is applied without
+          subtraction and the target's local differences are preserved by the stored
+          Mutation Predicate values; set true to additionally subtract the target's
+          local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
-        name: merge_disable_subtraction
+        name: merge_enable_subtraction
         required: false
         schema:
           type: boolean
@@ -22474,7 +22589,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -22654,7 +22769,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeDisableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
@@ -22871,7 +22986,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23040,7 +23155,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23206,7 +23321,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23468,8 +23583,12 @@ paths:
       - QueuedOperation
   /unit_event:
     get:
-      description: Retrieves a list of UnitEvents across units in the Organization,
-        returning at most one UnitEvent per unit
+      description: Retrieves a list of UnitEvents across units in the Organization.
+        By default, returns at most one UnitEvent per unit (the most recent). Set
+        `distinct_on=Off` to receive every matching UnitEvent instead, undeduped --
+        paginate with `limit`/`offset` to walk the full result set (`distinct_on=Off`
+        requires an explicit `limit` and a non-empty `where` or `filter`, since without
+        deduplication or a filter there is nothing bounding the result set)
       operationId: ListAllUnitEvents
       parameters:
       - description: |-
@@ -23551,11 +23670,13 @@ paths:
         schema:
           type: string
       - description: Maximum number of UnitEvent entities to return. If not specified,
-          all matching entities are returned.
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
         in: query
         name: limit
         required: false
         schema:
+          maximum: 1000
           minimum: 0
           type: integer
       - description: Number of UnitEvent entities to skip before returning results.
@@ -23568,21 +23689,37 @@ paths:
           minimum: 0
           type: integer
       - description: |-
-          Comma-separated list of fields to sort UnitEvent results by, each in the form 'FieldName' or 'FieldName ASC|DESC'.
+          Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 
-          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when omitted.
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
           Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 
-          Example: 'CreatedAt DESC' or 'DisplayName,CreatedAt DESC'.
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
           If not specified, results are returned in the database's default order.
 
           The whole string must be query-encoded.
         in: query
-        name: orderby
+        name: order_by
         required: false
         schema:
+          type: string
+      - description: |-
+          Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+
+          Supported values: Unit, Off.
+
+          If not specified, results are restricted to at most one row per Unit.
+
+          Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+        in: query
+        name: distinct_on
+        required: false
+        schema:
+          enum:
+          - Unit
+          - "Off"
           type: string
       responses:
         "200":
@@ -24086,7 +24223,7 @@ paths:
           expected in a comma-separated list format as in the JSON encoding.
           If not specified, all fields are returned.
           Entity and parent IDs (like OrganizationID, SpaceID, ViewID) and Slug are always returned regardless of the select parameter.
-          Fields used in where and contains filters are also automatically included.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
           Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
           The whole string must be query-encoded.
         in: query
@@ -26341,6 +26478,11 @@ components:
           x-go-type-skip-optional-pointer: true
         FunctionInvocations:
           $ref: '#/components/schemas/FunctionInvocationList'
+        IncludeConflicts:
+          description: Put the Unit's outstanding merge conflicts in the FunctionContext,
+            for functions that reason about them
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Invocations:
           description: 'Invocations is a list of Invocation IDs to execute. The invocations
             must be within the same Organization. Invocations will be executed after
@@ -26910,14 +27052,14 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
-        MergeDisableSubtraction:
-          description: Disables the subtraction (override-preservation) step of the
+        MergeEnableSubtraction:
+          description: Enables the subtraction (override-preservation) step of the
             merge performed when resolving this Link. When false (the default), the
-            merge subtracts the downstream Unit's local differences from the source
-            patch so they survive the merge. When true, the source patch is applied
-            without subtraction and downstream overrides are preserved only via stored
-            Mutation Predicate values (and WhereMutation). Only meaningful for UpgradeUnit
-            and MergeUnits Links.
+            source patch is applied without subtraction and the downstream Unit's
+            local differences are preserved by the stored Mutation Predicate values
+            alone, narrowed further by WhereMutation if it is set. When true, the
+            merge additionally subtracts the downstream Unit's local differences from
+            the source patch. Only meaningful for UpgradeUnit and MergeUnits Links.
           type: boolean
           x-go-type-skip-optional-pointer: true
         OrganizationID:
@@ -28219,6 +28361,8 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
         ContentHash:
           description: 'Deprecated: Use DataHash instead. The CRC32 hash of this revision''s
             data.'
@@ -29319,6 +29463,8 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
         ContentHash:
           description: 'Deprecated: Use DataHash instead. The CRC32 hash of the configuration
             data.'
@@ -29780,6 +29926,54 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/QueuedOperation'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+      type: object
+    UnitConflictSelector:
+      properties:
+        Path:
+          description: Match conflicts at this path; empty matches any path, including
+            resource-level conflicts
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: 'Match conflicts dropped for this reason: Subtracted, DeleteShadowed,
+            PredicateFiltered, or UnresolvedPath; empty matches any reason'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: Match conflicts on this resource; empty matches any resource
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UnitConflictsRequest:
+      properties:
+        Action:
+          description: Apply re-applies the withheld change; Dismiss drops the conflict
+            without changing the configuration data
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Select:
+          description: Which outstanding conflicts to act on. Empty acts on all of
+            them.
+          items:
+            $ref: '#/components/schemas/UnitConflictSelector'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UnitConflictsResponse:
+      properties:
+        Applied:
+          description: Number of conflicts whose withheld change was applied
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
+        Dismissed:
+          description: Number of conflicts dropped without changing the configuration
+            data
+          type: integer
+          x-go-type-skip-optional-pointer: true
         Error:
           $ref: '#/components/schemas/ResponseError'
       type: object

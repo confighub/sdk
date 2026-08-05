@@ -36,8 +36,8 @@ func NewEnvResourceProvider() *EnvResourceProviderType {
 	}
 }
 
-func (*EnvResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*EnvResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*EnvResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

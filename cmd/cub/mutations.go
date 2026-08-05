@@ -298,7 +298,7 @@ func displayMutationEntries(mutations *goclientnew.ResourceMutationList, indices
 					continue
 				}
 				indexLabel := formatIndexLabel(mi.Index, indicesAreMutationNums, 0, mutationMap)
-				tprintRaw(fmt.Sprintf("  %s %s  %s", mutationTypeSymbol(*mi.MutationType), path, indexLabel))
+				tprintRaw(fmt.Sprintf("  %s %s  %s", mutationTypeSymbol(*mi.MutationType), displayPath(path), indexLabel))
 
 				// Show old → new values for path mutations
 				if oldValues != nil || (mi.Value != "" && verbose) {
@@ -799,6 +799,27 @@ func fetchOldPathValuesFromRevision(mutations *goclientnew.ResourceMutationList,
 // corresponds to a get-paths response path (e.g., "a.0.b").
 // The mutation path may contain array selectors like "?name=x;@N" which get-paths
 // resolves to just "N".
+// displayPath renders a mutation path for reading. An element of an array with no merge
+// key is recorded with an anchor — a digest of its content that lets a patch find the
+// element in a copy that has moved it — which is machinery, not information the reader of
+// a diff wants. Show the index the anchor carries instead. Merge-keyed elements keep their
+// key, which is what identifies them to a reader too.
+func displayPath(path string) string {
+	if !strings.Contains(path, "?~") {
+		return path
+	}
+	segments := strings.Split(path, ".")
+	for i, segment := range segments {
+		if !strings.HasPrefix(segment, "?~") {
+			continue
+		}
+		if _, index, found := strings.Cut(segment, ";@"); found {
+			segments[i] = index
+		}
+	}
+	return strings.Join(segments, ".")
+}
+
 func pathsMatchResolved(mutationPath, responsePath string) bool {
 	// Split both paths into segments
 	mutParts := strings.Split(mutationPath, ".")
@@ -1039,17 +1060,80 @@ func displayMutationsFromFunctionResponse(resp *[]goclientnew.FunctionInvocation
 	}
 }
 
+// displayMutationsForBulkUnitUpdate displays mutations for each unit successfully
+// updated by a bulk patch. It mirrors the single-unit display in unitUpdateCmdRun:
+// a dry-run uses the proposed MutationSources returned in the response, a
+// non-dry-run refetches the unit for its persisted MutationSources, and a restore
+// computes a fresh diff (restore snapshots the restored revision's MutationSources
+// verbatim, so the prior/new split can't tell them apart).
+func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpdateResponse, priorUnits map[string]priorUnitInfo, isRestore bool, newChangeDescription string) {
+	if responses == nil {
+		return
+	}
+	first := true
+	for i := range *responses {
+		r := &(*responses)[i]
+		if r.Error != nil || r.Unit == nil {
+			continue
+		}
+		unit := r.Unit
+		info := priorUnits[unit.UnitID.String()]
+
+		if !first {
+			// tprintRaw strips leading newlines, so separate units with their own line.
+			tprintRaw("")
+		}
+		first = false
+		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
+		lookupMutationsUnitID = unit.UnitID.String()
+
+		priorRevision := ""
+		if dryRun {
+			priorRevision = "dry-run"
+		} else if info.Slug != "" && info.HeadRevisionNum > 0 {
+			priorRevision = fmt.Sprintf("%s/%d", info.Slug, info.HeadRevisionNum)
+		}
+
+		switch {
+		case isRestore:
+			displayMutationsForRestore(info.Data, unit.Data, unit.SpaceID.String(), dryRun, priorRevision, newChangeDescription)
+		case dryRun:
+			displayMutationsForUnit(unit, info.HeadMutationNum, newChangeDescription, "dry-run")
+		default:
+			updatedUnit, err := apiGetUnitInSpace(unit.UnitID.String(), unit.SpaceID.String(), "*")
+			if err != nil {
+				tprintErr("Failed to get unit: %s", err.Error())
+				continue
+			}
+			displayMutationsForUnit(updatedUnit, info.HeadMutationNum, newChangeDescription, priorRevision)
+		}
+	}
+}
+
 // priorUnitInfo stores pre-operation state for a unit.
 type priorUnitInfo struct {
 	HeadMutationNum int64
 	HeadRevisionNum int64
 	Slug            string
+	// Data is the pre-operation config data, populated only when the caller asks
+	// for it (restore display diffs against it).
+	Data string
 }
 
 // savePriorUnitInfoFromWhere queries units matching a where clause and returns their
 // pre-operation state (HeadMutationNum, HeadRevisionNum, Slug).
 func savePriorUnitInfoFromWhere(whereClause string, _ string) map[string]priorUnitInfo {
-	units, err := apiListUnits(selectedSpaceID, whereClause, "UnitID,HeadMutationNum,HeadRevisionNum,Slug")
+	return savePriorUnitInfoFromWhereWithData(whereClause, false)
+}
+
+// savePriorUnitInfoFromWhereWithData is savePriorUnitInfoFromWhere, additionally
+// capturing each unit's pre-operation Data when includeData is set.
+func savePriorUnitInfoFromWhereWithData(whereClause string, includeData bool) map[string]priorUnitInfo {
+	selectList := "UnitID,HeadMutationNum,HeadRevisionNum,Slug"
+	if includeData {
+		selectList += ",Data"
+	}
+	units, err := apiListUnits(selectedSpaceID, whereClause, selectList)
 	if err != nil {
 		return nil
 	}
@@ -1059,6 +1143,7 @@ func savePriorUnitInfoFromWhere(whereClause string, _ string) map[string]priorUn
 			HeadMutationNum: u.HeadMutationNum,
 			HeadRevisionNum: u.HeadRevisionNum,
 			Slug:            u.Slug,
+			Data:            u.Data,
 		}
 	}
 	return result

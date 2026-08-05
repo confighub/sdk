@@ -62,12 +62,18 @@ type ResourceProvider interface {
 	GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType
 	GetAttributeRegistry() api.AttributeNameToAttributeDescriptor
 	GetRegistry() *ResourceProviderRegistry
-	// MergeKeyForPath returns the merge key field name for the given resource type
-	// and array path, if one exists. The path should use dot-separated segments
+	// MergeKeysForPath returns the merge key field names for the given resource type
+	// and array path, if any exist. The path should use dot-separated segments
 	// where array indices may be numeric or wildcards. The implementation normalizes
-	// numeric indices to wildcards for lookup. Returns ("", false) if no merge key
+	// numeric indices to wildcards for lookup. Returns (nil, false) if no merge key
 	// is defined for the path.
-	MergeKeyForPath(resourceType api.ResourceType, path string) (string, bool)
+	//
+	// More than one key is returned for an array whose elements are identified by a
+	// tuple rather than a single field: a Kubernetes container port is identified by
+	// its number *and* its protocol, and a topology spread constraint by its topology
+	// key *and* its whenUnsatisfiable. Matching such an element on the first field
+	// alone pairs elements that are not the same element.
+	MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool)
 	// IsMapKeyPath returns true if the given path is a freeform map (e.g., labels,
 	// annotations) whose children are dynamic keys rather than schema fields.
 	// During path normalization, child segments of map paths are converted to wildcards.
@@ -197,10 +203,14 @@ func EnrichMergeKeysFromDoc(doc *gaby.YamlDoc, resourceProvider ResourceProvider
 		copy(wildcardSegments, segments[:si])
 		wildcardSegments[si] = "*"
 		arrayPath := JoinPathSegments(wildcardSegments)
-		mergeKey, found := resourceProvider.MergeKeyForPath(attr.ResourceType, arrayPath)
-		if !found || mergeKey == "" {
+		mergeKeys, found := resourceProvider.MergeKeysForPath(attr.ResourceType, arrayPath)
+		if !found || len(mergeKeys) == 0 {
 			continue
 		}
+		// The first key names the element for this purpose: it is the identifying one
+		// (containerPort before protocol, port before protocol), and the property this
+		// builds is a hint for matching a provider, not an exact identity.
+		mergeKey := mergeKeys[0]
 		mergeKeyPath := JoinPathSegments(segments[:si+1]) + "." + EscapeDotsInPathSegment(mergeKey)
 		mkValue, mkFound, _ := YamlSafePathGetValue[string](doc, api.ResolvedPath(mergeKeyPath), true)
 		if !mkFound || mkValue == "" {

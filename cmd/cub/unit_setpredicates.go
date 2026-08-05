@@ -20,10 +20,11 @@ var unitSetPredicatesCmd = &cobra.Command{
 
 A Predicate records whether a path is eligible to be overwritten by a merge:
 true means a merge may patch it, false marks it a protected local override.
-Merges consult these stored values when no WhereMutation filter is supplied —
-most importantly when the merge's subtraction step is disabled (via
---merge-disable-subtraction or a link's MergeDisableSubtraction), where the
-stored Predicate is the only mechanism preserving local overrides.
+Merges consult these stored values when no WhereMutation filter is supplied,
+which is the default: the stored Predicate is then the only mechanism
+preserving local overrides. Turning the merge's subtraction step on (via
+--merge-enable-subtraction or a link's MergeEnableSubtraction) preserves them
+by a second mechanism, and the stored values are not consulted.
 
 Each --predicate has the form RESOURCE_TYPE:RESOURCE_NAME:PATH=BOOL, where
 RESOURCE_TYPE and RESOURCE_NAME identify the resource (e.g. apps/v1/Deployment

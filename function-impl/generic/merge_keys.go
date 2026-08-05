@@ -4,7 +4,6 @@
 package generic
 
 import (
-	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -80,7 +79,7 @@ func findDuplicateMergeKeys(doc *gaby.YamlDoc, path string, resourceInfo *api.Re
 		return
 	}
 
-	mergeKey, hasMergeKey := resourceProvider.MergeKeyForPath(resourceInfo.ResourceType, path)
+	mergeKeys, hasMergeKey := resourceProvider.MergeKeysForPath(resourceInfo.ResourceType, path)
 	if hasMergeKey {
 		seen := make(map[string]bool)
 		for i, child := range arrayChildren {
@@ -88,13 +87,15 @@ func findDuplicateMergeKeys(doc *gaby.YamlDoc, path string, resourceInfo *api.Re
 			if childMap == nil {
 				continue
 			}
-			keyChild, ok := childMap[mergeKey]
+			// An element is a duplicate only when it matches on every key: two ports
+			// sharing a number but differing in protocol are distinct elements.
+			keyValues, ok := yamlkit.MergeKeyValues(child, mergeKeys)
 			if !ok {
 				continue
 			}
-			keyValue := fmt.Sprintf("%v", keyChild.Data())
+			keyValue := yamlkit.MergeKeyIdentity(keyValues)
 			if seen[keyValue] {
-				duplicatePath := path + "." + strconv.Itoa(i) + "." + yamlkit.EscapeDotsInPathSegment(mergeKey)
+				duplicatePath := path + "." + strconv.Itoa(i) + "." + yamlkit.EscapeDotsInPathSegment(mergeKeys[0])
 				*failedAttributes = append(*failedAttributes, api.AttributeValue{
 					AttributeInfo: api.AttributeInfo{
 						AttributeIdentifier: api.AttributeIdentifier{

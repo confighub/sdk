@@ -33,8 +33,8 @@ var disruptionTiers = []struct {
 // disruptionOtherDataPreference is the order in which baselines are accepted.
 //
 // LastAppliedRevisionNum is preferred over LiveRevisionNum: it is set at apply time and is "what
-// the target was last told", whereas LiveRevisionNum only advances once an apply completes. A
-// validator runs *before* apply, so the former is the correct comparison point — and it is what
+// the target was last told".
+// A validator runs *before* apply, so the former is the correct comparison point — and it is what
 // the GitOps release path maintains.
 var disruptionOtherDataPreference = []api.OtherDataSource{"LastAppliedRevisionNum", "LiveRevisionNum"}
 

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
@@ -36,7 +37,9 @@ func (testResourceProvider) DefaultResourceCategory() api.ResourceCategory {
 func (testResourceProvider) ResourceCategoryGetter(_ *gaby.YamlDoc) (api.ResourceCategory, error) {
 	return api.ResourceCategoryResource, nil
 }
-func (testResourceProvider) ResourceNameStableCoreGetter(_ *gaby.YamlDoc) (api.ResourceName, error) { return "", nil }
+func (testResourceProvider) ResourceNameStableCoreGetter(_ *gaby.YamlDoc) (api.ResourceName, error) {
+	return "", nil
+}
 func (testResourceProvider) RemoveScopeFromResourceName(name api.ResourceName) api.ResourceName {
 	return name
 }
@@ -48,10 +51,10 @@ func (testResourceProvider) SetResourceName(doc *gaby.YamlDoc, name string) erro
 	return err
 }
 func (testResourceProvider) ResourceTypesAreSimilar(a, b api.ResourceType) bool { return a == b }
-func (testResourceProvider) TypeDescription() string                          { return "Kind" }
-func (testResourceProvider) NormalizeName(name string) string                 { return name }
-func (testResourceProvider) NameSeparator() string                            { return "/" }
-func (testResourceProvider) ContextPath(field string) string                  { return "metadata." + field }
+func (testResourceProvider) TypeDescription() string                            { return "Kind" }
+func (testResourceProvider) NormalizeName(name string) string                   { return name }
+func (testResourceProvider) NameSeparator() string                              { return "/" }
+func (testResourceProvider) ContextPath(field string) string                    { return "metadata." + field }
 func (t testResourceProvider) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {
 	return t.registry.PathRegistry
 }
@@ -61,8 +64,8 @@ func (t testResourceProvider) GetAttributeRegistry() api.AttributeNameToAttribut
 func (t *testResourceProvider) GetRegistry() *ResourceProviderRegistry {
 	return &t.registry
 }
-func (testResourceProvider) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (testResourceProvider) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (testResourceProvider) IsMapKeyPath(_ api.ResourceType, _ string) bool {
@@ -438,7 +441,7 @@ spec:
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.securityContext.runAsNonRoot"), results[0].Path)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.securityContext.runAsNonRoot"), results[1].Path)
 
-	// Test 2: Upsert with associative match should resolve path even when target doesn't exist  
+	// Test 2: Upsert with associative match should resolve path even when target doesn't exist
 	results, err = ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name=nginx.securityContext.runAsNonRoot"), "", true, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(results))
@@ -607,7 +610,7 @@ spec:
 	resolvedPath := string(results1[0].Path) // from Test 1
 	_, err = docs[0].SetP("test-value", resolvedPath)
 	assert.NoError(t, err)
-	
+
 	// Verify the value was set
 	result := docs[0].S("metadata", "annotations", "confighub.com/test")
 	assert.NotNil(t, result)
@@ -633,26 +636,26 @@ spec:
 `
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
-	
+
 	// Test wildcard rewriting: ?name:container-name=* should be transformed to *?name:container-name
 	results, err := ResolveAssociativePaths(docs[0], api.UnresolvedPath("spec.template.spec.containers.?name:container-name=*.image"), "", false, nil)
 	assert.NoError(t, err)
 	assert.Equal(t, 3, len(results))
-	
+
 	// Verify all containers are matched
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.0.image"), results[0].Path)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.1.image"), results[1].Path)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.2.image"), results[2].Path)
-	
+
 	// Verify parameter arguments are correctly captured
 	assert.Equal(t, 1, len(results[0].PathArguments))
 	assert.Equal(t, "container-name", results[0].PathArguments[0].ParameterName)
 	assert.Equal(t, "container-one", results[0].PathArguments[0].Value)
-	
+
 	assert.Equal(t, 1, len(results[1].PathArguments))
 	assert.Equal(t, "container-name", results[1].PathArguments[0].ParameterName)
 	assert.Equal(t, "container-two", results[1].PathArguments[0].Value)
-	
+
 	assert.Equal(t, 1, len(results[2].PathArguments))
 	assert.Equal(t, "container-name", results[2].PathArguments[0].ParameterName)
 	assert.Equal(t, "container-three", results[2].PathArguments[0].Value)
@@ -930,8 +933,47 @@ func TestAssociativePathSegment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := AssociativePathSegment(tt.mergeKey, tt.mergeKeyValue, tt.index)
+			result := AssociativePathSegment([]string{tt.mergeKey}, []string{tt.mergeKeyValue}, tt.index)
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+// TestAssociativePathSegmentCompositeKeys covers arrays whose elements are identified by
+// more than one field: the segment carries one pair per key, and the single-key form is
+// unchanged so paths already recorded in a Unit's MutationSources still resolve.
+func TestAssociativePathSegmentCompositeKeys(t *testing.T) {
+	assert.Equal(t, "?containerPort=8080,protocol=TCP;@1",
+		AssociativePathSegment([]string{"containerPort", "protocol"}, []string{"8080", "TCP"}, 1))
+	assert.Equal(t, "?name=app;@0",
+		AssociativePathSegment([]string{"name"}, []string{"app"}, 0))
+}
+
+// TestResolveCompositeAssociativeSegment covers matching an element on every key. Two
+// ports sharing a number but differing in protocol are different elements, and matching
+// on the number alone would merge one into the other.
+func TestResolveCompositeAssociativeSegment(t *testing.T) {
+	doc, err := gaby.ParseYAML([]byte(`ports:
+- containerPort: 8080
+  protocol: UDP
+  name: dns-udp
+- containerPort: 8080
+  protocol: TCP
+  name: dns-tcp
+`))
+	require.NoError(t, err)
+
+	resolved, ok := ResolveAssociativeSegments(doc, "ports.?containerPort=8080,protocol=TCP;@0")
+	assert.True(t, ok)
+	assert.Equal(t, "ports.1", resolved, "the TCP port is the second element, not the first")
+
+	resolved, ok = ResolveAssociativeSegments(doc, "ports.?containerPort=8080,protocol=UDP;@1")
+	assert.True(t, ok)
+	assert.Equal(t, "ports.0", resolved)
+
+	// A port that is not there at all: the fallback index holds a different element, so
+	// the segment stays unresolved and the caller skips rather than patching the wrong
+	// port.
+	_, ok = ResolveAssociativeSegments(doc, "ports.?containerPort=9090,protocol=TCP;@0")
+	assert.False(t, ok)
 }

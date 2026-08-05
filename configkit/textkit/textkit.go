@@ -32,8 +32,8 @@ func NewTextResourceProvider() *TextResourceProviderType {
 	}
 }
 
-func (*TextResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*TextResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*TextResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

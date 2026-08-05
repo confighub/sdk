@@ -33,8 +33,8 @@ func NewTOMLResourceProvider() *TOMLResourceProviderType {
 	}
 }
 
-func (*TOMLResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*TOMLResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*TOMLResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

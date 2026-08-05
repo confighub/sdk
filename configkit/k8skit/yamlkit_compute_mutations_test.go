@@ -611,7 +611,14 @@ rollingUpdate:
 			pathMutationMap := api.MutationMap{}
 			yamlkit.ComputeMutationsForDocs(tt.path, previousDoc, modifiedDoc, int64(tt.functionIndex), pathMutationMap, nil, nil, nil)
 
-			// Verify the mutation map
+			// Verify the mutation map. Elements of an array with no declared merge key
+			// are named by an anchor carrying the index; reduce those back to the index
+			// so the cases can state the path they are about.
+			stripped := api.MutationMap{}
+			for path, info := range pathMutationMap {
+				stripped[api.ResolvedPath(yamlkit.StripAssociativeSegments(string(path)))] = info
+			}
+			pathMutationMap = stripped
 			for path, expectedInfo := range tt.expected {
 				actualInfo, exists := pathMutationMap[api.ResolvedPath(path)]
 				assert.True(t, exists, fmt.Sprintf("Expected path %s not found in mutation map", path))

@@ -32,8 +32,8 @@ func NewConfigHubResourceProvider() *ConfigHubResourceProviderType {
 	}
 }
 
-func (*ConfigHubResourceProviderType) MergeKeyForPath(_ api.ResourceType, _ string) (string, bool) {
-	return "", false
+func (*ConfigHubResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
+	return nil, false
 }
 
 func (*ConfigHubResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {

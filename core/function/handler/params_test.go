@@ -68,3 +68,31 @@ func TestEvaluateCEL_Params(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-unit", got)
 }
+
+// TestArgumentEvaluatorsSeeConflicts covers the other half of putting merge conflicts in
+// the FunctionContext. A function that reasons about them can read them directly, but a
+// function that does not know about them can still be pointed at them through an
+// argument, so getting them into the context is the only thing that has to happen.
+func TestArgumentEvaluatorsSeeConflicts(t *testing.T) {
+	fc := &api.FunctionContext{
+		UnitSlug: "my-unit",
+		Conflicts: api.MutationConflictList{
+			{Reason: api.ConflictReasonUnresolvedPath, Path: "spec.replicas"},
+		},
+	}
+
+	got, err := evaluateTemplate(nil, fc, nil, "{{ (index .Conflicts 0).Reason }}")
+	require.NoError(t, err)
+	assert.Equal(t, "UnresolvedPath", got)
+
+	got, err = evaluateCEL(nil, fc, nil, `string(functionContext.Conflicts[0].Path)`)
+	require.NoError(t, err)
+	assert.Equal(t, "spec.replicas", got)
+
+	// A Unit with no conflicts is the ordinary case, and the field is omitempty, so
+	// nothing about the context changes for it.
+	clean := &api.FunctionContext{UnitSlug: "my-unit"}
+	got, err = evaluateTemplate(nil, clean, nil, "{{ len .Conflicts }}")
+	require.NoError(t, err)
+	assert.Equal(t, "0", got)
+}
