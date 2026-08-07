@@ -4,6 +4,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,6 +41,161 @@ func TestCubBinaryPathIgnoresPATH(t *testing.T) {
 	}
 	if got == "cub" || got == decoy {
 		t.Errorf("cubBinaryPath() = %q: resolved via $PATH, so delegated work would run a different build", got)
+	}
+}
+
+// TestExternalSourceRecordJSON pins the wire shape of the annotation a re-upload
+// reads back. The digest is omitted for a non-oci:// input rather than emitted
+// empty, but granularity is always present: it decides the shape of the entire
+// Unit set, so a re-upload that could not recover it would silently restructure
+// the Space instead of updating it.
+func TestExternalSourceRecordJSON(t *testing.T) {
+	tests := []struct {
+		name   string
+		record externalSourceRecord
+		want   string
+	}{
+		{
+			name: "oci input carries its resolved digest",
+			record: externalSourceRecord{
+				Ref:         "oci://ghcr.io/org/bundle",
+				Digest:      "sha256:abc",
+				Granularity: "per-file",
+			},
+			want: `{"ref":"oci://ghcr.io/org/bundle","digest":"sha256:abc","granularity":"per-file"}`,
+		},
+		{
+			name: "directory input records granularity with no digest",
+			record: externalSourceRecord{
+				Ref:         "./rendered/",
+				Granularity: "minimal",
+			},
+			want: `{"ref":"./rendered/","granularity":"minimal"}`,
+		},
+		{
+			name: "stdin input records the namespace it ran with",
+			record: externalSourceRecord{
+				Ref:         "stdin",
+				Granularity: "per-resource",
+				Namespace:   "myapp",
+			},
+			want: `{"ref":"stdin","granularity":"per-resource","namespace":"myapp"}`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := json.Marshal(tt.record)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(got) != tt.want {
+				t.Errorf("json.Marshal() = %s, want %s", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestRecordedSource covers reading the upload options back off a Space. The
+// not-found results all mean "nothing to check against, let the upload proceed",
+// so a Space seeded before the annotation was written for every input, or one
+// whose annotation is unreadable, must never be mistaken for a mismatch.
+func TestRecordedSource(t *testing.T) {
+	tests := []struct {
+		name       string
+		annotation string
+		wantFound  bool
+		wantGran   string
+		wantNS     string
+	}{
+		{
+			name:       "absent annotation is not a record",
+			annotation: "",
+			wantFound:  false,
+		},
+		{
+			name:       "empty array is not a record",
+			annotation: `[]`,
+			wantFound:  false,
+		},
+		{
+			name:       "malformed JSON is not a record",
+			annotation: `not json`,
+			wantFound:  false,
+		},
+		{
+			name:       "single record",
+			annotation: `[{"ref":"stdin","granularity":"per-file","namespace":"myapp"}]`,
+			wantFound:  true,
+			wantGran:   "per-file",
+			wantNS:     "myapp",
+		},
+		{
+			name:       "multiple inputs share one set of options",
+			annotation: `[{"ref":"a.yaml","granularity":"minimal"},{"ref":"b.yaml","granularity":"minimal"}]`,
+			wantFound:  true,
+			wantGran:   "minimal",
+			wantNS:     "",
+		},
+		{
+			name:       "oci record with a digest",
+			annotation: `[{"ref":"oci://ghcr.io/org/b","digest":"sha256:abc","granularity":"per-resource"}]`,
+			wantFound:  true,
+			wantGran:   "per-resource",
+			wantNS:     "",
+		},
+		{
+			// An omitted namespace is a recorded value, not a missing one: it means
+			// the upload ran without --namespace, so passing one later is a mismatch.
+			name:       "omitted namespace is found as empty",
+			annotation: `[{"ref":"stdin","granularity":"minimal"}]`,
+			wantFound:  true,
+			wantGran:   "minimal",
+			wantNS:     "",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, found := recordedSource(tt.annotation)
+			if found != tt.wantFound {
+				t.Fatalf("recordedSource(%q) found = %v, want %v", tt.annotation, found, tt.wantFound)
+			}
+			if !found {
+				return
+			}
+			if got.Granularity != tt.wantGran {
+				t.Errorf("granularity = %q, want %q", got.Granularity, tt.wantGran)
+			}
+			if got.Namespace != tt.wantNS {
+				t.Errorf("namespace = %q, want %q", got.Namespace, tt.wantNS)
+			}
+		})
+	}
+}
+
+// TestUploadNamespaceDesc checks that an absent --namespace is named rather than
+// rendered as an empty string, since it appears in both halves of the mismatch
+// message and "specifies " reads as a truncation.
+func TestUploadNamespaceDesc(t *testing.T) {
+	if got := uploadNamespaceDesc(""); got != "no --namespace" {
+		t.Errorf("uploadNamespaceDesc(\"\") = %q, want %q", got, "no --namespace")
+	}
+	if got := uploadNamespaceDesc("myapp"); got != "--namespace myapp" {
+		t.Errorf("uploadNamespaceDesc(%q) = %q, want %q", "myapp", got, "--namespace myapp")
+	}
+}
+
+// TestUploadSourceRef covers the one input that is not recorded verbatim.
+func TestUploadSourceRef(t *testing.T) {
+	tests := map[string]string{
+		"-":                        "stdin",
+		"oci://ghcr.io/org/bundle": "oci://ghcr.io/org/bundle",
+		"./rendered/":              "./rendered/",
+		"extra.yaml":               "extra.yaml",
+	}
+	for input, want := range tests {
+		if got := uploadSourceRef(input); got != want {
+			t.Errorf("uploadSourceRef(%q) = %q, want %q", input, got, want)
+		}
 	}
 }
 

@@ -193,6 +193,7 @@ var (
 	mergeEnd               string
 	mergeExternalSource    string
 	mergeEnableSubtraction bool
+	preservePredicates     bool
 	whereMutation          string
 	filterMutation         string
 	tag                    string
@@ -208,6 +209,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve non-automatically resolved links: Link:* for all, Link:<uuid> or Link:<slug> for a specific link, or just <slug> (e.g., space/link-name)")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
+	unitUpdateCmd.Flags().BoolVar(&preservePredicates, "preserve-predicates", false, "keep the stored predicates of the paths this change writes instead of recording new ones: each path keeps the override protection it already has, and a new path is left overwritable")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
 	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore); with --merge-external-source, overrides the default selection of the latest MergeExternal revision")
@@ -523,6 +525,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
+	}
+	if preservePredicates {
+		newParams.PreservePredicates = &preservePredicates
 	}
 	if mergeEnableSubtraction {
 		newParams.MergeEnableSubtraction = &mergeEnableSubtraction
@@ -921,6 +926,9 @@ func runBulkUnitUpdate() error {
 	if isUpgrade {
 		params.Upgrade = &isUpgrade
 	}
+	if preservePredicates {
+		params.PreservePredicates = &preservePredicates
+	}
 	if mergeEnableSubtraction {
 		params.MergeEnableSubtraction = &mergeEnableSubtraction
 	}
@@ -996,6 +1004,7 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.MergeEnd = updateParams.MergeEnd
 	patchParams.MergeExternalSource = updateParams.MergeExternalSource
 	patchParams.MergeEnableSubtraction = updateParams.MergeEnableSubtraction
+	patchParams.PreservePredicates = updateParams.PreservePredicates
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag

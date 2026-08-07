@@ -5995,6 +5995,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
+	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
+	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -8438,6 +8441,9 @@ type InvokeFunctionsParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
+	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
+	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -9592,6 +9598,9 @@ type PatchUnitParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
+	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
@@ -9684,6 +9693,9 @@ type UpdateUnitParams struct {
 
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
@@ -12006,6 +12018,9 @@ type BulkPatchUnitsParams struct {
 
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`

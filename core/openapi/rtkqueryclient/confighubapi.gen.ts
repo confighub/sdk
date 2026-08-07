@@ -464,6 +464,7 @@ const injectedRtkApi = api
           params: {
             executor_space: queryArg.executorSpace,
             dry_run: queryArg.dryRun,
+            preserve_predicates: queryArg.preservePredicates,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1212,6 +1213,7 @@ const injectedRtkApi = api
             unit_id: queryArg.unitId,
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
+            preserve_predicates: queryArg.preservePredicates,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1629,6 +1631,7 @@ const injectedRtkApi = api
           params: {
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
+            preserve_predicates: queryArg.preservePredicates,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -1654,6 +1657,7 @@ const injectedRtkApi = api
           params: {
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
+            preserve_predicates: queryArg.preservePredicates,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -2155,6 +2159,7 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             dry_run: queryArg.dryRun,
+            preserve_predicates: queryArg.preservePredicates,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -4704,6 +4709,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   executorSpace?: string;
   /** Dry run mode: when true, skip updating configuration data even if it changed */
   dryRun?: string;
+  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
+  preservePredicates?: boolean;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -7314,6 +7321,8 @@ export type InvokeFunctionsApiArg = {
   revisionId?: string;
   /** Dry run mode: when true, skip updating configuration data even if it changed */
   dryRun?: string;
+  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
+  preservePredicates?: boolean;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -8617,6 +8626,8 @@ export type PatchUnitApiArg = {
   revisionId?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
+  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preservePredicates?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -8750,6 +8761,8 @@ export type UpdateUnitApiArg = {
   revisionId?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
+  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preservePredicates?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -11047,6 +11060,8 @@ export type BulkPatchUnitsApiArg = {
   include?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
+  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preservePredicates?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */

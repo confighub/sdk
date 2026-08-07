@@ -5025,6 +5025,18 @@ paths:
         required: false
         schema:
           type: string
+      - description: Preserve the stored Predicate values of the paths this operation
+          writes, instead of recording new ones. Each written path keeps whatever
+          the Unit already has for it, and a path with no history is left overwritable.
+          Use it for an operation that is applying content decided elsewhere -- replaying
+          a change, or copying an already-reviewed value -- so it neither claims local
+          ownership of upstream content nor drops protection the target deliberately
+          set.
+        in: query
+        name: preserve_predicates
+        required: false
+        schema:
+          type: boolean
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -12913,6 +12925,18 @@ paths:
         required: false
         schema:
           type: string
+      - description: Preserve the stored Predicate values of the paths this operation
+          writes, instead of recording new ones. Each written path keeps whatever
+          the Unit already has for it, and a path with no history is left overwritable.
+          Use it for an operation that is applying content decided elsewhere -- replaying
+          a change, or copying an already-reviewed value -- so it neither claims local
+          ownership of upstream content nor drops protection the target deliberately
+          set.
+        in: query
+        name: preserve_predicates
+        required: false
+        schema:
+          type: boolean
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -17539,6 +17563,19 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: Preserve the stored Predicate values of the paths this operation
+          writes, instead of recording new ones. Each written path keeps whatever
+          the Unit already has for it, and a path with no history is left overwritable.
+          Use it for an operation that is applying content decided elsewhere -- replaying
+          a change, or copying an already-reviewed value -- so it neither claims local
+          ownership of upstream content nor drops protection the target deliberately
+          set. Has no effect with restore, which rewinds MutationSources to the restored
+          Revision's stored values wholesale.
+        in: query
+        name: preserve_predicates
+        required: false
+        schema:
+          type: boolean
       - description: Upgrade the unit to the latest version of its upstream unit
         in: query
         name: upgrade
@@ -17904,6 +17941,19 @@ paths:
           data'
         in: query
         name: dry_run
+        required: false
+        schema:
+          type: boolean
+      - description: Preserve the stored Predicate values of the paths this operation
+          writes, instead of recording new ones. Each written path keeps whatever
+          the Unit already has for it, and a path with no history is left overwritable.
+          Use it for an operation that is applying content decided elsewhere -- replaying
+          a change, or copying an already-reviewed value -- so it neither claims local
+          ownership of upstream content nor drops protection the target deliberately
+          set. Has no effect with restore, which rewinds MutationSources to the restored
+          Revision's stored values wholesale.
+        in: query
+        name: preserve_predicates
         required: false
         schema:
           type: boolean
@@ -23701,6 +23751,19 @@ paths:
           data'
         in: query
         name: dry_run
+        required: false
+        schema:
+          type: boolean
+      - description: Preserve the stored Predicate values of the paths this operation
+          writes, instead of recording new ones. Each written path keeps whatever
+          the Unit already has for it, and a path with no history is left overwritable.
+          Use it for an operation that is applying content decided elsewhere -- replaying
+          a change, or copying an already-reviewed value -- so it neither claims local
+          ownership of upstream content nor drops protection the target deliberately
+          set. Has no effect with restore, which rewinds MutationSources to the restored
+          Revision's stored values wholesale.
+        in: query
+        name: preserve_predicates
         required: false
         schema:
           type: boolean
