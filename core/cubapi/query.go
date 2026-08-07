@@ -245,6 +245,22 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 	return derefPtrs(res.JSON200), nil
 }
 
+// ListChangeOrders returns change orders across the organization matching where.
+func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedChangeOrder, error) {
+	params := &goclientnew.ListAllChangeOrdersParams{
+		Where:    ptrIf(where.String()),
+		Select:   ptrIf(opts.Select),
+		Include:  ptrIf(opts.Include),
+		Filter:   ptrIf(opts.Filter),
+		Contains: ptrIf(opts.Contains),
+	}
+	res, err := c.API.ListAllChangeOrdersWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
 // ListTags returns tags across the organization matching where.
 func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTag, error) {
 	params := &goclientnew.ListAllTagsParams{

@@ -75,6 +75,13 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	downstreamSpaceID := downstreamSpace.SpaceID
 
+	// Promote names its space positionally rather than through --space, so the selected
+	// space is whatever the context defaults to -- possibly nothing. Point it at the space
+	// being promoted: the helpers that render mutations resolve units through it, and one
+	// of them parses it as a UUID.
+	selectedSpaceID = downstreamSpaceID.String()
+	selectedSpaceSlug = downstreamSpace.Slug
+
 	// Promote always waits for triggers, except on a dry run (nothing is changed,
 	// so there is nothing to wait for).
 	wait = !variantPromoteArgs.dryRun
@@ -147,6 +154,12 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
+	// Snapshot prior unit state before the patch so the mutation display can tell the
+	// changes this promotion brings from the ones already there.
+	var priorUnits map[string]priorUnitInfo
+	if shouldDisplayMutations() {
+		priorUnits = savePriorUnitInfoInSpace(downstreamSpaceID.String(), where, false)
+	}
 	bulkRes, err := cubClientNew.BulkPatchUnitsWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchData))
 	if cubapi.IsAPIError(err, bulkRes) {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
@@ -155,7 +168,18 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID) error {
 	if responses == nil {
 		return fmt.Errorf("unexpected response from bulk patch API")
 	}
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "upgrade", "")
+	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "upgrade", "")
+	if shouldDisplayMutations() {
+		// A unit already level with its upstream is not selected at all, so there are no
+		// responses to render. Say so rather than printing nothing: -o mutations
+		// suppresses the ordinary summary, and silence is indistinguishable from the
+		// renderer not being wired up.
+		if len(*responses) == 0 {
+			tprintRaw("No units behind their upstream")
+		}
+		displayMutationsForBulkUnitUpdate(responses, priorUnits, false, variantPromoteArgs.dryRun, "upgrade")
+	}
+	return bulkErr
 }
 
 // promoteAddNewUnits finds units added to the upstream space (not tracked by any

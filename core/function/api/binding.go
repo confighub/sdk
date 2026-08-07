@@ -15,8 +15,6 @@ type Binding struct {
 
 	ProvidedPath ResolvedPath `json:",omitempty" swaggertype:"string" description:"Resolved path within the provided resource"`
 
-	InLiveState bool `json:",omitempty" description:"Whether the provided value comes from the upstream unit's LiveState rather than its Data"`
-
 	NeededResource ResourceInfo `description:"Resource in the downstream unit that needs the value"`
 
 	NeededPath ResolvedPath `json:",omitempty" swaggertype:"string" description:"Resolved path within the needed resource"`

@@ -30,6 +30,7 @@ const (
 	EntityTypeTrigger      = "Trigger"
 	EntityTypeTag          = "Tag"
 	EntityTypeChangeSet    = "ChangeSet"
+	EntityTypeChangeOrder  = "ChangeOrder"
 	EntityTypeTarget       = "Target"
 	EntityTypeBridgeWorker = "BridgeWorker"
 	EntityTypeUnit         = "Unit"
@@ -385,6 +386,20 @@ func GetEntityBySlug(ctx context.Context, client *goclientnew.ClientWithResponse
 		}
 		return (*resp.JSON200)[0].ChangeSet, nil
 
+	case EntityTypeChangeOrder:
+		spaceUUID := uuid.MustParse(spaceID)
+		params := &goclientnew.ListChangeOrdersParams{
+			Where: &whereFilter,
+		}
+		resp, err := client.ListChangeOrdersWithResponse(ctx, spaceUUID, params)
+		if IsAPIError(err, resp) {
+			return nil, InterpretErrorGeneric(err, resp)
+		}
+		if resp.JSON200 == nil || len(*resp.JSON200) == 0 {
+			return nil, errors.Mark(fmt.Errorf("changeorder %s not found in space %s", slug, spaceID), ErrEntityNotFound)
+		}
+		return (*resp.JSON200)[0].ChangeOrder, nil
+
 	case EntityTypeTag:
 		spaceUUID := uuid.MustParse(spaceID)
 		params := &goclientnew.ListTagsParams{
@@ -602,6 +617,14 @@ func createEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 		}
 		return resp.JSON200, resp.JSON200.ChangeSetID.String(), nil
 
+	case EntityTypeChangeOrder:
+		params := &goclientnew.CreateChangeOrderParams{AllowExists: &allowExistsStr}
+		resp, err := client.CreateChangeOrderWithBodyWithResponse(ctx, spaceUUID, params, "application/json", bytes.NewReader(jsonData))
+		if IsAPIError(err, resp) {
+			return nil, "", InterpretErrorGeneric(err, resp)
+		}
+		return resp.JSON200, resp.JSON200.ChangeOrderID.String(), nil
+
 	case EntityTypeTag:
 		params := &goclientnew.CreateTagParams{AllowExists: &allowExistsStr}
 		resp, err := client.CreateTagWithBodyWithResponse(ctx, spaceUUID, params, "application/json", bytes.NewReader(jsonData))
@@ -665,6 +688,9 @@ func updateEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 		case EntityTypeChangeSet:
 			changeSet := existingEntity.(*goclientnew.ChangeSet)
 			return nil, changeSet.ChangeSetID.String(), nil
+		case EntityTypeChangeOrder:
+			changeOrder := existingEntity.(*goclientnew.ChangeOrder)
+			return nil, changeOrder.ChangeOrderID.String(), nil
 		case EntityTypeTag:
 			tag := existingEntity.(*goclientnew.Tag)
 			return nil, tag.TagID.String(), nil

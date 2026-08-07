@@ -214,7 +214,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	// If --make-current is set, initialize revision numbers to current unit revisions
 	if linkMakeCurrent {
 		newLink.UpstreamLastMergedRevisionNum, newLink.DownstreamLastMergedRevisionNum =
-			makeCurrentPointers(fromUnit, toUnit, newLink.UseLiveState)
+			makeCurrentPointers(fromUnit, toUnit)
 	}
 
 	// Create params with AllowExists if needed

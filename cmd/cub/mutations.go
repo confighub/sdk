@@ -1066,7 +1066,10 @@ func displayMutationsFromFunctionResponse(resp *[]goclientnew.FunctionInvocation
 // non-dry-run refetches the unit for its persisted MutationSources, and a restore
 // computes a fresh diff (restore snapshots the restored revision's MutationSources
 // verbatim, so the prior/new split can't tell them apart).
-func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpdateResponse, priorUnits map[string]priorUnitInfo, isRestore bool, newChangeDescription string) {
+// isDryRun is passed rather than read from the global: a command with its own --dry-run flag
+// (variant promote) leaves the global false, and a dry run displayed as a real one refetches
+// the unmodified unit from the server and reports "No new changes".
+func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpdateResponse, priorUnits map[string]priorUnitInfo, isRestore, isDryRun bool, newChangeDescription string) {
 	if responses == nil {
 		return
 	}
@@ -1088,7 +1091,7 @@ func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpda
 		lookupMutationsUnitID = unit.UnitID.String()
 
 		priorRevision := ""
-		if dryRun {
+		if isDryRun {
 			priorRevision = "dry-run"
 		} else if info.Slug != "" && info.HeadRevisionNum > 0 {
 			priorRevision = fmt.Sprintf("%s/%d", info.Slug, info.HeadRevisionNum)
@@ -1096,8 +1099,8 @@ func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpda
 
 		switch {
 		case isRestore:
-			displayMutationsForRestore(info.Data, unit.Data, unit.SpaceID.String(), dryRun, priorRevision, newChangeDescription)
-		case dryRun:
+			displayMutationsForRestore(info.Data, unit.Data, unit.SpaceID.String(), isDryRun, priorRevision, newChangeDescription)
+		case isDryRun:
 			displayMutationsForUnit(unit, info.HeadMutationNum, newChangeDescription, "dry-run")
 		default:
 			updatedUnit, err := apiGetUnitInSpace(unit.UnitID.String(), unit.SpaceID.String(), "*")
@@ -1129,11 +1132,18 @@ func savePriorUnitInfoFromWhere(whereClause string, _ string) map[string]priorUn
 // savePriorUnitInfoFromWhereWithData is savePriorUnitInfoFromWhere, additionally
 // capturing each unit's pre-operation Data when includeData is set.
 func savePriorUnitInfoFromWhereWithData(whereClause string, includeData bool) map[string]priorUnitInfo {
+	return savePriorUnitInfoInSpace(selectedSpaceID, whereClause, includeData)
+}
+
+// savePriorUnitInfoInSpace is savePriorUnitInfoFromWhereWithData for a bulk operation that
+// is not scoped to the selected space: `variant promote` names its downstream space as a
+// positional argument rather than through --space.
+func savePriorUnitInfoInSpace(spaceID, whereClause string, includeData bool) map[string]priorUnitInfo {
 	selectList := "UnitID,HeadMutationNum,HeadRevisionNum,Slug"
 	if includeData {
 		selectList += ",Data"
 	}
-	units, err := apiListUnits(selectedSpaceID, whereClause, selectList)
+	units, err := apiListUnits(spaceID, whereClause, selectList)
 	if err != nil {
 		return nil
 	}

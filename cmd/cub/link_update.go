@@ -320,7 +320,7 @@ func runBulkLinkMakeCurrent(cmd *cobra.Command, effectiveWhere, filterID string)
 		// server did not expand one.
 		var upstream, downstream int64
 		if el.FromUnit != nil && el.ToUnit != nil {
-			upstream, downstream = makeCurrentPointers(el.FromUnit, el.ToUnit, link.UseLiveState)
+			upstream, downstream = makeCurrentPointers(el.FromUnit, el.ToUnit)
 		} else {
 			var resolveErr error
 			upstream, downstream, resolveErr = resolveMakeCurrentPointers(link)
@@ -685,11 +685,9 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Applied after setLinkFieldsOnUpdate so that a --use-live-state/--no-use-live-state
-	// in the same command decides which upstream counter is read.
 	if linkMakeCurrent {
 		currentLink.UpstreamLastMergedRevisionNum, currentLink.DownstreamLastMergedRevisionNum =
-			makeCurrentPointers(fromUnit, toUnit, currentLink.UseLiveState)
+			makeCurrentPointers(fromUnit, toUnit)
 	}
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)

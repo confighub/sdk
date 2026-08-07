@@ -8,6 +8,7 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +30,10 @@ Tag a specific revision type:
   --revision LiveRevisionNum     Tag the live revision
   --revision LastAppliedRevisionNum  Tag the last applied revision
   --revision PreviousLiveRevisionNum Tag the previous live revision
+  --revision 42                  Tag revision 42
+  --revision Tag:release-v1      Tag the revision another tag marks
+  --revision ChangeSet:rollout   Tag the revision a changeset ended on
+  --revision Before:Tag:release-v1  Tag the revision before another tag's
   --revision Remove              Remove the tag from the revision
   --revision -                   Remove the tag (shorthand for Remove)
 `+"```"+`
@@ -40,6 +45,9 @@ Examples:
 
   # Tag live revision of all units with specific label
   cub unit tag release-v1 --revision LiveRevisionNum --where "Labels.version = 'v1'"
+
+  # Tag whatever revision a changeset ended on, across the units it touched
+  cub unit tag release-v1 --revision ChangeSet:rollout --where "Space.Slug = 'prod'"
 
   # Remove tag from units
   cub unit tag my-tag --revision Remove --unit my-unit,another-unit
@@ -61,7 +69,7 @@ Examples:
 
 func init() {
 	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum",
-		"Which revision to tag: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, Remove, or -")
+		"Which revision to tag: a named revision (HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum), a revision number, Tag:slug, ChangeSet:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
 	enableWhereFlag(unitTagCmd)
 	enableFilterFlag(unitTagCmd)
 	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{},
@@ -80,13 +88,12 @@ func checkUnitTagConflictingArgs(args []string) error {
 		return fmt.Errorf("must specify --unit, --where, or --filter to select units")
 	}
 
-	// Validate revision flag value
-	switch tagRevision {
-	case "HeadRevisionNum", "LiveRevisionNum", "LastAppliedRevisionNum",
-		"PreviousLiveRevisionNum", "Remove", "-":
-		// Valid values
-	default:
-		return fmt.Errorf("invalid --revision value: %s", tagRevision)
+	// The revision is resolved per Unit by the server, so anything --restore accepts is accepted
+	// here too. Only the shape is checked locally, and Remove is ours rather than the resolver's.
+	if tagRevision != "Remove" && tagRevision != "-" {
+		if _, _, err := parseSelectedRevisionParameter(tagRevision, uuid.Nil, "*", 0); err != nil {
+			return fmt.Errorf("invalid --revision value: %w", err)
+		}
 	}
 
 	// Check space flag
@@ -110,10 +117,20 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to parse tag: %w", err)
 	}
 
-	// Convert "-" to "Remove" for the API
+	// Convert "-" to "Remove" for the API. Everything else is resolved server-side, but slugs
+	// have to become UUIDs first: Tag:release-v1 is only meaningful to the caller.
 	revision := tagRevision
-	if revision == "-" {
+	if revision == "-" || revision == "Remove" {
 		revision = "Remove"
+	} else {
+		formatted, isUUID, err := parseSelectedRevisionParameter(revision, uuid.Nil, "*", 0)
+		if err != nil {
+			return fmt.Errorf("invalid --revision value: %w", err)
+		}
+		if isUUID {
+			formatted = fmt.Sprintf("Revision:%s", formatted)
+		}
+		revision = formatted
 	}
 
 	// Parse filter parameter

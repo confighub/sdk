@@ -32,6 +32,11 @@ func (*AppConfigYAMLResourceProviderType) MergeKeysForPath(_ api.ResourceType, _
 	return nil, false
 }
 
+// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
+func (*AppConfigYAMLResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
+	return yamlkit.ExclusiveFields{}, false
+}
+
 func (*AppConfigYAMLResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
 	return false
 }

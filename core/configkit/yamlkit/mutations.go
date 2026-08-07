@@ -115,23 +115,96 @@ const anchorDigestKey = "~h"
 // old index.
 const anchorIdentityKey = "~i"
 
+// anchorPreviousKey and anchorNextKey are the anchor pairs carrying digests of the
+// elements on either side of this one — the structured analogue of a text patch's context
+// lines. They are what lets the resolver refuse a positional fallback: an index alone says
+// where the element sat, and the neighbors say whether the element sitting there now is
+// plausibly the same one. Without them a patch that cannot find its element writes over
+// whatever occupies its old index, which is how replaying a positional removal onto its own
+// result used to delete the following element.
+const anchorPreviousKey = "~p"
+const anchorNextKey = "~n"
+
+// anchorLengthKey carries the length of the array the path was computed against. It is the
+// cheapest thing the anchor knows and the one that survives a target that customized every
+// element: neighbor digests say nothing when every neighbor has been edited, but an array
+// that still has the same number of elements has not had anything inserted or removed under
+// the path, so its indices still mean what the patch meant by them.
+const anchorLengthKey = "~l"
+
+// arrayEdgeDigest is the neighbor value recorded when there is no neighbor, so that "first
+// element of the array" is a fact the resolver can check rather than a gap it has to guess
+// about.
+const arrayEdgeDigest = "^"
+
+// neighborDigestLength is how much of a neighbor's digest a path segment carries. Neighbors
+// only have to be told apart from the other elements of one array, and they are recorded on
+// every anchored segment, so they are kept shorter than the element's own digest: a
+// collision between two neighbors costs an accepted positional fallback that would otherwise
+// have been refused, not a wrong element.
+const neighborDigestLength = 4
+
+// neighborDigest returns the digest recorded for an element's neighbor, or arrayEdgeDigest
+// when the element is at the edge of the array.
+func neighborDigest(elements []*gaby.YamlDoc, index int) string {
+	if index < 0 || index >= len(elements) {
+		return arrayEdgeDigest
+	}
+	digest := ElementDigest(elements[index])
+	if digest == "" {
+		return arrayEdgeDigest
+	}
+	if len(digest) > neighborDigestLength {
+		digest = digest[:neighborDigestLength]
+	}
+	return digest
+}
+
 // commandLineFlagRegexp matches a command-line flag with an inline value: one or two
 // leading dashes, a name, then '='. It deliberately does not match a bare flag (there the
 // whole value is already the identity) or a value that merely contains '=' without the
 // leading dash.
 var commandLineFlagRegexp = regexp.MustCompile(`^--?[A-Za-z0-9][^=\s]*=`)
 
+// identityDirective is the structured comment that lets a person say which element of an
+// unkeyed array this is. Two forms:
+//
+//	routes:
+//	# confighub:id=api
+//	- match: Host(`a.example.com`)
+//	- match: Host(`b.example.com`)   # confighub:id=web
+//	- name: admin                    # confighub:id
+//	  match: Host(`c.example.com`)
+//
+// `confighub:id=<value>` states the identity outright. A bare `confighub:id` on a field
+// says that field's value is the identity, which is how a person nominates a field the
+// provider has no merge key for.
+const identityDirective = "confighub:id"
+
 // ElementIdentity returns a projection of an array element that identifies it independently
 // of its current value, or "" when the element offers none.
 //
-// Today that means one thing: a scalar holding a command-line flag with an inline value,
-// whose identity is the flag name. An args list is the most common unkeyed array in a
-// Kubernetes workload, and `--log.level=INFO` and `--log.level=DEBUG` are the same flag —
-// so a variant that changed a flag's value and an upstream that changed the same flag are
-// talking about the same element, however either side has since reordered the list.
+// Two sources, the person's first:
+//
+//   - A structured comment, which is the only mechanism here that lets someone *correct* the
+//     engine rather than work around it. Where a person has said which element this is, that
+//     is what it is. See identityDirective.
+//   - A scalar holding a command-line flag with an inline value, whose identity is the flag
+//     name. An args list is the most common unkeyed array in a Kubernetes workload, and
+//     `--log.level=INFO` and `--log.level=DEBUG` are the same flag.
+//
+// Either way the point is the same: an element the target has *edited* can still be found,
+// which no digest can do, however either side has since reordered the list.
+//
+// Both sides of a merge have to carry the markup for it to do anything — the source records
+// it in the path, and the target is matched against it — so it belongs upstream, where a
+// clone inherits it, rather than only on the variant that needed it.
 func ElementIdentity(element *gaby.YamlDoc) string {
 	if element == nil {
 		return ""
+	}
+	if identity := markedIdentity(element); identity != "" {
+		return identity
 	}
 	value, ok := element.Data().(string)
 	if !ok {
@@ -142,6 +215,83 @@ func ElementIdentity(element *gaby.YamlDoc) string {
 		return value[:loc[1]-1]
 	}
 	return ""
+}
+
+// markedIdentity reads the identity a person wrote on an element, or "".
+//
+// The comment can sit on the element itself — a line above it, or an inline comment when the
+// element is a scalar — or on any of its fields, which is where an inline comment on the
+// first line of a mapping element actually lands. Fields are read in document order, so two
+// markings resolve the same way every time.
+func markedIdentity(element *gaby.YamlDoc) string {
+	if identity, marked, found := identityFromComments(element.GetComments()); found && !marked {
+		return identity
+	}
+	node := element.YNode()
+	if node == nil || node.Kind != yaml.MappingNode {
+		return ""
+	}
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key, value := node.Content[i], node.Content[i+1]
+		for _, comments := range []string{nodeComments(key), nodeComments(value)} {
+			identity, marked, found := identityFromComments(comments)
+			if !found {
+				continue
+			}
+			if marked {
+				// The field itself is the identity.
+				if value.Kind == yaml.ScalarNode && identityIsUsable(value.Value) {
+					return value.Value
+				}
+				continue
+			}
+			return identity
+		}
+	}
+	return ""
+}
+
+// nodeComments joins whatever comments are attached to a YAML node.
+func nodeComments(node *yaml.Node) string {
+	if node == nil {
+		return ""
+	}
+	var parts []string
+	for _, comment := range []string{node.HeadComment, node.LineComment, node.FootComment} {
+		if comment != "" {
+			parts = append(parts, comment)
+		}
+	}
+	return strings.Join(parts, "\n")
+}
+
+// identityFromComments looks for the identity directive in a comment. marked reports the bare
+// form, which names the field it sits on rather than carrying a value of its own.
+func identityFromComments(comments string) (identity string, marked, found bool) {
+	if comments == "" {
+		return "", false, false
+	}
+	for _, line := range strings.Split(comments, "\n") {
+		line = strings.TrimSpace(strings.TrimLeft(strings.TrimSpace(line), "#"))
+		if line == identityDirective {
+			return "", true, true
+		}
+		value, isDirective := strings.CutPrefix(line, identityDirective+"=")
+		if !isDirective {
+			continue
+		}
+		if value = strings.TrimSpace(value); identityIsUsable(value) {
+			return value, false, true
+		}
+	}
+	return "", false, false
+}
+
+// identityIsUsable rejects a value that would not survive being written into a path segment.
+// Dots are escaped on the way in, but the characters the segment syntax itself uses have no
+// encoding, so an identity containing one is ignored rather than corrupting the path.
+func identityIsUsable(value string) bool {
+	return value != "" && !strings.ContainsAny(value, ",=;")
 }
 
 // anchorDigestLength is how much of the digest the path segment carries. A path is read by
@@ -179,7 +329,17 @@ func ElementDigest(element *gaby.YamlDoc) string {
 // previous revision for a matched pair or a removal, the new content for an insertion.
 // Both sides of a three-way merge diff against the same base, so their anchors for the same
 // element agree and subtraction still recognizes them as the same path.
-func AnchoredPathSegment(element *gaby.YamlDoc, index int) string {
+//
+// withContext adds the shape of the array around the element: digests of the elements on
+// either side and the array's length. All of it describes the array the patch was computed
+// against, so it is recorded for a path that names an element of that array — a matched
+// element or a removal — and not for an insertion, whose index names a position in the
+// array that only exists once the patch has been applied.
+func AnchoredPathSegment(elements []*gaby.YamlDoc, index int, withContext bool) string {
+	var element *gaby.YamlDoc
+	if index >= 0 && index < len(elements) {
+		element = elements[index]
+	}
 	digest := ElementDigest(element)
 	if digest == "" {
 		return strconv.Itoa(index)
@@ -189,7 +349,89 @@ func AnchoredPathSegment(element *gaby.YamlDoc, index int) string {
 		keys = append(keys, anchorIdentityKey)
 		values = append(values, identity)
 	}
+	if withContext {
+		keys = append(keys, anchorPreviousKey, anchorNextKey, anchorLengthKey)
+		values = append(values, neighborDigest(elements, index-1), neighborDigest(elements, index+1),
+			strconv.Itoa(len(elements)))
+	}
 	return AssociativePathSegment(keys, values, index)
+}
+
+// arrayContext is what an anchored segment records about the array around its element, as
+// opposed to about the element itself.
+type arrayContext struct {
+	previous, next string
+	length         int
+	present        bool
+}
+
+// splitAnchorContext separates an anchored segment's array-context pairs from the pairs that
+// describe the element. The element-matching stages only ever see the latter: a neighbor
+// digest is a fact about the array, and an element cannot be asked whether it matches one.
+func splitAnchorContext(keys, values []string) (contentKeys, contentValues []string, context arrayContext) {
+	context.length = -1
+	for i, key := range keys {
+		switch key {
+		case anchorPreviousKey:
+			context.previous, context.present = values[i], true
+		case anchorNextKey:
+			context.next, context.present = values[i], true
+		case anchorLengthKey:
+			if length, err := strconv.Atoi(values[i]); err == nil {
+				context.length, context.present = length, true
+			}
+		default:
+			contentKeys = append(contentKeys, key)
+			contentValues = append(contentValues, values[i])
+		}
+	}
+	return contentKeys, contentValues, context
+}
+
+// indexIsTrustworthy reports whether an element's recorded index still means what the patch
+// meant by it.
+//
+// Matching neighbors settle it: the element sits between the elements it sat between, so
+// whatever else the target has done to the array, this position is the one the patch meant.
+//
+// Failing that, the array's length has to be the length the patch was computed against —
+// inserting or removing an element is the only thing that renumbers the ones after it — and
+// that is usually enough on its own, because a target that customized every element of an
+// array (the case the whole positional-array mechanism exists for) has no neighbor left to
+// match. But length alone can be a coincidence: an array that gained one element and lost
+// another is the length it started at while its indices have all moved. The tell is that the
+// element now at the index is one of the ones recorded beside it, which is what the array
+// looks like after it has shifted under the path — as it has when a removal is replayed onto
+// its own result.
+//
+// A target that has changed the array's length and edited the neighbors has told the
+// resolver nothing it can rely on, and the caller reports an unresolved path rather than
+// writing over whatever has moved into place.
+func (c arrayContext) indexIsTrustworthy(elements []*gaby.YamlDoc, index int) bool {
+	if !c.present {
+		return true
+	}
+	if neighborsMatch(elements, index, c.previous, c.next) {
+		return true
+	}
+	return c.length == len(elements) && !c.elementIsANeighbor(elements, index)
+}
+
+// elementIsANeighbor reports whether the element at index is one of the two the anchor
+// recorded on either side of the element it names — the sign that the array has shifted
+// under the path rather than that the element there was edited.
+func (c arrayContext) elementIsANeighbor(elements []*gaby.YamlDoc, index int) bool {
+	digest := neighborDigest(elements, index)
+	if digest == arrayEdgeDigest {
+		return false
+	}
+	return digest == c.previous || digest == c.next
+}
+
+// neighborsMatch reports whether the elements on either side of index are the ones the
+// anchor recorded.
+func neighborsMatch(elements []*gaby.YamlDoc, index int, previous, next string) bool {
+	return neighborDigest(elements, index-1) == previous && neighborDigest(elements, index+1) == next
 }
 
 // segmentIsAnchor reports whether an associative path segment names its element by content
@@ -464,6 +706,11 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 			continue
 		}
 
+		// Neighbor context describes the array rather than the element, so it is held
+		// aside: the element-matching stages below see only the pairs that describe the
+		// element itself.
+		keys, values, context := splitAnchorContext(keys, values)
+
 		resolved := false
 		if currentNode != nil {
 			elements := currentNode.Children()
@@ -471,6 +718,13 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 			// anchored segment, on the identifying pairs alone, which is what finds an
 			// element the target has edited — the digest stops matching the moment it
 			// does, and the identity is the part that says which element it is.
+			//
+			// Array context deliberately does not get a stage of its own. Searching for
+			// the element whose neighbors are the recorded ones finds a bystander as
+			// readily as the element that moved: in an array whose first element was
+			// removed, the element that took its place sits between the same neighbors
+			// the removed one did. Context is evidence about a position, so it is used to
+			// judge the recorded position below and not to nominate a different one.
 			matchIndex := matchArrayElement(elements, keys, values, fallbackIndex)
 			if matchIndex < 0 {
 				if identityKeys, identityValues := identifyingPairs(keys, values); len(identityKeys) > 0 {
@@ -487,6 +741,11 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 			// has none of the merge keys, treat it as legacy data and fall back
 			// positionally. Otherwise the in-bounds element has different merge-key
 			// values — it's a different element, so leave the segment unresolved.
+			//
+			// An anchored segment carrying neighbor context has one more condition: the
+			// element at the index is only accepted when it sits between the elements the
+			// anchor recorded. That is what stops a patch whose element is gone from
+			// writing over whatever moved into its place.
 			if !resolved && fallbackIndex != "" {
 				idx, err := strconv.Atoi(fallbackIndex)
 				if err == nil && idx >= 0 {
@@ -494,7 +753,7 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 						resolvedSegments = append(resolvedSegments, fallbackIndex)
 						currentNode = nil
 						resolved = true
-					} else if !elementHasAnyKey(elements[idx], keys) {
+					} else if !elementHasAnyKey(elements[idx], keys) && context.indexIsTrustworthy(elements, idx) {
 						resolvedSegments = append(resolvedSegments, fallbackIndex)
 						currentNode = elements[idx]
 						resolved = true
@@ -803,7 +1062,115 @@ const maxAlignmentPairs = 2500
 // insertion instead leaves the surrounding elements alone. Editing still wins whenever it is
 // genuinely cheaper, so an array whose elements were edited in place aligns index to index
 // exactly as the old positional diff did.
+// Elements a person has named are matched by that name first, before any of this. An
+// identity says which element this is regardless of where it sits, which the alignment
+// cannot work out for itself: the recurrence is order-preserving, so two elements that swap
+// places can never both be paired, and the one that loses is recorded as a removal and an
+// insertion — which makes the whole element the target's, and the next merge's change to a
+// field of it is filtered out as an override. Matching by name first is what stops that, and
+// it is the same treatment a declared merge key gets.
 func alignArrayElements(previous, modified []*gaby.YamlDoc, path string, mergeKeyLookup MergeKeyLookup) arrayAlignment {
+	identityPairs, previousRest, modifiedRest := matchByIdentity(previous, modified)
+	if len(identityPairs) > 0 {
+		// Align what is left over among themselves, then translate its indices back.
+		rest := alignRemainingElements(previous, modified, previousRest, modifiedRest, path, mergeKeyLookup)
+		return mergeAlignments(identityPairs, rest, previousRest, modifiedRest)
+	}
+	return alignByCost(previous, modified, path, mergeKeyLookup)
+}
+
+// matchByIdentity pairs elements that carry the same identity, and returns the indices of
+// those left over on each side.
+//
+// An identity is only usable here when it names exactly one element on each side: two
+// elements sharing one identity say nothing about which is which, so both are left to the
+// cost-based alignment rather than paired arbitrarily.
+func matchByIdentity(previous, modified []*gaby.YamlDoc) (pairs [][2]int, previousRest, modifiedRest []int) {
+	previousByIdentity := uniqueIdentities(previous)
+	modifiedByIdentity := uniqueIdentities(modified)
+	pairedPrevious := make([]bool, len(previous))
+	pairedModified := make([]bool, len(modified))
+	for identity, i := range previousByIdentity {
+		j, ok := modifiedByIdentity[identity]
+		if !ok {
+			continue
+		}
+		pairs = append(pairs, [2]int{i, j})
+		pairedPrevious[i], pairedModified[j] = true, true
+	}
+	slices.SortFunc(pairs, func(a, b [2]int) int { return a[0] - b[0] })
+	for i, paired := range pairedPrevious {
+		if !paired {
+			previousRest = append(previousRest, i)
+		}
+	}
+	for j, paired := range pairedModified {
+		if !paired {
+			modifiedRest = append(modifiedRest, j)
+		}
+	}
+	return pairs, previousRest, modifiedRest
+}
+
+// uniqueIdentities maps each identity that names exactly one element to that element's index.
+func uniqueIdentities(elements []*gaby.YamlDoc) map[string]int {
+	seen := map[string]int{}
+	duplicated := map[string]struct{}{}
+	for i, element := range elements {
+		identity := ElementIdentity(element)
+		if identity == "" {
+			continue
+		}
+		if _, exists := seen[identity]; exists {
+			duplicated[identity] = struct{}{}
+			continue
+		}
+		seen[identity] = i
+	}
+	for identity := range duplicated {
+		delete(seen, identity)
+	}
+	return seen
+}
+
+// alignRemainingElements runs the cost-based alignment over the elements identity did not
+// claim, in their original order.
+func alignRemainingElements(previous, modified []*gaby.YamlDoc, previousRest, modifiedRest []int,
+	path string, mergeKeyLookup MergeKeyLookup) arrayAlignment {
+	if len(previousRest) == 0 && len(modifiedRest) == 0 {
+		return arrayAlignment{}
+	}
+	previousSubset := make([]*gaby.YamlDoc, len(previousRest))
+	for k, i := range previousRest {
+		previousSubset[k] = previous[i]
+	}
+	modifiedSubset := make([]*gaby.YamlDoc, len(modifiedRest))
+	for k, j := range modifiedRest {
+		modifiedSubset[k] = modified[j]
+	}
+	return alignByCost(previousSubset, modifiedSubset, path, mergeKeyLookup)
+}
+
+// mergeAlignments translates a leftover alignment's indices back into the original arrays and
+// combines it with the identity-matched pairs.
+func mergeAlignments(identityPairs [][2]int, rest arrayAlignment, previousRest, modifiedRest []int) arrayAlignment {
+	alignment := arrayAlignment{pairs: identityPairs}
+	for _, pair := range rest.pairs {
+		alignment.pairs = append(alignment.pairs, [2]int{previousRest[pair[0]], modifiedRest[pair[1]]})
+	}
+	for _, i := range rest.deleted {
+		alignment.deleted = append(alignment.deleted, previousRest[i])
+	}
+	for _, j := range rest.added {
+		alignment.added = append(alignment.added, modifiedRest[j])
+	}
+	slices.SortFunc(alignment.pairs, func(a, b [2]int) int { return a[0] - b[0] })
+	slices.Sort(alignment.deleted)
+	slices.Sort(alignment.added)
+	return alignment
+}
+
+func alignByCost(previous, modified []*gaby.YamlDoc, path string, mergeKeyLookup MergeKeyLookup) arrayAlignment {
 	if len(previous)*len(modified) > maxAlignmentPairs {
 		return positionalAlignment(len(previous), len(modified))
 	}
@@ -833,6 +1200,12 @@ func alignArrayElements(previous, modified []*gaby.YamlDoc, path string, mergeKe
 	pairCost := func(i, j int) int {
 		if previousText[i] == modifiedText[j] {
 			return 0
+		}
+		// Two elements a person named differently are different elements, whatever they
+		// have in common — the same rule a declared merge key follows.
+		previousIdentity, modifiedIdentity := ElementIdentity(previous[i]), ElementIdentity(modified[j])
+		if previousIdentity != "" && modifiedIdentity != "" && previousIdentity != modifiedIdentity {
+			return math.MaxInt32
 		}
 		subPathMap := api.MutationMap{}
 		ComputeMutationsForDocs(path+"."+strconv.Itoa(i), previous[i], modified[j], 0,
@@ -1134,6 +1507,38 @@ func ExtractMergeKeysFromPath(path string) []MergeKeyEntry {
 // the target array after path mutations are applied, so positional associative
 // arrays preserve source-side ordering.
 //
+// recordAddedSubtree records what a newly present subtree adds, one entry per path the
+// addition actually introduces.
+//
+// A map's keys are its identity, so a map that did not exist before is an addition of each
+// of its keys rather than of one opaque value. Recording the whole map made it a single
+// owned path, and ownership of a path covers everything under it: a downstream that added
+// its own annotation to a resource that had none owned `metadata.annotations` entire, and
+// the next upgrade's unrelated annotation was filtered out against it — two sides adding
+// different keys to the same map is the case a data merge should handle best, and it was
+// handling it worst.
+//
+// Recursion stops at anything that is not a non-empty map. A scalar has nothing below it. An
+// array's elements are identified positionally or by merge key, which is a different
+// mechanism, and an array that is wholly new has no element the target could own. An empty
+// map is recorded as itself, because there is no key to record it under and something has to
+// create it.
+func recordAddedSubtree(path string, doc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap) {
+	children := doc.ChildrenMap()
+	if len(children) == 0 || !isMappingDoc(doc) {
+		pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
+			MutationType: api.MutationTypeAdd,
+			Index:        functionIndex,
+			Predicate:    true,
+			Value:        doc.String(), // new data
+		}
+		return
+	}
+	for key, child := range children {
+		recordAddedSubtree(path+"."+EscapeDotsInPathSegment(key), child, functionIndex, pathMutationMap)
+	}
+}
+
 // arrayElementAliases, if non-nil, is populated with element-level renames
 // detected inside merge-keyed arrays. When an unmatched modified element and
 // an unmatched previous element are similar enough, the pair is treated as a
@@ -1194,12 +1599,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 
 				previousChild, present := previousChildren[key]
 				if !present {
-					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
-						MutationType: api.MutationTypeAdd,
-						Index:        functionIndex,
-						Predicate:    true,
-						Value:        modifiedChild.String(), // new data
-					}
+					recordAddedSubtree(currentPath, modifiedChild, functionIndex, pathMutationMap)
 					continue // process next stack element
 				}
 
@@ -1541,7 +1941,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				for _, pair := range alignment.pairs {
 					stack = append(stack, traversalItem{
 						path: path + "." + AnchoredPathSegment(
-							previousArrayChildren[pair[0]], pair[0]),
+							previousArrayChildren, pair[0], true),
 						previousDoc: previousArrayChildren[pair[0]],
 						modifiedDoc: modifiedArrayChildren[pair[1]],
 					})
@@ -1549,7 +1949,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 
 				// Removed elements are likewise addressed by their previous index.
 				for _, index := range alignment.deleted {
-					currentPath := path + "." + AnchoredPathSegment(previousArrayChildren[index], index)
+					currentPath := path + "." + AnchoredPathSegment(previousArrayChildren, index, true)
 					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 						MutationType: api.MutationTypeDelete,
 						Index:        functionIndex,
@@ -1565,7 +1965,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				// an append, which is what a purely positional diff produced for every
 				// addition.
 				for _, index := range alignment.added {
-					currentPath := path + "." + AnchoredPathSegment(modifiedArrayChildren[index], index)
+					currentPath := path + "." + AnchoredPathSegment(modifiedArrayChildren, index, false)
 					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 						MutationType: api.MutationTypeAdd,
 						Index:        functionIndex,
@@ -2036,6 +2436,11 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 	}
 
 	patchIdx := api.NewResourceMutationIndex(mutationsPatch)
+	// The subtrahend is the target's own diff. Subtraction has already removed the patch
+	// entries it overlaps; what is still wanted from it is the record of which paths the
+	// target claimed, which is how a merge with subtraction on expresses the ownership a
+	// merge without it expresses as a stored Predicate.
+	subtractIdx := api.NewResourceMutationIndex(mutationsToSubtract)
 
 	// Track which patch mutations were matched to existing documents.
 	// Unmatched Add/Replace mutations need to be appended as new documents.
@@ -2104,10 +2509,17 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		mergeKeyLookup := MergeKeyLookup(func(path string) ([]string, bool) {
 			return resourceProvider.MergeKeysForPath(docResourceInfo.ResourceType, path)
 		})
+		exclusiveLookup := ExclusiveFieldsLookup(func(path string) (ExclusiveFields, bool) {
+			return resourceProvider.ExclusiveFieldsForPath(docResourceInfo.ResourceType, path)
+		})
+		var subtractedPaths api.MutationMap
+		if subtractIndex, ok := subtractIdx.Find(*docResourceInfo, predicateAliases); ok {
+			subtractedPaths = mutationsToSubtract[subtractIndex].PathMutationMap
+		}
 		visitorErrs, pathConflicts = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
 			hasPredicate, mutationsPredicates, mutationPredicateIndex, mutationsPatch[mutationPatchIndex].Resource,
 			mutationsPatch[mutationPatchIndex].ArrayOrders, mutationsPatch[mutationPatchIndex].ArrayElementAliases,
-			mergeKeyLookup,
+			mergeKeyLookup, exclusiveLookup, subtractedPaths,
 			visitorErrs)
 		conflicts = append(conflicts, pathConflicts...)
 		return nil, visitorErrs
@@ -2194,10 +2606,13 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			mergeKeyLookup := MergeKeyLookup(func(path string) ([]string, bool) {
 				return resourceProvider.MergeKeysForPath(mutationsPatch[i].Resource.ResourceType, path)
 			})
+			exclusiveLookup := ExclusiveFieldsLookup(func(path string) (ExclusiveFields, bool) {
+				return resourceProvider.ExclusiveFieldsForPath(mutationsPatch[i].Resource.ResourceType, path)
+			})
 			errs, pathConflicts = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
 				false, nil, 0, mutationsPatch[i].Resource,
 				mutationsPatch[i].ArrayOrders, mutationsPatch[i].ArrayElementAliases,
-				mergeKeyLookup,
+				mergeKeyLookup, exclusiveLookup, nil,
 				errs)
 			conflicts = append(conflicts, pathConflicts...)
 			parsedData = append(parsedData, valueDoc)
@@ -2355,6 +2770,311 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 	return errs
 }
 
+// exclusiveTouch records that a patch set something inside a union: the path of the object
+// holding it, and which member (or the discriminator) it wrote.
+//
+// The path is kept in both forms. groupPath is resolved against this document, which is what
+// reads and edits it; patchGroupPath is the form the patch named it in, which is what the
+// target's own mutation records are keyed by and what a conflict has to quote back — the same
+// two forms the predicate lookup needs, for the same reason.
+type exclusiveTouch struct {
+	groupPath      string
+	patchGroupPath string
+	// member is the union member the patch wrote, or "" when it wrote the discriminator.
+	member string
+	// patchPath and source are the mutation that wrote it, for the conflict that reports
+	// the write as withheld.
+	patchPath api.ResolvedPath
+	source    api.MutationInfo
+}
+
+// findExclusiveTouch reports whether a path writes into a union, and which part of it. Every
+// prefix of the path is a candidate for the object holding the union, so a write anywhere
+// under a member — `volumes.0.configMap.name`, not just `volumes.0.configMap` — counts as
+// setting that member.
+//
+// patchPath is the path as the patch named it and resolvedPath is the same path resolved
+// against this document; resolution maps segment to segment, so a prefix of one is the same
+// prefix of the other.
+func findExclusiveTouch(patchPath api.ResolvedPath, resolvedPath string, lookup ExclusiveFieldsLookup) (exclusiveTouch, bool) {
+	if lookup == nil {
+		return exclusiveTouch{}, false
+	}
+	segments := gaby.DotPathToSlice(resolvedPath)
+	patchSegments := gaby.DotPathToSlice(string(patchPath))
+	if len(patchSegments) != len(segments) {
+		// Resolution changed the shape of the path, so the two forms cannot be lined up.
+		// Fall back to the resolved form for both; the ownership lookup below has a
+		// resolved-form fallback of its own.
+		patchSegments = segments
+	}
+	// The last segment cannot be the object holding the union: something has to be written
+	// inside it for there to be a member.
+	for i := 0; i < len(segments)-1; i++ {
+		groupPath := strings.Join(segments[:i+1], ".")
+		fields, ok := lookup(groupPath)
+		if !ok {
+			continue
+		}
+		touch := exclusiveTouch{
+			groupPath:      groupPath,
+			patchGroupPath: strings.Join(patchSegments[:i+1], "."),
+		}
+		next := segments[i+1]
+		if fields.IsMember(next) {
+			touch.member = next
+			return touch, true
+		}
+		if fields.Discriminator != "" && next == fields.Discriminator {
+			return touch, true
+		}
+	}
+	return exclusiveTouch{}, false
+}
+
+// pathOwnership answers whether the target has claimed a path as its own — a stored
+// Predicate=false on it or an ancestor, or, when subtraction is in play, a mutation of its
+// own at it or an ancestor. Both forms of the path are consulted for the same reason the
+// predicate filter consults both: the target's records name a path the way the diff produced
+// it, while the path in hand has been resolved against this document.
+type pathOwnership func(canonicalPath, resolvedPath string) bool
+
+// clearExclusiveSiblings settles a union the patch wrote into, so that at most one member is
+// left standing.
+//
+// Setting one member of a union has to clear the others; Kubernetes spells this
+// patchStrategy:"retainKeys". A field-level merge does not do it on its own — the addition of
+// the new member applies, the removal of the old one is withheld against the target's
+// ownership of it or subtracted as one of the target's own differences, and the result is a
+// volume with two sources or a Recreate strategy that still carries rollingUpdate. Neither
+// will apply.
+//
+// Which member survives follows the ownership rules the rest of the engine runs on rather
+// than overriding them:
+//
+//   - If the target owns another member — it chose that volume source, and the choice is
+//     recorded at the member itself rather than somewhere beneath it — the patch's member is
+//     withheld and reported as ExclusiveWithheld. That is an ordinary conflict: the source
+//     wanted a change and did not get it, and applying it later performs the switch, because
+//     replayed on its own there is no ownership left to withhold it.
+//   - Otherwise the patch's member stands and the others are cleared, reported as
+//     ExclusiveCleared with the removed value.
+//
+// Where the union has a discriminator the *document* decides: whatever `type` reads after the
+// merge, only the member it permits may remain. Ownership does not enter into it, because
+// there is no arrangement that keeps both — and ownership of the discriminator itself has
+// already had its say through the ordinary predicate filter, which is what decides whether
+// the patch's `type` change applied at all.
+func clearExclusiveSiblings(doc *gaby.YamlDoc, touches []exclusiveTouch, resource api.ResourceInfo,
+	lookup ExclusiveFieldsLookup, targetOwns pathOwnership) api.MutationConflictList {
+	if len(touches) == 0 || lookup == nil {
+		return nil
+	}
+	var conflicts api.MutationConflictList
+	// One decision per union, however many paths the patch wrote inside it.
+	seen := map[string]struct{}{}
+	for _, touch := range touches {
+		if _, done := seen[touch.groupPath]; done {
+			continue
+		}
+		seen[touch.groupPath] = struct{}{}
+
+		fields, ok := lookup(touch.groupPath)
+		if !ok {
+			continue
+		}
+		group := doc.Path(touch.groupPath)
+		if group == nil {
+			continue
+		}
+
+		// Which member the document is left saying it is.
+		keep := touch.member
+		withheld := ""
+		if fields.Discriminator != "" {
+			discriminator := group.S(fields.Discriminator)
+			if discriminator == nil {
+				// Nothing says which member is valid, so nothing can be ruled out.
+				continue
+			}
+			keep = fields.AllowedMember[fmt.Sprintf("%v", discriminator.Data())]
+		} else if owned := ownedMember(group, fields, touch, targetOwns); owned != "" && owned != touch.member {
+			// The target chose a different member. Its choice stands, and what the
+			// patch wrote is what goes.
+			keep, withheld = owned, touch.member
+		}
+
+		for _, member := range fields.Members {
+			if member == keep {
+				continue
+			}
+			present := group.S(member)
+			if present == nil {
+				continue
+			}
+			removed := api.MutationInfo{
+				MutationType: api.MutationTypeDelete,
+				Index:        touch.source.Index,
+				Predicate:    true,
+				Value:        present.String(),
+			}
+			if err := group.Delete(member); err != nil {
+				slog.Info("error clearing exclusive field", "path", touch.groupPath,
+					"member", member, "error", err)
+				continue
+			}
+			if member == withheld {
+				// The patch's own writes were undone, so each of them is reported as
+				// the change it is: one the source wanted and did not get. Applying
+				// them later performs the switch.
+				conflicts = append(conflicts, withheldWriteConflicts(touches, touch.groupPath, member, resource)...)
+				continue
+			}
+			conflicts = append(conflicts, api.MutationConflict{
+				Reason:   api.ConflictReasonExclusiveCleared,
+				Resource: resource,
+				Path:     api.ResolvedPath(touch.patchGroupPath + "." + member),
+				Source:   touch.source,
+				Target:   &removed,
+			})
+		}
+	}
+	return conflicts
+}
+
+// withheldWriteConflicts reports every path the patch wrote into a member that was then
+// withheld, one conflict per write, so the report says which changes did not land rather
+// than only which member did not.
+func withheldWriteConflicts(touches []exclusiveTouch, groupPath, member string,
+	resource api.ResourceInfo) api.MutationConflictList {
+	var conflicts api.MutationConflictList
+	for _, touch := range touches {
+		if touch.groupPath != groupPath || touch.member != member {
+			continue
+		}
+		conflicts = append(conflicts, api.MutationConflict{
+			Reason:   api.ConflictReasonExclusiveWithheld,
+			Resource: resource,
+			Path:     touch.patchPath,
+			Source:   touch.source,
+		})
+	}
+	return conflicts
+}
+
+// ownedMember returns the member of a union that the target claimed as its own, or "".
+//
+// The claim has to be on the member itself, not on something under it. A target that switched
+// its volume from a configMap to an emptyDir has a record at the emptyDir; a target that only
+// tuned a field inside the member it inherited has one further down, and tuning a knob is not
+// choosing the source.
+func ownedMember(group *gaby.YamlDoc, fields ExclusiveFields, touch exclusiveTouch,
+	targetOwns pathOwnership) string {
+	if targetOwns == nil {
+		return ""
+	}
+	for _, member := range fields.Members {
+		if member == touch.member || group.S(member) == nil {
+			continue
+		}
+		memberPath := touch.patchGroupPath + "." + member
+		if targetOwns(string(CanonicalMutationPath(api.ResolvedPath(memberPath))),
+			touch.groupPath+"."+member) {
+			return member
+		}
+	}
+	return ""
+}
+
+// expandCoarsePatchEntries breaks a patch entry that covers a whole subtree into the leaves
+// it actually changes, when the target protects something inside that subtree.
+//
+// A Predicate is found by walking up from the patch's path to the closest ancestor that has
+// one, so a coarse entry is matched by a coarse predicate and the finer ones underneath never
+// get a say: protecting `spec.tls.secretName` does nothing when the source recorded a single
+// Update of `spec.tls`, because the filter stops at `spec.tls` and writes the whole block.
+// Splitting the entry first is what gives each leaf its own decision.
+//
+// The split is a sub-diff of the entry's value against what the target has at that path, not
+// a walk of the value alone, because a coarse Update *replaces* a subtree while a set of leaf
+// Updates merges into it. Diffing recovers the removals the coarse form would have performed,
+// so splitting changes which paths are filtered and nothing else.
+//
+// It only runs where it can matter: the target has a protected path strictly below the entry,
+// both sides hold a mapping there, and the entry is not itself a Delete -- deleting a subtree
+// is not a set of leaf deletions, and what it displaces is already reported as DeleteShadowed.
+func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
+	canonicalPredicates, storedPredicates api.MutationMap,
+	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
+	expanded := make([]api.MutationMapEntry, 0, len(entries))
+	for _, entry := range entries {
+		leaves := coarseEntryLeaves(doc, entry, canonicalPredicates, storedPredicates, mergeKeyLookup)
+		if leaves == nil {
+			expanded = append(expanded, entry)
+			continue
+		}
+		expanded = append(expanded, leaves...)
+	}
+	return expanded
+}
+
+// coarseEntryLeaves returns the per-leaf entries an entry breaks into, or nil to leave it
+// whole.
+func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
+	canonicalPredicates, storedPredicates api.MutationMap,
+	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
+	if entry.MutationInfo.MutationType == api.MutationTypeDelete {
+		return nil
+	}
+	resolvedPath, resolved := ResolveAssociativeSegments(doc, string(entry.Path))
+	if !resolved {
+		return nil
+	}
+	if !protectsBelow(canonicalPredicates, CanonicalMutationPath(entry.Path)) &&
+		!protectsBelow(storedPredicates, api.ResolvedPath(resolvedPath)) {
+		return nil
+	}
+	target := doc.Path(resolvedPath)
+	if !isMappingDoc(target) {
+		return nil
+	}
+	value, err := gaby.ParseYAML([]byte(entry.MutationInfo.Value))
+	if err != nil || !isMappingDoc(value) {
+		return nil
+	}
+
+	subMap := api.MutationMap{}
+	ComputeMutationsForDocs(string(entry.Path), target, value, entry.MutationInfo.Index,
+		subMap, mergeKeyLookup, nil, nil)
+	if len(subMap) == 0 {
+		return nil
+	}
+	leaves := make([]api.MutationMapEntry, 0, len(subMap))
+	for _, leaf := range api.SortedMutationMapEntries(subMap) {
+		// The sub-diff describes what changes; the provenance stays the original entry's,
+		// so a leaf is attributed to the mutation that produced the subtree.
+		leaf.MutationInfo.Index = entry.MutationInfo.Index
+		leaf.MutationInfo.Predicate = entry.MutationInfo.Predicate
+		leaves = append(leaves, leaf)
+	}
+	return leaves
+}
+
+// protectsBelow reports whether the target protects a path strictly below the given one. An
+// overwritable descendant changes nothing, so only Predicate=false counts.
+func protectsBelow(predicates api.MutationMap, path api.ResolvedPath) bool {
+	if len(predicates) == 0 {
+		return false
+	}
+	prefix := string(path) + "."
+	for candidate, info := range predicates {
+		if !info.Predicate && strings.HasPrefix(string(candidate), prefix) {
+			return true
+		}
+	}
+	return false
+}
+
 // applyPathMutations applies path-level mutations from a PathMutationMap to a document.
 // If hasPredicate is true, paths whose path or any ancestor has Predicate=false in the
 // caller's predicate map are skipped.
@@ -2392,10 +3112,13 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	resource api.ResourceInfo, arrayOrders api.ArrayOrderMap,
 	arrayElementAliases api.ArrayElementAliasMap,
 	mergeKeyLookup MergeKeyLookup,
+	exclusiveLookup ExclusiveFieldsLookup,
+	mutationsSubtracted api.MutationMap,
 	errs []error) ([]error, api.MutationConflictList) {
 
 	var conflicts api.MutationConflictList
 	var arrayElementOps []arrayElementOp
+	var exclusiveTouches []exclusiveTouch
 
 	// Predicates are looked up on canonical paths. The stored MutationSources record a
 	// path the way ComputeMutations produced it — with associative segments naming the
@@ -2411,9 +3134,49 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 		canonicalPredicates, _ = canonicalMutationMap(mutationsPredicates[mutationPredicateIndex].PathMutationMap)
 	}
 
+	// What the target has claimed as its own, in whichever way this merge expresses it: a
+	// stored Predicate=false, or — when subtraction is in play, where there are no
+	// predicates at all — a mutation of the target's own at the path. Only the exclusive-
+	// field rules consult it; every other filter is already expressed as a predicate.
+	var canonicalSubtracted api.MutationMap
+	if len(mutationsSubtracted) > 0 {
+		canonicalSubtracted, _ = canonicalMutationMap(mutationsSubtracted)
+	}
+	targetOwns := pathOwnership(func(canonicalPath, resolvedPath string) bool {
+		if hasPredicate {
+			for _, candidate := range []api.MutationMap{canonicalPredicates,
+				mutationsPredicates[mutationPredicateIndex].PathMutationMap} {
+				if _, mutation, found := api.FindAncestorPath(candidate,
+					api.ResolvedPath(canonicalPath)); found && !mutation.Predicate {
+					return true
+				}
+				if _, mutation, found := api.FindAncestorPath(candidate,
+					api.ResolvedPath(resolvedPath)); found && !mutation.Predicate {
+					return true
+				}
+			}
+		}
+		for _, candidate := range []api.MutationMap{canonicalSubtracted, mutationsSubtracted} {
+			if len(candidate) == 0 {
+				continue
+			}
+			if _, _, found := api.FindAncestorPath(candidate, api.ResolvedPath(canonicalPath)); found {
+				return true
+			}
+			if _, _, found := api.FindAncestorPath(candidate, api.ResolvedPath(resolvedPath)); found {
+				return true
+			}
+		}
+		return false
+	})
+
 	// Sort paths so parents are processed before children, then partition so all Deletes
 	// run before all non-Deletes. Path order is preserved within each partition.
 	sorted := api.SortedMutationMapEntries(pathMutationMap)
+	if hasPredicate {
+		sorted = expandCoarsePatchEntries(doc, sorted, canonicalPredicates,
+			mutationsPredicates[mutationPredicateIndex].PathMutationMap, mergeKeyLookup)
+	}
 	patches := make([]api.MutationMapEntry, 0, len(sorted))
 	for _, entry := range sorted {
 		if entry.MutationInfo.MutationType == api.MutationTypeDelete {
@@ -2467,8 +3230,9 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 				continue
 			}
 		}
-		// Check for patches that conflict with the predicate.
-		// TODO: Break down the patch.
+		// Check for patches that conflict with the predicate. A coarse entry covering a
+		// path the target protects part of has already been broken into its leaves, so
+		// this decides one leaf at a time -- see expandCoarsePatchEntries.
 		if hasPredicate {
 			// Walk up path ancestors to find if any predicate filters this path.
 			_, predicateMutation, hasFilter := api.FindAncestorPath(
@@ -2490,6 +3254,17 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 				continue
 			}
 		}
+		// Note what the patch writes into a union, so its siblings can be cleared once
+		// the whole patch has been applied. A Delete removes a member rather than
+		// choosing one, so it is not a touch.
+		if patchMutation.MutationType != api.MutationTypeDelete {
+			if touch, ok := findExclusiveTouch(patches[i].Path, string(patchPath), exclusiveLookup); ok {
+				touch.patchPath = patches[i].Path
+				touch.source = *patchMutation
+				exclusiveTouches = append(exclusiveTouches, touch)
+			}
+		}
+
 		// Removing or inserting a whole element of a positional array renumbers every
 		// element after it. Defer those so the rest of the patch, whose paths are all
 		// indices into the array as it stands now, is applied against the shape it was
@@ -2657,6 +3432,11 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	}
 
 	errs = applyArrayElementOps(doc, arrayElementOps, errs)
+
+	// Clear the siblings of any union member the patch set. This runs after the element
+	// ops so the paths it works with are the ones the merged document actually has.
+	conflicts = append(conflicts,
+		clearExclusiveSiblings(doc, exclusiveTouches, resource, exclusiveLookup, targetOwns)...)
 
 	// Rename pass: for each (arrayPath, oldKey -> newKey) in arrayElementAliases,
 	// find the array element whose merge-key value is oldKey at arrayPath in the

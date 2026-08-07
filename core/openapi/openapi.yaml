@@ -2346,6 +2346,859 @@ paths:
       summary: Create action result
       tags:
       - BridgeWorker
+  /change_order:
+    delete:
+      description: Delete multiple changeorders selected by query parameters
+      operationId: BulkDeleteChangeOrders
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeOrder list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeOrder).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk delete multiple changeorders
+      tags:
+      - ChangeOrder
+    get:
+      description: Retrieves a list of ChangeOrders across spaces in the Organization
+      operationId: ListAllChangeOrders
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeOrder list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeOrder).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedChangeOrder'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of ChangeOrders across spaces
+      tags:
+      - ChangeOrder
+    patch:
+      description: Apply JSON merge patch to multiple changeorders selected by query
+        parameters
+      operationId: BulkPatchChangeOrders
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeOrder list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeOrder).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ChangeOrder. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EndTagID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                SpaceFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChangeOrderCreateOrUpdateResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChangeOrderCreateOrUpdateResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk patch multiple changeorders
+      tags:
+      - ChangeOrder
+    post:
+      description: Clone multiple changeorders selected by query parameters with optional
+        name prefixes and destination spaces
+      operationId: BulkCreateChangeOrders
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeOrder list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeOrder).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Comma-separated list of prefixes to apply to cloned ChangeOrder
+          names
+        in: query
+        name: name_prefixes
+        required: false
+        schema:
+          type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          ChangeOrder labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Spaces returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+
+          Where expression to select destination spaces for cloning changeorders
+
+          The whole string must be query-encoded.
+        in: query
+        name: where_space
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Space list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Space).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter_space
+        required: false
+        schema:
+          type: string
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ChangeOrder. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EndTagID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                SpaceFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChangeOrderCreateOrUpdateResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChangeOrderCreateOrUpdateResponse'
+                type: array
+          description: Multi-Status (partial success)
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk create (clone) multiple changeorders
+      tags:
+      - ChangeOrder
   /change_set:
     delete:
       description: Delete multiple changesets selected by query parameters
@@ -2383,7 +3236,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 
           The whole string must be query-encoded.
         in: query
@@ -2546,7 +3399,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 
           The whole string must be query-encoded.
         in: query
@@ -2704,7 +3557,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 
           The whole string must be query-encoded.
         in: query
@@ -2805,6 +3658,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UpstreamChangeSetID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -2912,7 +3770,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 
           The whole string must be query-encoded.
         in: query
@@ -3101,6 +3959,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UpstreamChangeSetID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -5350,7 +6213,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -5515,7 +6378,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -5672,7 +6535,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -5854,10 +6717,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                UseLiveState:
-                  description: ""
-                  nullable: true
-                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -5972,7 +6831,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to select source links to copy
 
@@ -6038,7 +6897,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -6080,7 +6939,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -6212,10 +7071,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                UseLiveState:
-                  description: ""
-                  nullable: true
-                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -7791,7 +8646,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -7890,7 +8745,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -10050,6 +10905,623 @@ paths:
       summary: Get BridgeWorkerStatus
       tags:
       - BridgeWorkerStatus
+  /space/{space_id}/change_order:
+    get:
+      description: List ChangeOrders
+      operationId: ListChangeOrders
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeOrder list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeOrder).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedChangeOrder'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ChangeOrders
+      tags:
+      - ChangeOrder
+    post:
+      description: Create ChangeOrder
+      operationId: CreateChangeOrder
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeOrder'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeOrder'
+          description: Defines a change's identity as it moves between Spaces.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create ChangeOrder
+      tags:
+      - ChangeOrder
+  /space/{space_id}/change_order/{change_order_id}:
+    delete:
+      description: Delete ChangeOrder
+      operationId: DeleteChangeOrder
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a change_order_id
+        in: path
+        name: change_order_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete ChangeOrder
+      tags:
+      - ChangeOrder
+    get:
+      description: Get ChangeOrder
+      operationId: GetChangeOrder
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ChangeOrder.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a change_order_id
+        in: path
+        name: change_order_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedChangeOrder'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ChangeOrder
+      tags:
+      - ChangeOrder
+    patch:
+      description: Patch ChangeOrder
+      operationId: PatchChangeOrder
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a change_order_id
+        in: path
+        name: change_order_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ChangeOrder. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                Description:
+                  description: ""
+                  nullable: true
+                  type: string
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EndTagID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                SpaceFilterID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                UpdateType:
+                  description: ""
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeOrder'
+          description: Defines a change's identity as it moves between Spaces.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch ChangeOrder
+      tags:
+      - ChangeOrder
+    put:
+      description: Update ChangeOrder
+      operationId: UpdateChangeOrder
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a change_order_id
+        in: path
+        name: change_order_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeOrder'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChangeOrder'
+          description: Defines a change's identity as it moves between Spaces.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeOrder data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeOrder.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update ChangeOrder
+      tags:
+      - ChangeOrder
   /space/{space_id}/change_set:
     get:
       description: List ChangeSets
@@ -10094,7 +11566,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 
           The whole string must be query-encoded.
         in: query
@@ -10518,6 +11990,11 @@ paths:
                   type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UpstreamChangeSetID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 Version:
@@ -12361,7 +13838,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -12869,10 +14346,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                UseLiveState:
-                  description: ""
-                  nullable: true
-                  type: boolean
                 Version:
                   description: An entity-specific sequence number used for optimistic
                     concurrency control. The value read must be sent in calls to Update.
@@ -13567,7 +15040,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -16114,11 +17587,15 @@ paths:
         schema:
           type: string
       - description: 'Merge end revision of the merge source, which provides the final
-          configuration of the changes to merge. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          configuration of the changes to merge. Also accepted with upgrade and with
+          resolve, where it names how far along the source to take the propagation;
+          the default there is the source''s head. Naming a ChangeSet or Tag that
+          ends a change is what leaves a change still being made at the source behind.
+          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
+          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
+          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
           associated with that entity is selected.'
         in: query
@@ -16478,11 +17955,15 @@ paths:
         schema:
           type: string
       - description: 'Merge end revision of the merge source, which provides the final
-          configuration of the changes to merge. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          configuration of the changes to merge. Also accepted with upgrade and with
+          resolve, where it names how far along the source to take the propagation;
+          the default there is the source''s head. Naming a ChangeSet or Tag that
+          ends a change is what leaves a change still being made at the source behind.
+          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
+          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
+          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
           associated with that entity is selected.'
         in: query
@@ -17862,7 +19343,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -17961,7 +19442,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -18091,7 +19572,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -19411,7 +20892,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19574,7 +21055,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19731,7 +21212,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -19935,7 +21416,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -22271,11 +23752,15 @@ paths:
         schema:
           type: string
       - description: 'Merge end revision of the merge source, which provides the final
-          configuration of the changes to merge. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          configuration of the changes to merge. Also accepted with upgrade and with
+          resolve, where it names how far along the source to take the propagation;
+          the default there is the source''s head. Naming a ChangeSet or Tag that
+          ends a change is what leaves a change still being made at the source behind.
+          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
+          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
+          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
           associated with that entity is selected.'
         in: query
@@ -22769,7 +24254,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
@@ -25395,11 +26880,6 @@ components:
           description: DataType of the bound value
           type: string
           x-go-type-skip-optional-pointer: true
-        InLiveState:
-          description: Whether the provided value comes from the upstream unit's LiveState
-            rather than its Data
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         NeededPath:
           description: Resolved path within the needed resource
           type: string
@@ -25676,6 +27156,146 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    ChangeOrder:
+      description: Defines a change's identity as it moves between Spaces.
+      properties:
+        Annotations:
+          additionalProperties:
+            maxLength: 1024
+            pattern: ^(.|\n)*$
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: ChangeOrderID uniquely identifies a change order within the
+            system.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CursorID:
+          description: An auto-incrementing sequence number used for pagination.
+          format: int64
+          readOnly: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Description:
+          description: Description is a human-readable description of the change.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DisplayName:
+          description: Friendly name for the entity.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EndTagID:
+          description: EndTagID is the identifier of the set of Revisions that end
+            the ChangeOrder. Settable at creation to adopt an existing Tag as the
+            boundary; the ChangeOrder creates one on each in-scope Unit's head Revision
+            if it is not set.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceFilterID:
+          description: SpaceFilterID is a reference to a Filter over Spaces that selects
+            the Spaces this ChangeOrder propagates into.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SpaceID:
+          description: Unique identifier for a space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        StartTagID:
+          description: StartTagID is the identifier of the set of Revisions immediately
+            before the ChangeOrder, making it the half-open interval (start, end].
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdateType:
+          description: UpdateType is the Link UpdateType this ChangeOrder follows
+            when propagating. UpgradeUnit, the clone lineage, is the default; MergeUnits
+            is the other supported value.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Slug
+      type: object
+    ChangeOrderCreateOrUpdateResponse:
+      properties:
+        ChangeOrder:
+          $ref: '#/components/schemas/ChangeOrder'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+      type: object
     ChangeSet:
       description: Defines an entity changeset.
       properties:
@@ -25777,6 +27397,14 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        StartTagIsPriorRevision:
+          description: StartTagIsPriorRevision reports whether the start Tag marks
+            the Revision before the ChangeSet, making the ChangeSet the half-open
+            interval (start, end]. False, the original meaning, means it marks the
+            ChangeSet's first Revision.
+          readOnly: true
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         State:
           description: State represents the current state of the ChangeSet.
           readOnly: true
@@ -25790,6 +27418,12 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        UpstreamChangeSetID:
+          description: UpstreamChangeSetID is the ChangeSet this one mirrors, set
+            when a promotion replays a change into this Space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
             control. The value read must be sent in calls to Update.
@@ -25911,6 +27545,23 @@ components:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
+      type: object
+    ExtendedChangeOrder:
+      properties:
+        ChangeOrder:
+          $ref: '#/components/schemas/ChangeOrder'
+        EndTag:
+          $ref: '#/components/schemas/Tag'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        Space:
+          $ref: '#/components/schemas/Space'
+        SpaceFilter:
+          $ref: '#/components/schemas/Filter'
+        StartTag:
+          $ref: '#/components/schemas/Tag'
       type: object
     ExtendedChangeSet:
       properties:
@@ -26094,6 +27745,10 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         TotalBridgeWorkerCount:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        TotalChangeOrderCount:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
@@ -27139,11 +28794,7 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         UpstreamLastMergedRevisionNum:
-          description: The sequence number of the last merged upstream change. When
-            UseLiveState is false, this is the RevisionNum of the last merged revision.
-            When UseLiveState is true, this is the UnitActionNum of the last merged
-            Apply action, since applying the same revision multiple times can produce
-            different LiveState.
+          description: The RevisionNum of the last merged upstream revision.
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
@@ -27173,11 +28824,6 @@ components:
           format: uuid
           readOnly: true
           type: string
-        UseLiveState:
-          description: Take data from the LiveState of the upstream Unit rather than
-            from Data.
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
             control. The value read must be sent in calls to Update.
@@ -28355,6 +30001,12 @@ components:
             $ref: '#/components/schemas/UUID'
           type: array
           x-go-type-skip-optional-pointer: true
+        ChangeOrders:
+          additionalProperties:
+            type: string
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
         ChangeSetID:
           description: Unique identifier for the ChangeSet to which this Revision
             belongs. Optional. Revisions are not required to belong to ChangeSets.
@@ -28789,6 +30441,13 @@ components:
             attach information to entities.
           type: object
           x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: ChangeOrderID is the optional ID of the ChangeOrder this Tag
+            is associated with.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         ChangeSetID:
           description: ChangeSetID is the optional ID of the ChangeSet this Tag is
             associated with.
@@ -30156,8 +31815,10 @@ components:
     UnitTagRequest:
       properties:
         Revision:
-          description: 'Which Unit revision to tag: ''HeadRevisionNum'', ''LiveRevisionNum'',
-            ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', or ''Remove''
+          description: 'Which Unit revision to tag: a named revision (''HeadRevisionNum'',
+            ''LiveRevisionNum'', ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum''),
+            a revision number, an entity reference (''Tag:uuid'', ''ChangeSet:uuid'',
+            ''Revision:uuid''), any of those prefixed with ''Before:'', or ''Remove''
             to remove the tag from the unit'
           type: string
           x-go-type-skip-optional-pointer: true

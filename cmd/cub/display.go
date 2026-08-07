@@ -346,6 +346,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedTag |
 		goclientnew.ChangeSet |
 		goclientnew.ExtendedChangeSet |
+		goclientnew.ChangeOrder |
+		goclientnew.ExtendedChangeOrder |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
 		goclientnew.UnitAction |

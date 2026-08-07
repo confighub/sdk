@@ -68,6 +68,10 @@ func (testResourceProvider) MergeKeysForPath(_ api.ResourceType, _ string) ([]st
 	return nil, false
 }
 
+func (testResourceProvider) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (ExclusiveFields, bool) {
+	return ExclusiveFields{}, false
+}
+
 func (testResourceProvider) IsMapKeyPath(_ api.ResourceType, _ string) bool {
 	return false
 }

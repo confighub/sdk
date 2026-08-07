@@ -25,6 +25,13 @@ downstream change displaced by an upstream deletion (DeleteShadowed). The
 merged data is correct as it stands -- a conflict says what the source wanted
 to change and couldn't.
 
+ExclusiveWithheld is one of those, for a change that could not be made because
+this unit owns a field mutually exclusive with it -- the source switched a
+volume to a secret and this unit had already chosen an emptyDir. Applying it
+performs the switch. ExclusiveCleared reports the opposite: the source's change
+applied and a value this unit had was removed to make room for it, because
+keeping both is a resource that will not apply. It carries the removed value.
+
 The conflicts stay on the unit until they are dealt with, so a merge that
 dropped half its patch is still visible afterwards rather than only in the
 response of the request that ran it. The next merge replaces them with its own,
@@ -69,7 +76,7 @@ func init() {
 	unitConflictsCmd.Flags().BoolVar(&conflictsDismiss, "dismiss", false,
 		"drop the selected conflicts without changing the configuration data")
 	unitConflictsCmd.Flags().StringVar(&conflictsReason, "reason", "",
-		"select conflicts with this reason: Subtracted, DeleteShadowed, PredicateFiltered, or UnresolvedPath")
+		"select conflicts with this reason: Subtracted, DeleteShadowed, PredicateFiltered, UnresolvedPath, ExclusiveWithheld, or ExclusiveCleared")
 	unitConflictsCmd.Flags().StringVar(&conflictsPath, "path", "",
 		"select conflicts at this path")
 	unitConflictsCmd.Flags().StringVar(&conflictsResourceName, "resource", "",

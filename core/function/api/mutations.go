@@ -119,6 +119,20 @@ const (
 	// (Add/Replace falls back to appending instead and does not produce
 	// this conflict.)
 	ConflictReasonUnresolvedPath ConflictReason = "UnresolvedPath"
+	// ConflictReasonExclusiveWithheld: the patch set one member of a set of
+	// mutually exclusive sibling fields and the target owned another, so the
+	// patch's member was withheld — the target keeps the source it chose.
+	// Applying this conflict performs the switch: replayed on its own there
+	// is no ownership to withhold it, so the patch's member lands and the
+	// target's is cleared.
+	ConflictReasonExclusiveWithheld ConflictReason = "ExclusiveWithheld"
+	// ConflictReasonExclusiveCleared: a member of a set of mutually exclusive
+	// sibling fields was removed from the target because nothing could keep
+	// it — the discriminator the merge left in place does not permit it, or
+	// the patch set a member the target had no claim to. Target carries the
+	// removed value. This is the reverse of every other reason: the patch
+	// applied, and what is reported is what the target lost to it.
+	ConflictReasonExclusiveCleared ConflictReason = "ExclusiveCleared"
 )
 
 // MutationConflict records that a mutation in a patch was not applied because

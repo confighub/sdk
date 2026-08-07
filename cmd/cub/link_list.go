@@ -51,7 +51,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UseLiveState", "Link.UpstreamLinkID"}
+var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UpstreamLinkID"}
 
 // linkListInclude is the Include parameter for link list queries.
 const linkListInclude = "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
@@ -125,10 +125,6 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 		if link.AutoUpdate {
 			autoUpdate = "true"
 		}
-		useLiveState := ""
-		if link.UseLiveState {
-			useLiveState = "true"
-		}
 		upstreamLinkID := ""
 		if link.UpstreamLinkID != nil {
 			upstreamLinkID = link.UpstreamLinkID.String()
@@ -141,7 +137,6 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 			toSpaceSlug,
 			link.UpdateType,
 			autoUpdate,
-			useLiveState,
 			upstreamLinkID,
 		})
 	}

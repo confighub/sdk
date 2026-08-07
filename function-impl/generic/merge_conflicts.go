@@ -36,7 +36,8 @@ func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.Config
 					ParameterName: "reasons",
 					Required:      false,
 					Description: "Comma-separated conflict reasons to fail on: Subtracted, DeleteShadowed, " +
-						"PredicateFiltered, UnresolvedPath. Empty fails on any outstanding conflict.",
+						"PredicateFiltered, UnresolvedPath, ExclusiveWithheld, ExclusiveCleared. " +
+						"Empty fails on any outstanding conflict.",
 					DataType: api.DataTypeString,
 					Example:  "UnresolvedPath,DeleteShadowed",
 				},

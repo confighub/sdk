@@ -4,6 +4,7 @@
 package yamlkit
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -74,12 +75,42 @@ type ResourceProvider interface {
 	// key *and* its whenUnsatisfiable. Matching such an element on the first field
 	// alone pairs elements that are not the same element.
 	MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool)
+	// ExclusiveFieldsForPath returns the mutually exclusive sibling fields of the object
+	// at the given path, if the schema declares any. Kubernetes handles the class with
+	// patchStrategy:"retainKeys": setting one member of a union has to clear the others,
+	// or the result is a resource the API server rejects — a volume with two sources, a
+	// Recreate strategy that still carries rollingUpdate. Returns ok=false when the path
+	// holds no union, which is the ordinary case.
+	ExclusiveFieldsForPath(resourceType api.ResourceType, path string) (ExclusiveFields, bool)
 	// IsMapKeyPath returns true if the given path is a freeform map (e.g., labels,
 	// annotations) whose children are dynamic keys rather than schema fields.
 	// During path normalization, child segments of map paths are converted to wildcards.
 	IsMapKeyPath(resourceType api.ResourceType, path string) bool
 	GetToolchainType() workerapi.ToolchainType
 }
+
+// ExclusiveFields describes a set of sibling fields of which at most one may be present —
+// a union, in the schema sense.
+//
+// Discriminator names the sibling that says which member is valid, where the schema has
+// one: a Deployment's strategy has `type`, and `rollingUpdate` is only permitted when it
+// reads RollingUpdate. AllowedMember maps each discriminator value to the member it
+// permits; a value with no entry permits none. Where there is no discriminator — a Volume's
+// source is an inline union with nothing naming it — Discriminator is empty and the member
+// the patch sets is the one that survives.
+type ExclusiveFields struct {
+	Members       []string
+	Discriminator string
+	AllowedMember map[string]string
+}
+
+// IsMember reports whether a field name is one of the union's members.
+func (e ExclusiveFields) IsMember(field string) bool {
+	return slices.Contains(e.Members, field)
+}
+
+// ExclusiveFieldsLookup is ExclusiveFieldsForPath bound to one resource type.
+type ExclusiveFieldsLookup func(path string) (ExclusiveFields, bool)
 
 type ResourceTypeToPathPrefixSetType map[api.ResourceType]map[string]struct{}
 

@@ -183,6 +183,7 @@ const (
 	EntityTypeTrigger      = "Trigger"
 	EntityTypeTag          = "Tag"
 	EntityTypeChangeSet    = "ChangeSet"
+	EntityTypeChangeOrder  = "ChangeOrder"
 	EntityTypeTarget       = "Target"
 	EntityTypeBridgeWorker = "BridgeWorker"
 	EntityTypeUnit         = "Unit"
@@ -195,6 +196,7 @@ const (
 type EntityInSpace interface {
 	goclientnew.Filter | goclientnew.View | goclientnew.Invocation |
 		goclientnew.Trigger | goclientnew.Tag | goclientnew.ChangeSet |
+		goclientnew.ChangeOrder |
 		goclientnew.Target | goclientnew.BridgeWorker | goclientnew.Unit |
 		goclientnew.Link | goclientnew.Attribute
 }
@@ -379,6 +381,15 @@ func parseChangeSetSlug(changesetValue string) (uuid.UUID, error) {
 		EntityTypeChangeSet,
 		apiGetChangeSetFromSlugInSpace,
 		func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
+	)
+}
+
+func parseChangeOrderSlug(changeorderValue string) (uuid.UUID, error) {
+	return parseEntityIdentifierSingle[goclientnew.ChangeOrder](
+		changeorderValue,
+		EntityTypeChangeOrder,
+		apiGetChangeOrderFromSlugInSpace,
+		func(c *goclientnew.ChangeOrder) string { return c.ChangeOrderID.String() },
 	)
 }
 

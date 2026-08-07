@@ -110,8 +110,7 @@ func randomModel(rng *rand.Rand) fuzzModel {
 }
 
 // fuzzEdit describes what a random edit did to positional arrays, which is what decides
-// whether the resulting patch can be replayed onto its own result. See notIdempotent in
-// the corpus for why: a positional element op names its element by index and nothing else.
+// whether the resulting patch can be replayed onto its own result.
 type fuzzEdit struct {
 	insertedPositional bool
 	removedPositional  bool
@@ -121,24 +120,31 @@ type fuzzEdit struct {
 // replayChangesResult reports whether replaying the upstream patch onto the merged result
 // would change it again — the cases where positional indices cannot survive the round trip.
 //
-//   - The upstream removed or moved an element: on the replay the removal half of the
-//     change finds an element to remove a second time — the one the first pass left in
-//     place, or the one that has since taken the index.
-//   - The upstream inserted an element and the downstream also changed the shape of a
-//     positional array: the insertion lands at a different index than the patch recorded
-//     (clamped, or shifted by the downstream's own removals), so on the replay the index
-//     the patch names no longer holds the inserted element and it is inserted twice.
+//   - The upstream moved an element, which is a removal and an insertion at once: on the
+//     replay the insertion half finds the element already in its new place and adds it
+//     again.
+//   - The upstream inserted or removed an element *and* the downstream also changed the
+//     shape of the same kind of array. The array context an anchored path carries — the
+//     length of the array the patch was computed against, and the elements on either side
+//     of the one it names — is what tells a replay that its element is already gone. Both
+//     sides changing the shape is what defeats it: the array can come back to the length
+//     the patch recorded while every index in it has moved, and an element that was only
+//     reordered still sits between plausible neighbors.
 //
-// An insertion into an array the downstream left alone lands at exactly the recorded
-// index, where PatchMutations recognizes it and skips, so those stay idempotent.
+// An upstream removal replayed onto an array the downstream only *edited* is idempotent,
+// which is the case the corpus is full of: the array is one element shorter than the patch
+// was computed against, so the removal finds nothing to remove rather than taking whatever
+// moved up into place. An insertion into an array the downstream left alone lands at exactly
+// the recorded index, where PatchMutations recognizes it and skips.
 func replayChangesResult(upstream, downstream fuzzEdit) bool {
 	// A move is a removal and an insertion, so it carries the removal's problem: on the
 	// replay the anchor finds the element the first pass already moved and removes it.
-	if upstream.removedPositional || upstream.movedPositional {
+	if upstream.movedPositional {
 		return true
 	}
-	return upstream.insertedPositional &&
-		(downstream.insertedPositional || downstream.removedPositional || downstream.movedPositional)
+	downstreamChangedShape := downstream.insertedPositional || downstream.removedPositional ||
+		downstream.movedPositional
+	return (upstream.insertedPositional || upstream.removedPositional) && downstreamChangedShape
 }
 
 func applyRandomEdits(rng *rand.Rand, m fuzzModel, count int) (fuzzModel, fuzzEdit) {

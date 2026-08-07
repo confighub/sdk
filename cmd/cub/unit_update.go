@@ -83,6 +83,10 @@ Examples:
   # Upgrade a unit to match its upstream unit
   cub unit update --space my-space myunit --upgrade
 
+  # Upgrade only as far as a point in the upstream's history, leaving later changes behind
+  cub unit update --space my-space myunit --upgrade --merge-end ChangeSet:upstream-space/release-42
+  cub unit update --space my-space myunit --upgrade --merge-end Tag:v1.0
+
   # Update with a change description
   cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
 
@@ -158,7 +162,7 @@ Key flags for agents:
 - --upgrade: Upgrade to match the latest version of upstream unit
 - --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
 - --merge-base: Base revision for merge (uses same format as --restore)
-- --merge-end: End revision for merge (uses same format as --restore)
+- --merge-end: End revision for merge (uses same format as --restore). Also usable with --upgrade or --resolve to stop short of the source's head -- name the ChangeSet or Tag that ends the change you want, so a change still being made upstream is left behind
 - --change-desc: Add a description for this change
 - --label: Update labels for organization and filtering
 - --patch: Use patch API for individual or bulk operations (enables --where and --unit flags for bulk mode)
@@ -207,7 +211,7 @@ func init() {
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
 	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore); with --merge-external-source, overrides the default selection of the latest MergeExternal revision")
-	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision for 3-way merge (uses same format as --restore)")
+	unitUpdateCmd.Flags().StringVar(&mergeEnd, "merge-end", "", "end revision of the source, for a 3-way merge, an --upgrade, or a --resolve (uses same format as --restore)")
 	unitUpdateCmd.Flags().StringVar(&whereMutation, "where-mutation", "", "where expression to filter which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&filterMutation, "filter-mutation", "", "filter to select which mutations are affected during merge operations (only used with --merge-source)")
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
@@ -320,9 +324,19 @@ func checkConflictingArgs(args []string) bool {
 		if whereMutation != "" || filterMutation != "" {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
 		}
+	} else if isUpgrade || resolve != "" {
+		// An upgrade or a resolve takes its base from what was last merged, so --merge-base is
+		// not theirs to set. --merge-end is: it says how far along the source to take this
+		// propagation, which is how a change that is still being made is left behind.
+		if mergeBase != "" {
+			failOnError(fmt.Errorf("--merge-base cannot be used with --upgrade or --resolve; the base is the last revision merged from the source"))
+		}
+		if whereMutation != "" || filterMutation != "" {
+			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
+		}
 	} else {
 		if mergeBase != "" || mergeEnd != "" {
-			failOnError(fmt.Errorf("--merge-source or --merge-external-source must be provided with --merge-base"))
+			failOnError(fmt.Errorf("--merge-source, --merge-external-source, --upgrade, or --resolve must be provided with --merge-base or --merge-end"))
 		}
 		if whereMutation != "" || filterMutation != "" {
 			failOnError(fmt.Errorf("--where-mutation and --filter-mutation can only be used with --merge-source"))
@@ -536,6 +550,17 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		newParams.Resolve = &resolveFormatted
+	}
+
+	if mergeEnd != "" && (isUpgrade || resolve != "") {
+		// The end revision names a Revision of the *source* -- the upstream Unit for an
+		// upgrade, the Link's target for a resolve -- so a delta relative to head has to be
+		// resolved against the source's head, not this Unit's.
+		mergeEndFormatted, err := parseSourceEndRevision(mergeEnd, currentUnit, isUpgrade)
+		if err != nil {
+			return err
+		}
+		newParams.MergeEnd = &mergeEndFormatted
 	}
 
 	if mergeSource != "" {
@@ -872,6 +897,14 @@ func runBulkUnitUpdate() error {
 		params.Restore = &restoreFormatted
 	}
 
+	if mergeEnd != "" && (isUpgrade || resolve != "") {
+		mergeEndFormatted, err := parseSourceEndRevision(mergeEnd, nil, isUpgrade)
+		if err != nil {
+			return err
+		}
+		params.MergeEnd = &mergeEndFormatted
+	}
+
 	// Add resolve parameter if specified
 	if resolve != "" {
 		resolveFormatted, err := formatResolveParameter(resolve)
@@ -935,7 +968,7 @@ func runBulkUnitUpdate() error {
 
 	// Display mutations if requested, for the units that were updated successfully
 	if shouldDisplayMutations() {
-		displayMutationsForBulkUnitUpdate(responses, priorUnits, restore != "", unitUpdateChangeDescription(""))
+		displayMutationsForBulkUnitUpdate(responses, priorUnits, restore != "", dryRun, unitUpdateChangeDescription(""))
 	}
 
 	return bulkErr
@@ -1081,6 +1114,45 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 			return ""
 		},
 	)
+}
+
+// parseSourceEndRevision formats a --merge-end value for an upgrade or a resolve, where the
+// Revision named belongs to the source rather than to the Unit being updated.
+//
+// For a single Unit's upgrade the source is known -- the Unit's upstream -- so it is fetched and
+// a delta relative to head resolves against it. For a resolve the source is whichever Unit each
+// Link points at, and in a bulk update each Unit has its own upstream, so there is no single head
+// to count back from; a delta is rejected there rather than silently measured against the wrong
+// Unit. Everything else -- a Tag, a ChangeSet, an absolute or named revision -- is resolved
+// per-Unit by the server.
+func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, isUpgrade bool) (string, error) {
+	sourceUnitID := uuid.Nil
+	sourceSpaceID := ""
+	var sourceHeadRevisionNum int64
+	if isUpgrade && currentUnit != nil {
+		if currentUnit.UpstreamUnitID == nil || currentUnit.UpstreamSpaceID == nil {
+			return "", fmt.Errorf("--merge-end requires an upstream unit to upgrade from")
+		}
+		upstreamUnit, err := apiGetUnitInSpace(currentUnit.UpstreamUnitID.String(),
+			currentUnit.UpstreamSpaceID.String(), "UnitID,SpaceID,HeadRevisionNum")
+		if err != nil {
+			return "", fmt.Errorf("failed to get upstream unit for --merge-end: %w", err)
+		}
+		sourceUnitID = upstreamUnit.UnitID
+		sourceSpaceID = upstreamUnit.SpaceID.String()
+		sourceHeadRevisionNum = upstreamUnit.HeadRevisionNum
+	} else if strings.HasPrefix(revisionSpec, "-") {
+		return "", fmt.Errorf("--merge-end relative to head is not supported here, since the source is not a single unit; name a Tag, a ChangeSet, or an absolute revision")
+	}
+	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, sourceUnitID, sourceSpaceID, sourceHeadRevisionNum)
+	if err != nil {
+		return "", fmt.Errorf("invalid merge end specification: %w", err)
+	}
+	if isUUID {
+		// The bulk and single APIs both take the end revision as a string.
+		formatted = fmt.Sprintf("Revision:%s", formatted)
+	}
+	return formatted, nil
 }
 
 // parseSelectedRevisionParameter parses various revision formats and returns the formatted value

@@ -27,8 +27,6 @@ var (
 	linkUpdateType                   string
 	linkAutoUpdate                   bool
 	linkNoAutoUpdate                 bool
-	linkUseLiveState                 bool
-	linkNoUseLiveState               bool
 	linkWhereMutation                string
 	linkWhereResource                string
 	linkMergeEnableSubtraction       bool
@@ -43,14 +41,12 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths)")
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates")
-	cmd.Flags().BoolVar(&linkUseLiveState, "use-live-state", false, "use LiveState of upstream unit instead of Data")
-	cmd.Flags().BoolVar(&linkNoUseLiveState, "no-use-live-state", false, "use Data of upstream unit instead of LiveState")
 	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression to filter mutations during merge")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the stored mutation predicates that preserve overrides by default")
 	cmd.Flags().BoolVar(&linkNoMergeEnableSubtraction, "no-merge-enable-subtraction", false, "return this link to the default: no subtraction step")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
-	cmd.Flags().Int64Var(&linkUpstreamLastMergedRevision, "upstream-last-merged-revision", 0, "set UpstreamLastMergedRevisionNum explicitly: the upstream revision the link is treated as merged through (an Apply action number when UseLiveState is true)")
+	cmd.Flags().Int64Var(&linkUpstreamLastMergedRevision, "upstream-last-merged-revision", 0, "set UpstreamLastMergedRevisionNum explicitly: the upstream revision the link is treated as merged through")
 	cmd.Flags().Int64Var(&linkDownstreamLastMergedRevision, "downstream-last-merged-revision", 0, "set DownstreamLastMergedRevisionNum explicitly: the downstream revision the last merge produced")
 	cmd.Flags().StringVar(&linkTransformInvocation, "transform-invocation", "", "Invocation slug (or space/slug, or UUID) whose function transforms upstream data before it is inserted or upserted; only valid with --update-type Insert or Upsert")
 }
@@ -58,9 +54,6 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 func validateLinkFieldFlags(cmd *cobra.Command) error {
 	if linkAutoUpdate && linkNoAutoUpdate {
 		return fmt.Errorf("--auto-update and --no-auto-update are mutually exclusive")
-	}
-	if linkUseLiveState && linkNoUseLiveState {
-		return fmt.Errorf("--use-live-state and --no-use-live-state are mutually exclusive")
 	}
 	if linkMergeEnableSubtraction && linkNoMergeEnableSubtraction {
 		return fmt.Errorf("--merge-enable-subtraction and --no-merge-enable-subtraction are mutually exclusive")
@@ -84,20 +77,13 @@ func validateLinkFieldFlags(cmd *cobra.Command) error {
 
 // makeCurrentPointers returns the merged-revision pointers that mark a link as
 // caught up with the two Units it connects: the downstream (From) Unit's head
-// revision, and the upstream (To) Unit's head revision — or its head Apply action
-// number when the link merges LiveState, which is what
-// UpstreamLastMergedRevisionNum tracks in that mode.
+// revision and the upstream (To) Unit's head revision.
 //
 // On a new link this skips the initial merge. On an existing link it re-points
 // the link at what the Units actually hold, which repairs a link whose pointers
 // name a revision that does not exist.
-func makeCurrentPointers(fromUnit, toUnit *goclientnew.Unit, useLiveState bool) (upstream, downstream int64) {
-	if useLiveState {
-		upstream = toUnit.HeadUnitActionNum
-	} else {
-		upstream = toUnit.HeadRevisionNum
-	}
-	return upstream, fromUnit.HeadRevisionNum
+func makeCurrentPointers(fromUnit, toUnit *goclientnew.Unit) (upstream, downstream int64) {
+	return toUnit.HeadRevisionNum, fromUnit.HeadRevisionNum
 }
 
 // resolveMakeCurrentPointers fetches an existing link's two Units and returns the
@@ -111,7 +97,7 @@ func resolveMakeCurrentPointers(link *goclientnew.Link) (upstream, downstream in
 	if err != nil {
 		return 0, 0, err
 	}
-	upstream, downstream = makeCurrentPointers(fromUnit, toUnit, link.UseLiveState)
+	upstream, downstream = makeCurrentPointers(fromUnit, toUnit)
 	return upstream, downstream, nil
 }
 
@@ -133,9 +119,6 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 	link.UpdateType = linkUpdateType
 	if linkAutoUpdate {
 		link.AutoUpdate = true
-	}
-	if linkUseLiveState {
-		link.UseLiveState = true
 	}
 	link.WhereMutation = linkWhereMutation
 	link.WhereResource = linkWhereResource
@@ -169,11 +152,6 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		link.AutoUpdate = true
 	} else if linkNoAutoUpdate {
 		link.AutoUpdate = false
-	}
-	if linkUseLiveState {
-		link.UseLiveState = true
-	} else if linkNoUseLiveState {
-		link.UseLiveState = false
 	}
 	if cmd.Flags().Changed("where-mutation") {
 		link.WhereMutation = linkWhereMutation
@@ -221,11 +199,6 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		} else if linkNoAutoUpdate {
 			patchMap["AutoUpdate"] = false
 		}
-		if linkUseLiveState {
-			patchMap["UseLiveState"] = true
-		} else if linkNoUseLiveState {
-			patchMap["UseLiveState"] = false
-		}
 		if cmd.Flags().Changed("where-mutation") {
 			patchMap["WhereMutation"] = linkWhereMutation
 		}
@@ -259,7 +232,6 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 // outside linkFieldsEnhancer.
 func hasLinkFieldFlags(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("update-type") || linkAutoUpdate || linkNoAutoUpdate ||
-		linkUseLiveState || linkNoUseLiveState ||
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
 		linkMergeEnableSubtraction || linkNoMergeEnableSubtraction ||
 		linkMakeCurrent ||

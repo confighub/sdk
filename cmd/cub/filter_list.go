@@ -196,7 +196,7 @@ func validateEntityParameters() error {
 	}
 
 	if entityType != "" {
-		supportedTypes := []string{"Space", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "Target", "BridgeWorker", "Unit", "Link", "Set"}
+		supportedTypes := []string{"Space", "Filter", "View", "Invocation", "Trigger", "Tag", "ChangeSet", "ChangeOrder", "Target", "BridgeWorker", "Unit", "Link", "Set"}
 		found := false
 		for _, supported := range supportedTypes {
 			if entityType == supported {
@@ -302,6 +302,13 @@ func parseEntityIdentifierForFilter(
 			return "", "", fmt.Errorf("failed to resolve ChangeSet %s: %w", identifier, err)
 		}
 		return entityType, changeSetUUID.String(), nil
+
+	case "ChangeOrder":
+		changeOrderUUID, err := parseChangeOrderSlug(identifier)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to resolve ChangeOrder %s: %w", identifier, err)
+		}
+		return entityType, changeOrderUUID.String(), nil
 
 	case "Target":
 		targetUUID, err := parseEntityIdentifierSingle[goclientnew.Target](

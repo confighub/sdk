@@ -144,6 +144,22 @@ type ClientInterface interface {
 
 	UserCreateActionResult(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkDeleteChangeOrders request
+	BulkDeleteChangeOrders(ctx context.Context, params *BulkDeleteChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAllChangeOrders request
+	ListAllChangeOrders(ctx context.Context, params *ListAllChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkPatchChangeOrdersWithBody request with any body
+	BulkPatchChangeOrdersWithBody(ctx context.Context, params *BulkPatchChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkPatchChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchChangeOrdersParams, body BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkCreateChangeOrdersWithBody request with any body
+	BulkCreateChangeOrdersWithBody(ctx context.Context, params *BulkCreateChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteChangeSets request
 	BulkDeleteChangeSets(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -358,6 +374,30 @@ type ClientInterface interface {
 
 	// GetBridgeWorkerStatus request
 	GetBridgeWorkerStatus(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListChangeOrders request
+	ListChangeOrders(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateChangeOrderWithBody request with any body
+	CreateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteChangeOrder request
+	DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetChangeOrder request
+	GetChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchChangeOrderWithBody request with any body
+	PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateChangeOrderWithBody request with any body
+	UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListChangeSets request
 	ListChangeSets(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -975,6 +1015,78 @@ func (c *Client) UserCreateActionResultWithBody(ctx context.Context, bridgeWorke
 
 func (c *Client) UserCreateActionResult(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUserCreateActionResultRequest(c.Server, bridgeWorkerId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkDeleteChangeOrders(ctx context.Context, params *BulkDeleteChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkDeleteChangeOrdersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAllChangeOrders(ctx context.Context, params *ListAllChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAllChangeOrdersRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchChangeOrdersWithBody(ctx context.Context, params *BulkPatchChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchChangeOrdersRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchChangeOrdersParams, body BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchChangeOrdersRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkCreateChangeOrdersWithBody(ctx context.Context, params *BulkCreateChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkCreateChangeOrdersRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkCreateChangeOrdersRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1923,6 +2035,114 @@ func (c *Client) ListBridgeWorkerStatuses(ctx context.Context, spaceId openapi_t
 
 func (c *Client) GetBridgeWorkerStatus(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetBridgeWorkerStatusRequest(c.Server, spaceId, bridgeWorkerId, statusId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListChangeOrders(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeOrdersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListChangeOrdersRequest(c.Server, spaceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateChangeOrderRequestWithBody(c.Server, spaceId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateChangeOrderRequest(c.Server, spaceId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteChangeOrderRequest(c.Server, spaceId, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetChangeOrderRequest(c.Server, spaceId, changeOrderId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeOrderId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeOrderRequest(c.Server, spaceId, changeOrderId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5108,6 +5328,532 @@ func NewUserCreateActionResultRequestWithBody(server string, bridgeWorkerId open
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkDeleteChangeOrdersRequest generates requests for BulkDeleteChangeOrders
+func NewBulkDeleteChangeOrdersRequest(server string, params *BulkDeleteChangeOrdersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAllChangeOrdersRequest generates requests for ListAllChangeOrders
+func NewListAllChangeOrdersRequest(server string, params *ListAllChangeOrdersParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewBulkPatchChangeOrdersRequestWithApplicationMergePatchPlusJSONBody calls the generic BulkPatchChangeOrders builder with application/merge-patch+json body
+func NewBulkPatchChangeOrdersRequestWithApplicationMergePatchPlusJSONBody(server string, params *BulkPatchChangeOrdersParams, body BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkPatchChangeOrdersRequestWithBody(server, params, "application/merge-patch+json", bodyReader)
+}
+
+// NewBulkPatchChangeOrdersRequestWithBody generates requests for BulkPatchChangeOrders with any type of body
+func NewBulkPatchChangeOrdersRequestWithBody(server string, params *BulkPatchChangeOrdersParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkCreateChangeOrdersRequestWithApplicationMergePatchPlusJSONBody calls the generic BulkCreateChangeOrders builder with application/merge-patch+json body
+func NewBulkCreateChangeOrdersRequestWithApplicationMergePatchPlusJSONBody(server string, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkCreateChangeOrdersRequestWithBody(server, params, "application/merge-patch+json", bodyReader)
+}
+
+// NewBulkCreateChangeOrdersRequestWithBody generates requests for BulkCreateChangeOrders with any type of body
+func NewBulkCreateChangeOrdersRequestWithBody(server string, params *BulkCreateChangeOrdersParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_order")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NamePrefixes != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name_prefixes", runtime.ParamLocationQuery, *params.NamePrefixes); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.VariantLabels != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "variant_labels", runtime.ParamLocationQuery, *params.VariantLabels); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.NamePattern != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "name_pattern", runtime.ParamLocationQuery, *params.NamePattern); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_space", runtime.ParamLocationQuery, *params.WhereSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_space", runtime.ParamLocationQuery, *params.FilterSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.AllowExists != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -10193,6 +10939,423 @@ func NewGetBridgeWorkerStatusRequest(server string, spaceId openapi_types.UUID, 
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewListChangeOrdersRequest generates requests for ListChangeOrders
+func NewListChangeOrdersRequest(server string, spaceId openapi_types.UUID, params *ListChangeOrdersParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateChangeOrderRequest calls the generic CreateChangeOrder builder with application/json body
+func NewCreateChangeOrderRequest(server string, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateChangeOrderRequestWithBody(server, spaceId, params, "application/json", bodyReader)
+}
+
+// NewCreateChangeOrderRequestWithBody generates requests for CreateChangeOrder with any type of body
+func NewCreateChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, params *CreateChangeOrderParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.AllowExists != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteChangeOrderRequest generates requests for DeleteChangeOrder
+func NewDeleteChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_order_id", runtime.ParamLocationPath, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetChangeOrderRequest generates requests for GetChangeOrder
+func NewGetChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_order_id", runtime.ParamLocationPath, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchChangeOrder builder with application/merge-patch+json body
+func NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchChangeOrderRequestWithBody(server, spaceId, changeOrderId, "application/merge-patch+json", bodyReader)
+}
+
+// NewPatchChangeOrderRequestWithBody generates requests for PatchChangeOrder with any type of body
+func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_order_id", runtime.ParamLocationPath, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateChangeOrderRequest calls the generic UpdateChangeOrder builder with application/json body
+func NewUpdateChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateChangeOrderRequestWithBody(server, spaceId, changeOrderId, "application/json", bodyReader)
+}
+
+// NewUpdateChangeOrderRequestWithBody generates requests for UpdateChangeOrder with any type of body
+func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_order_id", runtime.ParamLocationPath, changeOrderId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_order/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -20542,6 +21705,22 @@ type ClientWithResponsesInterface interface {
 
 	UserCreateActionResultWithResponse(ctx context.Context, bridgeWorkerId openapi_types.UUID, body UserCreateActionResultJSONRequestBody, reqEditors ...RequestEditorFn) (*UserCreateActionResultResponse, error)
 
+	// BulkDeleteChangeOrdersWithResponse request
+	BulkDeleteChangeOrdersWithResponse(ctx context.Context, params *BulkDeleteChangeOrdersParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeOrdersResponse, error)
+
+	// ListAllChangeOrdersWithResponse request
+	ListAllChangeOrdersWithResponse(ctx context.Context, params *ListAllChangeOrdersParams, reqEditors ...RequestEditorFn) (*ListAllChangeOrdersResponse, error)
+
+	// BulkPatchChangeOrdersWithBodyWithResponse request with any body
+	BulkPatchChangeOrdersWithBodyWithResponse(ctx context.Context, params *BulkPatchChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchChangeOrdersResponse, error)
+
+	BulkPatchChangeOrdersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchChangeOrdersParams, body BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchChangeOrdersResponse, error)
+
+	// BulkCreateChangeOrdersWithBodyWithResponse request with any body
+	BulkCreateChangeOrdersWithBodyWithResponse(ctx context.Context, params *BulkCreateChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateChangeOrdersResponse, error)
+
+	BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateChangeOrdersResponse, error)
+
 	// BulkDeleteChangeSetsWithResponse request
 	BulkDeleteChangeSetsWithResponse(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeSetsResponse, error)
 
@@ -20756,6 +21935,30 @@ type ClientWithResponsesInterface interface {
 
 	// GetBridgeWorkerStatusWithResponse request
 	GetBridgeWorkerStatusWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, statusId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetBridgeWorkerStatusResponse, error)
+
+	// ListChangeOrdersWithResponse request
+	ListChangeOrdersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeOrdersParams, reqEditors ...RequestEditorFn) (*ListChangeOrdersResponse, error)
+
+	// CreateChangeOrderWithBodyWithResponse request with any body
+	CreateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateChangeOrderResponse, error)
+
+	CreateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateChangeOrderResponse, error)
+
+	// DeleteChangeOrderWithResponse request
+	DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error)
+
+	// GetChangeOrderWithResponse request
+	GetChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*GetChangeOrderResponse, error)
+
+	// PatchChangeOrderWithBodyWithResponse request with any body
+	PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
+
+	PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
+
+	// UpdateChangeOrderWithBodyWithResponse request with any body
+	UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
+
+	UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
 
 	// ListChangeSetsWithResponse request
 	ListChangeSetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*ListChangeSetsResponse, error)
@@ -21527,6 +22730,125 @@ func (r UserCreateActionResultResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UserCreateActionResultResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkDeleteChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]DeleteResponse
+	JSON207      *[]DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkDeleteChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkDeleteChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListAllChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAllChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAllChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkPatchChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ChangeOrderCreateOrUpdateResponse
+	JSON207      *[]ChangeOrderCreateOrUpdateResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkPatchChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkPatchChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkCreateChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ChangeOrderCreateOrUpdateResponse
+	JSON207      *[]ChangeOrderCreateOrUpdateResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkCreateChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkCreateChangeOrdersResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -23170,6 +24492,179 @@ func (r GetBridgeWorkerStatusResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetBridgeWorkerStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListChangeOrdersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListChangeOrdersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListChangeOrdersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ExtendedChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchChangeOrderResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateChangeOrderResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ChangeOrder
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateChangeOrderResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateChangeOrderResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -26384,6 +27879,58 @@ func (c *ClientWithResponses) UserCreateActionResultWithResponse(ctx context.Con
 	return ParseUserCreateActionResultResponse(rsp)
 }
 
+// BulkDeleteChangeOrdersWithResponse request returning *BulkDeleteChangeOrdersResponse
+func (c *ClientWithResponses) BulkDeleteChangeOrdersWithResponse(ctx context.Context, params *BulkDeleteChangeOrdersParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeOrdersResponse, error) {
+	rsp, err := c.BulkDeleteChangeOrders(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkDeleteChangeOrdersResponse(rsp)
+}
+
+// ListAllChangeOrdersWithResponse request returning *ListAllChangeOrdersResponse
+func (c *ClientWithResponses) ListAllChangeOrdersWithResponse(ctx context.Context, params *ListAllChangeOrdersParams, reqEditors ...RequestEditorFn) (*ListAllChangeOrdersResponse, error) {
+	rsp, err := c.ListAllChangeOrders(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAllChangeOrdersResponse(rsp)
+}
+
+// BulkPatchChangeOrdersWithBodyWithResponse request with arbitrary body returning *BulkPatchChangeOrdersResponse
+func (c *ClientWithResponses) BulkPatchChangeOrdersWithBodyWithResponse(ctx context.Context, params *BulkPatchChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchChangeOrdersResponse, error) {
+	rsp, err := c.BulkPatchChangeOrdersWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchChangeOrdersResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkPatchChangeOrdersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchChangeOrdersParams, body BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchChangeOrdersResponse, error) {
+	rsp, err := c.BulkPatchChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchChangeOrdersResponse(rsp)
+}
+
+// BulkCreateChangeOrdersWithBodyWithResponse request with arbitrary body returning *BulkCreateChangeOrdersResponse
+func (c *ClientWithResponses) BulkCreateChangeOrdersWithBodyWithResponse(ctx context.Context, params *BulkCreateChangeOrdersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateChangeOrdersResponse, error) {
+	rsp, err := c.BulkCreateChangeOrdersWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkCreateChangeOrdersResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateChangeOrdersParams, body BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateChangeOrdersResponse, error) {
+	rsp, err := c.BulkCreateChangeOrdersWithApplicationMergePatchPlusJSONBody(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkCreateChangeOrdersResponse(rsp)
+}
+
 // BulkDeleteChangeSetsWithResponse request returning *BulkDeleteChangeSetsResponse
 func (c *ClientWithResponses) BulkDeleteChangeSetsWithResponse(ctx context.Context, params *BulkDeleteChangeSetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeSetsResponse, error) {
 	rsp, err := c.BulkDeleteChangeSets(ctx, params, reqEditors...)
@@ -27071,6 +28618,84 @@ func (c *ClientWithResponses) GetBridgeWorkerStatusWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetBridgeWorkerStatusResponse(rsp)
+}
+
+// ListChangeOrdersWithResponse request returning *ListChangeOrdersResponse
+func (c *ClientWithResponses) ListChangeOrdersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeOrdersParams, reqEditors ...RequestEditorFn) (*ListChangeOrdersResponse, error) {
+	rsp, err := c.ListChangeOrders(ctx, spaceId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListChangeOrdersResponse(rsp)
+}
+
+// CreateChangeOrderWithBodyWithResponse request with arbitrary body returning *CreateChangeOrderResponse
+func (c *ClientWithResponses) CreateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateChangeOrderResponse, error) {
+	rsp, err := c.CreateChangeOrderWithBody(ctx, spaceId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateChangeOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateChangeOrderResponse, error) {
+	rsp, err := c.CreateChangeOrder(ctx, spaceId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateChangeOrderResponse(rsp)
+}
+
+// DeleteChangeOrderWithResponse request returning *DeleteChangeOrderResponse
+func (c *ClientWithResponses) DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error) {
+	rsp, err := c.DeleteChangeOrder(ctx, spaceId, changeOrderId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteChangeOrderResponse(rsp)
+}
+
+// GetChangeOrderWithResponse request returning *GetChangeOrderResponse
+func (c *ClientWithResponses) GetChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*GetChangeOrderResponse, error) {
+	rsp, err := c.GetChangeOrder(ctx, spaceId, changeOrderId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetChangeOrderResponse(rsp)
+}
+
+// PatchChangeOrderWithBodyWithResponse request with arbitrary body returning *PatchChangeOrderResponse
+func (c *ClientWithResponses) PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
+	rsp, err := c.PatchChangeOrderWithBody(ctx, spaceId, changeOrderId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchChangeOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
+	rsp, err := c.PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeOrderId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchChangeOrderResponse(rsp)
+}
+
+// UpdateChangeOrderWithBodyWithResponse request with arbitrary body returning *UpdateChangeOrderResponse
+func (c *ClientWithResponses) UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
+	rsp, err := c.UpdateChangeOrderWithBody(ctx, spaceId, changeOrderId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateChangeOrderResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
+	rsp, err := c.UpdateChangeOrder(ctx, spaceId, changeOrderId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateChangeOrderResponse(rsp)
 }
 
 // ListChangeSetsWithResponse request returning *ListChangeSetsResponse
@@ -29273,6 +30898,327 @@ func ParseUserCreateActionResultResponse(rsp *http.Response) (*UserCreateActionR
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkDeleteChangeOrdersResponse parses an HTTP response from a BulkDeleteChangeOrdersWithResponse call
+func ParseBulkDeleteChangeOrdersResponse(rsp *http.Response) (*BulkDeleteChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkDeleteChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAllChangeOrdersResponse parses an HTTP response from a ListAllChangeOrdersWithResponse call
+func ParseListAllChangeOrdersResponse(rsp *http.Response) (*ListAllChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAllChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkPatchChangeOrdersResponse parses an HTTP response from a BulkPatchChangeOrdersWithResponse call
+func ParseBulkPatchChangeOrdersResponse(rsp *http.Response) (*BulkPatchChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkPatchChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkCreateChangeOrdersResponse parses an HTTP response from a BulkCreateChangeOrdersWithResponse call
+func ParseBulkCreateChangeOrdersResponse(rsp *http.Response) (*BulkCreateChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkCreateChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []ChangeOrderCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
@@ -33513,6 +35459,449 @@ func ParseGetBridgeWorkerStatusResponse(rsp *http.Response) (*GetBridgeWorkerSta
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListChangeOrdersResponse parses an HTTP response from a ListChangeOrdersWithResponse call
+func ParseListChangeOrdersResponse(rsp *http.Response) (*ListChangeOrdersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListChangeOrdersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateChangeOrderResponse parses an HTTP response from a CreateChangeOrderWithResponse call
+func ParseCreateChangeOrderResponse(rsp *http.Response) (*CreateChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteChangeOrderResponse parses an HTTP response from a DeleteChangeOrderWithResponse call
+func ParseDeleteChangeOrderResponse(rsp *http.Response) (*DeleteChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetChangeOrderResponse parses an HTTP response from a GetChangeOrderWithResponse call
+func ParseGetChangeOrderResponse(rsp *http.Response) (*GetChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExtendedChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchChangeOrderResponse parses an HTTP response from a PatchChangeOrderWithResponse call
+func ParsePatchChangeOrderResponse(rsp *http.Response) (*PatchChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateChangeOrderResponse parses an HTTP response from a UpdateChangeOrderWithResponse call
+func ParseUpdateChangeOrderResponse(rsp *http.Response) (*UpdateChangeOrderResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateChangeOrderResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ChangeOrder
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

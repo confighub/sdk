@@ -399,6 +399,15 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf(`"cub unit diff" only accepts "-o mutations"; %q is not supported`, outputFormat)
 	}
 
+	// Comparing two units means comparing what they say now, so the from side defaults to
+	// their heads rather than to the live revision. The live default belongs to a diff of one
+	// unit against itself; applied to a cross-unit diff it fails outright on a unit that has
+	// never been applied, which every unit in a base space has in common.
+	if unitDiffArgs.withUnit != "" && unitDiffArgs.fromRev == defaultFrom && len(args) == 1 {
+		unitDiffArgs.fromRev = defaultTo
+		revFrom = defaultTo
+	}
+
 	// Prevent mixing positional arguments with --from/--to flags
 	if len(args) > 1 && (unitDiffArgs.fromRev != defaultFrom || unitDiffArgs.toRev != defaultTo) {
 		return fmt.Errorf("cannot mix positional arguments with --from/--to flags")
@@ -476,15 +485,18 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("revision %s not found or is invalid", revTo)
 	}
 
-	// Get revision data for both revisions
-	revFromData, err := apiGetRevisionFromNumber(revFromNum, unit.UnitID.String(), "*")
+	// Get revision data for both revisions. Each revision is looked up in its own unit's
+	// space: with --with-unit the second unit can live in another space, and looking its
+	// revision up in the first unit's space finds nothing.
+	revFromData, err := apiGetRevisionFromNumberInSpace(revFromNum, unit.UnitID.String(), unit.SpaceID.String(), "*")
 	if err != nil {
-		return fmt.Errorf("failed to get revision %d: %v", revFromNum, err)
+		return fmt.Errorf("failed to get revision %d of %s: %v", revFromNum, unitSlug, err)
 	}
 
-	revToData, err := apiGetRevisionFromNumber(revToNum, toUnit.UnitID.String(), "*")
+	revToData, err := apiGetRevisionFromNumberInSpace(revToNum, toUnit.UnitID.String(), toUnit.SpaceID.String(), "*")
 	if err != nil {
-		return fmt.Errorf("failed to get revision %d: %v", revToNum, err)
+		return fmt.Errorf("failed to get revision %d of %s/%s: %v", revToNum,
+			toUnit.SpaceSlug, toUnit.Slug, err)
 	}
 
 	// Decode base64 data
@@ -506,9 +518,11 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		// Compute text diff
 		diffSegments := ComputeStructuredDiff(string(fromData), string(toData))
 
-		// Format file labels
-		fromLabel := formatDiffLabel(unitSlug, revFromNum)
-		toLabel := formatDiffLabel(unitSlugOrWith(unitSlug, unitDiffArgs.withUnit), revToNum)
+		// Format file labels. Each side is named by its own unit's space, so a cross-space
+		// diff says where the second unit actually lives instead of prefixing it with the
+		// first one's space.
+		fromLabel := formatDiffLabel(unit.SpaceSlug, unitSlug, revFromNum)
+		toLabel := formatDiffLabel(toUnit.SpaceSlug, toUnit.Slug, revToNum)
 
 		// Print diff in requested format
 		if unitDiffArgs.unifiedDiff {
@@ -521,15 +535,11 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func formatDiffLabel(unitSlug string, revNum int64) string {
-	return fmt.Sprintf("%s/%s/%d", selectedSpaceSlug, unitSlug, revNum)
-}
-
-func unitSlugOrWith(slug, withUnit string) string {
-	if withUnit != "" {
-		return withUnit
+func formatDiffLabel(spaceSlug, unitSlug string, revNum int64) string {
+	if spaceSlug == "" {
+		spaceSlug = selectedSpaceSlug
 	}
-	return slug
+	return fmt.Sprintf("%s/%s/%d", spaceSlug, unitSlug, revNum)
 }
 
 // resolveFormattedRevision converts a parseSelectedRevisionParameter result to a revision number.

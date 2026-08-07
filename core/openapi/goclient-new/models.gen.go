@@ -405,9 +405,6 @@ type Binding struct {
 	// DataType DataType of the bound value
 	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
 
-	// InLiveState Whether the provided value comes from the upstream unit's LiveState rather than its Data
-	InLiveState bool `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
-
 	// NeededPath Resolved path within the needed resource
 	NeededPath     string        `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
 	NeededResource *ResourceInfo `json:"NeededResource,omitempty" yaml:"NeededResource,omitempty"`
@@ -568,6 +565,73 @@ type BridgeWorkerStatus struct {
 	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
 }
 
+// ChangeOrder Defines a change's identity as it moves between Spaces.
+type ChangeOrder struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// ChangeOrderID ChangeOrderID uniquely identifies a change order within the system.
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// CursorID An auto-incrementing sequence number used for pagination.
+	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion.
+	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
+
+	// Description Description is a human-readable description of the change.
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+
+	// EndTagID EndTagID is the identifier of the set of Revisions that end the ChangeOrder. Settable at creation to adopt an existing Tag as the boundary; the ChangeOrder creates one on each in-scope Unit's head Revision if it is not set.
+	EndTagID openapi_types.UUID `json:"EndTagID,omitempty" yaml:"EndTagID,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug" yaml:"Slug"`
+
+	// SpaceFilterID SpaceFilterID is a reference to a Filter over Spaces that selects the Spaces this ChangeOrder propagates into.
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// StartTagID StartTagID is the identifier of the set of Revisions immediately before the ChangeOrder, making it the half-open interval (start, end].
+	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
+
+	// UpdateType UpdateType is the Link UpdateType this ChangeOrder follows when propagating. UpgradeUnit, the clone lineage, is the default; MergeUnits is the other supported value.
+	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// ChangeOrderCreateOrUpdateResponse defines model for ChangeOrderCreateOrUpdateResponse.
+type ChangeOrderCreateOrUpdateResponse struct {
+	// ChangeOrder Defines a change's identity as it moves between Spaces.
+	ChangeOrder *ChangeOrder   `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
+	Error       *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
 // ChangeSet Defines an entity changeset.
 type ChangeSet struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -615,11 +679,17 @@ type ChangeSet struct {
 	// StartTagID StartTagID is the identifier of the set of revisions that begin the ChangeSet.
 	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
 
+	// StartTagIsPriorRevision StartTagIsPriorRevision reports whether the start Tag marks the Revision before the ChangeSet, making the ChangeSet the half-open interval (start, end]. False, the original meaning, means it marks the ChangeSet's first Revision.
+	StartTagIsPriorRevision bool `json:"StartTagIsPriorRevision,omitempty" yaml:"StartTagIsPriorRevision,omitempty"`
+
 	// State State represents the current state of the ChangeSet.
 	State string `json:"State,omitempty" yaml:"State,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UpstreamChangeSetID UpstreamChangeSetID is the ChangeSet this one mirrors, set when a promotion replays a change into this Space.
+	UpstreamChangeSetID *openapi_types.UUID `json:"UpstreamChangeSetID,omitempty" yaml:"UpstreamChangeSetID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -717,6 +787,28 @@ type ExtendedBridgeWorker struct {
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	Space       *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 	TargetCount int64  `json:"TargetCount,omitempty" yaml:"TargetCount,omitempty"`
+}
+
+// ExtendedChangeOrder defines model for ExtendedChangeOrder.
+type ExtendedChangeOrder struct {
+	// ChangeOrder Defines a change's identity as it moves between Spaces.
+	ChangeOrder *ChangeOrder `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
+
+	// EndTag Defines a Tag that can be used to identify a set of Revisions across Units.
+	EndTag *Tag           `json:"EndTag,omitempty" yaml:"EndTag,omitempty"`
+	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// SpaceFilter Defines an entity filter.
+	SpaceFilter *Filter `json:"SpaceFilter,omitempty" yaml:"SpaceFilter,omitempty"`
+
+	// StartTag Defines a Tag that can be used to identify a set of Revisions across Units.
+	StartTag *Tag `json:"StartTag,omitempty" yaml:"StartTag,omitempty"`
 }
 
 // ExtendedChangeSet defines model for ExtendedChangeSet.
@@ -1003,6 +1095,7 @@ type ExtendedSpace struct {
 	TargetCountByToolchainType map[string]int `json:"TargetCountByToolchainType" yaml:"TargetCountByToolchainType"`
 	TotalAttributeCount        int64          `json:"TotalAttributeCount,omitempty" yaml:"TotalAttributeCount,omitempty"`
 	TotalBridgeWorkerCount     int64          `json:"TotalBridgeWorkerCount,omitempty" yaml:"TotalBridgeWorkerCount,omitempty"`
+	TotalChangeOrderCount      int64          `json:"TotalChangeOrderCount,omitempty" yaml:"TotalChangeOrderCount,omitempty"`
 	TotalChangeSetCount        int64          `json:"TotalChangeSetCount,omitempty" yaml:"TotalChangeSetCount,omitempty"`
 	TotalFilterCount           int64          `json:"TotalFilterCount,omitempty" yaml:"TotalFilterCount,omitempty"`
 	TotalInvocationCount       int64          `json:"TotalInvocationCount,omitempty" yaml:"TotalInvocationCount,omitempty"`
@@ -1662,7 +1755,7 @@ type Link struct {
 	// UpstreamGetters Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths.
 	UpstreamGetters []NamedFunctionResult `json:"UpstreamGetters,omitempty" yaml:"UpstreamGetters,omitempty"`
 
-	// UpstreamLastMergedRevisionNum The sequence number of the last merged upstream change. When UseLiveState is false, this is the RevisionNum of the last merged revision. When UseLiveState is true, this is the UnitActionNum of the last merged Apply action, since applying the same revision multiple times can produce different LiveState.
+	// UpstreamLastMergedRevisionNum The RevisionNum of the last merged upstream revision.
 	UpstreamLastMergedRevisionNum int64 `json:"UpstreamLastMergedRevisionNum,omitempty" yaml:"UpstreamLastMergedRevisionNum,omitempty"`
 
 	// UpstreamLinkID Link ID of the link this link was cloned from (if any).
@@ -1676,9 +1769,6 @@ type Link struct {
 
 	// UpstreamSpaceID Space ID of the link this link was cloned from (if any).
 	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
-
-	// UseLiveState Take data from the LiveState of the upstream Unit rather than from Data.
-	UseLiveState bool `json:"UseLiveState,omitempty" yaml:"UseLiveState,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2313,7 +2403,8 @@ type Revision struct {
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
+	ApprovedBy   []UUID            `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
+	ChangeOrders map[string]string `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets.
 	ChangeSetID *openapi_types.UUID   `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
@@ -2571,6 +2662,9 @@ type SupportedConfigType struct {
 type Tag struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// ChangeOrderID ChangeOrderID is the optional ID of the ChangeOrder this Tag is associated with.
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
 
 	// ChangeSetID ChangeSetID is the optional ID of the ChangeSet this Tag is associated with.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
@@ -3300,7 +3394,7 @@ type UnitPredicatesResponse struct {
 
 // UnitTagRequest defines model for UnitTagRequest.
 type UnitTagRequest struct {
-	// Revision Which Unit revision to tag: 'HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', or 'Remove' to remove the tag from the unit
+	// Revision Which Unit revision to tag: a named revision ('HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum'), a revision number, an entity reference ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'), any of those prefixed with 'Before:', or 'Remove' to remove the tag from the unit
 	Revision string             `json:"Revision,omitempty" yaml:"Revision,omitempty"`
 	TagID    openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 }
@@ -4542,6 +4636,441 @@ type ListQueuedOperationsParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 }
 
+// BulkDeleteChangeOrdersParams defines parameters for BulkDeleteChangeOrders.
+type BulkDeleteChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
+// ListAllChangeOrdersParams defines parameters for ListAllChangeOrders.
+type ListAllChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeOrders.
+type BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID" yaml:"SpaceFilterID"`
+	UpdateType    *string             `json:"UpdateType" yaml:"UpdateType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// BulkPatchChangeOrdersParams defines parameters for BulkPatchChangeOrders.
+type BulkPatchChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
+// BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeOrders.
+type BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID" yaml:"SpaceFilterID"`
+	UpdateType    *string             `json:"UpdateType" yaml:"UpdateType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// BulkCreateChangeOrdersParams defines parameters for BulkCreateChangeOrders.
+type BulkCreateChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeOrder names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values for cloned ChangeOrder labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseBridgeWorkerID, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	//
+	// Where expression to select destination spaces for cloning changeorders
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty" yaml:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty" yaml:"filter_space,omitempty"`
+
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
 // BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
 type BulkDeleteChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -4575,7 +5104,7 @@ type BulkDeleteChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4653,7 +5182,7 @@ type ListAllChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4724,7 +5253,8 @@ type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug                *string             `json:"Slug" yaml:"Slug"`
+	UpstreamChangeSetID *openapi_types.UUID `json:"UpstreamChangeSetID" yaml:"UpstreamChangeSetID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -4763,7 +5293,7 @@ type BulkPatchChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4824,7 +5354,8 @@ type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug                *string             `json:"Slug" yaml:"Slug"`
+	UpstreamChangeSetID *openapi_types.UUID `json:"UpstreamChangeSetID" yaml:"UpstreamChangeSetID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -4863,7 +5394,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6033,7 +6564,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -6113,7 +6644,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6198,7 +6729,6 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
-	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`
@@ -6239,7 +6769,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -6319,7 +6849,6 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
-	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`
@@ -6360,7 +6889,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6414,7 +6943,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6452,7 +6981,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -6884,7 +7413,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -6950,7 +7479,7 @@ type ListAllRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -7425,6 +7954,147 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	Version *int `json:"Version" yaml:"Version"`
 }
 
+// ListChangeOrdersParams defines parameters for ListChangeOrders.
+type ListChangeOrdersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ChangeOrders returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ChangeOrder: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceFilterID, SpaceID, StartTagID, UpdateType, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ChangeOrder list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ChangeOrder).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ChangeOrder include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// CreateChangeOrderParams defines parameters for CreateChangeOrder.
+type CreateChangeOrderParams struct {
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
+// GetChangeOrderParams defines parameters for GetChangeOrder.
+type GetChangeOrderParams struct {
+	// Include Include clause for expanding related entities in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceFilterID, SpaceID, StartTagID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ChangeOrder.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ChangeOrderID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// PatchChangeOrderApplicationMergePatchPlusJSONBody defines parameters for PatchChangeOrder.
+type PatchChangeOrderApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+	Description *string           `json:"Description" yaml:"Description"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug          *string             `json:"Slug" yaml:"Slug"`
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID" yaml:"SpaceFilterID"`
+	UpdateType    *string             `json:"UpdateType" yaml:"UpdateType"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
 // ListChangeSetsParams defines parameters for ListChangeSets.
 type ListChangeSetsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -7458,7 +8128,7 @@ type ListChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt, UpstreamChangeSetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7557,7 +8227,8 @@ type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// Slug Unique URL-safe identifier for the entity.
-	Slug *string `json:"Slug" yaml:"Slug"`
+	Slug                *string             `json:"Slug" yaml:"Slug"`
+	UpstreamChangeSetID *openapi_types.UUID `json:"UpstreamChangeSetID" yaml:"UpstreamChangeSetID"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
@@ -8031,7 +8702,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8144,7 +8815,6 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	UpstreamGetters               *[]map[string]interface{} `json:"UpstreamGetters" yaml:"UpstreamGetters"`
 	UpstreamLastMergedRevisionNum *int                      `json:"UpstreamLastMergedRevisionNum" yaml:"UpstreamLastMergedRevisionNum"`
 	UpstreamPaths                 *[]map[string]interface{} `json:"UpstreamPaths" yaml:"UpstreamPaths"`
-	UseLiveState                  *bool                     `json:"UseLiveState" yaml:"UseLiveState"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version       *int    `json:"Version" yaml:"Version"`
@@ -8301,7 +8971,7 @@ type ListTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8937,7 +9607,7 @@ type PatchUnitParams struct {
 	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -9030,7 +9700,7 @@ type UpdateUnitParams struct {
 	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -9411,7 +10081,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -9477,7 +10147,7 @@ type ListExtendedRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9518,7 +10188,7 @@ type GetExtendedRevisionParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9883,7 +10553,7 @@ type BulkDeleteTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9961,7 +10631,7 @@ type ListAllTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10070,7 +10740,7 @@ type BulkPatchTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10169,7 +10839,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11352,7 +12022,7 @@ type BulkPatchUnitsParams struct {
 	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -11638,7 +12308,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID, UseLiveState.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//
@@ -12584,6 +13254,12 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONRequestBody BulkPatchBri
 // UserCreateActionResultJSONRequestBody defines body for UserCreateActionResult for application/json ContentType.
 type UserCreateActionResultJSONRequestBody = ActionResult
 
+// BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChangeOrders for application/merge-patch+json ContentType.
+type BulkPatchChangeOrdersApplicationMergePatchPlusJSONRequestBody BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody
+
+// BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateChangeOrders for application/merge-patch+json ContentType.
+type BulkCreateChangeOrdersApplicationMergePatchPlusJSONRequestBody BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody
+
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchChangeSets for application/merge-patch+json ContentType.
 type BulkPatchChangeSetsApplicationMergePatchPlusJSONRequestBody BulkPatchChangeSetsApplicationMergePatchPlusJSONBody
 
@@ -12649,6 +13325,15 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody PatchBridgeWorker
 
 // UpdateBridgeWorkerJSONRequestBody defines body for UpdateBridgeWorker for application/json ContentType.
 type UpdateBridgeWorkerJSONRequestBody = BridgeWorker
+
+// CreateChangeOrderJSONRequestBody defines body for CreateChangeOrder for application/json ContentType.
+type CreateChangeOrderJSONRequestBody = ChangeOrder
+
+// PatchChangeOrderApplicationMergePatchPlusJSONRequestBody defines body for PatchChangeOrder for application/merge-patch+json ContentType.
+type PatchChangeOrderApplicationMergePatchPlusJSONRequestBody PatchChangeOrderApplicationMergePatchPlusJSONBody
+
+// UpdateChangeOrderJSONRequestBody defines body for UpdateChangeOrder for application/json ContentType.
+type UpdateChangeOrderJSONRequestBody = ChangeOrder
 
 // CreateChangeSetJSONRequestBody defines body for CreateChangeSet for application/json ContentType.
 type CreateChangeSetJSONRequestBody = ChangeSet

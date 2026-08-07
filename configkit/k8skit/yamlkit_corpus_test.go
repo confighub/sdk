@@ -61,14 +61,6 @@ type mergeCase struct {
 	// where Subtracted and DeleteShadowed can arise at all — both are products of
 	// comparing the patch with the target's own diff.
 	wantConflictsSubtracted []api.ConflictReason
-	// notIdempotent marks a case whose patch cannot be replayed onto its own result
-	// without changing it. Every such case is a positional-array element removal: the
-	// patch says "remove the element at index N", the element at index N after the
-	// first application is a different one, and nothing in the patch says which element
-	// was meant. Anchored paths are what would fix it — see §5.2 of
-	// docs/design/merge-robustness.md. The flag records the gap rather than hiding it;
-	// when the anchors land, these flags come off and the property must hold.
-	notIdempotent bool
 }
 
 // ---------------------------------------------------------------------------
@@ -349,7 +341,6 @@ func TestMergeCorpusUnkeyedArrays(t *testing.T) {
 				"spec.template.spec.tolerations.0.effect": "NoExecute",
 				"spec.template.spec.tolerations.1.key":    absent,
 			},
-			notIdempotent: true,
 		},
 		{
 			// RBAC rules are an unkeyed list of maps whose elements contain lists.
@@ -504,7 +495,6 @@ func TestMergeCorpusCommandLineArgs(t *testing.T) {
 				argPath(6):                    "--log.level=WARN",
 				argPath(len(traefikArgs) - 1): absent,
 			},
-			notIdempotent: true,
 		},
 		{
 			// The case an anchor alone cannot reach: the downstream changed a flag's
@@ -538,7 +528,6 @@ func TestMergeCorpusCommandLineArgs(t *testing.T) {
 				argPath(6): "--log.level=INFO",
 				argPath(8): "--accesslog.format=common",
 			},
-			notIdempotent: true,
 		},
 		{
 			// A flag and its value as separate elements, which is the harder shape: the
@@ -608,7 +597,6 @@ func TestMergeCorpusCustomResources(t *testing.T) {
 				"spec.routes.1.match":           absent,
 				"spec.tls.certResolver":         "letsencrypt",
 			},
-			notIdempotent: true,
 		},
 		{
 			// A route inserted upstream, in front of one the downstream customized.
@@ -679,7 +667,6 @@ func TestMergeCorpusPolicyRules(t *testing.T) {
 				"spec.ingress.0.ports.0.port":                       "9443",
 				"spec.ingress.1.from":                               absent,
 			},
-			notIdempotent: true,
 		},
 		{
 			name:       "ingress path added upstream, backend customized downstream",
@@ -714,17 +701,12 @@ func TestMergeCorpusMaps(t *testing.T) {
 				"metadata.annotations.owner":       "platform",
 				"metadata.annotations.cost-center": "42",
 			},
-			// Subtraction drops the upstream's annotation entirely. Neither side's
-			// annotations existed in the base, so each side's diff is a single Add of
-			// the whole map, and subtraction compares whole paths: the downstream
-			// "owns" metadata.annotations, so the upstream's key goes with it. Per-key
-			// ownership is what this should be, and the coarseness is visible here
-			// because the map was created rather than extended. Reported as Subtracted,
-			// so it is recoverable rather than lost.
-			wantSubtracted: map[string]string{
-				"metadata.annotations.owner": absent,
-			},
-			wantConflictsSubtracted: []api.ConflictReason{api.ConflictReasonSubtracted},
+			// Both keys survive subtraction too. Neither side's annotations existed in
+			// the base, and a map that did not exist used to be diffed as one Add of
+			// the whole map — so the downstream owned metadata.annotations entire and
+			// the upstream's key was subtracted along with it. A map's keys are its
+			// identity, so the addition is recorded per key and each side owns only
+			// what it added.
 		},
 		{
 			// The config-checksum annotation people put on pod templates changes on
@@ -753,6 +735,30 @@ func TestMergeCorpusMaps(t *testing.T) {
 			},
 		},
 		{
+			// A map created on one side and extended on the other, which is the
+			// asymmetric half of the case above: the downstream created the
+			// annotations block, and the upstream's later annotation has to land in
+			// the map the downstream made rather than be blocked by it.
+			name: "annotation added upstream to a map the downstream created",
+			base: baseDep().String(),
+			upstream: func() string {
+				d := baseDep()
+				d.Meta = "  annotations:\n    owner: platform\n"
+				return d.String()
+			}(),
+			downstream: func() string {
+				d := baseDep()
+				d.Meta = "  annotations:\n    cost-center: \"42\"\n"
+				d.Replicas = 4
+				return d.String()
+			}(),
+			want: map[string]string{
+				"metadata.annotations.owner":       "platform",
+				"metadata.annotations.cost-center": "42",
+				"spec.replicas":                    "4",
+			},
+		},
+		{
 			name: "node selector key added upstream",
 			base: baseDep().String(),
 			upstream: func() string {
@@ -769,11 +775,8 @@ func TestMergeCorpusMaps(t *testing.T) {
 				"spec.template.spec.nodeSelector.kubernetes~1io/os": "linux",
 				"spec.template.spec.nodeSelector.pool":              "batch",
 			},
-			// Same whole-map subtraction as the annotations case above.
-			wantSubtracted: map[string]string{
-				"spec.template.spec.nodeSelector.kubernetes~1io/os": absent,
-			},
-			wantConflictsSubtracted: []api.ConflictReason{api.ConflictReasonSubtracted},
+			// Per-key ownership of a created map, as in the annotations case above:
+			// each side keeps its own selector key.
 		},
 	})
 }
@@ -1368,6 +1371,319 @@ type: Opaque
 	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
 }
 
+// TestMergeMarkupIdentifiesAnEditedAndMovedElement covers the identity a person writes.
+//
+// This is the case nothing the engine infers can reach: the downstream edited the field the
+// element would be recognized by *and* moved it. The digest is stale, there is no merge key,
+// a route's match expression is exactly what varies between variants so it is no use as an
+// identity, and the position now holds a different route. The upstream's change lands on the
+// wrong route, silently.
+//
+// A `# confighub:id=` comment on each route settles it. It is legible, it is the person's
+// own, and it is the one mechanism on the list that lets them correct the engine rather than
+// work around it. Both sides have to carry it — the source records it in the path and the
+// target is matched against it — which is why it belongs upstream, where a clone inherits it.
+func TestMergeMarkupIdentifiesAnEditedAndMovedElement(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	route := func(id, match, service string, priority int) string {
+		marking := ""
+		if id != "" {
+			marking = fmt.Sprintf("    # confighub:id=%s\n", id)
+		}
+		return fmt.Sprintf("  - match: %s\n%s    kind: Rule\n    priority: %d\n    services:\n    - name: %s\n      port: 80\n",
+			match, marking, priority, service)
+	}
+	ingressRoute := func(routes ...string) string {
+		return "apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: web\n  namespace: ns\nspec:\n  routes:\n" +
+			strings.Join(routes, "")
+	}
+	priorityOf := func(t *testing.T, merged gaby.Container, service string) string {
+		t.Helper()
+		routes := merged[0].Path("spec.routes")
+		require.NotNil(t, routes)
+		for _, element := range routes.Children() {
+			if fmt.Sprintf("%v", element.Path("services.0.name").Data()) == service {
+				return fmt.Sprintf("%v", element.Path("priority").Data())
+			}
+		}
+		t.Fatalf("no route for service %s in %s", service, merged.String())
+		return ""
+	}
+
+	// The upstream raises the priority of the second route. The downstream customized both
+	// match expressions and swapped the order.
+	run := func(t *testing.T, idA, idB string) gaby.Container {
+		t.Helper()
+		base := ingressRoute(
+			route(idA, "Host(`a.example.com`)", "svc-a", 100),
+			route(idB, "Host(`b.example.com`)", "svc-b", 50))
+		upstream := ingressRoute(
+			route(idA, "Host(`a.example.com`)", "svc-a", 100),
+			route(idB, "Host(`b.example.com`)", "svc-b", 75))
+		downstream := ingressRoute(
+			route(idB, "Host(`b.internal`)", "svc-b", 50),
+			route(idA, "Host(`a.internal`)", "svc-a", 100))
+
+		patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+		require.NoError(t, err)
+		merged, _, err := yamlkit.PatchMutations(parseCorpus(t, downstream), nil, patch, nil, provider, nil)
+		require.NoError(t, err)
+		return merged
+	}
+
+	t.Run("without markup the change lands on the wrong route", func(t *testing.T) {
+		merged := run(t, "", "")
+		assert.Equal(t, "50", priorityOf(t, merged, "svc-b"),
+			"the route the upstream meant keeps its old priority")
+		assert.Equal(t, "75", priorityOf(t, merged, "svc-a"),
+			"and the route that took its index gets the change instead")
+	})
+
+	t.Run("markup finds the route the upstream meant", func(t *testing.T) {
+		merged := run(t, "a", "b")
+		assert.Equal(t, "75", priorityOf(t, merged, "svc-b"))
+		assert.Equal(t, "100", priorityOf(t, merged, "svc-a"))
+		assert.Contains(t, merged.String(), "# confighub:id=b",
+			"the markup survives the merge, or it would only work once")
+	})
+
+	// The default merge runs on the stored predicates, so identity has to reach the *diff*
+	// and not only the patch. The alignment is order-preserving: two routes that swap places
+	// can never both be paired, so without identity the loser is recorded as a removal and an
+	// insertion, the whole route becomes the downstream's, and the upstream's change to a
+	// field of it is filtered out as an override — with the merge reporting nothing wrong.
+	t.Run("markup survives the predicate filter", func(t *testing.T) {
+		base := ingressRoute(
+			route("a", "Host(`a.example.com`)", "svc-a", 100),
+			route("b", "Host(`b.example.com`)", "svc-b", 50))
+		upstream := ingressRoute(
+			route("a", "Host(`a.example.com`)", "svc-a", 100),
+			route("b", "Host(`b.example.com`)", "svc-b", 75))
+		downstream := ingressRoute(
+			route("b", "Host(`b.internal`)", "svc-b", 50),
+			route("a", "Host(`a.internal`)", "svc-a", 100))
+
+		patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+		require.NoError(t, err)
+		// The downstream's own diff, with every path it touched protected, which is what
+		// the stored predicates amount to.
+		predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+		require.NoError(t, err)
+		for _, resourceMutation := range predicates {
+			for path, mutation := range resourceMutation.PathMutationMap {
+				mutation.Predicate = false
+				resourceMutation.PathMutationMap[path] = mutation
+			}
+		}
+
+		merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+		require.NoError(t, err)
+		assert.Equal(t, "75", priorityOf(t, merged, "svc-b"),
+			"the downstream owns the match it rewrote, not the whole route")
+		assert.Equal(t, "Host(`b.internal`)", fmt.Sprintf("%v",
+			merged[0].Path("spec.routes.0.match").Data()),
+			"and its own match survives")
+		assertConflictReasons(t, conflicts, nil)
+	})
+}
+
+// TestMergeCoarsePatchProtectsALeaf covers what a target can protect inside a subtree the
+// source replaces wholesale.
+//
+// A Predicate is found by walking up from the patch's path to the closest ancestor that has
+// one. A coarse patch entry is therefore matched by a coarse predicate, and the finer ones
+// underneath never get a say: protecting one field of a block did nothing when the source's
+// own diff recorded a single Update of the whole block, and the block was written entire
+// with no conflict reported. The advice used to be to protect the whole subtree.
+//
+// The source's diff goes coarse whenever the base held something other than a mapping at that
+// path -- here a placeholder string that both sides replaced with a block, which is how a
+// variant and its base diverge on a field that was stubbed out.
+func TestMergeCoarsePatchProtectsALeaf(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	route := func(tls string) string {
+		return "apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: web\n  namespace: ns\nspec:\n  routes:\n  - match: Host(`a.example.com`)\n  tlsConfig: " + tls
+	}
+	base := route("none\n")
+	downstream := route("\n    secretName: local-tls\n")
+	upstream := route("\n    secretName: upstream-tls\n    caBundle: up-ca\n")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+	require.Contains(t, patch[0].PathMutationMap, api.ResolvedPath("spec.tlsConfig"),
+		"the case only means anything while the source's entry is the whole block")
+
+	// The downstream's own diff is coarse too. The operator narrows it the way
+	// cub unit set-predicates does: reopen the block, protect the one field.
+	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	require.NoError(t, err)
+	for _, resource := range predicates {
+		for path, mutation := range resource.PathMutationMap {
+			mutation.Predicate = true
+			resource.PathMutationMap[path] = mutation
+		}
+		resource.PathMutationMap["spec.tlsConfig.secretName"] = api.MutationInfo{
+			MutationType: api.MutationTypeUpdate, Index: 2, Predicate: false, Value: "local-tls\n",
+		}
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	require.NoError(t, err)
+	tls := merged[0].Path("spec.tlsConfig")
+	require.NotNil(t, tls)
+	assert.Equal(t, "local-tls", fmt.Sprintf("%v", tls.Path("secretName").Data()),
+		"the protected field is the downstream's")
+	assert.Equal(t, "up-ca", fmt.Sprintf("%v", tls.Path("caBundle").Data()),
+		"and the rest of the block still comes from the source")
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
+	for _, conflict := range conflicts {
+		assert.Equal(t, api.ResolvedPath("spec.tlsConfig.secretName"), conflict.Path,
+			"the conflict names the field that was withheld, not the block it sat in")
+	}
+}
+
+// TestMergeCoarsePatchSplitPreservesRemovals covers the reason the split is a sub-diff of the
+// entry's value against the target rather than a walk of the value alone: a coarse Update
+// *replaces* a subtree, while a set of leaf Updates merges into it. A field the source
+// removed has to keep being removed.
+func TestMergeCoarsePatchSplitPreservesRemovals(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	route := func(tls string) string {
+		return "apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: web\n  namespace: ns\nspec:\n  tlsConfig: " + tls
+	}
+	base := route("none\n")
+	// The downstream has a field the source's block does not.
+	downstream := route("\n    secretName: local-tls\n    insecure: true\n")
+	upstream := route("\n    secretName: upstream-tls\n    caBundle: up-ca\n")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	require.NoError(t, err)
+	for _, resource := range predicates {
+		for path, mutation := range resource.PathMutationMap {
+			mutation.Predicate = true
+			resource.PathMutationMap[path] = mutation
+		}
+		resource.PathMutationMap["spec.tlsConfig.secretName"] = api.MutationInfo{
+			MutationType: api.MutationTypeUpdate, Index: 2, Predicate: false, Value: "local-tls\n",
+		}
+	}
+
+	merged, _, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	require.NoError(t, err)
+	tls := merged[0].Path("spec.tlsConfig")
+	require.NotNil(t, tls)
+	assert.Equal(t, "local-tls", fmt.Sprintf("%v", tls.Path("secretName").Data()))
+	assert.Equal(t, "up-ca", fmt.Sprintf("%v", tls.Path("caBundle").Data()))
+	assert.Nil(t, tls.Path("insecure"),
+		"the source replaced the block, so a field only the target had is still removed")
+}
+
+// TestMergeCorpusExclusiveFields covers the sets of sibling fields of which at most one may
+// be present — a volume's source, a rollout strategy's rollingUpdate under its type. This is
+// what Kubernetes handles with patchStrategy:"retainKeys", and a field-level merge does not
+// get it for free: the addition of the new member applies and the removal of the old one is
+// withheld against the target's ownership or subtracted as one of the target's own
+// differences, leaving a resource the API server rejects.
+func TestMergeCorpusExclusiveFields(t *testing.T) {
+	volume := func(source string) string {
+		return "      volumes:\n      - name: data\n" + source
+	}
+	emptyDir := "        emptyDir: {}\n"
+	emptyDirSized := "        emptyDir:\n          sizeLimit: 2Gi\n"
+	configMap := "        configMap:\n          name: settings\n"
+	rollingUpdate := func(maxUnavailable int) string {
+		return fmt.Sprintf("  strategy:\n    type: RollingUpdate\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: %d\n", maxUnavailable)
+	}
+	recreate := "  strategy:\n    type: Recreate\n"
+	withPod := func(podExtra string) string {
+		d := baseDep()
+		d.PodExtra = podExtra
+		return d.String()
+	}
+	withStrategy := func(strategy string) string {
+		d := baseDep()
+		d.SpecExtra = strategy
+		return d.String()
+	}
+
+	runMergeCases(t, []mergeCase{
+		{
+			// The most recognized case. The downstream sized the emptyDir, so the
+			// upstream's removal of it is withheld — and the volume ends up with two
+			// sources unless the addition of configMap clears it.
+			name:       "volume source switched upstream, downstream sized the old source",
+			base:       withPod(volume(emptyDir)),
+			upstream:   withPod(volume(configMap)),
+			downstream: withPod(volume(emptyDirSized)),
+			want: map[string]string{
+				"spec.template.spec.volumes.0.configMap.name":     "settings",
+				"spec.template.spec.volumes.0.emptyDir":           absent,
+				"spec.template.spec.volumes.0.emptyDir.sizeLimit": absent,
+			},
+			// With subtraction off the removal of emptyDir applies on its own — the
+			// corpus supplies no stored predicates, so nothing withholds it.
+			//
+			// With subtraction on the downstream owns the emptyDir, so the union is
+			// settled the same way every other overlap is: the downstream's choice
+			// stands and the upstream's configMap is withheld and reported. Applying
+			// that conflict later performs the switch, because replayed on its own
+			// there is no ownership left to withhold it.
+			wantSubtracted: map[string]string{
+				"spec.template.spec.volumes.0.configMap.name":     absent,
+				"spec.template.spec.volumes.0.emptyDir":           "map[sizeLimit:2Gi]",
+				"spec.template.spec.volumes.0.emptyDir.sizeLimit": "2Gi",
+			},
+			wantConflictsSubtracted: []api.ConflictReason{
+				api.ConflictReasonSubtracted, api.ConflictReasonExclusiveWithheld,
+			},
+		},
+		{
+			// A switch onto a target that has not touched the volume needs nothing
+			// special: the removal applies on its own. Here to show the mechanism does
+			// not fire when it is not needed.
+			name:       "volume source switched upstream, downstream elsewhere",
+			base:       withPod(volume(emptyDir)),
+			upstream:   withPod(volume(configMap)),
+			downstream: func() string { d := baseDep(); d.PodExtra = volume(emptyDir); d.Replicas = 5; return d.String() }(),
+			want: map[string]string{
+				"spec.template.spec.volumes.0.configMap.name": "settings",
+				"spec.template.spec.volumes.0.emptyDir":       absent,
+				"spec.replicas":                               "5",
+			},
+		},
+		{
+			// The discriminated shape, and the direction that needs the document to
+			// decide rather than the patch: the upstream tunes rollingUpdate, the
+			// downstream has already moved to Recreate, and nothing withholds the
+			// upstream's change. Recreate permits no rollingUpdate, so the field the
+			// update would have re-created has to go.
+			name:       "rollingUpdate tuned upstream, downstream moved to Recreate",
+			base:       withStrategy(rollingUpdate(0)),
+			upstream:   withStrategy(rollingUpdate(3)),
+			downstream: withStrategy(recreate),
+			want: map[string]string{
+				"spec.strategy.type":          "Recreate",
+				"spec.strategy.rollingUpdate": absent,
+			},
+		},
+		{
+			// The other direction: the upstream moves off RollingUpdate while the
+			// downstream had tuned it.
+			name:       "strategy moved to Recreate upstream, downstream tuned rollingUpdate",
+			base:       withStrategy(rollingUpdate(0)),
+			upstream:   withStrategy(recreate),
+			downstream: withStrategy(rollingUpdate(2)),
+			want: map[string]string{
+				"spec.strategy.type":          "Recreate",
+				"spec.strategy.rollingUpdate": absent,
+			},
+			wantConflictsSubtracted: []api.ConflictReason{api.ConflictReasonDeleteShadowed},
+		},
+	})
+}
+
 // TestMergeAnchorLocatesMovedElement covers what the anchor on a positional array element
 // is for. The elements of an array with no declared merge key have no identity beyond
 // where they sit, so a patch computed against one arrangement used to land on whatever
@@ -1442,6 +1758,67 @@ func TestMergeAnchorPrefersRecordedIndexAmongDuplicates(t *testing.T) {
 		values = append(values, fmt.Sprintf("%v", element.Data()))
 	}
 	assert.Equal(t, []string{"--verbose", "--loud", "--quiet"}, values)
+}
+
+// TestMergeArrayContextRefusesAShiftedIndex covers the other half of an anchor: what it
+// records about the array around its element, and what that stops the resolver from doing.
+//
+// A positional removal names its element by index. Once the removal has been applied the
+// element is gone, and the index it named holds the element that followed it — so replaying
+// the same patch used to remove that one too, and the one after it on the next replay. A
+// merge is not supposed to be an operation you can only afford to run once.
+//
+// The anchor records the length of the array the patch was computed against and the digests
+// of the elements on either side. An array that has lost an element is no longer that
+// length, and the elements around the index are no longer the recorded ones, so the removal
+// finds nothing it can vouch for and reports an unresolved path instead of taking a
+// bystander with it.
+func TestMergeArrayContextRefusesAShiftedIndex(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	withArgs := func(args ...string) string {
+		d := baseDep()
+		var b strings.Builder
+		b.WriteString("      - name: app\n        image: nginx:1.19\n        args:\n")
+		for _, arg := range args {
+			fmt.Fprintf(&b, "        - %s\n", arg)
+		}
+		d.Containers = b.String()
+		return d.String()
+	}
+	argsOf := func(t *testing.T, doc gaby.Container) []string {
+		t.Helper()
+		array := doc[0].Path("spec.template.spec.containers.0.args")
+		require.NotNil(t, array)
+		values := []string{}
+		for _, element := range array.Children() {
+			values = append(values, fmt.Sprintf("%v", element.Data()))
+		}
+		return values
+	}
+
+	base := withArgs("--alpha", "--beta", "--gamma")
+	// Upstream drops the first argument.
+	upstream := withArgs("--beta", "--gamma")
+	// The downstream customized every argument, so no digest in the patch matches anything
+	// in it — the case the positional-array machinery exists for. The removal still has to
+	// take the argument it means.
+	downstream := withArgs("--alpha=1", "--beta=2", "--gamma=3")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), nil, patch, nil, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"--beta=2", "--gamma=3"}, argsOf(t, merged),
+		"the array is the length the patch was computed against, so its indices still mean what the patch meant")
+	assert.Empty(t, conflicts)
+
+	// Replaying the same patch onto its own result must do nothing at all.
+	again, replayConflicts, err := yamlkit.PatchMutations(reparse(t, merged), nil, patch, nil, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"--beta=2", "--gamma=3"}, argsOf(t, again),
+		"the element the removal names is gone, and the argument that took its index is not it")
+	assertConflictReasons(t, replayConflicts, []api.ConflictReason{api.ConflictReasonUnresolvedPath})
 }
 
 // TestMergePredicateProtectsMergeKeyedPath covers the default override-preservation
@@ -1548,7 +1925,7 @@ func runMergeCase(t *testing.T, c mergeCase) {
 	assertConflictReasons(t, conflicts, c.wantConflicts)
 	checkMergeProperties(t, "subtraction off", provider, patch, targetDiff,
 		parseCorpus(t, c.upstream), parseCorpus(t, c.downstream), merged, conflicts,
-		false, c.notIdempotent)
+		false, false)
 
 	// Same merge with subtraction on: the downstream's differences from the base are
 	// removed from the patch first, so the downstream wins on an overlapping path.
@@ -1561,7 +1938,7 @@ func runMergeCase(t *testing.T, c mergeCase) {
 	assertConflictReasons(t, conflictsSub, c.wantConflictsSubtracted)
 	checkMergeProperties(t, "subtraction on", provider, patch, targetDiff,
 		parseCorpus(t, c.upstream), parseCorpus(t, c.downstream), mergedSub, conflictsSub,
-		true, c.notIdempotent)
+		true, false)
 }
 
 // checkMergeProperties checks the invariants that must hold for every merge, whatever the
@@ -1576,7 +1953,7 @@ func runMergeCase(t *testing.T, c mergeCase) {
 func checkMergeProperties(t *testing.T, mode string, provider yamlkit.ResourceProvider,
 	patch, targetDiff api.ResourceMutationList,
 	upstream, downstream, merged gaby.Container, conflicts api.MutationConflictList,
-	subtracted, notIdempotent bool) {
+	subtracted, skipIdempotence bool) {
 	t.Helper()
 
 	// Property: conservation. Every path the upstream change wanted is either applied or
@@ -1675,7 +2052,14 @@ func checkMergeProperties(t *testing.T, mode string, provider yamlkit.ResourcePr
 	// Property: idempotence. Replaying the same patch onto the merged result is a no-op.
 	// Only meaningful without subtraction: with it, the second pass has a different
 	// subtrahend, which is a different merge rather than a repeat of this one.
-	if !subtracted && !notIdempotent {
+	//
+	// Positional-array element removals used to be exempt: the patch said "remove the
+	// element at index N", the element at index N after the first application was a
+	// different one, and nothing in the patch said which element was meant. The array
+	// context an anchored segment carries is what says so now — an array that has lost an
+	// element no longer has the length the patch was computed against, so the removal
+	// finds nothing to remove rather than taking whatever moved up into place.
+	if !subtracted && !skipIdempotence {
 		again, _, err := yamlkit.PatchMutations(reparse(t, merged), nil, patch, nil, provider, nil)
 		require.NoError(t, err)
 		assert.Equalf(t, merged.String(), again.String(),
