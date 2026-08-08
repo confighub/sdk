@@ -111,8 +111,8 @@ func TestApplyLinePatch_InvalidPatch(t *testing.T) {
 func TestIsMultiLineString(t *testing.T) {
 	assert.False(t, IsMultiLineString("single line"))
 	assert.False(t, IsMultiLineString(""))
-	assert.False(t, IsMultiLineString("single line\n"))  // trailing newline from gaby serialization
-	assert.False(t, IsMultiLineString("\n"))              // just a newline
+	assert.False(t, IsMultiLineString("single line\n")) // trailing newline from gaby serialization
+	assert.False(t, IsMultiLineString("\n"))            // just a newline
 	assert.True(t, IsMultiLineString("line one\nline two"))
 	assert.True(t, IsMultiLineString("line one\nline two\n"))
 }

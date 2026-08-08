@@ -1722,7 +1722,7 @@ type Link struct {
 	// LinkID Unique identifier for a Link.
 	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
 
-	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links.
+	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links.
 	MergeEnableSubtraction bool `json:"MergeEnableSubtraction,omitempty" yaml:"MergeEnableSubtraction,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
@@ -1896,8 +1896,8 @@ type MutationInfo struct {
 	// Patch Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly.
 	Patch string `json:"Patch,omitempty" yaml:"Patch,omitempty"`
 
-	// Predicate Used to decide how to use the mututation
-	Predicate bool `json:"Predicate,omitempty" yaml:"Predicate,omitempty"`
+	// Protected True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten
+	Protected bool `json:"Protected,omitempty" yaml:"Protected,omitempty"`
 
 	// Value Removed configuration data if MutationType is Delete and otherwise the new data
 	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
@@ -2322,11 +2322,11 @@ type ResourceMutation struct {
 // ResourceMutationList defines model for ResourceMutationList.
 type ResourceMutationList = []ResourceMutation
 
-// ResourcePredicates defines model for ResourcePredicates.
-type ResourcePredicates struct {
-	// Predicates Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override
-	Predicates map[string]bool `json:"Predicates" yaml:"Predicates"`
-	Resource   *ResourceInfo   `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+// ResourceProtection defines model for ResourceProtection.
+type ResourceProtection struct {
+	// Protected Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update
+	Protected map[string]bool `json:"Protected" yaml:"Protected"`
+	Resource  *ResourceInfo   `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
 // ResourceStatus defines model for ResourceStatus.
@@ -3253,7 +3253,7 @@ type UnitConflictSelector struct {
 	// Path Match conflicts at this path; empty matches any path, including resource-level conflicts
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
-	// Reason Match conflicts dropped for this reason: Subtracted, DeleteShadowed, PredicateFiltered, or UnresolvedPath; empty matches any reason
+	// Reason Match conflicts dropped for this reason: Subtracted, DeleteShadowed, ProtectedPath, or UnresolvedPath; empty matches any reason
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 
 	// ResourceName Match conflicts on this resource; empty matches any resource
@@ -3380,14 +3380,14 @@ type UnitExtended struct {
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
-// UnitPredicatesRequest defines model for UnitPredicatesRequest.
-type UnitPredicatesRequest struct {
-	// ResourcePredicates Per-resource Predicate edits to apply to the Unit's MutationSources
-	ResourcePredicates []ResourcePredicates `json:"ResourcePredicates" yaml:"ResourcePredicates"`
+// UnitProtectionRequest defines model for UnitProtectionRequest.
+type UnitProtectionRequest struct {
+	// ResourceProtection Per-resource Protected edits to apply to the Unit's MutationSources
+	ResourceProtection []ResourceProtection `json:"ResourceProtection" yaml:"ResourceProtection"`
 }
 
-// UnitPredicatesResponse defines model for UnitPredicatesResponse.
-type UnitPredicatesResponse struct {
+// UnitProtectionResponse defines model for UnitProtectionResponse.
+type UnitProtectionResponse struct {
 	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 }
@@ -5995,8 +5995,8 @@ type InvokeFunctionsOnOrgParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
-	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
+	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
 
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
@@ -8441,8 +8441,8 @@ type InvokeFunctionsParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
-	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
+	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
 
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
@@ -9598,8 +9598,8 @@ type PatchUnitParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
@@ -9622,7 +9622,7 @@ type PatchUnitParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
 	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
@@ -9694,8 +9694,8 @@ type UpdateUnitParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
@@ -9718,7 +9718,7 @@ type UpdateUnitParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
 	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
@@ -12019,8 +12019,8 @@ type BulkPatchUnitsParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreservePredicates Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreservePredicates *bool `form:"preserve_predicates,omitempty" json:"preserve_predicates,omitempty" yaml:"preserve_predicates,omitempty"`
+	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
@@ -12043,7 +12043,7 @@ type BulkPatchUnitsParams struct {
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
-	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
 	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
 
 	// WhereMutation The specified string is an expression for the purpose of filtering
@@ -13431,8 +13431,8 @@ type UpdateUnitJSONRequestBody = Unit
 // ResolveUnitConflictsJSONRequestBody defines body for ResolveUnitConflicts for application/json ContentType.
 type ResolveUnitConflictsJSONRequestBody = UnitConflictsRequest
 
-// SetUnitPredicatesJSONRequestBody defines body for SetUnitPredicates for application/json ContentType.
-type SetUnitPredicatesJSONRequestBody = UnitPredicatesRequest
+// SetUnitProtectionJSONRequestBody defines body for SetUnitProtection for application/json ContentType.
+type SetUnitProtectionJSONRequestBody = UnitProtectionRequest
 
 // CreateViewJSONRequestBody defines body for CreateView for application/json ContentType.
 type CreateViewJSONRequestBody = View

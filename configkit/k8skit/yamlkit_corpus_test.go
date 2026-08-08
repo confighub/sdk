@@ -897,13 +897,13 @@ spec:
 
 	// The downstream's diff from the base is what its MutationSources hold, and a rename
 	// records both names as aliases.
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
-	require.Len(t, predicates, 1)
-	assert.Contains(t, predicates[0].AliasesWithoutScopes, api.ResourceName("web"),
+	require.Len(t, protection, 1)
+	assert.Contains(t, protection[0].AliasesWithoutScopes, api.ResourceName("web"),
 		"the previous name is what a later merge matches on")
 
-	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, "prod-web", merged[0].Path("metadata.name").Data(),
@@ -1203,7 +1203,7 @@ func TestMergeCorpusOpaqueStrings(t *testing.T) {
 
 // TestMergeHonorsDownstreamDeletions covers deletions as provenance. A path or resource the
 // downstream deleted is a local override like any other: it is recorded in MutationSources
-// with a Predicate, and a merge must not re-add what a protected deletion removed — nor
+// with its protection, and a merge must not re-add what a protected deletion removed — nor
 // drop the upstream's change to it without a word.
 func TestMergeHonorsDownstreamDeletions(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
@@ -1258,27 +1258,27 @@ stringData:
 	// The downstream's own diff from the base is what its MutationSources hold. Mark the
 	// deletions protected and leave everything else overwritable, the way an edit that did
 	// not come from a clone or a merge is marked.
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
 	sawResourceDelete, sawPathDelete := false, false
-	for i := range predicates {
-		if predicates[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+	for i := range protection {
+		if protection[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
 			sawResourceDelete = true
 		}
-		predicates[i].ResourceMutationInfo.Predicate =
-			predicates[i].ResourceMutationInfo.MutationType != api.MutationTypeDelete
-		for path, info := range predicates[i].PathMutationMap {
+		protection[i].ResourceMutationInfo.Protected =
+			protection[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete
+		for path, info := range protection[i].PathMutationMap {
 			if info.MutationType == api.MutationTypeDelete {
 				sawPathDelete = true
 			}
-			info.Predicate = info.MutationType != api.MutationTypeDelete
-			predicates[i].PathMutationMap[path] = info
+			info.Protected = info.MutationType == api.MutationTypeDelete
+			protection[i].PathMutationMap[path] = info
 		}
 	}
 	assert.True(t, sawPathDelete, "a deleted path is recorded in the accumulated mutations")
 	assert.True(t, sawResourceDelete, "a deleted resource is recorded in the accumulated mutations")
 
-	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 
 	assert.Nil(t, merged[0].Path("data.gone"),
@@ -1286,7 +1286,7 @@ stringData:
 	assert.Equal(t, "9", merged[0].Path("data.keep").Data(),
 		"the rest of the upstream change still lands")
 	assert.Len(t, merged, 1, "a resource the downstream deleted must not come back")
-	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
 
 	// The upstream's change to the deleted resource is reported rather than dropped in
 	// silence: once for the resource, once for each path it carried.
@@ -1294,8 +1294,8 @@ stringData:
 	for _, conflict := range conflicts {
 		if conflict.Resource.ResourceName == "ns/sec" {
 			secretConflicts++
-			assert.Equal(t, api.ConflictReasonPredicateFiltered, conflict.Reason,
-				"the target owns the deletion, so the reason is the predicate, not a lost path")
+			assert.Equal(t, api.ConflictReasonProtectedPath, conflict.Reason,
+				"the target owns the deletion, so the reason is its protection, not a lost path")
 		}
 	}
 	assert.GreaterOrEqual(t, secretConflicts, 1,
@@ -1305,7 +1305,7 @@ stringData:
 // TestMergeDoesNotResurrectDeletedResource covers the other half of the same rule: an
 // upstream Add or Replace of a resource the downstream deleted and protected. The
 // unmatched-resource branch of PatchMutations used to append such a resource without
-// consulting the predicate list at all — the matched branch got it, this one was passed
+// consulting the protection list at all — the matched branch got it, this one was passed
 // nil — so a delete-and-recreate upstream brought back what the downstream had removed.
 func TestMergeDoesNotResurrectDeletedResource(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
@@ -1353,22 +1353,22 @@ type: Opaque
 	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
 	require.NoError(t, err)
 
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
 	protectedDeletion := false
-	for i := range predicates {
-		if predicates[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
-			predicates[i].ResourceMutationInfo.Predicate = false
+	for i := range protection {
+		if protection[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+			protection[i].ResourceMutationInfo.Protected = true
 			protectedDeletion = true
 		}
 	}
 	require.True(t, protectedDeletion, "the downstream's deletion is what this is about")
 
-	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 
 	assert.Len(t, merged, 1, "the resource the downstream deleted and protected must not come back")
-	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
 }
 
 // TestMergeMarkupIdentifiesAnEditedAndMovedElement covers the identity a person writes.
@@ -1447,12 +1447,12 @@ func TestMergeMarkupIdentifiesAnEditedAndMovedElement(t *testing.T) {
 			"the markup survives the merge, or it would only work once")
 	})
 
-	// The default merge runs on the stored predicates, so identity has to reach the *diff*
+	// The default merge runs on the stored protection, so identity has to reach the *diff*
 	// and not only the patch. The alignment is order-preserving: two routes that swap places
 	// can never both be paired, so without identity the loser is recorded as a removal and an
 	// insertion, the whole route becomes the downstream's, and the upstream's change to a
 	// field of it is filtered out as an override — with the merge reporting nothing wrong.
-	t.Run("markup survives the predicate filter", func(t *testing.T) {
+	t.Run("markup survives the protection filter", func(t *testing.T) {
 		base := ingressRoute(
 			route("a", "Host(`a.example.com`)", "svc-a", 100),
 			route("b", "Host(`b.example.com`)", "svc-b", 50))
@@ -1466,17 +1466,17 @@ func TestMergeMarkupIdentifiesAnEditedAndMovedElement(t *testing.T) {
 		patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
 		require.NoError(t, err)
 		// The downstream's own diff, with every path it touched protected, which is what
-		// the stored predicates amount to.
-		predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+		// the stored protection amount to.
+		protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 		require.NoError(t, err)
-		for _, resourceMutation := range predicates {
+		for _, resourceMutation := range protection {
 			for path, mutation := range resourceMutation.PathMutationMap {
-				mutation.Predicate = false
+				mutation.Protected = true
 				resourceMutation.PathMutationMap[path] = mutation
 			}
 		}
 
-		merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+		merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 		require.NoError(t, err)
 		assert.Equal(t, "75", priorityOf(t, merged, "svc-b"),
 			"the downstream owns the match it rewrote, not the whole route")
@@ -1490,8 +1490,8 @@ func TestMergeMarkupIdentifiesAnEditedAndMovedElement(t *testing.T) {
 // TestMergeCoarsePatchProtectsALeaf covers what a target can protect inside a subtree the
 // source replaces wholesale.
 //
-// A Predicate is found by walking up from the patch's path to the closest ancestor that has
-// one. A coarse patch entry is therefore matched by a coarse predicate, and the finer ones
+// Protection is found by walking up from the patch's path to the closest ancestor that has
+// an entry. A coarse patch entry is therefore matched by a coarse one, and the finer ones
 // underneath never get a say: protecting one field of a block did nothing when the source's
 // own diff recorded a single Update of the whole block, and the block was written entire
 // with no conflict reported. The advice used to be to protect the whole subtree.
@@ -1514,20 +1514,20 @@ func TestMergeCoarsePatchProtectsALeaf(t *testing.T) {
 		"the case only means anything while the source's entry is the whole block")
 
 	// The downstream's own diff is coarse too. The operator narrows it the way
-	// cub unit set-predicates does: reopen the block, protect the one field.
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	// cub unit set-protection does: reopen the block, protect the one field.
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
-	for _, resource := range predicates {
+	for _, resource := range protection {
 		for path, mutation := range resource.PathMutationMap {
-			mutation.Predicate = true
+			mutation.Protected = false
 			resource.PathMutationMap[path] = mutation
 		}
 		resource.PathMutationMap["spec.tlsConfig.secretName"] = api.MutationInfo{
-			MutationType: api.MutationTypeUpdate, Index: 2, Predicate: false, Value: "local-tls\n",
+			MutationType: api.MutationTypeUpdate, Index: 2, Protected: true, Value: "local-tls\n",
 		}
 	}
 
-	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 	tls := merged[0].Path("spec.tlsConfig")
 	require.NotNil(t, tls)
@@ -1535,7 +1535,7 @@ func TestMergeCoarsePatchProtectsALeaf(t *testing.T) {
 		"the protected field is the downstream's")
 	assert.Equal(t, "up-ca", fmt.Sprintf("%v", tls.Path("caBundle").Data()),
 		"and the rest of the block still comes from the source")
-	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
 	for _, conflict := range conflicts {
 		assert.Equal(t, api.ResolvedPath("spec.tlsConfig.secretName"), conflict.Path,
 			"the conflict names the field that was withheld, not the block it sat in")
@@ -1558,19 +1558,19 @@ func TestMergeCoarsePatchSplitPreservesRemovals(t *testing.T) {
 
 	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
 	require.NoError(t, err)
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
-	for _, resource := range predicates {
+	for _, resource := range protection {
 		for path, mutation := range resource.PathMutationMap {
-			mutation.Predicate = true
+			mutation.Protected = false
 			resource.PathMutationMap[path] = mutation
 		}
 		resource.PathMutationMap["spec.tlsConfig.secretName"] = api.MutationInfo{
-			MutationType: api.MutationTypeUpdate, Index: 2, Predicate: false, Value: "local-tls\n",
+			MutationType: api.MutationTypeUpdate, Index: 2, Protected: true, Value: "local-tls\n",
 		}
 	}
 
-	merged, _, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, _, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 	tls := merged[0].Path("spec.tlsConfig")
 	require.NotNil(t, tls)
@@ -1623,7 +1623,7 @@ func TestMergeCorpusExclusiveFields(t *testing.T) {
 				"spec.template.spec.volumes.0.emptyDir.sizeLimit": absent,
 			},
 			// With subtraction off the removal of emptyDir applies on its own — the
-			// corpus supplies no stored predicates, so nothing withholds it.
+			// corpus supplies no stored protection, so nothing withholds it.
 			//
 			// With subtraction on the downstream owns the emptyDir, so the union is
 			// settled the same way every other overlap is: the downstream's choice
@@ -1821,16 +1821,16 @@ func TestMergeArrayContextRefusesAShiftedIndex(t *testing.T) {
 	assertConflictReasons(t, replayConflicts, []api.ConflictReason{api.ConflictReasonUnresolvedPath})
 }
 
-// TestMergePredicateProtectsMergeKeyedPath covers the default override-preservation
+// TestMergeProtectionProtectsMergeKeyedPath covers the default override-preservation
 // mechanism on a path inside a merge-keyed array — a container image, which is the single
 // most commonly customized field in a variant.
 //
 // The stored MutationSources name such a path by merge key, while the path being applied
 // has been resolved into numeric indices against the target document. Comparing the two
 // forms directly never matches, so a protected path under any merge-keyed array used to be
-// overwritten silently, with no PredicateFiltered conflict to show for it. The e2e coverage
+// overwritten silently, with no ProtectedPath conflict to show for it. The e2e coverage
 // missed it because the path it protects is spec.replicas, which has no array in it.
-func TestMergePredicateProtectsMergeKeyedPath(t *testing.T) {
+func TestMergeProtectionProtectsMergeKeyedPath(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	image := func(tag string) string {
 		d := baseDep()
@@ -1844,21 +1844,21 @@ func TestMergePredicateProtectsMergeKeyedPath(t *testing.T) {
 
 	// The downstream's own diff from the base is what its MutationSources hold; mark it
 	// protected, the way an edit that did not come from a clone or a merge is marked.
-	predicates, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
 	require.NoError(t, err)
-	for i := range predicates {
-		for path, info := range predicates[i].PathMutationMap {
-			info.Predicate = false
-			predicates[i].PathMutationMap[path] = info
+	for i := range protection {
+		for path, info := range protection[i].PathMutationMap {
+			info.Protected = true
+			protection[i].PathMutationMap[path] = info
 		}
 	}
 
-	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), predicates, patch, nil, provider, nil)
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 
 	assert.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.0.image").Data(),
 		"a protected path inside a merge-keyed array must survive the merge")
-	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonPredicateFiltered})
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
 }
 
 // ---------------------------------------------------------------------------
@@ -1917,7 +1917,7 @@ func runMergeCase(t *testing.T, c mergeCase) {
 	targetDiff, err := yamlkit.ComputeMutations(parseCorpus(t, c.base), parseCorpus(t, c.downstream), 2, provider)
 	require.NoError(t, err, "computing the downstream diff")
 
-	// Default merge: subtraction off, no stored predicates, so the upstream change is
+	// Default merge: subtraction off, no stored protection, so the upstream change is
 	// eligible everywhere and wins on any path both sides touched.
 	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, c.downstream), nil, patch, nil, provider, nil)
 	require.NoError(t, err)

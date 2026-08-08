@@ -179,7 +179,7 @@ func init() {
 	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
-	functionDoCmd.Flags().BoolVar(&preservePredicates, "preserve-predicates", false, "keep the stored predicates of the paths this change writes instead of recording new ones: each path keeps the override protection it already has, and a new path is left overwritable")
+	functionDoCmd.Flags().BoolVar(&preserveProtection, "preserve-protection", false, "keep the stored protection of the paths this change writes instead of recording new ones: each path keeps the protection it already has, and a new path is left unprotected")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
@@ -516,9 +516,9 @@ type invokeArgs struct {
 	ResourceType string
 	WhereData    string
 	DryRun       bool
-	// PreservePredicates leaves the written paths' stored predicates alone, for an invocation
+	// PreserveProtection leaves the written paths' stored protection alone, for an invocation
 	// applying content decided elsewhere rather than authoring it.
-	PreservePredicates bool
+	PreserveProtection bool
 	ChangeSetID        uuid.UUID
 	Body               *goclientnew.FunctionInvocationsRequest
 }
@@ -546,8 +546,8 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.PreservePredicates {
-			newParams.PreservePredicates = &invokeArgs.PreservePredicates
+		if invokeArgs.PreserveProtection {
+			newParams.PreserveProtection = &invokeArgs.PreserveProtection
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -583,8 +583,8 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.PreservePredicates {
-			newParams.PreservePredicates = &invokeArgs.PreservePredicates
+		if invokeArgs.PreserveProtection {
+			newParams.PreserveProtection = &invokeArgs.PreserveProtection
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -714,7 +714,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 			ResourceType:       resourceType,
 			WhereData:          whereData,
 			DryRun:             dryRun,
-			PreservePredicates: preservePredicates,
+			PreserveProtection: preserveProtection,
 			ChangeSetID:        changesetUUID,
 			Body:               newBody,
 		}

@@ -5025,15 +5025,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: Preserve the stored Predicate values of the paths this operation
+      - description: Preserve the stored Protected values of the paths this operation
           writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left overwritable.
+          the Unit already has for it, and a path with no history is left unprotected.
           Use it for an operation that is applying content decided elsewhere -- replaying
           a change, or copying an already-reviewed value -- so it neither claims local
           ownership of upstream content nor drops protection the target deliberately
           set.
         in: query
-        name: preserve_predicates
+        name: preserve_protection
         required: false
         schema:
           type: boolean
@@ -12925,15 +12925,15 @@ paths:
         required: false
         schema:
           type: string
-      - description: Preserve the stored Predicate values of the paths this operation
+      - description: Preserve the stored Protected values of the paths this operation
           writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left overwritable.
+          the Unit already has for it, and a path with no history is left unprotected.
           Use it for an operation that is applying content decided elsewhere -- replaying
           a change, or copying an already-reviewed value -- so it neither claims local
           ownership of upstream content nor drops protection the target deliberately
           set.
         in: query
-        name: preserve_predicates
+        name: preserve_protection
         required: false
         schema:
           type: boolean
@@ -17563,16 +17563,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Predicate values of the paths this operation
+      - description: Preserve the stored Protected values of the paths this operation
           writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left overwritable.
+          the Unit already has for it, and a path with no history is left unprotected.
           Use it for an operation that is applying content decided elsewhere -- replaying
           a change, or copying an already-reviewed value -- so it neither claims local
           ownership of upstream content nor drops protection the target deliberately
           set. Has no effect with restore, which rewinds MutationSources to the restored
           Revision's stored values wholesale.
         in: query
-        name: preserve_predicates
+        name: preserve_protection
         required: false
         schema:
           type: boolean
@@ -17651,7 +17651,7 @@ paths:
       - description: Enable the subtraction (override-preservation) step of upgrade
           and merge_source. By default (false), the source patch is applied without
           subtraction and the target's local differences are preserved by the stored
-          Mutation Predicate values; set true to additionally subtract the target's
+          Mutation Protected values; set true to additionally subtract the target's
           local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
@@ -17944,16 +17944,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Predicate values of the paths this operation
+      - description: Preserve the stored Protected values of the paths this operation
           writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left overwritable.
+          the Unit already has for it, and a path with no history is left unprotected.
           Use it for an operation that is applying content decided elsewhere -- replaying
           a change, or copying an already-reviewed value -- so it neither claims local
           ownership of upstream content nor drops protection the target deliberately
           set. Has no effect with restore, which rewinds MutationSources to the restored
           Revision's stored values wholesale.
         in: query
-        name: preserve_predicates
+        name: preserve_protection
         required: false
         schema:
           type: boolean
@@ -18032,7 +18032,7 @@ paths:
       - description: Enable the subtraction (override-preservation) step of upgrade
           and merge_source. By default (false), the source patch is applied without
           subtraction and the target's local differences are preserved by the stored
-          Mutation Predicate values; set true to additionally subtract the target's
+          Mutation Protected values; set true to additionally subtract the target's
           local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
@@ -18886,13 +18886,13 @@ paths:
       summary: Get ExtendedMutation
       tags:
       - Mutation
-  /space/{space_id}/unit/{unit_id}/predicates:
+  /space/{space_id}/unit/{unit_id}/protection:
     post:
-      description: Set Predicate values on the unit's MutationSources, controlling
-        which paths a merge may overwrite when subtraction is disabled and no WhereMutation
-        is supplied. Creates a new revision only if the predicates actually change.
-        Requires Edit permission.
-      operationId: SetUnitPredicates
+      description: Set Protected values on the unit's MutationSources, marking paths
+        as local overrides a merge must not overwrite when subtraction is disabled
+        and no WhereMutation is supplied. Creates a new revision only if the protection
+        actually changes. Requires Edit permission.
+      operationId: SetUnitProtection
       parameters:
       - description: Unique identifier for a space_id
         in: path
@@ -18912,13 +18912,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UnitPredicatesRequest'
+              $ref: '#/components/schemas/UnitProtectionRequest'
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UnitPredicatesResponse'
+                $ref: '#/components/schemas/UnitProtectionResponse'
           description: OK
         "400":
           content:
@@ -18962,7 +18962,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Set mutation predicates on a unit
+      summary: Set path protection on a unit
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/resource:
@@ -23754,16 +23754,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Predicate values of the paths this operation
+      - description: Preserve the stored Protected values of the paths this operation
           writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left overwritable.
+          the Unit already has for it, and a path with no history is left unprotected.
           Use it for an operation that is applying content decided elsewhere -- replaying
           a change, or copying an already-reviewed value -- so it neither claims local
           ownership of upstream content nor drops protection the target deliberately
           set. Has no effect with restore, which rewinds MutationSources to the restored
           Revision's stored values wholesale.
         in: query
-        name: preserve_predicates
+        name: preserve_protection
         required: false
         schema:
           type: boolean
@@ -23842,7 +23842,7 @@ paths:
       - description: Enable the subtraction (override-preservation) step of upgrade
           and merge_source. By default (false), the source patch is applied without
           subtraction and the target's local differences are preserved by the stored
-          Mutation Predicate values; set true to additionally subtract the target's
+          Mutation Protected values; set true to additionally subtract the target's
           local differences from the source patch. Has no effect on a self merge (merge_source=Self),
           where subtraction is always disabled.
         in: query
@@ -28774,7 +28774,7 @@ components:
           description: Enables the subtraction (override-preservation) step of the
             merge performed when resolving this Link. When false (the default), the
             source patch is applied without subtraction and the downstream Unit's
-            local differences are preserved by the stored Mutation Predicate values
+            local differences are preserved by the stored Mutation Protected values
             alone, narrowed further by WhereMutation if it is set. When true, the
             merge additionally subtracts the downstream Unit's local differences from
             the source patch. Only meaningful for UpgradeUnit and MergeUnits Links.
@@ -29110,8 +29110,9 @@ components:
             if the patch cannot be applied cleanly.
           type: string
           x-go-type-skip-optional-pointer: true
-        Predicate:
-          description: Used to decide how to use the mututation
+        Protected:
+          description: True if this is a local override a merge must not overwrite;
+            false if the value came from elsewhere and may be overwritten
           type: boolean
           x-go-type-skip-optional-pointer: true
         Value:
@@ -29918,13 +29919,13 @@ components:
       items:
         $ref: '#/components/schemas/ResourceMutation'
       type: array
-    ResourcePredicates:
+    ResourceProtection:
       properties:
-        Predicates:
+        Protected:
           additionalProperties:
             type: boolean
-          description: 'Map of resolved path to its new Predicate value: true = eligible
-            to be overwritten by a merge, false = protected local override'
+          description: 'Map of resolved path to its new Protected value: true = a
+            local override a merge must not overwrite, false = the merge''s to update'
           nullable: true
           type: object
           x-go-type-skip-optional-pointer: true
@@ -31660,7 +31661,7 @@ components:
           x-go-type-skip-optional-pointer: true
         Reason:
           description: 'Match conflicts dropped for this reason: Subtracted, DeleteShadowed,
-            PredicateFiltered, or UnresolvedPath; empty matches any reason'
+            ProtectedPath, or UnresolvedPath; empty matches any reason'
           type: string
           x-go-type-skip-optional-pointer: true
         ResourceName:
@@ -31858,17 +31859,17 @@ components:
         Unit:
           $ref: '#/components/schemas/Unit'
       type: object
-    UnitPredicatesRequest:
+    UnitProtectionRequest:
       properties:
-        ResourcePredicates:
-          description: Per-resource Predicate edits to apply to the Unit's MutationSources
+        ResourceProtection:
+          description: Per-resource Protected edits to apply to the Unit's MutationSources
           items:
-            $ref: '#/components/schemas/ResourcePredicates'
+            $ref: '#/components/schemas/ResourceProtection'
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
-    UnitPredicatesResponse:
+    UnitProtectionResponse:
       properties:
         Error:
           $ref: '#/components/schemas/ResponseError'

@@ -464,7 +464,7 @@ const injectedRtkApi = api
           params: {
             executor_space: queryArg.executorSpace,
             dry_run: queryArg.dryRun,
-            preserve_predicates: queryArg.preservePredicates,
+            preserve_protection: queryArg.preserveProtection,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1213,7 +1213,7 @@ const injectedRtkApi = api
             unit_id: queryArg.unitId,
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
-            preserve_predicates: queryArg.preservePredicates,
+            preserve_protection: queryArg.preserveProtection,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1631,7 +1631,7 @@ const injectedRtkApi = api
           params: {
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
-            preserve_predicates: queryArg.preservePredicates,
+            preserve_protection: queryArg.preserveProtection,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -1657,7 +1657,7 @@ const injectedRtkApi = api
           params: {
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
-            preserve_predicates: queryArg.preservePredicates,
+            preserve_protection: queryArg.preserveProtection,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -1755,12 +1755,12 @@ const injectedRtkApi = api
         }),
         providesTags: ['Mutation'],
       }),
-      setUnitPredicates: build.mutation<SetUnitPredicatesApiResponse, SetUnitPredicatesApiArg>(
+      setUnitProtection: build.mutation<SetUnitProtectionApiResponse, SetUnitProtectionApiArg>(
         {
           query: (queryArg) => ({
-            url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/predicates`,
+            url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/protection`,
             method: 'POST',
-            body: queryArg.unitPredicatesRequest,
+            body: queryArg.unitProtectionRequest,
           }),
           invalidatesTags: ['Unit'],
         },
@@ -2159,7 +2159,7 @@ const injectedRtkApi = api
             contains: queryArg.contains,
             include: queryArg.include,
             dry_run: queryArg.dryRun,
-            preserve_predicates: queryArg.preservePredicates,
+            preserve_protection: queryArg.preserveProtection,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
             resolve: queryArg.resolve,
@@ -4709,8 +4709,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   executorSpace?: string;
   /** Dry run mode: when true, skip updating configuration data even if it changed */
   dryRun?: string;
-  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
-  preservePredicates?: boolean;
+  /** Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
+  preserveProtection?: boolean;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -7321,8 +7321,8 @@ export type InvokeFunctionsApiArg = {
   revisionId?: string;
   /** Dry run mode: when true, skip updating configuration data even if it changed */
   dryRun?: string;
-  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
-  preservePredicates?: boolean;
+  /** Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. */
+  preserveProtection?: boolean;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -8626,8 +8626,8 @@ export type PatchUnitApiArg = {
   revisionId?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
-  preservePredicates?: boolean;
+  /** Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preserveProtection?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -8642,7 +8642,7 @@ export type PatchUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
   mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -8761,8 +8761,8 @@ export type UpdateUnitApiArg = {
   revisionId?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
-  preservePredicates?: boolean;
+  /** Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preserveProtection?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -8777,7 +8777,7 @@ export type UpdateUnitApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
   mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -8994,13 +8994,13 @@ export type GetExtendedMutationApiArg = {
   /** Unique identifier for a mutation_id */
   mutationId: string;
 };
-export type SetUnitPredicatesApiResponse = /** status 200 OK */ UnitPredicatesResponse;
-export type SetUnitPredicatesApiArg = {
+export type SetUnitProtectionApiResponse = /** status 200 OK */ UnitProtectionResponse;
+export type SetUnitProtectionApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
-  unitPredicatesRequest: UnitPredicatesRequest;
+  unitProtectionRequest: UnitProtectionRequest;
 };
 export type ListExtendedResourcesApiResponse = /** status 200 OK */ ExtendedResourceRead[];
 export type ListExtendedResourcesApiArg = {
@@ -11060,8 +11060,8 @@ export type BulkPatchUnitsApiArg = {
   include?: string;
   /** Dry run mode: return changed unit(s) but don't update configuration data */
   dryRun?: boolean;
-  /** Preserve the stored Predicate values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left overwritable. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
-  preservePredicates?: boolean;
+  /** Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  preserveProtection?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
   upgrade?: boolean;
   /** Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. */
@@ -11076,7 +11076,7 @@ export type BulkPatchUnitsApiArg = {
   mergeEnd?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
   mergeExternalSource?: string;
-  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Predicate values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
   mergeEnableSubtraction?: boolean;
   /** The specified string is an expression for the purpose of filtering
     the list of Mutations returned. The expression syntax was inspired by SQL.
@@ -13543,8 +13543,8 @@ export type MutationInfo = {
   MutationType?: MutationType;
   /** Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly. */
   Patch?: string;
-  /** Used to decide how to use the mututation */
-  Predicate?: boolean;
+  /** True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten */
+  Protected?: boolean;
   /** Removed configuration data if MutationType is Delete and otherwise the new data */
   Value?: string;
 };
@@ -14111,7 +14111,7 @@ export type Link = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
-  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
+  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
   MergeEnableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
@@ -14176,7 +14176,7 @@ export type LinkRead = {
   };
   /** Unique identifier for a Link. */
   LinkID?: string;
-  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Predicate values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
+  /** Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, narrowed further by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch. Only meaningful for UpgradeUnit and MergeUnits Links. */
   MergeEnableSubtraction?: boolean;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
@@ -15438,7 +15438,7 @@ export type UnitConflictsResponse = {
 export type UnitConflictSelector = {
   /** Match conflicts at this path; empty matches any path, including resource-level conflicts */
   Path?: string;
-  /** Match conflicts dropped for this reason: Subtracted, DeleteShadowed, PredicateFiltered, or UnresolvedPath; empty matches any reason */
+  /** Match conflicts dropped for this reason: Subtracted, DeleteShadowed, ProtectedPath, or UnresolvedPath; empty matches any reason */
   Reason?: string;
   /** Match conflicts on this resource; empty matches any resource */
   ResourceName?: string;
@@ -15485,20 +15485,20 @@ export type ExtendedMutationRead = {
   Trigger?: TriggerRead;
   Unit?: UnitRead;
 };
-export type UnitPredicatesResponse = {
+export type UnitProtectionResponse = {
   Error?: ResponseError;
   MutationSources?: ResourceMutationList;
 };
-export type ResourcePredicates = {
-  /** Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override */
-  Predicates?: {
+export type ResourceProtection = {
+  /** Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update */
+  Protected?: {
     [key: string]: boolean;
   } | null;
   Resource?: ResourceInfo;
 };
-export type UnitPredicatesRequest = {
-  /** Per-resource Predicate edits to apply to the Unit's MutationSources */
-  ResourcePredicates?: ResourcePredicates[] | null;
+export type UnitProtectionRequest = {
+  /** Per-resource Protected edits to apply to the Unit's MutationSources */
+  ResourceProtection?: ResourceProtection[] | null;
 };
 export type UnitAction = {
   Action?: ActionType;
@@ -15831,7 +15831,7 @@ export const {
   useLazyListExtendedMutationsQuery,
   useGetExtendedMutationQuery,
   useLazyGetExtendedMutationQuery,
-  useSetUnitPredicatesMutation,
+  useSetUnitProtectionMutation,
   useListExtendedResourcesQuery,
   useLazyListExtendedResourcesQuery,
   useGetExtendedResourceQuery,

@@ -20,9 +20,9 @@ func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConver
 			FunctionName: "reset",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName:    "mutation-predicates",
+					ParameterName:    "mutation-protection",
 					Required:         true,
-					Description:      "Mutations with predicates set to true if they should be reset",
+					Description:      "The unit's MutationSources; paths that are not Protected are reset",
 					DataType:         api.DataTypeResourceMutationList,
 					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
@@ -31,7 +31,7 @@ func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConver
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Sets attributes back to placeholder values if last set by mutations that match the predicates",
+			Description:           "Sets attributes back to placeholder values if last set by mutations that are not protected",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
@@ -44,13 +44,13 @@ func registerReset(fh handler.FunctionRegistry, converter configkit.ConfigConver
 }
 
 func genericFnReset(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	mutationPredicatesString := args[0].Value.(string)
-	var mutationsPredicates api.ResourceMutationList
-	err := json.Unmarshal([]byte(mutationPredicatesString), &mutationsPredicates)
+	mutationProtectionString := args[0].Value.(string)
+	var mutationsProtection api.ResourceMutationList
+	err := json.Unmarshal([]byte(mutationProtectionString), &mutationsProtection)
 	if err != nil {
 		return parsedData, nil, err
 	}
 
-	err = yamlkit.Reset(parsedData, mutationsPredicates, resourceProvider, options)
+	err = yamlkit.Reset(parsedData, mutationsProtection, resourceProvider, options)
 	return parsedData, nil, err
 }

@@ -44,7 +44,7 @@ func TestParseCommentKey(t *testing.T) {
 		// Not comment keys
 		{"server", "", "", false},
 		{"$visitor", "", "", false},
-		{"$comment$", "", "", false},       // no type
+		{"$comment$", "", "", false},        // no type
 		{"$comment$bad$key", "", "", false}, // invalid type
 		{"notacomment:head:foo", "", "", false},
 	}

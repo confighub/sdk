@@ -25,7 +25,7 @@ import (
 //   - Resource-level rename heuristic (the fuzzy-similarity branch in
 //     ComputeMutations) — name change with multiple candidates, namespace move,
 //     type change, no-rename baseline.
-//   - Predicate filtering in PatchMutations — at the resource level, the path
+//   - Protection filtering in PatchMutations — at the resource level, the path
 //     level, and via path ancestors.
 //   - Realistic Kubernetes upgrade scenarios — image bump + replica scale, port
 //     addition, volume addition, multi-resource Add+Delete+Update batches.
@@ -49,12 +49,12 @@ func computeMutationsHelper(t *testing.T, previous, modified string) api.Resourc
 
 // patchMutationsHelper runs PatchMutations against parsed YAML and returns the
 // rendered output as a string.
-func patchMutationsHelper(t *testing.T, target string, predicates, patch api.ResourceMutationList) string {
+func patchMutationsHelper(t *testing.T, target string, protection, patch api.ResourceMutationList) string {
 	t.Helper()
 	provider := k8skit.NewK8sResourceProvider()
 	parsed, err := gaby.ParseAll([]byte(target))
 	require.NoError(t, err)
-	out, _, err := yamlkit.PatchMutations(parsed, predicates, patch, nil, provider, nil)
+	out, _, err := yamlkit.PatchMutations(parsed, protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 	return out.String()
 }
@@ -173,7 +173,6 @@ data:
 	assert.Contains(t, renamed.AliasesWithoutScopes, api.ResourceName("renamed"))
 }
 
-
 // TestRename_NamespaceChange_NotARename — moving a resource to a different
 // namespace while keeping the same name is matched by ResourceNameWithoutScope
 // (exact match), not by the fuzzy branch. Both scoped names appear as aliases.
@@ -291,10 +290,10 @@ spec:
 }
 
 // ---------------------------------------------------------------------------
-// Predicate filtering in PatchMutations
+// Protection filtering in PatchMutations
 // ---------------------------------------------------------------------------
 
-const predicateBaseDeployment = `apiVersion: apps/v1
+const protectionBaseDeployment = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app
@@ -324,38 +323,35 @@ func patchUpdate() api.ResourceMutationList {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        2,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			"spec.replicas": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        2,
-				Predicate:    true,
 				Value:        "5\n",
 			},
 			"spec.template.spec.containers.?name=app;@0.image": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        2,
-				Predicate:    true,
 				Value:        "nginx:1.20\n",
 			},
 		},
 	}}
 }
 
-// TestPredicate_NilAppliesAllPaths — passing nil for predicates lets every
+// TestProtection_NilAppliesAllPaths — passing nil for the protection list lets every
 // patch through.
-func TestPredicate_NilAppliesAllPaths(t *testing.T) {
-	out := patchMutationsHelper(t, predicateBaseDeployment, nil, patchUpdate())
+func TestProtection_NilAppliesAllPaths(t *testing.T) {
+	out := patchMutationsHelper(t, protectionBaseDeployment, nil, patchUpdate())
 	assert.Contains(t, out, "replicas: 5")
 	assert.Contains(t, out, "image: nginx:1.20")
 }
 
-// TestPredicate_PathFalseSkipsThatPath — when a predicate has Predicate=false
+// TestProtection_PathProtectedSkipsThatPath — when an entry has Protected=true
 // at a specific path, the mutation at that path is skipped, while other paths
 // are still applied.
-func TestPredicate_PathFalseSkipsThatPath(t *testing.T) {
-	predicates := api.ResourceMutationList{{
+func TestProtection_PathProtectedSkipsThatPath(t *testing.T) {
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
@@ -365,27 +361,26 @@ func TestPredicate_PathFalseSkipsThatPath(t *testing.T) {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        1,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			"spec.replicas": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        1,
-				Predicate:    false, // block replicas
+				Protected:    true, // block replicas
 				Value:        "1\n",
 			},
 		},
 	}}
-	out := patchMutationsHelper(t, predicateBaseDeployment, predicates, patchUpdate())
+	out := patchMutationsHelper(t, protectionBaseDeployment, protection, patchUpdate())
 	assert.Contains(t, out, "replicas: 1", "replicas should still be 1 (patch blocked)")
 	assert.NotContains(t, out, "replicas: 5")
 	assert.Contains(t, out, "image: nginx:1.20", "image patch should still apply")
 }
 
-// TestPredicate_AncestorFalseSkipsDescendants — Predicate=false at a parent
+// TestProtection_AncestorProtectedSkipsDescendants — Protected=true at a parent
 // path causes child path mutations to be skipped too.
-func TestPredicate_AncestorFalseSkipsDescendants(t *testing.T) {
-	predicates := api.ResourceMutationList{{
+func TestProtection_AncestorProtectedSkipsDescendants(t *testing.T) {
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
@@ -395,26 +390,25 @@ func TestPredicate_AncestorFalseSkipsDescendants(t *testing.T) {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        1,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			// Block everything under spec.template.
 			"spec.template": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        1,
-				Predicate:    false,
+				Protected:    true,
 			},
 		},
 	}}
-	out := patchMutationsHelper(t, predicateBaseDeployment, predicates, patchUpdate())
+	out := patchMutationsHelper(t, protectionBaseDeployment, protection, patchUpdate())
 	assert.Contains(t, out, "image: nginx:1.19", "image patch under spec.template should be blocked")
 	assert.Contains(t, out, "replicas: 5", "replicas (not under spec.template) should still apply")
 }
 
-// TestPredicate_ResourceLevelFalseSkipsResource — Predicate=false at the resource
+// TestProtection_ResourceLevelProtectedSkipsResource — Protected=true at the resource
 // level causes the whole resource to be skipped by PatchMutations.
-func TestPredicate_ResourceLevelFalseSkipsResource(t *testing.T) {
-	predicates := api.ResourceMutationList{{
+func TestProtection_ResourceLevelProtectedSkipsResource(t *testing.T) {
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
@@ -424,19 +418,19 @@ func TestPredicate_ResourceLevelFalseSkipsResource(t *testing.T) {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        1,
-			Predicate:    false, // block whole resource
+			Protected:    true, // block whole resource
 		},
 		PathMutationMap: api.MutationMap{},
 	}}
-	out := patchMutationsHelper(t, predicateBaseDeployment, predicates, patchUpdate())
-	assert.Contains(t, out, "replicas: 1", "no patch should apply when resource-level predicate is false")
+	out := patchMutationsHelper(t, protectionBaseDeployment, protection, patchUpdate())
+	assert.Contains(t, out, "replicas: 1", "no patch should apply when the resource is protected")
 	assert.Contains(t, out, "image: nginx:1.19")
 }
 
-// TestPredicate_NoMatchingPredicateDoesntFilter — when the predicate list is
+// TestProtection_NoMatchingEntryDoesntFilter — when the protection list is
 // nonempty but doesn't include the target resource, every path applies.
-func TestPredicate_NoMatchingPredicateDoesntFilter(t *testing.T) {
-	predicates := api.ResourceMutationList{{
+func TestProtection_NoMatchingEntryDoesntFilter(t *testing.T) {
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "v1/ConfigMap",
 			ResourceName:             "default/unrelated",
@@ -446,10 +440,10 @@ func TestPredicate_NoMatchingPredicateDoesntFilter(t *testing.T) {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        1,
-			Predicate:    false,
+			Protected:    true,
 		},
 	}}
-	out := patchMutationsHelper(t, predicateBaseDeployment, predicates, patchUpdate())
+	out := patchMutationsHelper(t, protectionBaseDeployment, protection, patchUpdate())
 	assert.Contains(t, out, "replicas: 5")
 	assert.Contains(t, out, "image: nginx:1.20")
 }

@@ -12,32 +12,27 @@ OUTPUT
     "ResourceMutationInfo": {
       "MutationType": "Update",
       "Index": 0,
-      "Predicate": true,
       "Value": ""
     },
     "PathMutationMap": {
       "database.$comment$head$host": {
         "MutationType": "Delete",
         "Index": 0,
-        "Predicate": true,
         "Value": "One comment\n"
       },
       "database.$comment$line$port": {
         "MutationType": "Delete",
         "Index": 0,
-        "Predicate": true,
         "Value": "Two comment\n"
       },
       "database.host": {
         "MutationType": "Update",
         "Index": 0,
-        "Predicate": true,
         "Value": "example.com\n"
       },
       "database.port": {
         "MutationType": "Update",
         "Index": 0,
-        "Predicate": true,
         "Value": "5433\n"
       }
     },

@@ -8,8 +8,8 @@ import (
 	"regexp"
 
 	"github.com/cockroachdb/errors"
-	"log/slog"
 	"github.com/swaggest/jsonschema-go"
+	"log/slog"
 
 	"github.com/confighub/sdk/core/configkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -180,4 +180,3 @@ func checkBoolValue(v bool, filter *api.ValueFilter) bool {
 	}
 	return false
 }
-

@@ -29,9 +29,9 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 			FunctionName: "patch-mutations",
 			Parameters: []api.FunctionParameter{
 				{
-					ParameterName:    "mutation-predicates",
+					ParameterName:    "mutation-protection",
 					Required:         true,
-					Description:      "Mutations with predicates set to true if they are patchable",
+					Description:      "The target's MutationSources, whose Protected flags say which paths the patch may not overwrite",
 					DataType:         api.DataTypeResourceMutationList,
 					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
@@ -52,7 +52,7 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "conflicts",
-				Description: "Mutations from the patch that were dropped (subtracted by the target, filtered by a predicate, or unresolvable against the target's data) and any target-side mutations the patch erased. Empty when the patch applied cleanly.",
+				Description: "Mutations from the patch that were dropped (subtracted by the target, blocked by the target's protection, or unresolvable against the target's data) and any target-side mutations the patch erased. Empty when the patch applied cleanly.",
 				OutputType:  api.OutputTypeMutationConflictList,
 				Schema:      &conflictListSchema,
 			},
@@ -73,9 +73,9 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 }
 
 func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	mutationPredicatesString := args[0].Value.(string)
-	var mutationsPredicates api.ResourceMutationList
-	err := json.Unmarshal([]byte(mutationPredicatesString), &mutationsPredicates)
+	mutationProtectionString := args[0].Value.(string)
+	var mutationsProtection api.ResourceMutationList
+	err := json.Unmarshal([]byte(mutationProtectionString), &mutationsProtection)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -95,7 +95,7 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		}
 	}
 
-	parsedData, conflicts, err := yamlkit.PatchMutations(parsedData, mutationsPredicates, mutationsPatch, mutationsToSubtract, resourceProvider, options)
+	parsedData, conflicts, err := yamlkit.PatchMutations(parsedData, mutationsProtection, mutationsPatch, mutationsToSubtract, resourceProvider, options)
 	if err != nil {
 		return parsedData, nil, err
 	}
@@ -107,10 +107,10 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 	return parsedData, conflicts, nil
 }
 
-func registerSetPredicates(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	if err := fh.RegisterFunction("set-predicates", &handler.FunctionRegistration{
+func registerSetProtection(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
+	if err := fh.RegisterFunction("set-protection", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
-			FunctionName: "set-predicates",
+			FunctionName: "set-protection",
 			Parameters: []api.FunctionParameter{
 				{
 					ParameterName:    "mutation-sources",
@@ -120,15 +120,15 @@ func registerSetPredicates(fh handler.FunctionRegistry, converter configkit.Conf
 					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
 				{
-					ParameterName: "resource-predicates",
+					ParameterName: "resource-protection",
 					Required:      true,
-					Description:   "JSON-encoded list of per-resource path Predicate values to set ([]api.ResourcePredicates)",
+					Description:   "JSON-encoded list of per-resource path Protected values to set ([]api.ResourceProtection)",
 					DataType:      api.DataTypeString,
 				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "mutation-sources",
-				Description: "The updated MutationSources with the requested Predicate values set.",
+				Description: "The updated MutationSources with the requested Protected values set.",
 				OutputType:  api.OutputTypeResourceMutationList,
 				Schema:      &api.ResourceMutationListSchema,
 			},
@@ -136,34 +136,34 @@ func registerSetPredicates(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set Predicate values on a unit's MutationSources for the given resource paths. Fails if any path does not exist in the unit's data.",
+			Description:           "Set Protected values on a unit's MutationSources for the given resource paths, marking them local overrides a merge must not overwrite. Fails if any path does not exist in the unit's data.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
 		},
 		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnSetPredicates(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
+			return genericFnSetProtection(resourceProvider, fArgs.ParsedData, fArgs.Arguments)
 		},
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
 }
 
-func genericFnSetPredicates(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
+func genericFnSetProtection(resourceProvider yamlkit.ResourceProvider, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	mutationSourcesString := args[0].Value.(string)
 	var mutationSources api.ResourceMutationList
 	if err := json.Unmarshal([]byte(mutationSourcesString), &mutationSources); err != nil {
 		return parsedData, nil, err
 	}
-	resourcePredicatesString := args[1].Value.(string)
-	var resourcePredicates []api.ResourcePredicates
-	if err := json.Unmarshal([]byte(resourcePredicatesString), &resourcePredicates); err != nil {
+	resourceProtectionString := args[1].Value.(string)
+	var resourceProtection []api.ResourceProtection
+	if err := json.Unmarshal([]byte(resourceProtectionString), &resourceProtection); err != nil {
 		return parsedData, nil, err
 	}
 
 	var unresolved []api.ResolvedPath
-	for _, rp := range resourcePredicates {
+	for _, rp := range resourceProtection {
 		var u []api.ResolvedPath
-		mutationSources, u = yamlkit.SetPredicates(parsedData, mutationSources, rp.Resource, rp.Predicates, resourceProvider)
+		mutationSources, u = yamlkit.SetProtection(parsedData, mutationSources, rp.Resource, rp.Protected, resourceProvider)
 		unresolved = append(unresolved, u...)
 	}
 	if len(unresolved) > 0 {

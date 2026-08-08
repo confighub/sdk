@@ -18,7 +18,7 @@ import (
 // registerVetNoMergeConflicts registers the validating function that turns a Unit's
 // outstanding merge conflicts into an ApplyGate.
 //
-// A merge reports what it could not do — a path the downstream owns, a path a predicate
+// A merge reports what it could not do — a path the downstream owns, a path its protection
 // protects, a path it could not locate, a downstream change an upstream deletion displaced
 // — and those reports stay on the Unit until someone applies or dismisses them. Whether an
 // unresolved merge should stop a Unit from being applied is a policy question, not a
@@ -36,7 +36,7 @@ func registerVetNoMergeConflicts(fh handler.FunctionRegistry, _ configkit.Config
 					ParameterName: "reasons",
 					Required:      false,
 					Description: "Comma-separated conflict reasons to fail on: Subtracted, DeleteShadowed, " +
-						"PredicateFiltered, UnresolvedPath, ExclusiveWithheld, ExclusiveCleared. " +
+						"ProtectedPath, UnresolvedPath, ExclusiveWithheld, ExclusiveCleared. " +
 						"Empty fails on any outstanding conflict.",
 					DataType: api.DataTypeString,
 					Example:  "UnresolvedPath,DeleteShadowed",

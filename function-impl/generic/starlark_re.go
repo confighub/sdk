@@ -154,8 +154,8 @@ func (m *starlarkMatch) String() string {
 }
 func (m *starlarkMatch) Type() string          { return "re.match" }
 func (m *starlarkMatch) Freeze()               {} // immutable
-func (m *starlarkMatch) Truth() starlark.Bool   { return true }
-func (m *starlarkMatch) Hash() (uint32, error)  { return 0, fmt.Errorf("unhashable type: re.match") }
+func (m *starlarkMatch) Truth() starlark.Bool  { return true }
+func (m *starlarkMatch) Hash() (uint32, error) { return 0, fmt.Errorf("unhashable type: re.match") }
 
 func (m *starlarkMatch) numGroups() int { return len(m.loc)/2 - 1 }
 

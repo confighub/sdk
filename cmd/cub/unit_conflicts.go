@@ -19,7 +19,7 @@ var unitConflictsCmd = &cobra.Command{
 	Long: getCommandHelp(`Work with the parts of the last merge's patch that were not applied.
 
 A merge reports a conflict for every change it could not make: a path the
-downstream owns (Subtracted), a path a predicate protects (PredicateFiltered),
+downstream owns (Subtracted), a path the downstream protects (ProtectedPath),
 a path that could not be located in this unit (UnresolvedPath), and each
 downstream change displaced by an upstream deletion (DeleteShadowed). The
 merged data is correct as it stands -- a conflict says what the source wanted
@@ -76,7 +76,7 @@ func init() {
 	unitConflictsCmd.Flags().BoolVar(&conflictsDismiss, "dismiss", false,
 		"drop the selected conflicts without changing the configuration data")
 	unitConflictsCmd.Flags().StringVar(&conflictsReason, "reason", "",
-		"select conflicts with this reason: Subtracted, DeleteShadowed, PredicateFiltered, UnresolvedPath, ExclusiveWithheld, or ExclusiveCleared")
+		"select conflicts with this reason: Subtracted, DeleteShadowed, ProtectedPath, UnresolvedPath, ExclusiveWithheld, or ExclusiveCleared")
 	unitConflictsCmd.Flags().StringVar(&conflictsPath, "path", "",
 		"select conflicts at this path")
 	unitConflictsCmd.Flags().StringVar(&conflictsResourceName, "resource", "",

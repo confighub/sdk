@@ -415,7 +415,7 @@ func TestPatchMutations(t *testing.T) {
 		name           string
 		config         string
 		mutations      api.ResourceMutationList
-		predicates     api.ResourceMutationList // nil means no filtering
+		protection     api.ResourceMutationList // nil means no filtering
 		validateResult func(t *testing.T, result string)
 	}{
 		{
@@ -705,7 +705,7 @@ metadata:
 			parsed, err := gaby.ParseAll([]byte(tt.config))
 			require.NoError(t, err)
 
-			result, _, err := yamlkit.PatchMutations(parsed, tt.predicates, tt.mutations, nil, k8skit.NewK8sResourceProvider(), nil)
+			result, _, err := yamlkit.PatchMutations(parsed, tt.protection, tt.mutations, nil, k8skit.NewK8sResourceProvider(), nil)
 			require.NoError(t, err)
 
 			// Serialize the result using Container's String() method

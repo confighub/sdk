@@ -51,7 +51,7 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerUpsertResource(fh, converter, resourceProvider)
 	registerDeleteResource(fh, converter, resourceProvider)
 	registerPatchMutations(fh, converter, resourceProvider)
-	registerSetPredicates(fh, converter, resourceProvider)
+	registerSetProtection(fh, converter, resourceProvider)
 	registerReset(fh, converter, resourceProvider)
 	registerReplicate(fh, converter, resourceProvider)
 	registerVetJSONSchema(fh, converter, resourceProvider)

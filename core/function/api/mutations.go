@@ -44,14 +44,13 @@ type ResourceMutationList []ResourceMutation
 
 type MutationMap map[ResolvedPath]MutationInfo
 
-// ResourcePredicates specifies Predicate values to set on the path-level mutations of one
-// resource in a MutationSources list. Each entry in Predicates maps a resolved path to its
-// new Predicate value: true means the path is eligible to be overwritten by a merge, false
-// marks it a protected local override. Consumed by the set-predicates function via
-// yamlkit.SetPredicates.
-type ResourcePredicates struct {
-	Resource   ResourceInfo          `description:"Identifies the resource within the unit whose mutation predicates are being set"`
-	Predicates map[ResolvedPath]bool `description:"Map of resolved path to its new Predicate value: true = eligible to be overwritten by a merge, false = protected local override"`
+// ResourceProtection specifies Protected values to set on the path-level mutations of one
+// resource in a MutationSources list. Each entry in Protected maps a resolved path to its new
+// value: true marks the path a local override a merge must not overwrite, false re-opens it.
+// Consumed by the set-protection function via yamlkit.SetProtection.
+type ResourceProtection struct {
+	Resource  ResourceInfo          `description:"Identifies the resource within the unit whose path protection is being set"`
+	Protected map[ResolvedPath]bool `description:"Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update"`
 }
 
 // ArrayOrderMap records, for each merge-keyed array path whose element set or
@@ -81,7 +80,10 @@ type ArrayElementAliasMap map[ResolvedPath]map[string]string
 type MutationInfo struct {
 	MutationType MutationType `description:"Type of mutation performed on the associated configuration element: Add, Update, Replace, Delete, or None, if no change"`
 	Index        int64        `description:"Function index or sequence number corresponding to the change"`
-	Predicate    bool         `description:"Used to decide how to use the mututation"`
+	// Protected says the target chose this value locally and a merge must not overwrite it.
+	// False -- the default, and the common case -- means the value came from somewhere else
+	// (a clone, an upgrade, a merge, an external source) and is the merge's to update.
+	Protected bool `json:",omitempty" description:"True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten"`
 	Value        string       `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
 	Patch        string       `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
 }
@@ -108,10 +110,11 @@ const (
 	// Path is the displaced target path; Source is the source-side parent
 	// Delete; Target is the displaced target mutation.
 	ConflictReasonDeleteShadowed ConflictReason = "DeleteShadowed"
-	// ConflictReasonPredicateFiltered: a path or resource in the patch was
-	// skipped by PatchMutations because the corresponding predicate had
-	// Predicate=false (directly or via an ancestor path).
-	ConflictReasonPredicateFiltered ConflictReason = "PredicateFiltered"
+	// ConflictReasonProtectedPath: a path or resource in the patch was
+	// skipped by PatchMutations because the target had Protected=true on it
+	// (directly or via an ancestor path) -- a local override the merge must
+	// not overwrite.
+	ConflictReasonProtectedPath ConflictReason = "ProtectedPath"
 	// ConflictReasonUnresolvedPath: a path in the patch couldn't be fully
 	// resolved against the target document — typically because the
 	// merge-key value at an associative segment didn't match any element
@@ -136,7 +139,7 @@ const (
 )
 
 // MutationConflict records that a mutation in a patch was not applied because
-// of an interaction with the target's own state (subtraction, predicate filter,
+// of an interaction with the target's own state (subtraction, the target's protection,
 // or unresolved associative path). Conflicts are advisory: the patched output
 // is correct as-is, but the conflict tells the caller what part of the patch
 // they wanted to apply was dropped, so they can surface it as a merge issue.

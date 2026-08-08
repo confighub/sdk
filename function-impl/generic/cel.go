@@ -75,7 +75,6 @@ func CelParseParams(args []api.FunctionArgument, startIndex int) (map[string]any
 	return params, nil
 }
 
-
 func registerVetCELExpr(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("vet-celexpr", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -707,4 +706,3 @@ func genericFnCELValidate(resourceProvider yamlkit.ResourceProvider, options *ap
 	failedResult.Details = result.details
 	return parsedData, failedResult, err
 }
-

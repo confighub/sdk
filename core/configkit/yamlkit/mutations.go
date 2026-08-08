@@ -34,7 +34,7 @@ import (
 //  1. Replayed onto a different (or earlier) configuration via PatchMutations as part of a
 //     three-way merge (e.g., upgrading a downstream Unit from upstream).
 //  2. Accumulated across sequential edits via api.OffsetMutations + AddMutations to record
-//     a compiled history of who changed what (used as predicates for selective patching).
+//     a compiled history of who changed what (used as protection for selective patching).
 //  3. Diffed against another mutation set via SubtractMutations / PatchMutations'
 //     mutationsToSubtract argument so target-side changes survive the patch.
 //
@@ -1529,7 +1529,6 @@ func recordAddedSubtree(path string, doc *gaby.YamlDoc, functionIndex int64, pat
 		pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
 			MutationType: api.MutationTypeAdd,
 			Index:        functionIndex,
-			Predicate:    true,
 			Value:        doc.String(), // new data
 		}
 		return
@@ -1582,7 +1581,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
 					MutationType: api.MutationTypeUpdate,
 					Index:        functionIndex,
-					Predicate:    true,
 					Value:        modifiedDoc.String(), // new data
 				}
 				continue // process next stack element
@@ -1624,7 +1622,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 					MutationType: api.MutationTypeDelete,
 					Index:        functionIndex,
-					Predicate:    true,
 					Value:        previousChild.String(), // deleted data
 				}
 			}
@@ -1653,7 +1650,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 							MutationType: api.MutationTypeDelete,
 							Index:        functionIndex,
-							Predicate:    true,
 							Value:        previousChild.String(), // deleted data
 						}
 					}
@@ -1662,7 +1658,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
 						MutationType: api.MutationTypeUpdate,
 						Index:        functionIndex,
-						Predicate:    true,
 						Value:        modifiedDoc.String(), // new data
 					}
 				}
@@ -1675,7 +1670,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
 					MutationType: api.MutationTypeUpdate,
 					Index:        functionIndex,
-					Predicate:    true,
 					Value:        modifiedDoc.String(), // new data
 				}
 				continue // process next stack element
@@ -1729,7 +1723,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 							pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 								MutationType: api.MutationTypeAdd,
 								Index:        functionIndex,
-								Predicate:    true,
 								Value:        modifiedChild.String(),
 							}
 						} else if !previousMatched[modifiedIndex] {
@@ -1861,7 +1854,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 							MutationType: api.MutationTypeAdd,
 							Index:        functionIndex,
-							Predicate:    true,
 							Value:        pa.modifiedChild.String(),
 						}
 						continue
@@ -1916,7 +1908,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 						MutationType: api.MutationTypeDelete,
 						Index:        functionIndex,
-						Predicate:    true,
 						Value:        child.String(),
 					}
 				}
@@ -1953,7 +1944,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 						MutationType: api.MutationTypeDelete,
 						Index:        functionIndex,
-						Predicate:    true,
 						Value:        previousArrayChildren[index].String(), // previous data
 					}
 				}
@@ -1969,7 +1959,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					pathMutationMap[api.ResolvedPath(currentPath)] = api.MutationInfo{
 						MutationType: api.MutationTypeAdd,
 						Index:        functionIndex,
-						Predicate:    true,
 						Value:        modifiedArrayChildren[index].String(), // new data
 					}
 				}
@@ -1980,7 +1969,6 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				mutation := api.MutationInfo{
 					MutationType: api.MutationTypeUpdate,
 					Index:        functionIndex,
-					Predicate:    true,
 					Value:        modifiedDoc.String(), // new data
 				}
 				// For string values that may contain structured data or multiple
@@ -2241,7 +2229,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 				ResourceMutationInfo: api.MutationInfo{
 					MutationType: api.MutationTypeAdd,
 					Index:        functionIndex,
-					Predicate:    true,
 					Value:        modifiedParsedData[modifiedDocIndex].String(), // new data
 				},
 				PathMutationMap: make(api.MutationMap),
@@ -2273,7 +2260,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			ResourceMutationInfo: api.MutationInfo{
 				MutationType: api.MutationTypeUpdate, // assume changed
 				Index:        functionIndex,
-				Predicate:    true,
 				// no Value at this level
 			},
 			PathMutationMap:     diff.pathMutationMap,
@@ -2316,7 +2302,6 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			ResourceMutationInfo: api.MutationInfo{
 				MutationType: api.MutationTypeDelete,
 				Index:        functionIndex,
-				Predicate:    true,
 				Value:        previousParsedData[previousDocIndex].String(), // previous data
 			},
 			PathMutationMap: make(api.MutationMap),
@@ -2348,15 +2333,16 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 // This is how target-side changes are preserved against the upstream patch (see
 // SubtractMutations). Pass nil (or an empty list) to skip subtraction.
 //
-// Predicates: mutationsPredicates is the accumulated MutationSources of the data being
-// patched (see AddMutations). When a Predicate is false at the resource or any ancestor
-// path, that part of mutationsPatch is filtered out. Default Predicate=true means all
-// changes are eligible. mutationsPredicates may be nil.
+// Protection: mutationsProtection is the accumulated MutationSources of the data being
+// patched (see AddMutations). When Protected is true at the resource or any ancestor path,
+// that part of mutationsPatch is filtered out -- the target chose that value locally. The
+// default, Protected=false, means the value came from elsewhere and every change is eligible.
+// mutationsProtection may be nil.
 //
 // Algorithm:
 //
 //  1. Resource matching (per document in parsedData): look up the corresponding patch
-//     entry by ResourceTypeAndName, then by predicate aliases (so
+//     entry by ResourceTypeAndName, then by the protection entry's aliases (so
 //     a renamed resource is still matched to its upstream patch entry).
 //
 //  2. Resource-level mutation:
@@ -2383,8 +2369,8 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 //     such as initContainers will require an additional reorder pass to fully restore
 //     source-side ordering.
 //
-//     Predicate filtering: a path or any ancestor with Predicate=false in
-//     mutationsPredicates causes the path to be skipped.
+//     Protection filtering: a path or any ancestor with Protected=true in
+//     mutationsProtection causes the path to be skipped.
 //
 //     Apply by type:
 //
@@ -2399,47 +2385,47 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 //
 //  4. After visiting all existing documents, any unmatched Add/Replace patch entries are
 //     parsed and appended as new documents to parsedData. Their per-path mutations are
-//     applied to the new document (no subtraction, no predicate filtering).
+//     applied to the new document (no subtraction, no protection filtering).
 //
 // Errors are accumulated and joined; PatchMutations does its best to apply every patch
 // it can rather than aborting on the first problem.
 //
 // PatchMutations also returns a MutationConflictList recording every part of the patch
 // that was not applied: SubtractMutations conflicts (forwarded from the subtract step),
-// PredicateFiltered (resource-level and path-level), and UnresolvedPath (when an
+// ProtectedPath (resource-level and path-level), and UnresolvedPath (when an
 // associative segment couldn't be matched against the target). The conflicts are
 // advisory — the returned data already reflects the drops.
-func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPatch, mutationsToSubtract api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
+func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPatch, mutationsToSubtract api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
 	var conflicts api.MutationConflictList
 	if len(mutationsToSubtract) > 0 {
 		var subtractConflicts api.MutationConflictList
 		mutationsPatch, subtractConflicts = SubtractMutations(mutationsPatch, mutationsToSubtract)
 		conflicts = append(conflicts, subtractConflicts...)
 	}
-	// Build predicate index with prefer-predicate dedup: when multiple mutation sources
-	// exist for the same resource (e.g., one from clone and one from triggers), prefer
-	// the one with Predicate=true so the resource is not incorrectly filtered out.
-	predicateIdx := api.NewResourceMutationIndex(mutationsPredicates)
-	for i := range mutationsPredicates {
-		resourceInfo := mutationsPredicates[i].Resource
+	// Build the protection index with prefer-unprotected dedup: when multiple mutation
+	// sources exist for the same resource (e.g., one from clone and one from triggers),
+	// prefer the unprotected one so the resource is not incorrectly filtered out.
+	protectionIdx := api.NewResourceMutationIndex(mutationsProtection)
+	for i := range mutationsProtection {
+		resourceInfo := mutationsProtection[i].Resource
 		if resourceInfo.ResourceNameWithoutScope == "" {
 			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
 		}
 		key := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		if existingIdx, exists := predicateIdx.NameMap[key]; exists {
-			if mutationsPredicates[existingIdx].ResourceMutationInfo.Predicate &&
-				!mutationsPredicates[i].ResourceMutationInfo.Predicate {
+		if existingIdx, exists := protectionIdx.NameMap[key]; exists {
+			if !mutationsProtection[existingIdx].ResourceMutationInfo.Protected &&
+				mutationsProtection[i].ResourceMutationInfo.Protected {
 				continue
 			}
 		}
-		predicateIdx.NameMap[key] = i
+		protectionIdx.NameMap[key] = i
 	}
 
 	patchIdx := api.NewResourceMutationIndex(mutationsPatch)
 	// The subtrahend is the target's own diff. Subtraction has already removed the patch
 	// entries it overlaps; what is still wanted from it is the record of which paths the
 	// target claimed, which is how a merge with subtraction on expresses the ownership a
-	// merge without it expresses as a stored Predicate.
+	// merge without it expresses as stored protection.
 	subtractIdx := api.NewResourceMutationIndex(mutationsToSubtract)
 
 	// Track which patch mutations were matched to existing documents.
@@ -2451,28 +2437,28 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 	visitor := func(doc *gaby.YamlDoc, _ any, docIndex int, docResourceInfo *api.ResourceInfo) (any, []error) {
 		var visitorErrs []error
 
-		// Find predicate for this document
-		mutationPredicateIndex, hasPredicate := predicateIdx.Find(*docResourceInfo, nil)
+		// Find the protection entry for this document
+		protectionIndex, hasProtection := protectionIdx.Find(*docResourceInfo, nil)
 
-		// Find patch for this document, using predicate aliases as additional aliases
-		var predicateAliases map[api.ResourceName]struct{}
-		if hasPredicate {
-			predicateAliases = mutationsPredicates[mutationPredicateIndex].AliasesWithoutScopes
+		// Find patch for this document, using the protection entry's aliases as additional aliases
+		var protectionAliases map[api.ResourceName]struct{}
+		if hasProtection {
+			protectionAliases = mutationsProtection[protectionIndex].AliasesWithoutScopes
 		}
-		mutationPatchIndex, ok := patchIdx.Find(*docResourceInfo, predicateAliases)
+		mutationPatchIndex, ok := patchIdx.Find(*docResourceInfo, protectionAliases)
 		if !ok {
 			return nil, nil
 		}
 
 		// Filter the patch at the resource level.
-		if hasPredicate && !mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate {
+		if hasProtection && mutationsProtection[protectionIndex].ResourceMutationInfo.Protected {
 			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
-			predicateMutInfo := mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo
+			protectedMutInfo := mutationsProtection[protectionIndex].ResourceMutationInfo
 			conflicts = append(conflicts, api.MutationConflict{
-				Reason:   api.ConflictReasonPredicateFiltered,
+				Reason:   api.ConflictReasonProtectedPath,
 				Resource: mutationsPatch[mutationPatchIndex].Resource,
 				Source:   mutationsPatch[mutationPatchIndex].ResourceMutationInfo,
-				Target:   &predicateMutInfo,
+				Target:   &protectedMutInfo,
 			})
 			matchedPatchIndices[mutationPatchIndex] = true
 			return nil, nil
@@ -2513,11 +2499,11 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			return resourceProvider.ExclusiveFieldsForPath(docResourceInfo.ResourceType, path)
 		})
 		var subtractedPaths api.MutationMap
-		if subtractIndex, ok := subtractIdx.Find(*docResourceInfo, predicateAliases); ok {
+		if subtractIndex, ok := subtractIdx.Find(*docResourceInfo, protectionAliases); ok {
 			subtractedPaths = mutationsToSubtract[subtractIndex].PathMutationMap
 		}
 		visitorErrs, pathConflicts = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
-			hasPredicate, mutationsPredicates, mutationPredicateIndex, mutationsPatch[mutationPatchIndex].Resource,
+			hasProtection, mutationsProtection, protectionIndex, mutationsPatch[mutationPatchIndex].Resource,
 			mutationsPatch[mutationPatchIndex].ArrayOrders, mutationsPatch[mutationPatchIndex].ArrayElementAliases,
 			mergeKeyLookup, exclusiveLookup, subtractedPaths,
 			visitorErrs)
@@ -2539,18 +2525,18 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 		resourcePatchMutation := &mutationsPatch[i].ResourceMutationInfo
 
 		// A resource the target deleted is a local override like any other: the deletion
-		// is recorded in the accumulated mutations with a Predicate, and Predicate=false
+		// is recorded in the accumulated mutations with its protection, and Protected=true
 		// means the target removed it on purpose. Consult that here as the matched branch
 		// does, or an upgrade re-adds what the target deliberately deleted.
-		predicateReason := api.ConflictReasonUnresolvedPath
-		var predicateMutInfo *api.MutationInfo
-		if len(mutationsPredicates) > 0 {
-			if predicateIndex, found := predicateIdx.Find(mutationsPatch[i].Resource,
+		protectionReason := api.ConflictReasonUnresolvedPath
+		var protectedMutInfo *api.MutationInfo
+		if len(mutationsProtection) > 0 {
+			if protectionEntryIndex, found := protectionIdx.Find(mutationsPatch[i].Resource,
 				mutationsPatch[i].AliasesWithoutScopes); found &&
-				!mutationsPredicates[predicateIndex].ResourceMutationInfo.Predicate {
-				info := mutationsPredicates[predicateIndex].ResourceMutationInfo
-				predicateMutInfo = &info
-				predicateReason = api.ConflictReasonPredicateFiltered
+				mutationsProtection[protectionEntryIndex].ResourceMutationInfo.Protected {
+				info := mutationsProtection[protectionEntryIndex].ResourceMutationInfo
+				protectedMutInfo = &info
+				protectionReason = api.ConflictReasonProtectedPath
 			}
 		}
 
@@ -2567,31 +2553,31 @@ func PatchMutations(parsedData gaby.Container, mutationsPredicates, mutationsPat
 			// dropping them silently loses a whole resource's worth of upstream work.
 			// Report the resource and each path it carried.
 			conflicts = append(conflicts, api.MutationConflict{
-				Reason:   predicateReason,
+				Reason:   protectionReason,
 				Resource: mutationsPatch[i].Resource,
 				Source:   *resourcePatchMutation,
-				Target:   predicateMutInfo,
+				Target:   protectedMutInfo,
 			})
 			for _, entry := range api.SortedMutationMapEntries(mutationsPatch[i].PathMutationMap) {
 				conflicts = append(conflicts, api.MutationConflict{
-					Reason:   predicateReason,
+					Reason:   protectionReason,
 					Resource: mutationsPatch[i].Resource,
 					Path:     entry.Path,
 					Source:   *entry.MutationInfo,
-					Target:   predicateMutInfo,
+					Target:   protectedMutInfo,
 				})
 			}
 			continue
 		case api.MutationTypeAdd, api.MutationTypeReplace:
-			if predicateMutInfo != nil {
+			if protectedMutInfo != nil {
 				// The target deleted this resource and marked the deletion protected.
 				slog.Info("patch filtered", "resource",
 					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource))
 				conflicts = append(conflicts, api.MutationConflict{
-					Reason:   api.ConflictReasonPredicateFiltered,
+					Reason:   api.ConflictReasonProtectedPath,
 					Resource: mutationsPatch[i].Resource,
 					Source:   *resourcePatchMutation,
-					Target:   predicateMutInfo,
+					Target:   protectedMutInfo,
 				})
 				continue
 			}
@@ -2776,7 +2762,7 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 // The path is kept in both forms. groupPath is resolved against this document, which is what
 // reads and edits it; patchGroupPath is the form the patch named it in, which is what the
 // target's own mutation records are keyed by and what a conflict has to quote back — the same
-// two forms the predicate lookup needs, for the same reason.
+// two forms the protection lookup needs, for the same reason.
 type exclusiveTouch struct {
 	groupPath      string
 	patchGroupPath string
@@ -2833,9 +2819,9 @@ func findExclusiveTouch(patchPath api.ResolvedPath, resolvedPath string, lookup 
 }
 
 // pathOwnership answers whether the target has claimed a path as its own — a stored
-// Predicate=false on it or an ancestor, or, when subtraction is in play, a mutation of its
+// Protected=true on it or an ancestor, or, when subtraction is in play, a mutation of its
 // own at it or an ancestor. Both forms of the path are consulted for the same reason the
-// predicate filter consults both: the target's records name a path the way the diff produced
+// protection filter consults both: the target's records name a path the way the diff produced
 // it, while the path in hand has been resolved against this document.
 type pathOwnership func(canonicalPath, resolvedPath string) bool
 
@@ -2863,7 +2849,7 @@ type pathOwnership func(canonicalPath, resolvedPath string) bool
 // Where the union has a discriminator the *document* decides: whatever `type` reads after the
 // merge, only the member it permits may remain. Ownership does not enter into it, because
 // there is no arrangement that keeps both — and ownership of the discriminator itself has
-// already had its say through the ordinary predicate filter, which is what decides whether
+// already had its say through the ordinary protection filter, which is what decides whether
 // the patch's `type` change applied at all.
 func clearExclusiveSiblings(doc *gaby.YamlDoc, touches []exclusiveTouch, resource api.ResourceInfo,
 	lookup ExclusiveFieldsLookup, targetOwns pathOwnership) api.MutationConflictList {
@@ -2915,7 +2901,6 @@ func clearExclusiveSiblings(doc *gaby.YamlDoc, touches []exclusiveTouch, resourc
 			removed := api.MutationInfo{
 				MutationType: api.MutationTypeDelete,
 				Index:        touch.source.Index,
-				Predicate:    true,
 				Value:        present.String(),
 			}
 			if err := group.Delete(member); err != nil {
@@ -2989,8 +2974,8 @@ func ownedMember(group *gaby.YamlDoc, fields ExclusiveFields, touch exclusiveTou
 // expandCoarsePatchEntries breaks a patch entry that covers a whole subtree into the leaves
 // it actually changes, when the target protects something inside that subtree.
 //
-// A Predicate is found by walking up from the patch's path to the closest ancestor that has
-// one, so a coarse entry is matched by a coarse predicate and the finer ones underneath never
+// Protection is found by walking up from the patch's path to the closest ancestor that has
+// an entry, so a coarse entry is matched by a coarse one and the finer ones underneath never
 // get a say: protecting `spec.tls.secretName` does nothing when the source recorded a single
 // Update of `spec.tls`, because the filter stops at `spec.tls` and writes the whole block.
 // Splitting the entry first is what gives each leaf its own decision.
@@ -3004,11 +2989,11 @@ func ownedMember(group *gaby.YamlDoc, fields ExclusiveFields, touch exclusiveTou
 // both sides hold a mapping there, and the entry is not itself a Delete -- deleting a subtree
 // is not a set of leaf deletions, and what it displaces is already reported as DeleteShadowed.
 func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
-	canonicalPredicates, storedPredicates api.MutationMap,
+	canonicalProtection, storedProtection api.MutationMap,
 	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
 	expanded := make([]api.MutationMapEntry, 0, len(entries))
 	for _, entry := range entries {
-		leaves := coarseEntryLeaves(doc, entry, canonicalPredicates, storedPredicates, mergeKeyLookup)
+		leaves := coarseEntryLeaves(doc, entry, canonicalProtection, storedProtection, mergeKeyLookup)
 		if leaves == nil {
 			expanded = append(expanded, entry)
 			continue
@@ -3021,7 +3006,7 @@ func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
 // coarseEntryLeaves returns the per-leaf entries an entry breaks into, or nil to leave it
 // whole.
 func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
-	canonicalPredicates, storedPredicates api.MutationMap,
+	canonicalProtection, storedProtection api.MutationMap,
 	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
 	if entry.MutationInfo.MutationType == api.MutationTypeDelete {
 		return nil
@@ -3030,8 +3015,8 @@ func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 	if !resolved {
 		return nil
 	}
-	if !protectsBelow(canonicalPredicates, CanonicalMutationPath(entry.Path)) &&
-		!protectsBelow(storedPredicates, api.ResolvedPath(resolvedPath)) {
+	if !protectsBelow(canonicalProtection, CanonicalMutationPath(entry.Path)) &&
+		!protectsBelow(storedProtection, api.ResolvedPath(resolvedPath)) {
 		return nil
 	}
 	target := doc.Path(resolvedPath)
@@ -3054,21 +3039,21 @@ func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 		// The sub-diff describes what changes; the provenance stays the original entry's,
 		// so a leaf is attributed to the mutation that produced the subtree.
 		leaf.MutationInfo.Index = entry.MutationInfo.Index
-		leaf.MutationInfo.Predicate = entry.MutationInfo.Predicate
+		leaf.MutationInfo.Protected = entry.MutationInfo.Protected
 		leaves = append(leaves, leaf)
 	}
 	return leaves
 }
 
 // protectsBelow reports whether the target protects a path strictly below the given one. An
-// overwritable descendant changes nothing, so only Predicate=false counts.
-func protectsBelow(predicates api.MutationMap, path api.ResolvedPath) bool {
-	if len(predicates) == 0 {
+// overwritable descendant changes nothing, so only Protected=true counts.
+func protectsBelow(protection api.MutationMap, path api.ResolvedPath) bool {
+	if len(protection) == 0 {
 		return false
 	}
 	prefix := string(path) + "."
-	for candidate, info := range predicates {
-		if !info.Predicate && strings.HasPrefix(string(candidate), prefix) {
+	for candidate, info := range protection {
+		if info.Protected && strings.HasPrefix(string(candidate), prefix) {
 			return true
 		}
 	}
@@ -3076,8 +3061,8 @@ func protectsBelow(predicates api.MutationMap, path api.ResolvedPath) bool {
 }
 
 // applyPathMutations applies path-level mutations from a PathMutationMap to a document.
-// If hasPredicate is true, paths whose path or any ancestor has Predicate=false in the
-// caller's predicate map are skipped.
+// If hasProtection is true, paths whose path or any ancestor has Protected=true in the
+// caller's protection map are skipped.
 //
 // Path resolution uses ResolveAssociativeSegments. If a path can't be fully resolved
 // (typically because a merge-keyed element no longer exists in the target with the
@@ -3099,7 +3084,7 @@ func protectsBelow(predicates api.MutationMap, path api.ResolvedPath) bool {
 // instead and applied last, by applyArrayElementOps.
 //
 // Returns the (possibly extended) errs slice and a list of MutationConflicts for any
-// path mutations that were dropped (predicate-filtered or unresolved). Conflicts for
+// path mutations that were dropped (protected or unresolved). Conflicts for
 // paths skipped via the Add append-fallback are NOT recorded (the Add was applied,
 // just at a different index).
 //
@@ -3108,7 +3093,7 @@ func protectsBelow(predicates api.MutationMap, path api.ResolvedPath) bool {
 // is what gives positional associative arrays (initContainers, env, ports) their
 // correct ordering when a rename, insertion, or reorder is part of the patch.
 func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
-	hasPredicate bool, mutationsPredicates api.ResourceMutationList, mutationPredicateIndex int,
+	hasProtection bool, mutationsProtection api.ResourceMutationList, protectionIndex int,
 	resource api.ResourceInfo, arrayOrders api.ArrayOrderMap,
 	arrayElementAliases api.ArrayElementAliasMap,
 	mergeKeyLookup MergeKeyLookup,
@@ -3120,38 +3105,38 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	var arrayElementOps []arrayElementOp
 	var exclusiveTouches []exclusiveTouch
 
-	// Predicates are looked up on canonical paths. The stored MutationSources record a
+	// Protection is looked up on canonical paths. The stored MutationSources record a
 	// path the way ComputeMutations produced it — with associative segments naming the
 	// element by merge key — while the path being applied has been resolved against this
 	// document into numeric indices. Comparing the two forms directly never matches, so
-	// a Predicate=false inside a merge-keyed array (a hand-edited container image, an
+	// a Protected=true inside a merge-keyed array (a hand-edited container image, an
 	// env value, a resource limit — the things variants customize most) protected
-	// nothing. The resolved form is still consulted as a fallback, since predicates set
-	// through the /predicates API and predicates from toolchains with no merge keys are
+	// nothing. The resolved form is still consulted as a fallback, since protection set
+	// through the /protection API and protection from toolchains with no merge keys are
 	// recorded numerically.
-	var canonicalPredicates api.MutationMap
-	if hasPredicate {
-		canonicalPredicates, _ = canonicalMutationMap(mutationsPredicates[mutationPredicateIndex].PathMutationMap)
+	var canonicalProtection api.MutationMap
+	if hasProtection {
+		canonicalProtection, _ = canonicalMutationMap(mutationsProtection[protectionIndex].PathMutationMap)
 	}
 
 	// What the target has claimed as its own, in whichever way this merge expresses it: a
-	// stored Predicate=false, or — when subtraction is in play, where there are no
-	// predicates at all — a mutation of the target's own at the path. Only the exclusive-
-	// field rules consult it; every other filter is already expressed as a predicate.
+	// stored Protected=true, or — when subtraction is in play, where there is no stored
+	// protection at all — a mutation of the target's own at the path. Only the exclusive-
+	// field rules consult it; every other filter is already expressed as protection.
 	var canonicalSubtracted api.MutationMap
 	if len(mutationsSubtracted) > 0 {
 		canonicalSubtracted, _ = canonicalMutationMap(mutationsSubtracted)
 	}
 	targetOwns := pathOwnership(func(canonicalPath, resolvedPath string) bool {
-		if hasPredicate {
-			for _, candidate := range []api.MutationMap{canonicalPredicates,
-				mutationsPredicates[mutationPredicateIndex].PathMutationMap} {
+		if hasProtection {
+			for _, candidate := range []api.MutationMap{canonicalProtection,
+				mutationsProtection[protectionIndex].PathMutationMap} {
 				if _, mutation, found := api.FindAncestorPath(candidate,
-					api.ResolvedPath(canonicalPath)); found && !mutation.Predicate {
+					api.ResolvedPath(canonicalPath)); found && mutation.Protected {
 					return true
 				}
 				if _, mutation, found := api.FindAncestorPath(candidate,
-					api.ResolvedPath(resolvedPath)); found && !mutation.Predicate {
+					api.ResolvedPath(resolvedPath)); found && mutation.Protected {
 					return true
 				}
 			}
@@ -3173,9 +3158,9 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	// Sort paths so parents are processed before children, then partition so all Deletes
 	// run before all non-Deletes. Path order is preserved within each partition.
 	sorted := api.SortedMutationMapEntries(pathMutationMap)
-	if hasPredicate {
-		sorted = expandCoarsePatchEntries(doc, sorted, canonicalPredicates,
-			mutationsPredicates[mutationPredicateIndex].PathMutationMap, mergeKeyLookup)
+	if hasProtection {
+		sorted = expandCoarsePatchEntries(doc, sorted, canonicalProtection,
+			mutationsProtection[protectionIndex].PathMutationMap, mergeKeyLookup)
 	}
 	patches := make([]api.MutationMapEntry, 0, len(sorted))
 	for _, entry := range sorted {
@@ -3230,26 +3215,26 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 				continue
 			}
 		}
-		// Check for patches that conflict with the predicate. A coarse entry covering a
+		// Check for patches that conflict with the target's protection. A coarse entry covering a
 		// path the target protects part of has already been broken into its leaves, so
 		// this decides one leaf at a time -- see expandCoarsePatchEntries.
-		if hasPredicate {
-			// Walk up path ancestors to find if any predicate filters this path.
-			_, predicateMutation, hasFilter := api.FindAncestorPath(
-				canonicalPredicates, CanonicalMutationPath(patches[i].Path))
+		if hasProtection {
+			// Walk up path ancestors to find whether any protection filters this path.
+			_, protectionMutation, hasFilter := api.FindAncestorPath(
+				canonicalProtection, CanonicalMutationPath(patches[i].Path))
 			if !hasFilter {
-				_, predicateMutation, hasFilter = api.FindAncestorPath(
-					mutationsPredicates[mutationPredicateIndex].PathMutationMap, patchPath)
+				_, protectionMutation, hasFilter = api.FindAncestorPath(
+					mutationsProtection[protectionIndex].PathMutationMap, patchPath)
 			}
-			if hasFilter && !predicateMutation.Predicate {
+			if hasFilter && protectionMutation.Protected {
 				slog.Debug("path filtered", "path", string(patchPath))
-				predicateMutCopy := predicateMutation
+				protectedMutCopy := protectionMutation
 				conflicts = append(conflicts, api.MutationConflict{
-					Reason:   api.ConflictReasonPredicateFiltered,
+					Reason:   api.ConflictReasonProtectedPath,
 					Resource: resource,
 					Path:     patches[i].Path,
 					Source:   *patchMutation,
-					Target:   &predicateMutCopy,
+					Target:   &protectedMutCopy,
 				})
 				continue
 			}
@@ -3522,40 +3507,40 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	return errs, conflicts
 }
 
-// Reset walks each path in mutationsPredicates and, where Predicate=true and the value
+// Reset walks each path in mutationsProtection and, where Protected is false and the value
 // at the corresponding location in parsedData is a string or int, sets the value back to
 // the toolchain's placeholder marker (PlaceHolderBlockApplyString / PlaceHolderBlockApplyInt).
 // Used by the "reset" function to revert the leaves last touched by a chosen subset of
 // historical mutations to their unset state, leaving everything else alone.
-func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
-	mutationPredicateMap := make(map[api.ResourceTypeAndName]int)
-	for i := range mutationsPredicates {
-		resourceInfo := mutationsPredicates[i].Resource
+func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
+	protectionMap := make(map[api.ResourceTypeAndName]int)
+	for i := range mutationsProtection {
+		resourceInfo := mutationsProtection[i].Resource
 		if resourceInfo.ResourceNameWithoutScope == "" {
 			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
 		}
 		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		mutationPredicateMap[resourceInfoKey] = i
+		protectionMap[resourceInfoKey] = i
 	}
 
 	visitor := func(doc *gaby.YamlDoc, _ any, _ int, docResourceInfo *api.ResourceInfo) (any, []error) {
 		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)
 
-		mutationPredicateIndex, hasPredicate := mutationPredicateMap[resourceInfoKey]
-		if !hasPredicate {
+		protectionIndex, hasProtection := protectionMap[resourceInfoKey]
+		if !hasProtection {
 			// Nothing to reset
 			return nil, nil
 		}
 
-		// TODO: The predicate for the resource could set the default, but would require traversing
+		// TODO: The resource-level protection could set the default, but would require traversing
 		// all the paths, like FindYAMLPathsByValue.
-		// shouldBeReset := hasPredicate && mutationsPredicates[mutationPredicateIndex].ResourceMutationInfo.Predicate
+		// shouldBeReset := hasProtection && !mutationsProtection[protectionIndex].ResourceMutationInfo.Protected
 		// PathMutationMap is a map, which could be in arbitrary order.
 		// We're only going to reset leaves, so that should be ok.
 
 		var errs []error
-		for path, mutation := range mutationsPredicates[mutationPredicateIndex].PathMutationMap {
-			if !mutation.Predicate {
+		for path, mutation := range mutationsProtection[protectionIndex].PathMutationMap {
+			if mutation.Protected {
 				// Shouldn't be reset
 				continue
 			}
@@ -3597,7 +3582,7 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 // AddMutations merges newMutations into mutations and returns the result, accumulating
 // changes over sequential edits to produce a compiled history of all modifications. The
 // accumulated form is what's stored as a Unit's MutationSources and what feeds the
-// Predicate map passed into PatchMutations.
+// protection map passed into PatchMutations.
 //
 // Algorithm:
 //
@@ -3619,13 +3604,13 @@ func Reset(parsedData gaby.Container, mutationsPredicates api.ResourceMutationLi
 //     so parent paths land before children. For each new path:
 //
 //     - Exact match in existing: replace the existing entry, taking the new MutationType
-//       (so a later edit's intent — e.g., an Update on a previously-Added field — is
-//       reflected). Exception: Delete → non-Delete becomes Replace, since the field was
-//       previously erased and is now being re-set.
+//     (so a later edit's intent — e.g., an Update on a previously-Added field — is
+//     reflected). Exception: Delete → non-Delete becomes Replace, since the field was
+//     previously erased and is now being re-set.
 //     - Existing path is a child of the new path AND new path is Delete or Replace: drop
-//       the now-superseded child paths.
+//     the now-superseded child paths.
 //     - Otherwise: insert the new path verbatim, dropping any existing children it
-//       supersedes.
+//     supersedes.
 //
 //     Because the new MutationType replaces the existing one on exact match, when this
 //     accumulated record is later used as a patch, PatchMutations sees the latest intent
@@ -3733,7 +3718,7 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 				mutations[mi].PathMutationMap[path] = api.MutationInfo{
 					MutationType: mutationType,
 					Index:        mutation.Index,
-					Predicate:    mutation.Predicate,
+					Protected:    mutation.Protected,
 					Value:        mutation.Value,
 				}
 				if mutation.MutationType == api.MutationTypeDelete || mutation.MutationType == api.MutationTypeReplace {
@@ -3796,13 +3781,13 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 //
 //     - Case 1 (exact match): subtract has the same path → drop the source path.
 //     - Case 2 (subtract is ancestor): subtract has spec.containers.0 and source has
-//       spec.containers.0.image → drop the source path (parent was changed in target).
+//     spec.containers.0.image → drop the source path (parent was changed in target).
 //     - Case 3 (subtract is descendant): subtract has spec.containers.0.image and source
-//       has spec.containers.0 (whole block). If the source path is a Delete, keep it
-//       and emit a DeleteShadowed conflict for each target child path that's being
-//       erased — once the parent is gone the child changes can't apply. Otherwise
-//       keep the source path and splice in subtract's more-specific paths so
-//       PatchMutations' parent-before-child processing lets target's change win.
+//     has spec.containers.0 (whole block). If the source path is a Delete, keep it
+//     and emit a DeleteShadowed conflict for each target child path that's being
+//     erased — once the parent is gone the child changes can't apply. Otherwise
+//     keep the source path and splice in subtract's more-specific paths so
+//     PatchMutations' parent-before-child processing lets target's change win.
 //
 //  4. If subtraction empties an Update's PathMutationMap, the resource-level type
 //     downgrades to None.
@@ -4051,7 +4036,7 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 	}
 
 	// Walk up path segments from most specific to least specific,
-	// same pattern as the predicate check at line ~793 in this file.
+	// same pattern as the protection check at line ~793 in this file.
 	pathSegments := gaby.DotPathToSlice(string(path))
 	for len(pathSegments) > 0 {
 		candidatePath := api.ResolvedPath(JoinPathSegments(pathSegments))
@@ -4069,26 +4054,26 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 	return rm.ResourceMutationInfo.Index, true
 }
 
-// SetPredicates sets the Predicate flag on path-level mutations of a single resource in
+// SetProtection sets the Protected flag on path-level mutations of a single resource in
 // mutations (typically a Unit's accumulated MutationSources), returning the updated list
 // and the paths that could not be resolved.
 //
-// The Predicate flag records whether the path is eligible to be overwritten by a merge:
-// true means a merge may patch it, false marks it a protected local override.
-// SetMutationPredicates consumes these stored values when no WhereMutation filter is
+// The Protected flag records whether the path is a local override a merge must not
+// overwrite: true protects it, false leaves it the merge's to update.
+// SetMutationProtection consumes these stored values when no WhereMutation filter is
 // supplied, so editing them changes what a subsequent upgrade/merge will overwrite.
 //
-// For each (path, value) in predicates:
+// For each (path, value) in protection:
 //
-//   - Exact match: the entry at path has its Predicate set to value; its other fields
+//   - Exact match: the entry at path has its Protected set to value; its other fields
 //     (including Value) are left intact.
 //   - No exact match: the closest ancestor present in the resource's PathMutationMap (or,
 //     failing that, the resource-level mutation) supplies the MutationType and Index, so the
 //     new, more-specific entry keeps the same provenance. The entry's Value is taken from the
 //     data at path (via YamlSafePathGetDoc) — NOT copied from the ancestor, whose Value is a
 //     broader block — and Patch is left empty (it is a line-diff that does not apply to a
-//     freshly-set value). Because predicate lookup during PatchMutations walks to the most
-//     specific ancestor, this scopes the predicate to path without disturbing the ancestor.
+//     freshly-set value). Because the protection lookup during PatchMutations walks to the
+//     most specific ancestor, this scopes the setting to path without disturbing the ancestor.
 //     This mirrors the parent-splitting in SubtractMutations' Case 3.
 //
 // A path is returned in unresolved (and left unchanged) when its resource is absent, when it
@@ -4096,12 +4081,12 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 // not exist in the resource's data (so no Value can be extracted). parsedData and
 // resourceProvider are used to locate the resource's document and read the value at each
 // path. mutations is modified in place and also returned for convenience.
-func SetPredicates(parsedData gaby.Container, mutations api.ResourceMutationList, resource api.ResourceInfo, predicates map[api.ResolvedPath]bool, resourceProvider ResourceProvider) (api.ResourceMutationList, []api.ResolvedPath) {
+func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList, resource api.ResourceInfo, protection map[api.ResolvedPath]bool, resourceProvider ResourceProvider) (api.ResourceMutationList, []api.ResolvedPath) {
 	var unresolved []api.ResolvedPath
 	idx := api.NewResourceMutationIndex(mutations)
 	mi, found := idx.Find(resource, nil)
 	if !found {
-		for path := range predicates {
+		for path := range protection {
 			unresolved = append(unresolved, path)
 		}
 		return mutations, unresolved
@@ -4111,10 +4096,10 @@ func SetPredicates(parsedData gaby.Container, mutations api.ResourceMutationList
 		rm.PathMutationMap = make(api.MutationMap)
 	}
 	doc, _ := FindResourceDoc(parsedData, resourceProvider, &resource)
-	for path, predicate := range predicates {
+	for path, protected := range protection {
 		// Exact match: the entry's Value is already correct; just flip the flag.
 		if info, ok := rm.PathMutationMap[path]; ok {
-			info.Predicate = predicate
+			info.Protected = protected
 			rm.PathMutationMap[path] = info
 			continue
 		}
@@ -4145,7 +4130,7 @@ func SetPredicates(parsedData gaby.Container, mutations api.ResourceMutationList
 		rm.PathMutationMap[path] = api.MutationInfo{
 			MutationType: ancInfo.MutationType,
 			Index:        ancInfo.Index,
-			Predicate:    predicate,
+			Protected:    protected,
 			Value:        valueDoc.String(),
 			// Patch intentionally left empty for a freshly-extracted value.
 		}

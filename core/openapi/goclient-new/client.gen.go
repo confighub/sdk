@@ -642,10 +642,10 @@ type ClientInterface interface {
 	// GetExtendedMutation request
 	GetExtendedMutation(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// SetUnitPredicatesWithBody request with any body
-	SetUnitPredicatesWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// SetUnitProtectionWithBody request with any body
+	SetUnitProtectionWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	SetUnitPredicates(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	SetUnitProtection(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedResources request
 	ListExtendedResources(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3233,8 +3233,8 @@ func (c *Client) GetExtendedMutation(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetUnitPredicatesWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetUnitPredicatesRequestWithBody(c.Server, spaceId, unitId, contentType, body)
+func (c *Client) SetUnitProtectionWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitProtectionRequestWithBody(c.Server, spaceId, unitId, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3245,8 +3245,8 @@ func (c *Client) SetUnitPredicatesWithBody(ctx context.Context, spaceId openapi_
 	return c.Client.Do(req)
 }
 
-func (c *Client) SetUnitPredicates(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetUnitPredicatesRequest(c.Server, spaceId, unitId, body)
+func (c *Client) SetUnitProtection(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitProtectionRequest(c.Server, spaceId, unitId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -7080,9 +7080,9 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
-		if params.PreservePredicates != nil {
+		if params.PreserveProtection != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_predicates", runtime.ParamLocationQuery, *params.PreservePredicates); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12418,9 +12418,9 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
-		if params.PreservePredicates != nil {
+		if params.PreserveProtection != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_predicates", runtime.ParamLocationQuery, *params.PreservePredicates); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15634,9 +15634,9 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
-		if params.PreservePredicates != nil {
+		if params.PreserveProtection != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_predicates", runtime.ParamLocationQuery, *params.PreservePredicates); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15950,9 +15950,9 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 
 		}
 
-		if params.PreservePredicates != nil {
+		if params.PreserveProtection != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_predicates", runtime.ParamLocationQuery, *params.PreservePredicates); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16681,19 +16681,19 @@ func NewGetExtendedMutationRequest(server string, spaceId openapi_types.UUID, un
 	return req, nil
 }
 
-// NewSetUnitPredicatesRequest calls the generic SetUnitPredicates builder with application/json body
-func NewSetUnitPredicatesRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody) (*http.Request, error) {
+// NewSetUnitProtectionRequest calls the generic SetUnitProtection builder with application/json body
+func NewSetUnitProtectionRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewSetUnitPredicatesRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
+	return NewSetUnitProtectionRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
 }
 
-// NewSetUnitPredicatesRequestWithBody generates requests for SetUnitPredicates with any type of body
-func NewSetUnitPredicatesRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+// NewSetUnitProtectionRequestWithBody generates requests for SetUnitProtection with any type of body
+func NewSetUnitProtectionRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16715,7 +16715,7 @@ func NewSetUnitPredicatesRequestWithBody(server string, spaceId openapi_types.UU
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/predicates", pathParam0, pathParam1)
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/protection", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -20045,9 +20045,9 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
-		if params.PreservePredicates != nil {
+		if params.PreserveProtection != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_predicates", runtime.ParamLocationQuery, *params.PreservePredicates); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -22283,10 +22283,10 @@ type ClientWithResponsesInterface interface {
 	// GetExtendedMutationWithResponse request
 	GetExtendedMutationWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, mutationId openapi_types.UUID, params *GetExtendedMutationParams, reqEditors ...RequestEditorFn) (*GetExtendedMutationResponse, error)
 
-	// SetUnitPredicatesWithBodyWithResponse request with any body
-	SetUnitPredicatesWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error)
+	// SetUnitProtectionWithBodyWithResponse request with any body
+	SetUnitProtectionWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error)
 
-	SetUnitPredicatesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error)
+	SetUnitProtectionWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error)
 
 	// ListExtendedResourcesWithResponse request
 	ListExtendedResourcesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedResourcesParams, reqEditors ...RequestEditorFn) (*ListExtendedResourcesResponse, error)
@@ -26570,10 +26570,10 @@ func (r GetExtendedMutationResponse) StatusCode() int {
 	return 0
 }
 
-type SetUnitPredicatesResponse struct {
+type SetUnitProtectionResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *UnitPredicatesResponse
+	JSON200      *UnitProtectionResponse
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -26584,7 +26584,7 @@ type SetUnitPredicatesResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r SetUnitPredicatesResponse) Status() string {
+func (r SetUnitProtectionResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -26592,7 +26592,7 @@ func (r SetUnitPredicatesResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r SetUnitPredicatesResponse) StatusCode() int {
+func (r SetUnitProtectionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -29561,21 +29561,21 @@ func (c *ClientWithResponses) GetExtendedMutationWithResponse(ctx context.Contex
 	return ParseGetExtendedMutationResponse(rsp)
 }
 
-// SetUnitPredicatesWithBodyWithResponse request with arbitrary body returning *SetUnitPredicatesResponse
-func (c *ClientWithResponses) SetUnitPredicatesWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error) {
-	rsp, err := c.SetUnitPredicatesWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
+// SetUnitProtectionWithBodyWithResponse request with arbitrary body returning *SetUnitProtectionResponse
+func (c *ClientWithResponses) SetUnitProtectionWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error) {
+	rsp, err := c.SetUnitProtectionWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSetUnitPredicatesResponse(rsp)
+	return ParseSetUnitProtectionResponse(rsp)
 }
 
-func (c *ClientWithResponses) SetUnitPredicatesWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitPredicatesJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitPredicatesResponse, error) {
-	rsp, err := c.SetUnitPredicates(ctx, spaceId, unitId, body, reqEditors...)
+func (c *ClientWithResponses) SetUnitProtectionWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitProtectionJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitProtectionResponse, error) {
+	rsp, err := c.SetUnitProtection(ctx, spaceId, unitId, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseSetUnitPredicatesResponse(rsp)
+	return ParseSetUnitProtectionResponse(rsp)
 }
 
 // ListExtendedResourcesWithResponse request returning *ListExtendedResourcesResponse
@@ -40671,22 +40671,22 @@ func ParseGetExtendedMutationResponse(rsp *http.Response) (*GetExtendedMutationR
 	return response, nil
 }
 
-// ParseSetUnitPredicatesResponse parses an HTTP response from a SetUnitPredicatesWithResponse call
-func ParseSetUnitPredicatesResponse(rsp *http.Response) (*SetUnitPredicatesResponse, error) {
+// ParseSetUnitProtectionResponse parses an HTTP response from a SetUnitProtectionWithResponse call
+func ParseSetUnitProtectionResponse(rsp *http.Response) (*SetUnitProtectionResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &SetUnitPredicatesResponse{
+	response := &SetUnitProtectionResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest UnitPredicatesResponse
+		var dest UnitProtectionResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

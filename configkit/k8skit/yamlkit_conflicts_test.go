@@ -467,19 +467,16 @@ func deploymentPatchUpdate(replicas, image string) api.ResourceMutationList {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        2,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			"spec.replicas": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        2,
-				Predicate:    true,
 				Value:        replicas,
 			},
 			"spec.template.spec.containers.?name=app;@0.image": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        2,
-				Predicate:    true,
 				Value:        image,
 			},
 		},
@@ -502,14 +499,12 @@ func TestPatch_SubtractConflictsAreForwarded(t *testing.T) {
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
 			Index:        3,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			// Target also touched spec.replicas — should subtract source's update.
 			"spec.replicas": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        3,
-				Predicate:    true,
 				Value:        "9\n",
 			},
 		},
@@ -522,63 +517,63 @@ func TestPatch_SubtractConflictsAreForwarded(t *testing.T) {
 		"image path was unaffected by subtraction")
 }
 
-// TestPatch_PredicateFilteredAtPath emits a conflict for the filtered path.
-func TestPatch_PredicateFilteredAtPath(t *testing.T) {
+// TestPatch_ProtectedPathAtPath emits a conflict for the protected path.
+func TestPatch_ProtectedPathAtPath(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	parsed, _ := gaby.ParseAll([]byte(conflictTestBase))
-	predicates := api.ResourceMutationList{{
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
-			"spec.replicas": api.MutationInfo{Predicate: false}, // block replicas
+			"spec.replicas": api.MutationInfo{Protected: true}, // block replicas
 		},
 	}}
-	_, conflicts, err := yamlkit.PatchMutations(parsed, predicates, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
+	_, conflicts, err := yamlkit.PatchMutations(parsed, protection, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
 	require.NoError(t, err)
 	c := findConflict(t, conflicts, "app", "spec.replicas")
-	assert.Equal(t, api.ConflictReasonPredicateFiltered, c.Reason)
+	assert.Equal(t, api.ConflictReasonProtectedPath, c.Reason)
 	require.NotNil(t, c.Target)
-	assert.False(t, c.Target.Predicate)
+	assert.True(t, c.Target.Protected)
 }
 
-// TestPatch_PredicateFilteredAtAncestorEmitsConflictForChild — when a parent
-// path has Predicate=false, child path mutations are dropped and conflicts
+// TestPatch_ProtectedAncestorEmitsConflictForChild — when a parent
+// path has Protected=true, child path mutations are dropped and conflicts
 // are emitted for each child.
-func TestPatch_PredicateFilteredAtAncestorEmitsConflictForChild(t *testing.T) {
+func TestPatch_ProtectedAncestorEmitsConflictForChild(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	parsed, _ := gaby.ParseAll([]byte(conflictTestBase))
-	predicates := api.ResourceMutationList{{
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
 			// Block everything under spec.template.
-			"spec.template": api.MutationInfo{Predicate: false},
+			"spec.template": api.MutationInfo{Protected: true},
 		},
 	}}
-	_, conflicts, err := yamlkit.PatchMutations(parsed, predicates, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
+	_, conflicts, err := yamlkit.PatchMutations(parsed, protection, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
 	require.NoError(t, err)
 	got := reasonsByPath(conflicts)
-	assert.Equal(t, api.ConflictReasonPredicateFiltered, got["spec.template.spec.containers.?name=app;@0.image"])
+	assert.Equal(t, api.ConflictReasonProtectedPath, got["spec.template.spec.containers.?name=app;@0.image"])
 	assert.NotContains(t, got, "spec.replicas",
 		"replicas isn't under spec.template, should not be filtered")
 }
 
-// TestPatch_PredicateFilteredAtResourceLevel emits a single resource-level
-// PredicateFiltered conflict.
-func TestPatch_PredicateFilteredAtResourceLevel(t *testing.T) {
+// TestPatch_ProtectedAtResourceLevel emits a single resource-level
+// ProtectedPath conflict.
+func TestPatch_ProtectedAtResourceLevel(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	parsed, _ := gaby.ParseAll([]byte(conflictTestBase))
-	predicates := api.ResourceMutationList{{
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
@@ -587,14 +582,14 @@ func TestPatch_PredicateFilteredAtResourceLevel(t *testing.T) {
 		},
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
-			Predicate:    false, // block whole resource
+			Protected:    true, // block whole resource
 		},
 	}}
-	_, conflicts, err := yamlkit.PatchMutations(parsed, predicates, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
+	_, conflicts, err := yamlkit.PatchMutations(parsed, protection, deploymentPatchUpdate("5\n", "nginx:1.20\n"), nil, provider, nil)
 	require.NoError(t, err)
 	require.Len(t, conflicts, 1)
 	c := conflicts[0]
-	assert.Equal(t, api.ConflictReasonPredicateFiltered, c.Reason)
+	assert.Equal(t, api.ConflictReasonProtectedPath, c.Reason)
 	assert.Equal(t, api.ResolvedPath(""), c.Path, "resource-level conflict has empty path")
 }
 
@@ -623,13 +618,12 @@ spec:
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
 			// Delete a container that doesn't exist in the target.
 			"spec.template.spec.containers.?name=ghost;@0": api.MutationInfo{
 				MutationType: api.MutationTypeDelete,
 				Index:        2,
-				Predicate:    true,
 				Value:        "name: ghost\nimage: ghost:v1\n",
 			},
 		},
@@ -668,12 +662,11 @@ spec:
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
 			"spec.template.spec.containers.?name=ghost;@0.image": api.MutationInfo{
 				MutationType: api.MutationTypeUpdate,
 				Index:        2,
-				Predicate:    true,
 				Value:        "redis:7\n",
 			},
 		},
@@ -711,12 +704,11 @@ spec:
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
 			"spec.template.spec.containers.?name=newone;@0": api.MutationInfo{
 				MutationType: api.MutationTypeAdd,
 				Index:        2,
-				Predicate:    true,
 				Value:        "name: newone\nimage: redis:7\n",
 			},
 		},
@@ -726,7 +718,7 @@ spec:
 	assert.Empty(t, conflicts, "Add appended at end is not a conflict")
 }
 
-// TestPatch_NoConflicts — happy path: no subtraction, all predicates true,
+// TestPatch_NoConflicts — happy path: no subtraction, nothing protected,
 // every path resolved. Conflicts list is empty.
 func TestPatch_NoConflicts(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()

@@ -82,7 +82,7 @@ func mutationTypes(t *testing.T, mutations api.ResourceMutationList) map[string]
 }
 
 // mergeArrayCase is one upstream change replayed onto a downstream copy that has its own
-// customizations, checked with subtraction both off (the default: the stored predicates
+// customizations, checked with subtraction both off (the default: the stored protection
 // decide what may be overwritten, and this test supplies none) and on.
 type mergeArrayCase struct {
 	name      string

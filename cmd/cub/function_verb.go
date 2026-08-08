@@ -234,7 +234,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	cmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
-	cmd.Flags().BoolVar(&preservePredicates, "preserve-predicates", false, "keep the stored predicates of the paths this change writes instead of recording new ones: each path keeps the override protection it already has, and a new path is left overwritable")
+	cmd.Flags().BoolVar(&preserveProtection, "preserve-protection", false, "keep the stored protection of the paths this change writes instead of recording new ones: each path keeps the protection it already has, and a new path is left unprotected")
 	cmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")

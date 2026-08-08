@@ -14,7 +14,7 @@ import (
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
-const setPredicatesYAML = `apiVersion: apps/v1
+const setProtectionYAML = `apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: myapp
@@ -36,8 +36,8 @@ data:
   key: val
 `
 
-func setPredicatesData(t *testing.T) gaby.Container {
-	docs, err := gaby.ParseAll([]byte(setPredicatesYAML))
+func setProtectionData(t *testing.T) gaby.Container {
+	docs, err := gaby.ParseAll([]byte(setProtectionYAML))
 	require.NoError(t, err)
 	return docs
 }
@@ -54,71 +54,71 @@ func deploymentMutations() api.ResourceMutationList {
 	return api.ResourceMutationList{
 		{
 			Resource:             deploymentResource(),
-			ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Index: 5, Predicate: true},
+			ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Index: 5},
 			PathMutationMap: api.MutationMap{
-				"spec.replicas":          {MutationType: api.MutationTypeUpdate, Index: 5, Predicate: true, Value: "3\n"},
-				"spec.template.spec.containers": {MutationType: api.MutationTypeUpdate, Index: 7, Predicate: true, Value: "<block>"},
+				"spec.replicas":                 {MutationType: api.MutationTypeUpdate, Index: 5, Value: "3\n"},
+				"spec.template.spec.containers": {MutationType: api.MutationTypeUpdate, Index: 7, Value: "<block>"},
 			},
 		},
 	}
 }
 
-func TestSetPredicatesExactMatch(t *testing.T) {
+func TestSetProtectionExactMatch(t *testing.T) {
 	mutations := deploymentMutations()
-	updated, unresolved := SetPredicates(setPredicatesData(t), mutations, deploymentResource(),
-		map[api.ResolvedPath]bool{"spec.replicas": false}, testProvider)
+	updated, unresolved := SetProtection(setProtectionData(t), mutations, deploymentResource(),
+		map[api.ResolvedPath]bool{"spec.replicas": true}, testProvider)
 	assert.Empty(t, unresolved)
 	got := updated[0].PathMutationMap["spec.replicas"]
-	assert.False(t, got.Predicate, "exact-match predicate should be set to false")
+	assert.True(t, got.Protected, "an exact match should have its Protected flag set")
 	assert.Equal(t, int64(5), got.Index, "exact match should preserve Index/provenance")
 	assert.Equal(t, "3\n", got.Value, "exact match should preserve the existing Value")
 }
 
-func TestSetPredicatesParentSplitExtractsValue(t *testing.T) {
+func TestSetProtectionParentSplitExtractsValue(t *testing.T) {
 	mutations := deploymentMutations()
 	childPath := api.ResolvedPath("spec.template.spec.containers.0.image")
-	updated, unresolved := SetPredicates(setPredicatesData(t), mutations, deploymentResource(),
-		map[api.ResolvedPath]bool{childPath: false}, testProvider)
+	updated, unresolved := SetProtection(setProtectionData(t), mutations, deploymentResource(),
+		map[api.ResolvedPath]bool{childPath: true}, testProvider)
 	assert.Empty(t, unresolved)
 	got, ok := updated[0].PathMutationMap[childPath]
 	require.True(t, ok, "a new child entry should be spliced in")
-	assert.False(t, got.Predicate)
+	assert.True(t, got.Protected)
 	assert.Equal(t, int64(7), got.Index, "child should inherit the ancestor's Index/provenance")
 	// Value is extracted from the data at the child path, NOT copied from the ancestor block.
 	assert.Equal(t, "nginx:1.20", strings.TrimSpace(got.Value))
 	assert.Empty(t, got.Patch, "Patch should be left empty for a freshly-extracted value")
 	// Ancestor entry is unchanged.
-	assert.True(t, updated[0].PathMutationMap["spec.template.spec.containers"].Predicate)
+	assert.False(t, updated[0].PathMutationMap["spec.template.spec.containers"].Protected)
 }
 
-func TestSetPredicatesResourceLevelFallback(t *testing.T) {
+func TestSetProtectionResourceLevelFallback(t *testing.T) {
 	mutations := api.ResourceMutationList{
 		{
 			Resource:             api.ResourceInfo{ResourceType: "v1/ConfigMap", ResourceName: "default/cm", ResourceNameWithoutScope: "cm"},
-			ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeAdd, Index: 9, Predicate: true},
+			ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeAdd, Index: 9},
 			PathMutationMap:      api.MutationMap{},
 		},
 	}
-	updated, unresolved := SetPredicates(setPredicatesData(t), mutations, mutations[0].Resource,
-		map[api.ResolvedPath]bool{"data.key": false}, testProvider)
+	updated, unresolved := SetProtection(setProtectionData(t), mutations, mutations[0].Resource,
+		map[api.ResolvedPath]bool{"data.key": true}, testProvider)
 	assert.Empty(t, unresolved)
 	got := updated[0].PathMutationMap["data.key"]
-	assert.False(t, got.Predicate)
+	assert.True(t, got.Protected)
 	assert.Equal(t, int64(9), got.Index, "should inherit the resource-level Index")
 	assert.Equal(t, "val", strings.TrimSpace(got.Value))
 }
 
-func TestSetPredicatesPathNotInData(t *testing.T) {
+func TestSetProtectionPathNotInData(t *testing.T) {
 	mutations := deploymentMutations()
-	_, unresolved := SetPredicates(setPredicatesData(t), mutations, deploymentResource(),
-		map[api.ResolvedPath]bool{"spec.doesNotExist": false}, testProvider)
+	_, unresolved := SetProtection(setProtectionData(t), mutations, deploymentResource(),
+		map[api.ResolvedPath]bool{"spec.doesNotExist": true}, testProvider)
 	assert.Equal(t, []api.ResolvedPath{"spec.doesNotExist"}, unresolved)
 }
 
-func TestSetPredicatesUnmatchedResource(t *testing.T) {
+func TestSetProtectionUnmatchedResource(t *testing.T) {
 	mutations := deploymentMutations()
 	other := api.ResourceInfo{ResourceType: "v1/Service", ResourceName: "default/svc", ResourceNameWithoutScope: "svc"}
-	_, unresolved := SetPredicates(setPredicatesData(t), mutations, other,
-		map[api.ResolvedPath]bool{"spec.ports": false}, testProvider)
+	_, unresolved := SetProtection(setProtectionData(t), mutations, other,
+		map[api.ResolvedPath]bool{"spec.ports": true}, testProvider)
 	assert.Equal(t, []api.ResolvedPath{"spec.ports"}, unresolved)
 }

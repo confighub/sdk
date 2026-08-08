@@ -20,7 +20,7 @@ import (
 // complement the focused per-feature tests (rename detection, reorder pass,
 // conflict reporting) by validating realistic patch shapes — sidecar
 // injection, volume + volumeMount synchronization, mass label propagation,
-// multi-resource adds, predicate-blocked paths, empty-array edges, and
+// multi-resource adds, protection-blocked paths, empty-array edges, and
 // non-Deployment resource types.
 
 // ---------------------------------------------------------------------------
@@ -401,11 +401,11 @@ spec:
 	assert.True(t, hasNetworkPolicy)
 }
 
-// TestScenario_PredicateBlocksUpgradePathButOthersApply — a realistic
-// "approve some, block others" flow. User has predicates that allow image
+// TestScenario_ProtectionBlocksUpgradePathButOthersApply — a realistic
+// "approve some, block others" flow. User has protection that allow image
 // changes but block replicas changes; source bumps both. Replicas stays;
 // image updates.
-func TestScenario_PredicateBlocksUpgradePathButOthersApply(t *testing.T) {
+func TestScenario_ProtectionBlocksUpgradePathButOthersApply(t *testing.T) {
 	provider := k8skit.NewK8sResourceProvider()
 	target := `apiVersion: apps/v1
 kind: Deployment
@@ -432,31 +432,30 @@ spec:
 		},
 		ResourceMutationInfo: api.MutationInfo{
 			MutationType: api.MutationTypeUpdate,
-			Predicate:    true,
 		},
 		PathMutationMap: api.MutationMap{
 			"spec.replicas": api.MutationInfo{
-				MutationType: api.MutationTypeUpdate, Predicate: true, Value: "9\n",
+				MutationType: api.MutationTypeUpdate, Value: "9\n",
 			},
 			"spec.template.spec.containers.?name=app;@0.image": api.MutationInfo{
-				MutationType: api.MutationTypeUpdate, Predicate: true, Value: "nginx:1.20\n",
+				MutationType: api.MutationTypeUpdate, Value: "nginx:1.20\n",
 			},
 		},
 	}}
-	predicates := api.ResourceMutationList{{
+	protection := api.ResourceMutationList{{
 		Resource: api.ResourceInfo{
 			ResourceType:             "apps/v1/Deployment",
 			ResourceName:             "default/app",
 			ResourceNameWithoutScope: "app",
 			ResourceCategory:         "Kubernetes",
 		},
-		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate, Predicate: true},
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeUpdate},
 		PathMutationMap: api.MutationMap{
-			"spec.replicas": api.MutationInfo{Predicate: false}, // block replicas
+			"spec.replicas": api.MutationInfo{Protected: true}, // block replicas
 		},
 	}}
 
-	out, conflicts, err := yamlkit.PatchMutations(parsed, predicates, patch, nil, provider, nil)
+	out, conflicts, err := yamlkit.PatchMutations(parsed, protection, patch, nil, provider, nil)
 	require.NoError(t, err)
 	doc := firstDoc(t, []byte(out.String()))
 	assert.Equal(t, 3, doc.S("spec", "replicas").Data(), "replicas blocked, stays at 3")
@@ -467,7 +466,7 @@ spec:
 	// Conflict reported for the blocked path.
 	var foundConflict bool
 	for _, c := range conflicts {
-		if c.Reason == api.ConflictReasonPredicateFiltered && c.Path == "spec.replicas" {
+		if c.Reason == api.ConflictReasonProtectedPath && c.Path == "spec.replicas" {
 			foundConflict = true
 		}
 	}
