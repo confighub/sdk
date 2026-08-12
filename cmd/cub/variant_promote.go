@@ -17,7 +17,9 @@ import (
 var variantPromoteArgs struct {
 	changeDescription string
 	changesetSlug     string
+	changeorderSlug   string
 	dryRun            bool
+	squash            bool
 }
 
 var variantPromoteCmd = &cobra.Command{
@@ -40,6 +42,27 @@ with that upstream in three steps:
 Promote waits for triggers to complete. Use --dry-run to preview: the units that would be
 upgraded (add -o mutations to see the changes) and the units that would be added.
 
+An upgrade re-runs the upstream's recorded function invocations against each unit where it
+can -- so a change lands where the unit's own structure puts it -- and records one revision per
+upstream revision that has an effect, carrying that revision's change description. The variant's
+history then reads as the upstream's does rather than as a series of promotions. --squash gives
+up both: the range arrives as one rebased diff in one revision.
+
+--change-order promotes a named change rather than everything the upstream has reached. The
+change order fixed its range when it was created, so the upgrade stops where it ends, a unit
+it does not cover is passed over, and a unit that is not where it starts is an error rather
+than a merge of a different range. Two things follow from what a change order is:
+
+  - The steps run in the other order, clone first. A unit the variant does not have yet is
+    cloned at the revision the change order starts from, and then upgraded through the change
+    with everything else, so it ends up with the revisions the change made everywhere else
+    rather than arriving whole with the change already in it. A unit created upstream after
+    the change order was fixed is outside it: those are listed rather than cloned, and
+    promoting without --change-order adds them.
+  - The promotion is undone in one step, however many revisions it made:
+    "cub unit update --patch --space <variant> --where \"Slug LIKE '%'\"
+     --restore Before:ChangeOrder:<space>/<change-order>".
+
 Examples:
 `+"```"+`
   # Promote a variant to match its upstream
@@ -47,6 +70,12 @@ Examples:
 
   # Preview the changes, including the mutations
   cub variant promote web-prod --dry-run -o mutations
+
+  # Promote, recording the whole range as one revision per unit
+  cub variant promote web-prod --squash
+
+  # Promote one named change, leaving later upstream changes behind
+  cub variant promote web-prod --change-order release-42
 
   # Promote within a changeset, with a change description
   cub variant promote web-prod --changeset release-2024-06 --change-desc "Promote to prod"
@@ -59,7 +88,9 @@ Examples:
 func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeDescription, "change-desc", "", "change description recorded on the upgraded and cloned units")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changesetSlug, "changeset", "", "changeset to associate the upgraded and cloned units with")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, and a unit that is not where it starts is an error. A bare slug resolves in the upstream space. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are listed rather than cloned")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.dryRun, "dry-run", false, "preview the units that would be upgraded and added without changing anything")
+	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.squash, "squash", false, "merge each unit's range as one rebased diff in one revision instead of walking it: by default a promotion re-runs the upstream's recorded function invocations against each unit where it can, and records one revision per upstream revision that has an effect there")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
 }
@@ -82,14 +113,54 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	selectedSpaceID = downstreamSpaceID.String()
 	selectedSpaceSlug = downstreamSpace.Slug
 
+	changeOrder, err := promoteChangeOrder(upstreamSpaceID)
+	if err != nil {
+		return err
+	}
+
 	// Promote always waits for triggers, except on a dry run (nothing is changed,
 	// so there is nothing to wait for).
 	wait = !variantPromoteArgs.dryRun
 
-	if err := promoteUpgradeUnits(downstreamSpaceID); err != nil {
+	if changeOrder != nil {
+		// Clone before upgrading, which is the other way round from a plain promote. A unit the
+		// variant does not have yet is taken at the change order's start -- the state the change
+		// begins from -- and then upgraded through the change with everything else, so it ends up
+		// with the same revisions the change made everywhere else rather than arriving whole.
+		if err := promoteAddNewUnitsForChangeOrder(downstreamSpaceID, upstreamSpaceID, changeOrder); err != nil {
+			return err
+		}
+		return promoteUpgradeUnits(downstreamSpaceID, &changeOrder.ChangeOrderID)
+	}
+	if err := promoteUpgradeUnits(downstreamSpaceID, nil); err != nil {
 		return err
 	}
 	return promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID)
+}
+
+// promoteChangeOrder resolves --change-order, or nil when it was not given.
+//
+// A ChangeOrder resides in the Space holding the changes to promote, so both the slug and the
+// entity behind it resolve there rather than in the variant being promoted, which is what the
+// selected space names by the time this runs.
+func promoteChangeOrder(upstreamSpaceID uuid.UUID) (*goclientnew.ChangeOrder, error) {
+	if variantPromoteArgs.changeorderSlug == "" {
+		return nil, nil
+	}
+	selectedForChangeOrder := selectedSpaceID
+	selectedSpaceID = upstreamSpaceID.String()
+	defer func() { selectedSpaceID = selectedForChangeOrder }()
+	changeOrder, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeOrder](
+		variantPromoteArgs.changeorderSlug,
+		EntityTypeChangeOrder,
+		"*",
+		apiGetChangeOrderFromSlugInSpace,
+		func(c *goclientnew.ChangeOrder) string { return c.ChangeOrderID.String() },
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get change order: %w", err)
+	}
+	return changeOrder, nil
 }
 
 // promoteUpstreamSpaceID reads the UpstreamSpaceID annotation stamped by
@@ -133,17 +204,30 @@ func promotePatchEnhancer() (PatchEnhancer, *uuid.UUID, error) {
 	return enhancer, changesetID, nil
 }
 
-// promoteUpgradeUnits upgrades every downstream unit whose upstream has advanced.
-func promoteUpgradeUnits(downstreamSpaceID uuid.UUID) error {
+// promoteUpgradeUnits upgrades every downstream unit whose upstream has advanced. With a change
+// order it upgrades those of them the change order covers, to where it ends rather than to the
+// upstream's head.
+func promoteUpgradeUnits(downstreamSpaceID uuid.UUID, changeOrderID *uuid.UUID) error {
 	if !jsonOutput && outputFormat == "" {
-		tprint("Upgrading units behind their upstream...")
+		if changeOrderID != nil {
+			tprint("Promoting change order %s into units behind their upstream...", variantPromoteArgs.changeorderSlug)
+		} else {
+			tprint("Upgrading units behind their upstream...")
+		}
 	}
+	// The selection stays "behind its upstream" even with a change order: which of those units
+	// the change is in is the change order's answer, given per unit by the server, and a unit
+	// already level with its upstream cannot be behind the end of anything.
 	where := fmt.Sprintf("SpaceID = '%s' AND UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum", downstreamSpaceID.String())
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	upgrade := true
 	params := &goclientnew.BulkPatchUnitsParams{Where: &where, Include: &include, Upgrade: &upgrade}
+	params.ChangeOrder = changeOrderID
 	if variantPromoteArgs.dryRun {
 		params.DryRun = &variantPromoteArgs.dryRun
+	}
+	if variantPromoteArgs.squash {
+		params.Squash = &variantPromoteArgs.squash
 	}
 	enhancer, changesetID, err := promotePatchEnhancer()
 	if err != nil {
@@ -182,14 +266,14 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID) error {
 	return bulkErr
 }
 
-// promoteAddNewUnits finds units added to the upstream space (not tracked by any
-// downstream unit) and, on a real run, clones them into the downstream space and
-// copies their non-UpgradeUnit links. On a dry run it just lists them.
-func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
+// promoteUntrackedUpstreamUnits finds the units of the upstream space that no downstream unit
+// tracks -- the ones added since the variant was created or last promoted -- and the where clause
+// that selects them.
+func promoteUntrackedUpstreamUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) ([]*goclientnew.Unit, string, error) {
 	// Upstream unit IDs already tracked by the downstream space.
 	downstreamUnits, err := apiListUnits(downstreamSpaceID.String(), "", "UnitID,UpstreamUnitID")
 	if err != nil {
-		return err
+		return nil, "", err
 	}
 	tracked := make([]string, 0, len(downstreamUnits))
 	for _, u := range downstreamUnits {
@@ -204,6 +288,121 @@ func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
 		newWhere = fmt.Sprintf("UnitID NOT IN (%s)", strings.Join(tracked, ", "))
 	}
 	newUnits, err := apiListUnits(upstreamSpaceID.String(), newWhere, "UnitID,Slug")
+	if err != nil {
+		return nil, "", err
+	}
+	return newUnits, newWhere, nil
+}
+
+// promoteAddNewUnitsForChangeOrder clones the units the variant does not have yet, at the revision
+// the change order starts from rather than at the upstream's head.
+//
+// Which of them the change order covers is decided by its start Tag: a unit created upstream after
+// the change order was fixed carries none of its Tags and is not part of the change, so it is named
+// rather than cloned. The clone itself names its revision the way every other operation does --
+// `Before:ChangeOrder:<id>`, resolved by the server against each source unit -- so the upgrade that
+// follows replays the change into the clone.
+func promoteAddNewUnitsForChangeOrder(downstreamSpaceID, upstreamSpaceID uuid.UUID, changeOrder *goclientnew.ChangeOrder) error {
+	newUnits, newWhere, err := promoteUntrackedUpstreamUnits(downstreamSpaceID, upstreamSpaceID)
+	if err != nil {
+		return err
+	}
+	if len(newUnits) == 0 {
+		return nil
+	}
+
+	startTagWhere := fmt.Sprintf("SpaceID = '%s' AND Tags ? '%s'", upstreamSpaceID.String(), changeOrder.StartTagID.String())
+	startRevisions, err := apiSearchListRevisions(startTagWhere, "UnitID,RevisionNum,Tags", "")
+	if err != nil {
+		return fmt.Errorf("failed to find the revisions the change order starts at: %w", err)
+	}
+	inChangeOrder := map[uuid.UUID]bool{}
+	for _, r := range startRevisions {
+		if r.Revision != nil {
+			inChangeOrder[r.Revision.UnitID] = true
+		}
+	}
+
+	toClone := make([]*goclientnew.Unit, 0, len(newUnits))
+	outside := make([]string, 0, len(newUnits))
+	for _, u := range newUnits {
+		if inChangeOrder[u.UnitID] {
+			toClone = append(toClone, u)
+		} else {
+			outside = append(outside, u.Slug)
+		}
+	}
+
+	if !jsonOutput && outputFormat == "" {
+		verb := "Adding"
+		if variantPromoteArgs.dryRun {
+			verb = "Would add"
+		}
+		tprint("%s %d unit(s) from upstream at the change order's start", verb, len(toClone))
+		if len(outside) > 0 {
+			tprint("Leaving %d upstream unit(s) outside the change order uncloned; promote without --change-order to add them:", len(outside))
+			for _, slug := range outside {
+				tprint("  - %s", slug)
+			}
+		}
+	}
+	if len(toClone) == 0 {
+		return nil
+	}
+	if variantPromoteArgs.dryRun {
+		for _, u := range toClone {
+			tprint("  + %s", u.Slug)
+		}
+		return nil
+	}
+
+	cloneWhere := fmt.Sprintf("SpaceID = '%s'", upstreamSpaceID.String())
+	if newWhere != "" {
+		cloneWhere += " AND " + newWhere
+	}
+	cloneWhere += fmt.Sprintf(" AND %s", unitIDInList(toClone))
+	whereSpace := fmt.Sprintf("SpaceID = '%s'", downstreamSpaceID.String())
+	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
+	upstreamRevision := fmt.Sprintf("Before:ChangeOrder:%s", changeOrder.ChangeOrderID.String())
+	cloneParams := &goclientnew.BulkCreateUnitsParams{
+		Where:            &cloneWhere,
+		WhereSpace:       &whereSpace,
+		Include:          &include,
+		UpstreamRevision: &upstreamRevision,
+	}
+	enhancer, _, err := promotePatchEnhancer()
+	if err != nil {
+		return err
+	}
+	patchData, err := EnhancePatchData([]byte("null"), nil, nil, nil, nil, enhancer)
+	if err != nil {
+		return err
+	}
+	responses, statusCode, err := bulkCreateUnits(cloneParams, patchData)
+	if err != nil {
+		return err
+	}
+	if err := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", ""); err != nil {
+		return err
+	}
+
+	return promoteCopyLinks(downstreamSpaceID, upstreamSpaceID, toClone)
+}
+
+// unitIDInList renders a UnitID IN (...) clause for a set of units.
+func unitIDInList(units []*goclientnew.Unit) string {
+	ids := make([]string, 0, len(units))
+	for _, u := range units {
+		ids = append(ids, "'"+u.UnitID.String()+"'")
+	}
+	return fmt.Sprintf("UnitID IN (%s)", strings.Join(ids, ", "))
+}
+
+// promoteAddNewUnits finds units added to the upstream space (not tracked by any
+// downstream unit) and, on a real run, clones them into the downstream space and
+// copies their non-UpgradeUnit links. On a dry run it just lists them.
+func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
+	newUnits, newWhere, err := promoteUntrackedUpstreamUnits(downstreamSpaceID, upstreamSpaceID)
 	if err != nil {
 		return err
 	}

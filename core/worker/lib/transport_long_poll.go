@@ -706,8 +706,6 @@ func (t *longPollTransport) SendResult(result *api.ActionResult) error {
 	{
 		logResult := *result
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
-		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
-		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
 		filteredJSON, _ := json.Marshal(logResult)
 		log.Printf("Result body (PATCH): %s", string(filteredJSON))
 	}
@@ -827,8 +825,6 @@ func (t *longPollTransport) SendResultOnce(result *api.ActionResult) error {
 	{
 		logResult := *result
 		logResult.Data = []byte(fmt.Sprintf("redacted: %d bytes", len(result.Data)))
-		logResult.LiveData = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveData)))
-		logResult.LiveState = []byte(fmt.Sprintf("redacted: %d bytes", len(result.LiveState)))
 		filteredJSON, _ := json.Marshal(logResult)
 		log.Printf("Sending result (PATCH, once): %s", string(filteredJSON))
 	}

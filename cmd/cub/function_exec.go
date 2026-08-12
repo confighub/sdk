@@ -82,7 +82,6 @@ func init() {
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionExecCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionExecCmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the functions on the live state and use the flag value as the toolchain type for live state.")
 	functionCmd.AddCommand(functionExecCmd)
 }
 

@@ -29,7 +29,7 @@ Agent workflow:
 
 Key information provided:
 - Function signature with required and optional parameters
-- Behavior flags (Mutating, Validating, Hermetic, Idempotent)
+- Behavior flags (Mutating, Validating, Hermetic, Idempotent, Replayable)
 - Parameter types, constraints, and examples
 - Affected resource types (which Kubernetes resources this function operates on)
 
@@ -99,6 +99,7 @@ func displayFunctionDetails(toolchainType, functionName string, functionDetails 
 	view.Append([]string{"Validating", fmt.Sprintf("%v", functionDetails.Validating)})
 	view.Append([]string{"Hermetic", fmt.Sprintf("%v", functionDetails.Hermetic)})
 	view.Append([]string{"Idempotent", fmt.Sprintf("%v", functionDetails.Idempotent)})
+	view.Append([]string{"Replayable", fmt.Sprintf("%v", functionDetails.Replayable)})
 	if functionDetails.FunctionType != "" {
 		view.Append([]string{"Function Type", functionDetails.FunctionType})
 	}

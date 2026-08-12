@@ -106,21 +106,32 @@ func SupportedToolchainsToString() string {
 // FunctionSignature specifies the parameter names and values, required and optional parameters,
 // OutputType, kind of function (mutating/readonly or validating), and description of the function.
 type FunctionSignature struct {
-	FunctionName          string                  `description:"Name of the function in kabob-case"`
-	ToolchainType         workerapi.ToolchainType `json:",omitempty" swaggertype:"string" description:"Toolchain under which the function is registered"`
-	Parameters            []FunctionParameter     `description:"Function parameters, in order"`
-	RequiredParameters    int                     `description:"Number of required parameters"`
-	VarArgs               bool                    `description:"Last parameter may be repeated"`
-	OtherDataExpected     []OtherDataSource       `json:",omitempty" description:"If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used"`
-	OutputInfo            *FunctionOutput         `description:"Output description"`
-	Mutating              bool                    `description:"May change the configuration data"`
-	Validating            bool                    `description:"Returns ValidationResult"`
-	Hermetic              bool                    `description:"Does not call other systems"`
-	Idempotent            bool                    `description:"Will return the same result if invoked again"`
-	Description           string                  `description:"Description of the function"`
-	FunctionType          FunctionType            `swaggertype:"string" description:"Implementation pattern of the function: PathVisitor or Custom"`
-	AttributeName         AttributeName           `json:",omitempty" swaggertype:"string" description:"Attribute corresponding to registered paths, if a path visitor; optional"`
-	AffectedResourceTypes []ResourceType          `json:",omitempty" description:"Resource types the function applies to; * if all"`
+	FunctionName       string                  `description:"Name of the function in kabob-case"`
+	ToolchainType      workerapi.ToolchainType `json:",omitempty" swaggertype:"string" description:"Toolchain under which the function is registered"`
+	Parameters         []FunctionParameter     `description:"Function parameters, in order"`
+	RequiredParameters int                     `description:"Number of required parameters"`
+	VarArgs            bool                    `description:"Last parameter may be repeated"`
+	OtherDataExpected  []OtherDataSource       `json:",omitempty" description:"If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used"`
+	OutputInfo         *FunctionOutput         `description:"Output description"`
+	Mutating           bool                    `description:"May change the configuration data"`
+	Validating         bool                    `description:"Returns ValidationResult"`
+	Hermetic           bool                    `description:"Does not call other systems"`
+	Idempotent         bool                    `description:"Will return the same result if invoked again"`
+	// Replayable says this function means the same thing run against a different Unit, so a
+	// merge may re-execute a stored invocation of it against a downstream variant instead of
+	// transporting the patch it produced. It is a claim about generalizing: the function
+	// selects what it changes by identity rather than position, and its arguments name what to
+	// change rather than carrying one Unit's data.
+	//
+	// Declared rather than inferred. No other flag here is a reliable proxy, and a function
+	// nobody has considered should not be replayed by default. Idempotent in particular is a
+	// different question -- that is about applying an operation twice to the same data, while
+	// replay applies it once to different data. See docs/design/function-replayability.md.
+	Replayable            bool           `json:",omitempty" description:"Means the same thing run against a different Unit, so a merge may re-execute a stored invocation of it against a downstream variant"`
+	Description           string         `description:"Description of the function"`
+	FunctionType          FunctionType   `swaggertype:"string" description:"Implementation pattern of the function: PathVisitor or Custom"`
+	AttributeName         AttributeName  `json:",omitempty" swaggertype:"string" description:"Attribute corresponding to registered paths, if a path visitor; optional"`
+	AffectedResourceTypes []ResourceType `json:",omitempty" description:"Resource types the function applies to; * if all"`
 }
 
 // FunctionParameter organizing metadata

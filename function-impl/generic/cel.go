@@ -533,10 +533,17 @@ func registerSetCEL(fh handler.FunctionRegistry, converter configkit.ConfigConve
 					DataType:      api.DataTypeString,
 				},
 			},
-			VarArgs:               true,
-			Mutating:              true,
-			Hermetic:              true,
-			Idempotent:            false,
+			VarArgs:  true,
+			Mutating: true,
+			Hermetic: true,
+			// Idempotent and Replayable both depend on the expression, not on the function,
+			// and the answer is the same one set-yq gives. Whether re-running produces the
+			// same result is up to what the caller wrote; claiming false asserts something
+			// this function cannot know. Replay needs the invocation to locate what it writes
+			// by identity rather than by recorded position, and an expression evaluated per
+			// resource under WhereResource does exactly that.
+			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Mutates configuration resources by merging a partial CEL expression result into the original resource. Comments are preserved.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

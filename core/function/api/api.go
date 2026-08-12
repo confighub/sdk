@@ -32,9 +32,8 @@ type FunctionContext struct {
 	TargetFacts         map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
 	RevisionID          uuid.UUID               `description:"Unique ID of the configuration Revision"`
 	RevisionNum         int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
-	QueuedOperationID   uuid.UUID               `description:"Unique ID of the operation generating the LiveState for the Unit"`
-	NotLive             bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision or LiveState invocations"`
-	IsLiveState         bool                    `description:"True if the ConfigData is the LiveState of the Unit"`
+	QueuedOperationID   uuid.UUID               `description:"Unique ID of the operation this function is executed under"`
+	NotLive             bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
 	PreviousContentHash RevisionHash            `description:"Deprecated: Use PreviousDataHash instead. crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
 	PreviousDataHash    DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
 	ApprovedBy          []string                `description:"Usernames of users that have approved this revision of the configuration data"`

@@ -110,8 +110,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 
 	// If functionContext.PreviousDataHash is set, it may not match the current ConfigData because
 	// the data could have been modified by prior function executions, so don't overwrite it.
-	// When operating on LiveState the PreviousDataHash is expected to be unset.
-	if !functionContext.IsLiveState && functionContext.PreviousDataHash == "" {
+	if functionContext.PreviousDataHash == "" {
 		functionContext.PreviousDataHash = api.HashConfigDataSHA256(functionInvocation.ConfigData)
 	}
 

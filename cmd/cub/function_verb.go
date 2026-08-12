@@ -17,10 +17,10 @@ import (
 type FunctionKindMode int
 
 const (
-	ModeAny          FunctionKindMode = iota // do / exec: any kind
-	ModeValidating                           // vet: Validating=true only
-	ModeNonMutating                          // get: Mutating=false
-	ModeMutating                             // set: Mutating=true only
+	ModeAny         FunctionKindMode = iota // do / exec: any kind
+	ModeValidating                          // vet: Validating=true only
+	ModeNonMutating                         // get: Mutating=false
+	ModeMutating                            // set: Mutating=true only
 )
 
 func (m FunctionKindMode) verb() string {
@@ -234,7 +234,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	cmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
-	cmd.Flags().BoolVar(&preserveProtection, "preserve-protection", false, "keep the stored protection of the paths this change writes instead of recording new ones: each path keeps the protection it already has, and a new path is left unprotected")
+	cmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	cmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
@@ -247,7 +247,6 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	cmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	cmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	cmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LiveRevisionNum)")
 	enableOutputFileFlag(cmd)
 }

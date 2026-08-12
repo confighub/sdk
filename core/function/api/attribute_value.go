@@ -131,8 +131,7 @@ const (
 // resource attribute.
 type AttributeIdentifier struct {
 	ResourceInfo
-	Path        ResolvedPath `swaggertype:"string" description:"Path of the attribute"`
-	InLiveState bool         `json:",omitempty" description:"True if a path in the live state, false if a path in the configuration data"`
+	Path ResolvedPath `swaggertype:"string" description:"Path of the attribute"`
 }
 
 // AttributeMetadata specifies the AttributeName, DataType, and other details, such as corresponding

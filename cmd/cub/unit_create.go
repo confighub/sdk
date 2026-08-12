@@ -69,6 +69,10 @@ Single Unit Examples:
 
   # Clone an existing unit
   cub unit create --space my-space --json --from-stdin myclone --upstream-unit sample-deployment
+
+  # Clone it as it stood before a change order, so a following upgrade replays the change into it
+  cub unit create --space my-space myclone --upstream-unit sample-deployment \
+      --upstream-revision Before:ChangeOrder:base-space/release-42
 ` + "```" + `
 
 Bulk Create Examples:
@@ -132,6 +136,7 @@ Important: Unit slugs must be unique within a space and follow naming convention
 var unitCreateArgs struct {
 	upstreamUnitSlug    string
 	upstreamSpaceSlug   string
+	upstreamRevision    string
 	importUnitSlug      string
 	toolchainType       string
 	providerType        string
@@ -160,6 +165,7 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changesetSlug, "changeset", "", "changeset to associate the unit with")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamRevision, "upstream-revision", "", "revision of the upstream unit to copy instead of its head (same format as --restore, resolved against the unit being cloned). Before:ChangeOrder:<slug> takes the state a change order starts from, so a following --upgrade --change-order replays the change into the clone")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
 	unitCreateCmd.Flags().StringVarP(&unitCreateArgs.toolchainType, "toolchain", "t", string(workerapi.ToolchainKubernetesYAML), "toolchain type (single mode only)")
@@ -417,6 +423,15 @@ func runSingleUnitCreate(args []string) error {
 		newParams.UpstreamSpaceId = &upstreamSpaceID
 		newParams.UpstreamUnitId = &upstreamUnitID
 	}
+	if unitCreateArgs.upstreamRevision != "" {
+		// The revision named is one of the *upstream* unit's, so a delta relative to head is
+		// resolved against its head rather than this unit's -- which does not exist yet.
+		upstreamRevision, err := parseUpstreamRevision(unitCreateArgs.upstreamRevision, newUnit.HeadRevisionNum)
+		if err != nil {
+			return err
+		}
+		newParams.UpstreamRevision = &upstreamRevision
+	}
 	if unitCreateArgs.mergeExternalSource != "" {
 		newParams.MergeExternalSource = &unitCreateArgs.mergeExternalSource
 	}
@@ -560,6 +575,16 @@ func runBulkUnitCreate() error {
 	// Set name pattern if specified
 	if unitCreateArgs.namePattern != "" {
 		params.NamePattern = &unitCreateArgs.namePattern
+	}
+
+	if unitCreateArgs.upstreamRevision != "" {
+		// Each clone resolves it against its own source unit, so there is no single head to
+		// measure a delta from.
+		upstreamRevision, err := parseUpstreamRevision(unitCreateArgs.upstreamRevision, 0)
+		if err != nil {
+			return err
+		}
+		params.UpstreamRevision = &upstreamRevision
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

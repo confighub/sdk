@@ -35,6 +35,7 @@ func registerSetHash(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Computes a SHA-256 hash of all values at the specified path and stores it at the resource provider's context path for Hash (e.g., confighub.com/Hash annotation for Kubernetes)",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

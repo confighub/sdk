@@ -161,6 +161,7 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "The configuration data is updated with the result of running yq -i with the specified expression on the configuration data filtered by WhereResource.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

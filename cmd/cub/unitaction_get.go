@@ -23,23 +23,12 @@ var unitActionGetCmd = &cobra.Command{
 	RunE:  unitActionGetRun,
 }
 
-var (
-	showLiveState   bool
-	showData        bool
-	showLiveData    bool
-	showBridgeState bool
-)
+var showData bool
 
 func init() {
 	addStandardGetFlags(unitActionGetCmd)
-	unitActionGetCmd.Flags().BoolVar(&showLiveState, "livestate", false, "decode and display the LiveState field")
-	_ = unitActionGetCmd.Flags().MarkDeprecated("livestate", "use 'cub unit-action livestate'")
 	unitActionGetCmd.Flags().BoolVar(&showData, "data", false, "decode and display the Data field")
 	_ = unitActionGetCmd.Flags().MarkDeprecated("data", "use 'cub unit-action data'")
-	unitActionGetCmd.Flags().BoolVar(&showLiveData, "livedata", false, "decode and display the LiveData field")
-	_ = unitActionGetCmd.Flags().MarkDeprecated("livedata", "use 'cub unit-action livedata'")
-	unitActionGetCmd.Flags().BoolVar(&showBridgeState, "bridgestate", false, "decode and display the BridgeState field")
-	_ = unitActionGetCmd.Flags().MarkDeprecated("bridgestate", "use 'cub unit-action bridgestate'")
 	unitActionCmd.AddCommand(unitActionGetCmd)
 }
 
@@ -124,7 +113,6 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 	table.Append([]string{"Bridge Worker ID", unitAction.BridgeWorkerID.String()})
 	table.Append([]string{"RevisionNum", fmt.Sprintf("%v", unitAction.RevisionNum)})
 	table.Append([]string{"UnitActionNum", fmt.Sprintf("%v", unitAction.UnitActionNum)})
-	table.Append([]string{"Drift Reconciliation Mode", unitAction.DriftReconciliationMode})
 	table.Render()
 
 	if len(unitAction.ErrorDetails) > 0 {
@@ -147,32 +135,5 @@ func displayUnitAction(unitAction *goclientnew.UnitAction) {
 		dataBytes, err := base64.StdEncoding.DecodeString(unitAction.Data)
 		failOnError(err)
 		tprintRaw(string(dataBytes))
-	}
-
-	if showLiveData && len(unitAction.LiveData) > 0 {
-		tprintRaw("")
-		tprintRaw("LiveData:")
-		tprintRaw("---------")
-		liveDataBytes, err := base64.StdEncoding.DecodeString(unitAction.LiveData)
-		failOnError(err)
-		tprintRaw(string(liveDataBytes))
-	}
-
-	if showLiveState && len(unitAction.LiveState) > 0 {
-		tprintRaw("")
-		tprintRaw("LiveState:")
-		tprintRaw("----------")
-		liveStateBytes, err := base64.StdEncoding.DecodeString(unitAction.LiveState)
-		failOnError(err)
-		tprintRaw(string(liveStateBytes))
-	}
-
-	if showBridgeState && len(unitAction.BridgeState) > 0 {
-		tprintRaw("")
-		tprintRaw("BridgeState:")
-		tprintRaw("------------")
-		bridgeStateBytes, err := base64.StdEncoding.DecodeString(unitAction.BridgeState)
-		failOnError(err)
-		tprintRaw(string(bridgeStateBytes))
 	}
 }

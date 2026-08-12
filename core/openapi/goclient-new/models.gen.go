@@ -99,21 +99,12 @@ const (
 type ActionResult struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
-	// BridgeState Additional state used by the Bridge
-	BridgeState string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
-
 	// Data Updated configuration Data of the Unit (for refresh and import)
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
 	// ErrorMessages Warning or error messages to surface to the user
 	ErrorMessages []string `json:"ErrorMessages,omitempty" yaml:"ErrorMessages,omitempty"`
-
-	// LiveData Live Data corresponding to the Unit (for inventory and drift detection)
-	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
-
-	// LiveState Live State corresponding to the Unit (for status determination)
-	LiveState string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
-	Message   string `json:"Message,omitempty" yaml:"Message,omitempty"`
+	Message       string   `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// QueuedOperationID UUID of the operation corresponding to the action request
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
@@ -314,9 +305,6 @@ type AttributeInfo struct {
 	DataType string            `json:"DataType,omitempty" yaml:"DataType,omitempty"`
 	Details  *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
 
-	// InLiveState True if a path in the live state, false if a path in the configuration data
-	InLiveState bool `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
-
 	// Path Path of the attribute
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
@@ -356,9 +344,6 @@ type AttributeValue struct {
 
 	// FunctionName Name of the function invocation corresponding to the output
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// InLiveState True if a path in the live state, false if a path in the configuration data
-	InLiveState bool `json:"InLiveState,omitempty" yaml:"InLiveState,omitempty"`
 
 	// Index Index of the function invocation corresponding to the output. Useful in the case that multiple function invocations in the same executor call return AttributeValueList output.
 	Index int `json:"Index,omitempty" yaml:"Index,omitempty"`
@@ -993,7 +978,7 @@ type ExtendedRelease struct {
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, and DeleteGates can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
@@ -1428,16 +1413,13 @@ type FunctionInvocationsRequest struct {
 	Invocations []UUID `json:"Invocations,omitempty" yaml:"Invocations,omitempty"`
 
 	// NumFilters NumFilters is the number of validating functions from the FunctionInvocations to treat as filters for the remaining functions in the list. In the case that the validation function does not pass, stop and don't execute the remaining functions, but don't report an error.
-	NumFilters int `json:"NumFilters,omitempty" yaml:"NumFilters,omitempty"`
-
-	// OnLiveState OnLiveState indicates that the functions should be invoked on the LiveState rather than the Data.
-	OnLiveState              bool                         `json:"OnLiveState,omitempty" yaml:"OnLiveState,omitempty"`
+	NumFilters               int                          `json:"NumFilters,omitempty" yaml:"NumFilters,omitempty"`
 	ParameterizedInvocations []ParameterizedInvocationRef `json:"ParameterizedInvocations,omitempty" yaml:"ParameterizedInvocations,omitempty"`
 
 	// StopOnError StopOnError indicates whether to stop executing functions from the FunctionInvocations list on the first error, or to execute all of the functions and return all of the errors. Note that this applies to each Unit or Revision individually rather than all of the entities on which the functions are being invoked.
 	StopOnError bool `json:"StopOnError,omitempty" yaml:"StopOnError,omitempty"`
 
-	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. If OnLiveState is false, it must match the ToolchainType of the Units. If OnLiveState is true, it must match the LiveStateType of the Targets of the Units.
+	// ToolchainType ToolchainType specifies the type of toolchain for these function invocations. This determines which configuration formats the functions can process. It must match the ToolchainType of the Units.
 	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
 
 	// Triggers Triggers is a list of Trigger IDs to execute. The triggers must be within the same Organization. Triggers will be executed after the FunctionInvocations list. Functions are grouped by executor (built-in vs bridge worker) and executed in phases: general mutating functions first, then final mutating functions (like ensure-context), then validating functions. Functions that don't match the unit's toolchain type are ignored.
@@ -1565,6 +1547,9 @@ type FunctionSignature struct {
 
 	// Parameters Function parameters, in order
 	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
+
+	// Replayable Means the same thing run against a different Unit, so a merge may re-execute a stored invocation of it against a downstream variant
+	Replayable bool `json:"Replayable,omitempty" yaml:"Replayable,omitempty"`
 
 	// RequiredParameters Number of required parameters
 	RequiredParameters int `json:"RequiredParameters,omitempty" yaml:"RequiredParameters,omitempty"`
@@ -1728,6 +1713,9 @@ type Link struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
+	// Protect Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.
+	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
+
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
@@ -1736,6 +1724,9 @@ type Link struct {
 
 	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// Squash Merge this Link's range as one rebased diff in one Revision instead of walking it. By default a resolve replays the source's recorded function invocations against this Unit where they can be re-executed, and records each source Revision that has an effect as a Revision of its own. Only meaningful for UpgradeUnit and MergeUnits Links, which are the ones with a range to walk.
+	Squash bool `json:"Squash,omitempty" yaml:"Squash,omitempty"`
 
 	// ToSpaceID Unique identifier of the Space of the upstream Unit.
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
@@ -1794,6 +1785,8 @@ type LinkCreateOrUpdateResponse struct {
 
 // Mutation Mutation is a single source of mutation for a Revision.
 type Mutation struct {
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
@@ -1805,7 +1798,8 @@ type Mutation struct {
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// InvocationID InvocationID is the identifier of the function invoked, if there is a corresponding Invocation.
-	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	InvocationID     *openapi_types.UUID    `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
+	InvocationParams map[string]interface{} `json:"InvocationParams,omitempty" yaml:"InvocationParams,omitempty"`
 
 	// LinkID LinkID is the unique identifier of the link if the change was made due to resolving a link.
 	LinkID *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
@@ -1831,6 +1825,8 @@ type Mutation struct {
 	// ProvidedPath ProvidedPath is the path of the provided value used to satisfy a needed value if the change was made due to resolving a link.
 	ProvidedPath     string             `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
 	ProvidedResource *ResourceInfoType2 `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
+	ReplayOutcome    string             `json:"ReplayOutcome,omitempty" yaml:"ReplayOutcome,omitempty"`
+	ReplayReason     string             `json:"ReplayReason,omitempty" yaml:"ReplayReason,omitempty"`
 
 	// RestoredRevisionNum Sequence number of the restored revision, if the change was due to a restore operation.
 	RestoredRevisionNum int64 `json:"RestoredRevisionNum,omitempty" yaml:"RestoredRevisionNum,omitempty"`
@@ -1871,6 +1867,9 @@ type Mutation struct {
 
 // MutationConflict defines model for MutationConflict.
 type MutationConflict struct {
+	// Details Explanation the Reason alone cannot carry, such as the error text of a failed replay
+	Details string `json:"Details,omitempty" yaml:"Details,omitempty"`
+
 	// Path Path of the mutation; empty for resource-level conflicts
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
@@ -2084,8 +2083,7 @@ type Permissions map[string]Subjects
 // worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
 // to each UnitAction.
 type QueuedOperation struct {
-	Action      *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-	BridgeState string      `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
+	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -2099,9 +2097,6 @@ type QueuedOperation struct {
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
 
-	// DriftReconciliationMode The drift reconciliation mode for the unit at the time of the operation.
-	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
-
 	// DryRun DryRun indicates whether the action is a dry run.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
@@ -2110,8 +2105,6 @@ type QueuedOperation struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
-	LiveData    string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
-	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2157,11 +2150,13 @@ type QueuedOperation struct {
 // QueuedOperationStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 type QueuedOperationStatus string
 
-// Release Release is an immutable, published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, and DeleteGates can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 type Release struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations    map[string]string  `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
-	// BundleBaseName Base filename used for the Release's stored bundle, without the .tar.gz suffix.
+	// BundleBaseName Base filename used for the Release's stored bundle, without the .tar.gz suffix. Set at publish time and recorded in the Release's OCI manifest, so it cannot be changed afterwards. (readonly)
 	BundleBaseName string `json:"BundleBaseName,omitempty" yaml:"BundleBaseName,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -2173,11 +2168,17 @@ type Release struct {
 	// Data The stored tar.gz bundle of the released Units' configuration.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
+	// DeleteGates An optional set of gates that, if any is present, will block deletion.
+	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
+
 	// Digest OCI content digest (sha256:...) of the Release's stored tar.gz bundle.
 	Digest string `json:"Digest,omitempty" yaml:"Digest,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
@@ -2211,8 +2212,17 @@ type Release struct {
 
 // ReleasePublishRequest defines model for ReleasePublishRequest.
 type ReleasePublishRequest struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
 	// BundleBaseName Optional override of the name of the Release's tar.gz bundle.
 	BundleBaseName string `json:"BundleBaseName,omitempty" yaml:"BundleBaseName,omitempty"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
@@ -2609,7 +2619,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2831,7 +2841,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -2938,6 +2948,9 @@ type Trigger struct {
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
 
+	// Protect Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.
+	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
+
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
@@ -3023,9 +3036,6 @@ type Unit struct {
 	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
 	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
 
-	// BridgeState Additional state used by the Bridge; content is ProviderType-specific.
-	BridgeState string `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
-
 	// BridgeWorkerID ID of the BridgeWorker from the Target assigned to this Unit.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
@@ -3057,9 +3067,6 @@ type Unit struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
-	// DriftReconciliationMode When the drift reconciliation mode is OnDemand, then the live state of the Target is updated only on Apply actions and the unit Data is updated only on Refresh actions. When the mode is ContinuousApply the live state is updated to match the last applied state when it has drifted from that state. When the mode is ContinuousRefresh, the unit Data is updated when it has drifted from the live state. The mode can be changed via the drift_mode parameter on Apply and Refresh operations. If the drift reconciliation mode is set in the opposing direction on the Unit (i.e., ContinuousApply when Refresh is invoked or ContinuousRefresh when Apply is invoked) and is not changed to a compatible value, then the operation will fail.
-	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
-
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
@@ -3087,14 +3094,8 @@ type Unit struct {
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
-	// LiveData The live resources as of the most recent non-dry-run action in the same representation as Data.
-	LiveData string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
-
 	// LiveRevisionNum Sequence number the last Revision applied once apply has completed. 0 if no live revision.
-	LiveRevisionNum int64 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
-
-	// LiveState The live state as of the most recent non-dry-run action; content is ProviderType-specific.
-	LiveState       string                `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
+	LiveRevisionNum int64                 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
@@ -3164,8 +3165,7 @@ type Unit struct {
 // worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
 // to each UnitAction.
 type UnitAction struct {
-	Action      *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
-	BridgeState string      `json:"BridgeState,omitempty" yaml:"BridgeState,omitempty"`
+	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
 	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -3179,9 +3179,6 @@ type UnitAction struct {
 	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
 
-	// DriftReconciliationMode The drift reconciliation mode for the unit at the time of the operation.
-	DriftReconciliationMode string `json:"DriftReconciliationMode,omitempty" yaml:"DriftReconciliationMode,omitempty"`
-
 	// DryRun DryRun indicates whether the action is a dry run.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
@@ -3190,8 +3187,6 @@ type UnitAction struct {
 
 	// ExtraParams ExtraParams contains additional parameters for the operation in string format.
 	ExtraParams string `json:"ExtraParams,omitempty" yaml:"ExtraParams,omitempty"`
-	LiveData    string `json:"LiveData,omitempty" yaml:"LiveData,omitempty"`
-	LiveState   string `json:"LiveState,omitempty" yaml:"LiveState,omitempty"`
 
 	// OrganizationID OrganizationID is the unique identifier of the organization this operation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -4600,7 +4595,7 @@ type ListQueuedOperationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5981,7 +5976,7 @@ type ListOrgFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
+	// Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, Replayable, RequiredParameters, ToolchainType, Validating, VarArgs.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5995,8 +5990,8 @@ type InvokeFunctionsOnOrgParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
-	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
 
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
@@ -6038,7 +6033,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -6567,7 +6562,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -6647,7 +6642,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6722,9 +6717,11 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
 	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Protect                *bool               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	Squash                        *bool                     `json:"Squash" yaml:"Squash"`
 	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
@@ -6772,7 +6769,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -6842,9 +6839,11 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
 	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Protect                *bool               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	Squash                        *bool                     `json:"Squash" yaml:"Squash"`
 	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
@@ -6892,7 +6891,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to select source links to copy
 	//
@@ -6946,7 +6945,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -6984,7 +6983,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -7213,7 +7212,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8424,7 +8423,7 @@ type ListFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
+	// Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, Replayable, RequiredParameters, ToolchainType, Validating, VarArgs.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8441,8 +8440,8 @@ type InvokeFunctionsParams struct {
 	// DryRun Dry run mode: when true, skip updating configuration data even if it changed
 	DryRun *string `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set.
-	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
 
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
@@ -8484,7 +8483,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -8708,7 +8707,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8811,9 +8810,11 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
 	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Protect                *bool               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
+	Squash                        *bool                     `json:"Squash" yaml:"Squash"`
 	ToSpaceID                     *openapi_types.UUID       `json:"ToSpaceID" yaml:"ToSpaceID"`
 	ToUnitID                      *openapi_types.UUID       `json:"ToUnitID" yaml:"ToUnitID"`
 	TransformInvocationID         *openapi_types.UUID       `json:"TransformInvocationID" yaml:"TransformInvocationID"`
@@ -8867,7 +8868,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8942,6 +8943,21 @@ type GetExtendedReleaseParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// PatchReleaseApplicationMergePatchPlusJSONBody defines parameters for PatchRelease.
+type PatchReleaseApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
 }
 
 // ListTagsParams defines parameters for ListTags.
@@ -9275,7 +9291,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9386,7 +9402,8 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
+	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
+	Protect *bool                   `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -9435,7 +9452,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -9518,6 +9535,9 @@ type CreateUnitParams struct {
 	// UpstreamUnitId Unique identifier for a upstream_unit_id
 	UpstreamUnitId *openapi_types.UUID `form:"upstream_unit_id,omitempty" json:"upstream_unit_id,omitempty" yaml:"upstream_unit_id,omitempty"`
 
+	// UpstreamRevision Revision of the upstream Unit to copy. The default is its head, which is what a clone has always taken. Takes the same forms as merge_end and restore -- a revision number, a named revision, 'Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Before:...' -- resolved against the Unit being cloned from, so a bulk clone lands on a different revision of each source Unit. 'Before:ChangeOrder:uuid' is what a promotion uses: it names the state the change starts from, which for a Unit no target has taken yet is its first revision, so the upgrade that follows replays the change into the clone rather than the clone arriving with the change already folded in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
+	UpstreamRevision *string `form:"upstream_revision,omitempty" json:"upstream_revision,omitempty" yaml:"upstream_revision,omitempty"`
+
 	// MergeExternalSource Identifier of the external source. Sets the source type to MergeExternal and appends the source name to the change description.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
 
@@ -9598,25 +9618,28 @@ type PatchUnitParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
+	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
-	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	// Resolve Resolve Links from this (downstream) Unit to another (upstream) Unit, propagating what each Link's UpdateType says to propagate. Expects Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link from this Unit that can resolve; a where expression selects among those, evaluated against the Links themselves (e.g. UpdateType = 'MergeUnits'), which is how to name one Link in a bulk operation, where a UUID cannot be. A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate Link may be resolved by hand: it does what the queue would have done, and nothing when the Link is already level with its source.
 	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
 
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
-	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -9656,7 +9679,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -9681,6 +9704,9 @@ type PatchUnitParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision.
+	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -9694,25 +9720,28 @@ type UpdateUnitParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
+	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
-	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	// Resolve Resolve Links from this (downstream) Unit to another (upstream) Unit, propagating what each Link's UpdateType says to propagate. Expects Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link from this Unit that can resolve; a where expression selects among those, evaluated against the Links themselves (e.g. UpdateType = 'MergeUnits'), which is how to name one Link in a bulk operation, where a UUID cannot be. A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate Link may be resolved by hand: it does what the queue would have done, and nothing when the Link is already level with its source.
 	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
 
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
-	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -9752,7 +9781,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -9777,6 +9806,9 @@ type UpdateUnitParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision.
+	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -9821,7 +9853,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10243,7 +10275,7 @@ type ListUnitActionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11272,7 +11304,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11350,7 +11382,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11433,7 +11465,8 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
+	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
+	Protect *bool                   `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -11482,7 +11515,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11555,7 +11588,8 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
+	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
+	Protect *bool                   `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -11604,7 +11638,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11739,7 +11773,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11819,7 +11853,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -11970,7 +12004,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -12019,25 +12053,28 @@ type BulkPatchUnitsParams struct {
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// PreserveProtection Preserve the stored Protected values of the paths this operation writes, instead of recording new ones. Each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. Use it for an operation that is applying content decided elsewhere -- replaying a change, or copying an already-reviewed value -- so it neither claims local ownership of upstream content nor drops protection the target deliberately set. Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
-	PreserveProtection *bool `form:"preserve_protection,omitempty" json:"preserve_protection,omitempty" yaml:"preserve_protection,omitempty"`
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
+	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
 	// Upgrade Upgrade the unit to the latest version of its upstream unit
 	Upgrade *bool `form:"upgrade,omitempty" json:"upgrade,omitempty" yaml:"upgrade,omitempty"`
 
-	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// Restore Restore revision source. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	Restore *string `form:"restore,omitempty" json:"restore,omitempty" yaml:"restore,omitempty"`
 
-	// Resolve Resolve specified non-automatically resolved link from this (downstream) Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+	// Resolve Resolve Links from this (downstream) Unit to another (upstream) Unit, propagating what each Link's UpdateType says to propagate. Expects Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link from this Unit that can resolve; a where expression selects among those, evaluated against the Links themselves (e.g. UpdateType = 'MergeUnits'), which is how to name one Link in a bulk operation, where a UUID cannot be. A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate Link may be resolved by hand: it does what the queue would have done, and nothing when the Link is already level with its source.
 	Resolve *string `form:"resolve,omitempty" json:"resolve,omitempty" yaml:"resolve,omitempty"`
 
 	// MergeSource Merge source unit. Currently it must be a unit ID or 'Self'.
 	MergeSource *string `form:"merge_source,omitempty" json:"merge_source,omitempty" yaml:"merge_source,omitempty"`
 
-	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
 
-	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected.
+	// MergeEnd Merge end revision of the merge source, which provides the final configuration of the changes to merge. Also accepted with upgrade and with resolve, where it names how far along the source to take the propagation; the default there is the source's head. Naming a ChangeSet or Tag that ends a change is what leaves a change still being made at the source behind. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeEnd *string `form:"merge_end,omitempty" json:"merge_end,omitempty" yaml:"merge_end,omitempty"`
 
 	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
@@ -12077,7 +12114,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Used to filter which mutations are affected during merge operations.
 	//
@@ -12102,6 +12139,9 @@ type BulkPatchUnitsParams struct {
 
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision.
+	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -12183,7 +12223,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -12323,12 +12363,15 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//
 	// The whole string must be query-encoded.
 	IncludeOutgoingLinksWhere *string `form:"include_outgoing_links_where,omitempty" json:"include_outgoing_links_where,omitempty" yaml:"include_outgoing_links_where,omitempty"`
+
+	// UpstreamRevision Revision of the upstream Unit to copy. The default is its head, which is what a clone has always taken. Takes the same forms as merge_end and restore -- a revision number, a named revision, 'Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Before:...' -- resolved against the Unit being cloned from, so a bulk clone lands on a different revision of each source Unit. 'Before:ChangeOrder:uuid' is what a promotion uses: it names the state the change starts from, which for a Unit no target has taken yet is its first revision, so the upgrade that follows replays the change into the clone rather than the clone arriving with the change already folded in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
+	UpstreamRevision *string `form:"upstream_revision,omitempty" json:"upstream_revision,omitempty" yaml:"upstream_revision,omitempty"`
 }
 
 // BulkApproveUnitsParams defines parameters for BulkApproveUnits.
@@ -12364,7 +12407,7 @@ type BulkApproveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -12447,7 +12490,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -12527,7 +12570,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 	//
@@ -12607,7 +12650,7 @@ type ListAllUnitActionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+	// Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13391,6 +13434,12 @@ type UpdateLinkJSONRequestBody = Link
 
 // PublishReleaseJSONRequestBody defines body for PublishRelease for application/json ContentType.
 type PublishReleaseJSONRequestBody = ReleasePublishRequest
+
+// PatchReleaseApplicationMergePatchPlusJSONRequestBody defines body for PatchRelease for application/merge-patch+json ContentType.
+type PatchReleaseApplicationMergePatchPlusJSONRequestBody PatchReleaseApplicationMergePatchPlusJSONBody
+
+// UpdateReleaseJSONRequestBody defines body for UpdateRelease for application/json ContentType.
+type UpdateReleaseJSONRequestBody = Release
 
 // CreateTagJSONRequestBody defines body for CreateTag for application/json ContentType.
 type CreateTagJSONRequestBody = Tag

@@ -283,10 +283,14 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 					DataType:      api.DataTypeString,
 				},
 			},
-			VarArgs:               true,
-			Mutating:              true,
-			Hermetic:              true,
-			Idempotent:            false,
+			VarArgs:  true,
+			Mutating: true,
+			Hermetic: true,
+			// Whether re-running produces the same result is up to the program the caller
+			// wrote, the same as set-yq and set-cel; claiming false asserts something this
+			// function cannot know.
+			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Mutates configuration resources using a Starlark program executed per resource. Comments are preserved. The 're' module provides regex support (search, match, sub, findall).",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

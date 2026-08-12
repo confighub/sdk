@@ -192,6 +192,9 @@ func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tabl
 	view.Append([]string{"Manifest Digest", releaseDetails.ManifestDigest})
 	view.Append([]string{"Organization ID", releaseDetails.OrganizationID.String()})
 	view.Append([]string{"Created At", releaseDetails.CreatedAt.String()})
+	view.Append([]string{"Labels", labelsToString(releaseDetails.Labels)})
+	view.Append([]string{"Delete Gates", deleteGatesToString(releaseDetails.DeleteGates)})
+	view.Append([]string{"Annotations", annotationsToString(releaseDetails.Annotations)})
 }
 
 func displayReleaseDetails(releaseDetails *goclientnew.Release) {

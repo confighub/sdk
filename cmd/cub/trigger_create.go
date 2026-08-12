@@ -128,6 +128,7 @@ func init() {
 	addStandardCreateFlags(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
+	triggerCreateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	enableWhereFlag(triggerCreateCmd)
 	enableFilterFlag(triggerCreateCmd)
@@ -248,6 +249,9 @@ func runSingleTriggerCreate(args []string) error {
 	}
 	if warnTrigger {
 		newBody.Warn = true
+	}
+	if protectTrigger {
+		newBody.Protect = true
 	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](

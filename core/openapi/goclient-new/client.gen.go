@@ -517,6 +517,16 @@ type ClientInterface interface {
 	// GetExtendedRelease request
 	GetExtendedRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PatchReleaseWithBody request with any body
+	PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateReleaseWithBody request with any body
+	UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// WithdrawRelease request
 	WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -629,12 +639,6 @@ type ClientInterface interface {
 
 	// GetUnitExtended request
 	GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DownloadUnitLiveData request
-	DownloadUnitLiveData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// DownloadUnitLiveState request
-	DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedMutations request
 	ListExtendedMutations(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2681,6 +2685,54 @@ func (c *Client) GetExtendedRelease(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
+func (c *Client) PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReleaseRequestWithBody(c.Server, spaceId, releaseId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, releaseId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReleaseRequestWithBody(c.Server, spaceId, releaseId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReleaseRequest(c.Server, spaceId, releaseId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) WithdrawRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewWithdrawReleaseRequest(c.Server, spaceId, releaseId)
 	if err != nil {
@@ -3175,30 +3227,6 @@ func (c *Client) DownloadUnitData(ctx context.Context, spaceId openapi_types.UUI
 
 func (c *Client) GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetUnitExtendedRequest(c.Server, spaceId, unitId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DownloadUnitLiveData(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDownloadUnitLiveDataRequest(c.Server, spaceId, unitId)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-func (c *Client) DownloadUnitLiveState(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDownloadUnitLiveStateRequest(c.Server, spaceId, unitId)
 	if err != nil {
 		return nil, err
 	}
@@ -7080,9 +7108,9 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
-		if params.PreserveProtection != nil {
+		if params.Protect != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12418,9 +12446,9 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
-		if params.PreserveProtection != nil {
+		if params.Protect != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -13762,6 +13790,114 @@ func NewGetExtendedReleaseRequest(server string, spaceId openapi_types.UUID, rel
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchRelease builder with application/merge-patch+json body
+func NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchReleaseRequestWithBody(server, spaceId, releaseId, "application/merge-patch+json", bodyReader)
+}
+
+// NewPatchReleaseRequestWithBody generates requests for PatchRelease with any type of body
+func NewPatchReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "release_id", runtime.ParamLocationPath, releaseId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/release/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateReleaseRequest calls the generic UpdateRelease builder with application/json body
+func NewUpdateReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateReleaseRequestWithBody(server, spaceId, releaseId, "application/json", bodyReader)
+}
+
+// NewUpdateReleaseRequestWithBody generates requests for UpdateRelease with any type of body
+func NewUpdateReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "release_id", runtime.ParamLocationPath, releaseId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/release/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -15390,6 +15526,22 @@ func NewCreateUnitRequestWithBody(server string, spaceId openapi_types.UUID, par
 
 		}
 
+		if params.UpstreamRevision != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upstream_revision", runtime.ParamLocationQuery, *params.UpstreamRevision); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.MergeExternalSource != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
@@ -15634,9 +15786,25 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
-		if params.PreserveProtection != nil {
+		if params.Protect != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Squash != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "squash", runtime.ParamLocationQuery, *params.Squash); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15829,6 +15997,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeOrder != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15950,9 +16134,25 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 
 		}
 
-		if params.PreserveProtection != nil {
+		if params.Protect != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Squash != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "squash", runtime.ParamLocationQuery, *params.Squash); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16145,6 +16345,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeOrder != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16369,88 +16585,6 @@ func NewGetUnitExtendedRequest(server string, spaceId openapi_types.UUID, unitId
 	}
 
 	operationPath := fmt.Sprintf("/space/%s/unit/%s/extended", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDownloadUnitLiveDataRequest generates requests for DownloadUnitLiveData
-func NewDownloadUnitLiveDataRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/live_data", pathParam0, pathParam1)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest("GET", queryURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return req, nil
-}
-
-// NewDownloadUnitLiveStateRequest generates requests for DownloadUnitLiveState
-func NewDownloadUnitLiveStateRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
-	if err != nil {
-		return nil, err
-	}
-
-	var pathParam1 string
-
-	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/space/%s/unit/%s/live_state", pathParam0, pathParam1)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -20045,9 +20179,25 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
-		if params.PreserveProtection != nil {
+		if params.Protect != nil {
 
-			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "preserve_protection", runtime.ParamLocationQuery, *params.PreserveProtection); err != nil {
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Squash != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "squash", runtime.ParamLocationQuery, *params.Squash); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20240,6 +20390,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeOrder != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20478,6 +20644,22 @@ func NewBulkCreateUnitsRequestWithBody(server string, params *BulkCreateUnitsPar
 		if params.IncludeOutgoingLinksWhere != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_outgoing_links_where", runtime.ParamLocationQuery, *params.IncludeOutgoingLinksWhere); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.UpstreamRevision != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upstream_revision", runtime.ParamLocationQuery, *params.UpstreamRevision); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -22158,6 +22340,16 @@ type ClientWithResponsesInterface interface {
 	// GetExtendedReleaseWithResponse request
 	GetExtendedReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*GetExtendedReleaseResponse, error)
 
+	// PatchReleaseWithBodyWithResponse request with any body
+	PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
+
+	PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
+
+	// UpdateReleaseWithBodyWithResponse request with any body
+	UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
+
+	UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
+
 	// WithdrawReleaseWithResponse request
 	WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error)
 
@@ -22270,12 +22462,6 @@ type ClientWithResponsesInterface interface {
 
 	// GetUnitExtendedWithResponse request
 	GetUnitExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitExtendedResponse, error)
-
-	// DownloadUnitLiveDataWithResponse request
-	DownloadUnitLiveDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveDataResponse, error)
-
-	// DownloadUnitLiveStateWithResponse request
-	DownloadUnitLiveStateWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveStateResponse, error)
 
 	// ListExtendedMutationsWithResponse request
 	ListExtendedMutationsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*ListExtendedMutationsResponse, error)
@@ -25621,6 +25807,64 @@ func (r GetExtendedReleaseResponse) StatusCode() int {
 	return 0
 }
 
+type PatchReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Release
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateReleaseResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Release
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateReleaseResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateReleaseResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type WithdrawReleaseResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -26454,60 +26698,6 @@ func (r GetUnitExtendedResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetUnitExtendedResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DownloadUnitLiveDataResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *StandardErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DownloadUnitLiveDataResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DownloadUnitLiveDataResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-type DownloadUnitLiveStateResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	JSON400      *StandardErrorResponse
-	JSON401      *StandardErrorResponse
-	JSON403      *StandardErrorResponse
-	JSON404      *StandardErrorResponse
-	JSON500      *StandardErrorResponse
-	JSONDefault  *StandardErrorResponse
-}
-
-// Status returns HTTPResponse.Status
-func (r DownloadUnitLiveStateResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r DownloadUnitLiveStateResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -29160,6 +29350,40 @@ func (c *ClientWithResponses) GetExtendedReleaseWithResponse(ctx context.Context
 	return ParseGetExtendedReleaseResponse(rsp)
 }
 
+// PatchReleaseWithBodyWithResponse request with arbitrary body returning *PatchReleaseResponse
+func (c *ClientWithResponses) PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
+	rsp, err := c.PatchReleaseWithBody(ctx, spaceId, releaseId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchReleaseResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
+	rsp, err := c.PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx, spaceId, releaseId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchReleaseResponse(rsp)
+}
+
+// UpdateReleaseWithBodyWithResponse request with arbitrary body returning *UpdateReleaseResponse
+func (c *ClientWithResponses) UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
+	rsp, err := c.UpdateReleaseWithBody(ctx, spaceId, releaseId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateReleaseResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
+	rsp, err := c.UpdateRelease(ctx, spaceId, releaseId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateReleaseResponse(rsp)
+}
+
 // WithdrawReleaseWithResponse request returning *WithdrawReleaseResponse
 func (c *ClientWithResponses) WithdrawReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*WithdrawReleaseResponse, error) {
 	rsp, err := c.WithdrawRelease(ctx, spaceId, releaseId, reqEditors...)
@@ -29523,24 +29747,6 @@ func (c *ClientWithResponses) GetUnitExtendedWithResponse(ctx context.Context, s
 		return nil, err
 	}
 	return ParseGetUnitExtendedResponse(rsp)
-}
-
-// DownloadUnitLiveDataWithResponse request returning *DownloadUnitLiveDataResponse
-func (c *ClientWithResponses) DownloadUnitLiveDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveDataResponse, error) {
-	rsp, err := c.DownloadUnitLiveData(ctx, spaceId, unitId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDownloadUnitLiveDataResponse(rsp)
-}
-
-// DownloadUnitLiveStateWithResponse request returning *DownloadUnitLiveStateResponse
-func (c *ClientWithResponses) DownloadUnitLiveStateWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadUnitLiveStateResponse, error) {
-	rsp, err := c.DownloadUnitLiveState(ctx, spaceId, unitId, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseDownloadUnitLiveStateResponse(rsp)
 }
 
 // ListExtendedMutationsWithResponse request returning *ListExtendedMutationsResponse
@@ -38252,6 +38458,156 @@ func ParseGetExtendedReleaseResponse(rsp *http.Response) (*GetExtendedReleaseRes
 	return response, nil
 }
 
+// ParsePatchReleaseResponse parses an HTTP response from a PatchReleaseWithResponse call
+func ParsePatchReleaseResponse(rsp *http.Response) (*PatchReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateReleaseResponse parses an HTTP response from a UpdateReleaseWithResponse call
+func ParseUpdateReleaseResponse(rsp *http.Response) (*UpdateReleaseResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateReleaseResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Release
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseWithdrawReleaseResponse parses an HTTP response from a WithdrawReleaseWithResponse call
 func ParseWithdrawReleaseResponse(rsp *http.Response) (*WithdrawReleaseResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -40366,128 +40722,6 @@ func ParseGetUnitExtendedResponse(rsp *http.Response) (*GetUnitExtendedResponse,
 		}
 		response.JSON200 = &dest
 
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDownloadUnitLiveDataResponse parses an HTTP response from a DownloadUnitLiveDataWithResponse call
-func ParseDownloadUnitLiveDataResponse(rsp *http.Response) (*DownloadUnitLiveDataResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DownloadUnitLiveDataResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON400 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON401 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON403 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON404 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON500 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest StandardErrorResponse
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSONDefault = &dest
-
-	}
-
-	return response, nil
-}
-
-// ParseDownloadUnitLiveStateResponse parses an HTTP response from a DownloadUnitLiveStateWithResponse call
-func ParseDownloadUnitLiveStateResponse(rsp *http.Response) (*DownloadUnitLiveStateResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &DownloadUnitLiveStateResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {

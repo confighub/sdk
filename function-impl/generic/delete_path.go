@@ -36,6 +36,7 @@ func registerDeletePath(fh handler.FunctionRegistry, converter configkit.ConfigC
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Deletes the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

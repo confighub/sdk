@@ -70,7 +70,7 @@ Available columns (prefixed with Unit.):
 
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
-  - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, LiveState, ApprovedBy
+  - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, ApprovedBy
   - Relationships: TargetID, ToolchainType
   - Revisions: LastAppliedRevisionNum, PreviousLiveRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>

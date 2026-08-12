@@ -150,7 +150,6 @@ var functionIncludeConflicts bool
 var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
-var functionLiveStateType string
 var functionOtherDataSource string
 
 // Set by `cub invocation get/set/vet` to execute a single parameterized
@@ -179,7 +178,7 @@ func init() {
 	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
-	functionDoCmd.Flags().BoolVar(&preserveProtection, "preserve-protection", false, "keep the stored protection of the paths this change writes instead of recording new ones: each path keeps the protection it already has, and a new path is left unprotected")
+	functionDoCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
@@ -193,7 +192,6 @@ func init() {
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionDoCmd.Flags().StringVar(&functionLiveStateType, "livestate-type", "", "Invoke the function on the live state and use the flag value as the toolchain type for live state.")
 	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LiveRevisionNum)")
 	functionCmd.AddCommand(functionDoCmd)
 }
@@ -215,12 +213,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.UpdateApplyGates = updateApplyGates
 	req.WhereResource = whereResource
 	req.IncludeConflicts = functionIncludeConflicts
-	if functionLiveStateType != "" {
-		req.OnLiveState = true
-		req.ToolchainType = functionLiveStateType
-	} else {
-		req.ToolchainType = functionToolchainType
-	}
+	req.ToolchainType = functionToolchainType
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 			workerSlug,
@@ -516,11 +509,11 @@ type invokeArgs struct {
 	ResourceType string
 	WhereData    string
 	DryRun       bool
-	// PreserveProtection leaves the written paths' stored protection alone, for an invocation
-	// applying content decided elsewhere rather than authoring it.
-	PreserveProtection bool
-	ChangeSetID        uuid.UUID
-	Body               *goclientnew.FunctionInvocationsRequest
+	// Protect records the written paths as protected local overrides. Without it the
+	// invocation claims nothing and each path keeps the protection it already has.
+	Protect     bool
+	ChangeSetID uuid.UUID
+	Body        *goclientnew.FunctionInvocationsRequest
 }
 
 func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvocationsResponse, error) {
@@ -546,8 +539,8 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.PreserveProtection {
-			newParams.PreserveProtection = &invokeArgs.PreserveProtection
+		if invokeArgs.Protect {
+			newParams.Protect = &invokeArgs.Protect
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -583,8 +576,8 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 			dryRunStr := "true"
 			newParams.DryRun = &dryRunStr
 		}
-		if invokeArgs.PreserveProtection {
-			newParams.PreserveProtection = &invokeArgs.PreserveProtection
+		if invokeArgs.Protect {
+			newParams.Protect = &invokeArgs.Protect
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -709,14 +702,14 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		}
 	} else {
 		invokeArgs := &invokeArgs{
-			Where:              effectiveWhere,
-			FilterID:           filterID,
-			ResourceType:       resourceType,
-			WhereData:          whereData,
-			DryRun:             dryRun,
-			PreserveProtection: preserveProtection,
-			ChangeSetID:        changesetUUID,
-			Body:               newBody,
+			Where:        effectiveWhere,
+			FilterID:     filterID,
+			ResourceType: resourceType,
+			WhereData:    whereData,
+			DryRun:       dryRun,
+			Protect:      protectChange,
+			ChangeSetID:  changesetUUID,
+			Body:         newBody,
 		}
 		resp, err = invokeFunctionsOnUnits(invokeArgs)
 		if err != nil {

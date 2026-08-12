@@ -87,6 +87,14 @@ Examples:
   cub unit update --space my-space myunit --upgrade --merge-end ChangeSet:upstream-space/release-42
   cub unit update --space my-space myunit --upgrade --merge-end Tag:v1.0
 
+  # Promote a change order: it supplies the range, and units outside it are passed over
+  cub unit update --patch --space my-space --where "UpstreamRevisionNum > 0" \
+      --upgrade --change-order base-space/release-42 --change-desc "Take release-42"
+
+  # Undo that promotion, however many revisions it made
+  cub unit update --patch --space my-space --where "UpstreamRevisionNum > 0" \
+      --restore Before:ChangeOrder:base-space/release-42 --change-desc "Roll release-42 back"
+
   # Update with a change description
   cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
 
@@ -158,8 +166,9 @@ Key flags for agents:
 - --verbose: Show detailed update information
 - --from-stdin: Read additional metadata from stdin
 - --replace-from-stdin: Replace entire metadata from stdin
-- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
+- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, ChangeOrder:slug (Before:ChangeOrder:slug undoes a promotion), or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
+- --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that isn't where it starts is an error
 - --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
 - --merge-base: Base revision for merge (uses same format as --restore)
 - --merge-end: End revision for merge (uses same format as --restore). Also usable with --upgrade or --resolve to stop short of the source's head -- name the ChangeSet or Tag that ends the change you want, so a change still being made upstream is left behind
@@ -187,13 +196,15 @@ var (
 	isUpgrade              bool
 	isPatch                bool
 	changesetSlug          string
+	changeorderSlug        string
 	providerType           string
 	mergeSource            string
 	mergeBase              string
 	mergeEnd               string
 	mergeExternalSource    string
 	mergeEnableSubtraction bool
-	preserveProtection     bool
+	protectChange          bool
+	squashMerge            bool
 	whereMutation          string
 	filterMutation         string
 	tag                    string
@@ -204,12 +215,14 @@ func init() {
 	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
+	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. Undo the promotion with --restore Before:ChangeOrder:<slug>")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
-	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve non-automatically resolved links: Link:* for all, Link:<uuid> or Link:<slug> for a specific link, or just <slug> (e.g., space/link-name)")
+	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
-	unitUpdateCmd.Flags().BoolVar(&preserveProtection, "preserve-protection", false, "keep the stored protection of the paths this change writes instead of recording new ones: each path keeps the protection it already has, and a new path is left unprotected")
+	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
+	unitUpdateCmd.Flags().BoolVar(&squashMerge, "squash", false, "merge the range as one rebased diff in one revision instead of walking it: by default a merge re-runs the upstream's recorded function invocations against this unit where it can, so each change lands where this unit's own structure puts it, and records one revision per upstream revision that has an effect here; only valid with --upgrade, --merge-source, or --resolve")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
 	unitUpdateCmd.Flags().StringVar(&mergeBase, "merge-base", "", "base revision for 3-way merge (uses same format as --restore); with --merge-external-source, overrides the default selection of the latest MergeExternal revision")
@@ -266,7 +279,8 @@ func checkConflictingArgs(args []string) bool {
 				switch len(parts) {
 				case 2:
 					// EntityType:Identifier format
-					isValidPrefix = parts[0] == "Tag" || parts[0] == "ChangeSet" || parts[0] == "Revision"
+					isValidPrefix = parts[0] == "Tag" || parts[0] == "ChangeSet" ||
+						parts[0] == "ChangeOrder" || parts[0] == "Revision"
 				case 1:
 					// Simple identifier - check if it's a valid restore value
 					_, isValidPrefix = restoreValues[parts[0]]
@@ -346,6 +360,20 @@ func checkConflictingArgs(args []string) bool {
 	}
 	if mergeExternalSource != "" {
 		optionsSet++
+	}
+
+	if changeorderSlug != "" {
+		// A change order names a change to propagate, so it goes with the operations that
+		// propagate one, and it decided the range when it was created.
+		if !isUpgrade && resolve == "" {
+			failOnError(fmt.Errorf("--change-order can only be used with --upgrade or --resolve"))
+		}
+		if mergeEnd != "" {
+			failOnError(fmt.Errorf("--merge-end cannot be used with --change-order; the end of the range is the change order's"))
+		}
+		if tag != "" {
+			failOnError(fmt.Errorf("--tag cannot be used with --change-order; the change order tags the revisions it promotes"))
+		}
 	}
 
 	if optionsSet > 1 {
@@ -526,8 +554,18 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if isUpgrade {
 		newParams.Upgrade = &isUpgrade
 	}
-	if preserveProtection {
-		newParams.PreserveProtection = &preserveProtection
+	if changeorderSlug != "" {
+		changeorderUUID, err := parseChangeOrderSlug(changeorderSlug)
+		if err != nil {
+			return fmt.Errorf("failed to parse change order '%s': %w", changeorderSlug, err)
+		}
+		newParams.ChangeOrder = &changeorderUUID
+	}
+	if protectChange {
+		newParams.Protect = &protectChange
+	}
+	if squashMerge {
+		newParams.Squash = &squashMerge
 	}
 	if mergeEnableSubtraction {
 		newParams.MergeEnableSubtraction = &mergeEnableSubtraction
@@ -926,8 +964,18 @@ func runBulkUnitUpdate() error {
 	if isUpgrade {
 		params.Upgrade = &isUpgrade
 	}
-	if preserveProtection {
-		params.PreserveProtection = &preserveProtection
+	if changeorderSlug != "" {
+		changeorderUUID, err := parseChangeOrderSlug(changeorderSlug)
+		if err != nil {
+			return fmt.Errorf("failed to parse change order '%s': %w", changeorderSlug, err)
+		}
+		params.ChangeOrder = &changeorderUUID
+	}
+	if protectChange {
+		params.Protect = &protectChange
+	}
+	if squashMerge {
+		params.Squash = &squashMerge
 	}
 	if mergeEnableSubtraction {
 		params.MergeEnableSubtraction = &mergeEnableSubtraction
@@ -1004,11 +1052,13 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	patchParams.MergeEnd = updateParams.MergeEnd
 	patchParams.MergeExternalSource = updateParams.MergeExternalSource
 	patchParams.MergeEnableSubtraction = updateParams.MergeEnableSubtraction
-	patchParams.PreserveProtection = updateParams.PreserveProtection
+	patchParams.Protect = updateParams.Protect
+	patchParams.Squash = updateParams.Squash
 	patchParams.WhereMutation = updateParams.WhereMutation
 	patchParams.FilterMutation = updateParams.FilterMutation
 	patchParams.Tag = updateParams.Tag
 	patchParams.ChangeSetId = updateParams.ChangeSetId
+	patchParams.ChangeOrder = updateParams.ChangeOrder
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,
@@ -1164,6 +1214,27 @@ func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, 
 	return formatted, nil
 }
 
+// parseUpstreamRevision formats --upstream-revision for the API.
+//
+// The revision named is one of the *upstream* unit's, so a delta relative to head is resolved
+// against upstreamHeadRevisionNum. In bulk mode there is no single upstream unit -- each clone
+// resolves the spec against its own source -- so pass 0, which rejects a delta rather than
+// measuring it from the wrong unit.
+func parseUpstreamRevision(revisionSpec string, upstreamHeadRevisionNum int64) (string, error) {
+	if strings.HasPrefix(revisionSpec, "-") && upstreamHeadRevisionNum == 0 {
+		return "", fmt.Errorf("--upstream-revision relative to head is not supported here, since the source is not a single unit; name a Tag, a ChangeSet, a ChangeOrder, or an absolute revision")
+	}
+	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, uuid.Nil, "", upstreamHeadRevisionNum)
+	if err != nil {
+		return "", fmt.Errorf("invalid upstream revision specification: %w", err)
+	}
+	if isUUID {
+		// The create APIs take the upstream revision as a string.
+		formatted = fmt.Sprintf("Revision:%s", formatted)
+	}
+	return formatted, nil
+}
+
 // parseSelectedRevisionParameter parses various revision formats and returns the formatted value
 // This renamed function can be used for restore, merge-base, merge-end and other revision specifications
 // Returns: (formatted string, isUUID bool, error)
@@ -1219,6 +1290,20 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 		}
 		return fmt.Sprintf("ChangeSet:%s", changesetUUID), false, nil
 
+	} else if entityType == "ChangeOrder" {
+		// Parse change order slug/ID and convert to UUID. A ChangeOrder marks the interval it
+		// promoted on every Unit it landed in, so this names a revision of *this* Unit:
+		// ChangeOrder:x is where the change arrived and Before:ChangeOrder:x is the state before
+		// it, which is what undoes a promotion however many revisions it made.
+		changeorderUUID, err := parseChangeOrderSlug(identifier)
+		if err != nil {
+			return "", false, fmt.Errorf("failed to parse change order '%s': %w", identifier, err)
+		}
+		if isBeforeModifier {
+			return fmt.Sprintf("Before:ChangeOrder:%s", changeorderUUID), false, nil
+		}
+		return fmt.Sprintf("ChangeOrder:%s", changeorderUUID), false, nil
+
 	} else if entityType == "Revision" {
 		// Handle Revision:uuid format
 		if revisionUUID, err := uuid.Parse(identifier); err == nil {
@@ -1229,7 +1314,7 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 		}
 
 	} else if entityType != "" {
-		return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, and Revision", entityType)
+		return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, ChangeOrder, and Revision", entityType)
 	}
 
 	// Handle simple identifiers (no entity type prefix)
@@ -1280,6 +1365,13 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 // - "Link:*" - resolves all non-auto-update links
 // - "Link:<uuid>" - resolves a specific link by UUID
 // - "<slug>" or "<space>/<slug>" - resolves a link by slug, converted to "Link:<uuid>"
+// looksLikeWhereExpression distinguishes a where expression from a link slug. A slug is
+// lowercase alphanumerics and hyphens, optionally qualified with a space (space/link-name), so
+// any operator or space in the identifier means the caller wrote a filter.
+func looksLikeWhereExpression(identifier string) bool {
+	return strings.ContainsAny(identifier, " =<>~!'()")
+}
+
 func formatResolveParameter(resolve string) (string, error) {
 	// Check for "Link:*" wildcard
 	if resolve == "Link:*" {
@@ -1291,6 +1383,11 @@ func formatResolveParameter(resolve string) (string, error) {
 		identifier := strings.TrimPrefix(resolve, "Link:")
 		// If it's already a UUID, pass as-is
 		if _, err := uuid.Parse(identifier); err == nil {
+			return resolve, nil
+		}
+		// A where expression over the Unit's links is evaluated by the server against the
+		// links themselves, so there is nothing to look up here.
+		if looksLikeWhereExpression(identifier) {
 			return resolve, nil
 		}
 		// Otherwise, try to parse the identifier as a link slug

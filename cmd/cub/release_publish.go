@@ -24,22 +24,38 @@ to instead pin each Unit to the highest-numbered Revision carrying that Tag; a
 Unit with no matching tagged Revision falls back to its head Revision. The
 revision Tag slug is resolved within the bundled Units' Space (<space-slug>).
 
+--label, --annotation and --delete-gate set the Release's metadata at publish
+time; `+"`cub release update`"+` can change it afterwards. The bundled content
+itself is fixed once published, and so is --bundle-base-name: the release's OCI
+manifest records the name, so it can only be set here.
+
 Examples:
 `+"```"+`
   cub release publish my-space
 
   # Bundle each Unit at the Revision tagged "v1.2.0"
   cub release publish --revision v1.2.0 my-space
+
+  # Publish with metadata, and a gate that blocks deleting the Release
+  cub release publish --label env=prod --annotation ticket=OPS-1234 my-space
+  cub release publish --delete-gate retention/30-days my-space
 `+"```"+`
 `, ""),
 	RunE: releasePublishCmdRun,
 }
 
-var releasePublishRevision string
+var (
+	releasePublishRevision       string
+	releasePublishBundleBaseName string
+)
 
 func init() {
 	addStandardDisplayFlags(releasePublishCmd)
+	enableLabelFlag(releasePublishCmd)
+	enableAnnotationFlag(releasePublishCmd)
+	enableDeleteGateFlag(releasePublishCmd)
 	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Tag slug identifying the tagged Revision to bundle for each Unit. Units without a matching tagged Revision fall back to their head Revision.")
+	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
 	releaseCmd.AddCommand(releasePublishCmd)
 }
 
@@ -52,7 +68,21 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	body := goclientnew.PublishReleaseJSONRequestBody{}
+	body := goclientnew.PublishReleaseJSONRequestBody{
+		// Publishing is the only point at which the bundle can be named: the name
+		// goes into the release's OCI manifest and is read-only afterwards.
+		BundleBaseName: releasePublishBundleBaseName,
+	}
+
+	if err := setLabels(&body.Labels); err != nil {
+		return err
+	}
+	if err := setAnnotations(&body.Annotations); err != nil {
+		return err
+	}
+	if err := setDeleteGates(&body.DeleteGates); err != nil {
+		return err
+	}
 
 	// Resolve the revision Tag slug to its ID within the bundled Units' Space (args[0]).
 	if releasePublishRevision != "" {

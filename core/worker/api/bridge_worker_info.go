@@ -123,22 +123,6 @@ func (sct *SupportedConfigType) ScrubAvailableTargets() {
 	sct.AvailableTargets = scrubbed
 }
 
-type DriftReconciliationMode string
-
-const (
-	DriftReconciliationModeOnDemand          DriftReconciliationMode = "OnDemand"
-	DriftReconciliationModeContinuousApply   DriftReconciliationMode = "ContinuousApply"
-	DriftReconciliationModeContinuousRefresh DriftReconciliationMode = "ContinuousRefresh"
-)
-
-func IsValidDriftReconciliationMode(mode DriftReconciliationMode) bool {
-	switch mode {
-	case DriftReconciliationModeOnDemand, DriftReconciliationModeContinuousApply, DriftReconciliationModeContinuousRefresh:
-		return true
-	}
-	return false
-}
-
 // ProviderType identifies a bridge implementation, including the API, authentication method, behavior, etc.
 // It is used by the worker's dispatcher to route to the selected bridge.
 const (

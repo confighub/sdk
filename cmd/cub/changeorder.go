@@ -21,6 +21,17 @@ the same ChangeOrderID, which is what lets a fleet be asked where a change has l
 A ChangeOrder resides in a Space, by convention the one holding the changes to promote, and is
 bounded by a start and an end Tag created with it. It selects where it is headed with a Filter over
 Spaces, and names the Link UpdateType to follow (UpgradeUnit, the clone lineage).
+
+Creating one decides what the change is; promoting one takes it into a target:
+
+  cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
+      --upgrade --change-order my-base/release-42 --change-desc "Take release-42"
+
+The change order supplies the range, so units it does not cover are passed over and a unit that is
+not where it starts is an error. It marks what it promoted, so one restore undoes it:
+
+  cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
+      --restore Before:ChangeOrder:my-base/release-42 --change-desc "Roll release-42 back"
 `, ""),
 	PersistentPreRunE: spacePreRunE,
 }

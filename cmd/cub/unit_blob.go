@@ -22,11 +22,10 @@ var (
 
 // newUnitBlobCmd builds one of the unit-blob subcommands.
 //
-//	section:     user-facing name ("data", "livedata", "livestate", "bridgestate")
-//	selectField: Unit struct field to select and read ("Data", "LiveData", ...)
+//	section:     user-facing name ("data")
+//	selectField: Unit struct field to select and read ("Data")
 //	short, long: command help strings
-//	legacyFlags: optional back-compat flag setup (e.g., the deprecated -o/--output
-//	             aliases on the three state commands, or the --filename alias on data)
+//	legacyFlags: optional back-compat flag setup (e.g., the --filename alias on data)
 func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   section + " <unit>",
@@ -51,20 +50,13 @@ func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*
 // unitBlobField returns the raw (still base64-encoded) value of a named blob
 // field on a Unit. Returns "" if the field is unknown.
 func unitBlobField(u *goclientnew.Unit, field string) string {
-	switch field {
-	case "Data":
+	if field == "Data" {
 		return u.Data
-	case "LiveData":
-		return u.LiveData
-	case "LiveState":
-		return u.LiveState
-	case "BridgeState":
-		return u.BridgeState
 	}
 	return ""
 }
 
-// runUnitBlob is the shared implementation for the four blob subcommands.
+// runUnitBlob is the shared implementation for the blob subcommands.
 // Fetches the unit with just Slug and the selected blob field, optionally
 // base64-decodes, and emits either to stdout or to the configured file.
 func runUnitBlob(unitSlugOrID, section, selectField string) error {
@@ -100,14 +92,6 @@ func runUnitBlob(unitSlugOrID, section, selectField string) error {
 	}
 	tprintRaw(string(out))
 	return nil
-}
-
-// legacyOutputAlias adds the deprecated --output string flag as an alias for
-// --output-file / -O. Used by the three "state" subcommands that had --output
-// before the rationalization.
-func legacyOutputAlias(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&unitBlobOutputFile, "output", "", "Deprecated: use --output-file / -O")
-	_ = cmd.Flags().MarkDeprecated("output", "use --output-file / -O")
 }
 
 // legacyFilenameAlias adds --filename as an alias for --output-file on the

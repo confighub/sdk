@@ -83,9 +83,9 @@ type MutationInfo struct {
 	// Protected says the target chose this value locally and a merge must not overwrite it.
 	// False -- the default, and the common case -- means the value came from somewhere else
 	// (a clone, an upgrade, a merge, an external source) and is the merge's to update.
-	Protected bool `json:",omitempty" description:"True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten"`
-	Value        string       `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
-	Patch        string       `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
+	Protected bool   `json:",omitempty" description:"True if this is a local override a merge must not overwrite; false if the value came from elsewhere and may be overwritten"`
+	Value     string `description:"Removed configuration data if MutationType is Delete and otherwise the new data"`
+	Patch     string `json:",omitempty" description:"Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly."`
 }
 
 type MutationMapEntry struct {
@@ -136,6 +136,45 @@ const (
 	// removed value. This is the reverse of every other reason: the patch
 	// applied, and what is reported is what the target lost to it.
 	ConflictReasonExclusiveCleared ConflictReason = "ExclusiveCleared"
+	// ConflictReasonReplayFailed: a replayed function errored against the target,
+	// as distinct from finding nothing to do. The merge falls back to the anchored
+	// patch for that Mutation, and reports this so the failure is visible: a
+	// function that cannot run here is worth looking at, while one that runs and
+	// matches nothing deliberately is not (see docs/design/function-replayability.md).
+	ConflictReasonReplayFailed ConflictReason = "ReplayFailed"
+)
+
+// ReplayOutcome records what a merge did with one Mutation of the source range: whether the
+// invocation that produced it was re-executed against the target, and if not, why not.
+//
+// It is not derivable after the fact from the resulting data, and it is the first thing anyone
+// debugging a surprising merge wants. ReplayedNoEffect in particular is worth recording
+// precisely because it is silent by design -- a function that matched nothing produces no
+// error and no change.
+type ReplayOutcome string
+
+const (
+	// ReplayOutcomeReplayed: the stored invocation was re-executed against the target and
+	// changed something.
+	ReplayOutcomeReplayed ReplayOutcome = "Replayed"
+	// ReplayOutcomeReplayedNoEffect: re-executed, and matched nothing. Usually a resource or
+	// element the target has renamed or does not have. Deliberately not a conflict.
+	ReplayOutcomeReplayedNoEffect ReplayOutcome = "ReplayedNoEffect"
+	// ReplayOutcomeNotReplayable: excluded before execution -- the function does not declare
+	// Replayable, or the stored invocation disqualifies itself. ReplayReason says which.
+	ReplayOutcomeNotReplayable ReplayOutcome = "NotReplayable"
+	// ReplayOutcomeUnavailable: replay was not possible here rather than not allowed -- the
+	// function no longer exists, its signature no longer accepts the stored arguments, or it
+	// ran on a worker.
+	ReplayOutcomeUnavailable ReplayOutcome = "ReplayUnavailable"
+	// ReplayOutcomeFailed: executed and errored. The patch ran instead, and a
+	// ConflictReasonReplayFailed was recorded.
+	ReplayOutcomeFailed ReplayOutcome = "ReplayFailed"
+	// ReplayOutcomePatched: never a replay candidate -- an opaque Revision, or a Mutation
+	// produced by a Trigger or a Link, or one in a Revision that fell back as a whole. A
+	// merge run without replay records no outcome at all rather than this one, so that a
+	// merge that never considered replay stays distinguishable from one that declined.
+	ReplayOutcomePatched ReplayOutcome = "Patched"
 )
 
 // MutationConflict records that a mutation in a patch was not applied because
@@ -154,6 +193,10 @@ type MutationConflict struct {
 	// caller after PatchMutations returns; PatchMutations itself doesn't know
 	// about ConfigHub units. Zero when not set or not applicable.
 	UnitID uuid.UUID `json:",omitempty" description:"ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)"`
+	// Details carries text the Reason alone cannot: which invocation failed and what it
+	// reported, for ReplayFailed. The path-level reasons need no explanation beyond Reason,
+	// Resource, and Path, and leave this empty.
+	Details string `json:",omitempty" description:"Explanation the Reason alone cannot carry, such as the error text of a failed replay"`
 }
 
 type MutationConflictList []MutationConflict

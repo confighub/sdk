@@ -331,6 +331,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 			Mutating:              true,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Add liveness, readiness, and startup probes to containers that don't have them, using the first containerPort for HTTP GET probes",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: resourceTypes,

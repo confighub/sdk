@@ -48,6 +48,7 @@ func registerSetTemplate(fh handler.FunctionRegistry, converter configkit.Config
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Renders a Go text/template expression and writes the result to the specified path of each resource matched by WhereResource. FunctionContext fields are accessible at the top level; vararg key=value params are accessible under .Params.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

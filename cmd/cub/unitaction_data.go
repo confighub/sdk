@@ -18,10 +18,7 @@ import (
 type blobSection string
 
 const (
-	blobData        blobSection = "data"
-	blobLiveData    blobSection = "livedata"
-	blobLiveState   blobSection = "livestate"
-	blobBridgeState blobSection = "bridgestate"
+	blobData blobSection = "data"
 )
 
 var (
@@ -50,9 +47,6 @@ The unit action is identified by its UUID or its per-unit UnitActionNum.`, secti
 
 func init() {
 	newUnitActionBlobCmd(blobData, "Show the Data of a unit action")
-	newUnitActionBlobCmd(blobLiveData, "Show the LiveData of a unit action")
-	newUnitActionBlobCmd(blobLiveState, "Show the LiveState of a unit action")
-	newUnitActionBlobCmd(blobBridgeState, "Show the BridgeState of a unit action")
 }
 
 // resolveUnitAction looks up a UnitAction by its UUID or UnitActionNum.
@@ -80,15 +74,8 @@ func runUnitActionBlob(section blobSection, unitSlugOrID, actionIdentifier strin
 	}
 
 	var raw string
-	switch section {
-	case blobData:
+	if section == blobData {
 		raw = action.Data
-	case blobLiveData:
-		raw = action.LiveData
-	case blobLiveState:
-		raw = action.LiveState
-	case blobBridgeState:
-		raw = action.BridgeState
 	}
 
 	if raw == "" {

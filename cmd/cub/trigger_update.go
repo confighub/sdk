@@ -62,6 +62,8 @@ var (
 	enableTrigger        bool
 	warnTrigger          bool
 	unwarnTrigger        bool
+	protectTrigger       bool
+	unprotectTrigger     bool
 	workerSlug           string
 	triggerPatch         bool
 	triggerIdentifiers   []string
@@ -80,6 +82,8 @@ func init() {
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
 	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
 	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ApplyGates (default, use with --patch for bulk)")
+	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
+	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
 	triggerUpdateCmd.Flags().BoolVar(&triggerPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(triggerUpdateCmd)
@@ -132,6 +136,9 @@ func checkTriggerConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("--disable and --enable flags are mutually exclusive"))
 	}
 
+	if protectTrigger && unprotectTrigger {
+		failOnError(fmt.Errorf("--protect and --unprotect flags are mutually exclusive"))
+	}
 	if warnTrigger && unwarnTrigger {
 		failOnError(fmt.Errorf("--warn and --unwarn flags are mutually exclusive"))
 	}
@@ -220,6 +227,13 @@ func runBulkTriggerUpdate() error {
 			patchMap["Warn"] = true
 		} else if unwarnTrigger {
 			patchMap["Warn"] = false
+		}
+
+		// Add protect/unprotect flags
+		if protectTrigger {
+			patchMap["Protect"] = true
+		} else if unprotectTrigger {
+			patchMap["Protect"] = false
 		}
 
 		// Add worker if specified
@@ -357,6 +371,12 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchData["Warn"] = false
 			}
 
+			if protectTrigger {
+				patchData["Protect"] = true
+			} else if unprotectTrigger {
+				patchData["Protect"] = false
+			}
+
 			if disableTrigger {
 				patchData["Disabled"] = true
 			} else if enableTrigger {
@@ -460,6 +480,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.Warn = true
 	} else if unwarnTrigger {
 		currentTrigger.Trigger.Warn = false
+	}
+	if protectTrigger {
+		currentTrigger.Trigger.Protect = true
+	} else if unprotectTrigger {
+		currentTrigger.Trigger.Protect = false
 	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](

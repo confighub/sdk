@@ -35,7 +35,7 @@ Agent workflow:
 3. Use 'function explain FUNCTION_NAME' for detailed parameter information
 
 Filter options:
-- --where: SQL-inspired filter over FunctionSignature attributes. Supported attributes: ToolchainType, FunctionName, Description, RequiredParameters, VarArgs, Mutating, Validating, Hermetic, Idempotent, FunctionType, AttributeName, and OutputInfo.OutputType / OutputInfo.ResultName / OutputInfo.Description. Example: --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName LIKE '%image%'"
+- --where: SQL-inspired filter over FunctionSignature attributes. Supported attributes: ToolchainType, FunctionName, Description, RequiredParameters, VarArgs, Mutating, Validating, Hermetic, Idempotent, Replayable, FunctionType, AttributeName, and OutputInfo.OutputType / OutputInfo.ResultName / OutputInfo.Description. Example: --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName LIKE '%image%'"
 - --toolchain: Shortcut that is AND'd into --where as ToolchainType = '<toolchain>'
 - --target: Show functions available for a specific deployment target
 - --worker: Show functions available on a specific worker

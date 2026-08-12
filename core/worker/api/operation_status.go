@@ -62,9 +62,8 @@ const (
 
 	// ActionApply is no longer performed — nothing applies configuration since
 	// the bridge sunset. The constant remains because historical UnitActions and
-	// UnitEvents carry it, and a Link that sources its data from LiveState
-	// resolves against the last completed Apply. It is deliberately absent from
-	// ValidAction: it can be read, not submitted.
+	// UnitEvents carry it. It is deliberately absent from ValidAction: it can be
+	// read, not submitted.
 	ActionApply ActionType = "Apply"
 
 	ActionInvokeFunctions ActionType = "InvokeFunctions"
@@ -117,10 +116,7 @@ type ActionResult struct {
 	// QueuedOperationID links this result back to the original operation request.
 	QueuedOperationID uuid.UUID `description:"UUID of the operation corresponding to the action request"`
 	ActionResultBaseMeta
-	Data        []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
-	LiveData    []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live Data corresponding to the Unit (for inventory and drift detection)"`
-	LiveState   []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Live State corresponding to the Unit (for status determination)"`
-	BridgeState []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Additional state used by the Bridge"`
+	Data []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
 	// ResourceStatuses contains per-resource sync and readiness status.
 	// Key format: "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
 	ResourceStatuses ResourceStatusMap `json:",omitempty" description:"Per-resource sync and readiness status"`
@@ -150,15 +146,6 @@ func ValidateActionResultMeta(ar *ActionResult) error {
 func ValidateActionResultData(ar *ActionResult) error {
 	if len(ar.Data) > MaxConfigDataLength {
 		return errors.Errorf("Data length %d exceeds max length %d", len(ar.Data), MaxConfigDataLength)
-	}
-	if len(ar.LiveData) > MaxConfigDataLength {
-		return errors.Errorf("LiveData length %d exceeds max length %d", len(ar.LiveData), MaxConfigDataLength)
-	}
-	if len(ar.LiveState) > MaxConfigDataLength {
-		return errors.Errorf("LiveState length %d exceeds max length %d", len(ar.LiveState), MaxConfigDataLength)
-	}
-	if len(ar.BridgeState) > MaxConfigDataLength {
-		return errors.Errorf("BridgeState length %d exceeds max length %d", len(ar.BridgeState), MaxConfigDataLength)
 	}
 	return nil
 }

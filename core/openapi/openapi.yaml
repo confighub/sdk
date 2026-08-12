@@ -2111,7 +2111,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -4948,7 +4948,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
+          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, Replayable, RequiredParameters, ToolchainType, Validating, VarArgs.
 
           The whole string must be query-encoded.
         in: query
@@ -5025,15 +5025,13 @@ paths:
         required: false
         schema:
           type: string
-      - description: Preserve the stored Protected values of the paths this operation
-          writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left unprotected.
-          Use it for an operation that is applying content decided elsewhere -- replaying
-          a change, or copying an already-reviewed value -- so it neither claims local
-          ownership of upstream content nor drops protection the target deliberately
-          set.
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).'
         in: query
-        name: preserve_protection
+        name: protect
         required: false
         schema:
           type: boolean
@@ -5094,7 +5092,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -6225,7 +6223,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -6390,7 +6388,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -6547,7 +6545,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -6688,10 +6686,18 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
                   type: string
+                Squash:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 ToSpaceID:
                   description: ""
                   format: uuid
@@ -6843,7 +6849,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to select source links to copy
 
@@ -6909,7 +6915,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -6951,7 +6957,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -7042,10 +7048,18 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
                   type: string
+                Squash:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 ToSpaceID:
                   description: ""
                   format: uuid
@@ -8283,7 +8297,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
+          Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -12834,7 +12848,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, RequiredParameters, ToolchainType, Validating, VarArgs.
+          Supported attributes for filtering on FunctionSignature: AttributeName, Description, FunctionName, FunctionType, Hermetic, Idempotent, Mutating, OutputInfo.Description, OutputInfo.OutputType, OutputInfo.ResultName, Replayable, RequiredParameters, ToolchainType, Validating, VarArgs.
 
           The whole string must be query-encoded.
         in: query
@@ -12925,15 +12939,13 @@ paths:
         required: false
         schema:
           type: string
-      - description: Preserve the stored Protected values of the paths this operation
-          writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left unprotected.
-          Use it for an operation that is applying content decided elsewhere -- replaying
-          a change, or copying an already-reviewed value -- so it neither claims local
-          ownership of upstream content nor drops protection the target deliberately
-          set.
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).'
         in: query
-        name: preserve_protection
+        name: protect
         required: false
         schema:
           type: boolean
@@ -12994,7 +13006,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -13862,7 +13874,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -14329,10 +14341,18 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
                   type: string
+                Squash:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 ToSpaceID:
                   description: ""
                   format: uuid
@@ -14565,7 +14585,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: CreatedAt, Digest, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
+          Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -14710,12 +14730,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Release'
-          description: Release is an immutable, published bundle of the configuration
-            of the Units in a Space that are assigned to a Target. It is created by
-            publishing, taken out of service by withdrawing, and removed by deleting;
-            its bundled content is never updated. The bundle is stored as an OCI image
-            (a tar.gz layer plus manifest) so it can be served to and consumed by
-            the Target.
+          description: Release is a published bundle of the configuration of the Units
+            in a Space that are assigned to a Target. It is created by publishing,
+            taken out of service by withdrawing, and removed by deleting; its bundled
+            content is never updated, though its Labels, Annotations, and DeleteGates
+            can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest)
+            so it can be served to and consumed by the Target.
         "400":
           content:
             application/json:
@@ -14936,6 +14956,205 @@ paths:
       summary: Get ExtendedRelease
       tags:
       - Release
+    patch:
+      description: 'Apply a JSON merge patch to the selected Release''s Labels, Annotations,
+        and DeleteGates. Patching is how a Label, Annotation, or DeleteGate is removed:
+        send null for its key. The read-only fields of a Release, including the bundled
+        content, the name it is stored under, and the Published flag, cannot be patched.'
+      operationId: PatchRelease
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a release_id
+        in: path
+        name: release_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Release. All fields are optional
+                and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Release'
+          description: Release is a published bundle of the configuration of the Units
+            in a Space that are assigned to a Target. It is created by publishing,
+            taken out of service by withdrawing, and removed by deleting; its bundled
+            content is never updated, though its Labels, Annotations, and DeleteGates
+            can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest)
+            so it can be served to and consumed by the Target.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Release.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch the selected Release
+      tags:
+      - Release
+    put:
+      description: 'Update the selected Release''s Labels, Annotations, and DeleteGates.
+        The bundled content of a Release is never updated, and neither are the read-only
+        fields describing it: withdraw the Release to take it out of service, and
+        publish a new one to change what is bundled or what the bundle is named.'
+      operationId: UpdateRelease
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a release_id
+        in: path
+        name: release_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Release'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Release'
+          description: Release is a published bundle of the configuration of the Units
+            in a Space that are assigned to a Target. It is created by publishing,
+            taken out of service by withdrawing, and removed by deleting; its bundled
+            content is never updated, though its Labels, Annotations, and DeleteGates
+            can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest)
+            so it can be served to and consumed by the Target.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Release.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update the selected Release
+      tags:
+      - Release
   /space/{space_id}/release/{release_id}/withdraw:
     post:
       description: Withdraw the selected Release, clearing its Published flag so it
@@ -14963,12 +15182,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Release'
-          description: Release is an immutable, published bundle of the configuration
-            of the Units in a Space that are assigned to a Target. It is created by
-            publishing, taken out of service by withdrawing, and removed by deleting;
-            its bundled content is never updated. The bundle is stored as an OCI image
-            (a tar.gz layer plus manifest) so it can be served to and consumed by
-            the Target.
+          description: Release is a published bundle of the configuration of the Units
+            in a Space that are assigned to a Target. It is created by publishing,
+            taken out of service by withdrawing, and removed by deleting; its bundled
+            content is never updated, though its Labels, Annotations, and DeleteGates
+            can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest)
+            so it can be served to and consumed by the Target.
         "400":
           content:
             application/json:
@@ -16356,7 +16575,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -16829,6 +17048,10 @@ paths:
                     argument Values; transient, not persisted
                   nullable: true
                   type: object
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -17051,7 +17274,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -17265,6 +17488,21 @@ paths:
         required: false
         schema:
           format: uuid
+          type: string
+      - description: 'Revision of the upstream Unit to copy. The default is its head,
+          which is what a clone has always taken. Takes the same forms as merge_end
+          and restore -- a revision number, a named revision, ''Tag:uuid'', ''ChangeSet:uuid'',
+          ''ChangeOrder:uuid'', ''Before:...'' -- resolved against the Unit being
+          cloned from, so a bulk clone lands on a different revision of each source
+          Unit. ''Before:ChangeOrder:uuid'' is what a promotion uses: it names the
+          state the change starts from, which for a Unit no target has taken yet is
+          its first revision, so the upgrade that follows replays the change into
+          the clone rather than the clone arriving with the change already folded
+          in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).'
+        in: query
+        name: upstream_revision
+        required: false
+        schema:
           type: string
       - description: Identifier of the external source. Sets the source type to MergeExternal
           and appends the source name to the change description.
@@ -17563,16 +17801,33 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Protected values of the paths this operation
-          writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left unprotected.
-          Use it for an operation that is applying content decided elsewhere -- replaying
-          a change, or copying an already-reviewed value -- so it neither claims local
-          ownership of upstream content nor drops protection the target deliberately
-          set. Has no effect with restore, which rewinds MutationSources to the restored
-          Revision's stored values wholesale.
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+          Has no effect with restore, which rewinds MutationSources to the restored
+          Revision''s stored values wholesale.'
         in: query
-        name: preserve_protection
+        name: protect
+        required: false
+        schema:
+          type: boolean
+      - description: 'Merge the range as one rebased diff and record it as one Revision,
+          instead of walking it. By default a merge replays: it takes the source''s
+          Revisions in order and, where a Revision records function invocations that
+          can be re-executed, runs them against this Unit rather than rebasing their
+          recorded paths onto it -- so a change lands where this Unit''s own structure
+          puts it -- and records each source Revision that has an effect here as a
+          Revision of its own, carrying that Revision''s change description, its own
+          conflicts, and one Mutation per source Mutation. Squashing gives up both:
+          the range arrives as a single rebased patch in a single Revision, which
+          is what a merge did before replay existed. Accepted with upgrade, merge_source,
+          and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere,
+          since there is no range to walk. A Link can ask for it standingly with its
+          Squash field.'
+        in: query
+        name: squash
         required: false
         schema:
           type: boolean
@@ -17585,17 +17840,27 @@ paths:
       - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
           ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
           direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
+          ChangeSet references, the latest revision associated with that entity is
+          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
+          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
+          which is what undoes a promotion however many revisions it made.'
         in: query
         name: restore
         required: false
         schema:
           type: string
-      - description: Resolve specified non-automatically resolved link from this (downstream)
-          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+      - description: 'Resolve Links from this (downstream) Unit to another (upstream)
+          Unit, propagating what each Link''s UpdateType says to propagate. Expects
+          Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link
+          from this Unit that can resolve; a where expression selects among those,
+          evaluated against the Links themselves (e.g. UpdateType = ''MergeUnits''),
+          which is how to name one Link in a bulk operation, where a UUID cannot be.
+          A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate
+          Link may be resolved by hand: it does what the queue would have done, and
+          nothing when the Link is already level with its source.'
         in: query
         name: resolve
         required: false
@@ -17614,10 +17879,13 @@ paths:
           revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_base
         required: false
@@ -17631,10 +17899,13 @@ paths:
           Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_end
         required: false
@@ -17691,7 +17962,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -17729,6 +18000,25 @@ paths:
           unless in dry run mode
         in: query
         name: change_set_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: ChangeOrder to promote, with upgrade or resolve. The change order
+          fixed the range when it was created -- the interval on each source Unit,
+          marked with its Tags -- so it supplies both ends of the merge and merge_end
+          is refused alongside it. A Unit whose source the change order does not cover
+          is passed over rather than failed, which is what lets a bulk upgrade name
+          a whole Space and take only the Units the change is in. A Unit whose last
+          merged revision is not where the change order starts is an error, since
+          merging anyway would replay what it already has or skip what it does not,
+          and with resolve a selected Link whose UpdateType the change order does
+          not follow is an error too. The revisions the promotion creates carry the
+          ChangeOrder, and its start Tag is placed on the revision before them and
+          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+          undoes it whether it landed as one revision or as one per source revision.
+        in: query
+        name: change_order
         required: false
         schema:
           format: uuid
@@ -17944,16 +18234,33 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Protected values of the paths this operation
-          writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left unprotected.
-          Use it for an operation that is applying content decided elsewhere -- replaying
-          a change, or copying an already-reviewed value -- so it neither claims local
-          ownership of upstream content nor drops protection the target deliberately
-          set. Has no effect with restore, which rewinds MutationSources to the restored
-          Revision's stored values wholesale.
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+          Has no effect with restore, which rewinds MutationSources to the restored
+          Revision''s stored values wholesale.'
         in: query
-        name: preserve_protection
+        name: protect
+        required: false
+        schema:
+          type: boolean
+      - description: 'Merge the range as one rebased diff and record it as one Revision,
+          instead of walking it. By default a merge replays: it takes the source''s
+          Revisions in order and, where a Revision records function invocations that
+          can be re-executed, runs them against this Unit rather than rebasing their
+          recorded paths onto it -- so a change lands where this Unit''s own structure
+          puts it -- and records each source Revision that has an effect here as a
+          Revision of its own, carrying that Revision''s change description, its own
+          conflicts, and one Mutation per source Mutation. Squashing gives up both:
+          the range arrives as a single rebased patch in a single Revision, which
+          is what a merge did before replay existed. Accepted with upgrade, merge_source,
+          and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere,
+          since there is no range to walk. A Link can ask for it standingly with its
+          Squash field.'
+        in: query
+        name: squash
         required: false
         schema:
           type: boolean
@@ -17966,17 +18273,27 @@ paths:
       - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
           ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
           direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
+          ChangeSet references, the latest revision associated with that entity is
+          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
+          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
+          which is what undoes a promotion however many revisions it made.'
         in: query
         name: restore
         required: false
         schema:
           type: string
-      - description: Resolve specified non-automatically resolved link from this (downstream)
-          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+      - description: 'Resolve Links from this (downstream) Unit to another (upstream)
+          Unit, propagating what each Link''s UpdateType says to propagate. Expects
+          Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link
+          from this Unit that can resolve; a where expression selects among those,
+          evaluated against the Links themselves (e.g. UpdateType = ''MergeUnits''),
+          which is how to name one Link in a bulk operation, where a UUID cannot be.
+          A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate
+          Link may be resolved by hand: it does what the queue would have done, and
+          nothing when the Link is already level with its source.'
         in: query
         name: resolve
         required: false
@@ -17995,10 +18312,13 @@ paths:
           revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_base
         required: false
@@ -18012,10 +18332,13 @@ paths:
           Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_end
         required: false
@@ -18072,7 +18395,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -18110,6 +18433,25 @@ paths:
           unless in dry run mode
         in: query
         name: change_set_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: ChangeOrder to promote, with upgrade or resolve. The change order
+          fixed the range when it was created -- the interval on each source Unit,
+          marked with its Tags -- so it supplies both ends of the merge and merge_end
+          is refused alongside it. A Unit whose source the change order does not cover
+          is passed over rather than failed, which is what lets a bulk upgrade name
+          a whole Space and take only the Units the change is in. A Unit whose last
+          merged revision is not where the change order starts is an error, since
+          merging anyway would replay what it already has or skip what it does not,
+          and with resolve a selected Link whose UpdateType the change order does
+          not follow is an error too. The revisions the promotion creates carry the
+          ChangeOrder, and its start Tag is placed on the revision before them and
+          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+          undoes it whether it landed as one revision or as one per source revision.
+        in: query
+        name: change_order
         required: false
         schema:
           format: uuid
@@ -18485,136 +18827,6 @@ paths:
       summary: Get Unit details with expanded relationships
       tags:
       - Unit
-  /space/{space_id}/unit/{unit_id}/live_data:
-    get:
-      description: Download the live data of a unit
-      operationId: DownloadUnitLiveData
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a unit_id
-        in: path
-        name: unit_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Unit.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unexpected error.
-      summary: Download live data
-      tags:
-      - Unit
-  /space/{space_id}/unit/{unit_id}/live_state:
-    get:
-      description: Download the live state of a unit
-      operationId: DownloadUnitLiveState
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a unit_id
-        in: path
-        name: unit_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Unit.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unexpected error.
-      summary: Download live state
-      tags:
-      - Unit
   /space/{space_id}/unit/{unit_id}/mutation:
     get:
       description: List ExtendedMutations
@@ -18666,7 +18878,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           The whole string must be query-encoded.
         in: query
@@ -19810,7 +20022,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -22350,7 +22562,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -22513,7 +22725,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -22670,7 +22882,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -22811,6 +23023,10 @@ paths:
                     argument Values; transient, not persisted
                   nullable: true
                   type: object
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -22943,7 +23159,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+          Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -23156,6 +23372,10 @@ paths:
                     argument Values; transient, not persisted
                   nullable: true
                   type: object
+                Protect:
+                  description: ""
+                  nullable: true
+                  type: boolean
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -23288,7 +23508,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23460,7 +23680,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23686,7 +23906,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -23754,16 +23974,33 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: Preserve the stored Protected values of the paths this operation
-          writes, instead of recording new ones. Each written path keeps whatever
-          the Unit already has for it, and a path with no history is left unprotected.
-          Use it for an operation that is applying content decided elsewhere -- replaying
-          a change, or copying an already-reviewed value -- so it neither claims local
-          ownership of upstream content nor drops protection the target deliberately
-          set. Has no effect with restore, which rewinds MutationSources to the restored
-          Revision's stored values wholesale.
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+          Has no effect with restore, which rewinds MutationSources to the restored
+          Revision''s stored values wholesale.'
         in: query
-        name: preserve_protection
+        name: protect
+        required: false
+        schema:
+          type: boolean
+      - description: 'Merge the range as one rebased diff and record it as one Revision,
+          instead of walking it. By default a merge replays: it takes the source''s
+          Revisions in order and, where a Revision records function invocations that
+          can be re-executed, runs them against this Unit rather than rebasing their
+          recorded paths onto it -- so a change lands where this Unit''s own structure
+          puts it -- and records each source Revision that has an effect here as a
+          Revision of its own, carrying that Revision''s change description, its own
+          conflicts, and one Mutation per source Mutation. Squashing gives up both:
+          the range arrives as a single rebased patch in a single Revision, which
+          is what a merge did before replay existed. Accepted with upgrade, merge_source,
+          and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere,
+          since there is no range to walk. A Link can ask for it standingly with its
+          Squash field.'
+        in: query
+        name: squash
         required: false
         schema:
           type: boolean
@@ -23776,17 +24013,27 @@ paths:
       - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
           ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
           direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
+          ChangeSet references, the latest revision associated with that entity is
+          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
+          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
+          which is what undoes a promotion however many revisions it made.'
         in: query
         name: restore
         required: false
         schema:
           type: string
-      - description: Resolve specified non-automatically resolved link from this (downstream)
-          Unit to another (upstream) Unit. Expects Link:uuid or Link:*.
+      - description: 'Resolve Links from this (downstream) Unit to another (upstream)
+          Unit, propagating what each Link''s UpdateType says to propagate. Expects
+          Link:*, Link:<uuid>, or Link:<where expression>. Link:* selects every Link
+          from this Unit that can resolve; a where expression selects among those,
+          evaluated against the Links themselves (e.g. UpdateType = ''MergeUnits''),
+          which is how to name one Link in a bulk operation, where a UUID cannot be.
+          A Link with UpdateType None resolves nothing and is never selected. An AutoUpdate
+          Link may be resolved by hand: it does what the queue would have done, and
+          nothing when the Link is already level with its source.'
         in: query
         name: resolve
         required: false
@@ -23805,10 +24052,13 @@ paths:
           revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_base
         required: false
@@ -23822,10 +24072,13 @@ paths:
           Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
           ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
           (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
-          immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
           ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected.'
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: merge_end
         required: false
@@ -23882,7 +24135,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Mutation: CreatedAt, FunctionName, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+          Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 
           Used to filter which mutations are affected during merge operations.
 
@@ -23920,6 +24173,25 @@ paths:
           unless in dry run mode
         in: query
         name: change_set_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: ChangeOrder to promote, with upgrade or resolve. The change order
+          fixed the range when it was created -- the interval on each source Unit,
+          marked with its Tags -- so it supplies both ends of the merge and merge_end
+          is refused alongside it. A Unit whose source the change order does not cover
+          is passed over rather than failed, which is what lets a bulk upgrade name
+          a whole Space and take only the Units the change is in. A Unit whose last
+          merged revision is not where the change order starts is an error, since
+          merging anyway would replay what it already has or skip what it does not,
+          and with resolve a selected Link whose UpdateType the change order does
+          not follow is an error too. The revisions the promotion creates carry the
+          ChangeOrder, and its start Tag is placed on the revision before them and
+          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+          undoes it whether it landed as one revision or as one per source revision.
+        in: query
+        name: change_order
         required: false
         schema:
           format: uuid
@@ -24137,7 +24409,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -24317,13 +24589,28 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Slug, SpaceID, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
           The whole string must be query-encoded.
         in: query
         name: include_outgoing_links_where
+        required: false
+        schema:
+          type: string
+      - description: 'Revision of the upstream Unit to copy. The default is its head,
+          which is what a clone has always taken. Takes the same forms as merge_end
+          and restore -- a revision number, a named revision, ''Tag:uuid'', ''ChangeSet:uuid'',
+          ''ChangeOrder:uuid'', ''Before:...'' -- resolved against the Unit being
+          cloned from, so a bulk clone lands on a different revision of each source
+          Unit. ''Before:ChangeOrder:uuid'' is what a promotion uses: it names the
+          state the change starts from, which for a Unit no target has taken yet is
+          its first revision, so the upgrade that follows replays the change into
+          the clone rather than the clone arriving with the change already folded
+          in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).'
+        in: query
+        name: upstream_revision
         required: false
         schema:
           type: string
@@ -24534,7 +24821,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -24703,7 +24990,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -24869,7 +25156,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, DriftReconciliationMode, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamOrganizationID, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
 
@@ -25035,7 +25322,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DriftReconciliationMode, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
+          Supported attributes for filtering on QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, SpaceID, Status, TargetID, UnitActionNum, UnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -26383,11 +26670,6 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
-        BridgeState:
-          description: Additional state used by the Bridge
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
         Data:
           description: Updated configuration Data of the Unit (for refresh and import)
           format: base64
@@ -26398,17 +26680,6 @@ components:
           items:
             type: string
           type: array
-          x-go-type-skip-optional-pointer: true
-        LiveData:
-          description: Live Data corresponding to the Unit (for inventory and drift
-            detection)
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveState:
-          description: Live State corresponding to the Unit (for status determination)
-          format: base64
-          type: string
           x-go-type-skip-optional-pointer: true
         Message:
           type: string
@@ -26789,11 +27060,6 @@ components:
           x-go-type-skip-optional-pointer: true
         Details:
           $ref: '#/components/schemas/AttributeDetails'
-        InLiveState:
-          description: True if a path in the live state, false if a path in the configuration
-            data
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         Path:
           description: Path of the attribute
           type: string
@@ -26860,11 +27126,6 @@ components:
         FunctionName:
           description: Name of the function invocation corresponding to the output
           type: string
-          x-go-type-skip-optional-pointer: true
-        InLiveState:
-          description: True if a path in the live state, false if a path in the configuration
-            data
-          type: boolean
           x-go-type-skip-optional-pointer: true
         Index:
           description: Index of the function invocation corresponding to the output.
@@ -28219,11 +28480,6 @@ components:
             remaining functions, but don't report an error.
           type: integer
           x-go-type-skip-optional-pointer: true
-        OnLiveState:
-          description: OnLiveState indicates that the functions should be invoked
-            on the LiveState rather than the Data.
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         ParameterizedInvocations:
           items:
             $ref: '#/components/schemas/ParameterizedInvocationRef'
@@ -28240,9 +28496,7 @@ components:
         ToolchainType:
           description: ToolchainType specifies the type of toolchain for these function
             invocations. This determines which configuration formats the functions
-            can process. If OnLiveState is false, it must match the ToolchainType
-            of the Units. If OnLiveState is true, it must match the LiveStateType
-            of the Targets of the Units.
+            can process. It must match the ToolchainType of the Units.
           type: string
           x-go-type-skip-optional-pointer: true
         Triggers:
@@ -28455,6 +28709,11 @@ components:
             $ref: '#/components/schemas/FunctionParameter'
           nullable: true
           type: array
+          x-go-type-skip-optional-pointer: true
+        Replayable:
+          description: Means the same thing run against a different Unit, so a merge
+            may re-execute a stored invocation of it against a downstream variant
+          type: boolean
           x-go-type-skip-optional-pointer: true
         RequiredParameters:
           description: Number of required parameters
@@ -28786,6 +29045,14 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        Protect:
+          description: Records the paths this Link's resolve writes as protected local
+            overrides, so a later merge from upstream does not overwrite them. Without
+            it the resolve claims nothing, as any other change does. Refused on UpgradeUnit
+            and MergeUnits Links, where the upstream keeps updating what it delivered
+            and protecting that content would freeze the downstream one merge in.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -28802,6 +29069,15 @@ components:
           description: Slug of the Space this entity belongs to. (readonly)
           readOnly: true
           type: string
+          x-go-type-skip-optional-pointer: true
+        Squash:
+          description: Merge this Link's range as one rebased diff in one Revision
+            instead of walking it. By default a resolve replays the source's recorded
+            function invocations against this Unit where they can be re-executed,
+            and records each source Revision that has an effect as a Revision of its
+            own. Only meaningful for UpgradeUnit and MergeUnits Links, which are the
+            ones with a range to walk.
+          type: boolean
           x-go-type-skip-optional-pointer: true
         ToSpaceID:
           description: Unique identifier of the Space of the upstream Unit.
@@ -28919,6 +29195,10 @@ components:
     Mutation:
       description: Mutation is a single source of mutation for a Revision.
       properties:
+        BridgeWorkerID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -28946,6 +29226,10 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+        InvocationParams:
+          additionalProperties: {}
+          type: object
+          x-go-type-skip-optional-pointer: true
         LinkID:
           description: LinkID is the unique identifier of the link if the change was
             made due to resolving a link.
@@ -28994,6 +29278,12 @@ components:
           x-go-type-skip-optional-pointer: true
         ProvidedResource:
           $ref: '#/components/schemas/ResourceInfoType2'
+        ReplayOutcome:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ReplayReason:
+          type: string
+          x-go-type-skip-optional-pointer: true
         RestoredRevisionNum:
           description: Sequence number of the restored revision, if the change was
             due to a restore operation.
@@ -29068,6 +29358,11 @@ components:
       type: object
     MutationConflict:
       properties:
+        Details:
+          description: Explanation the Reason alone cannot carry, such as the error
+            text of a failed replay
+          type: string
+          x-go-type-skip-optional-pointer: true
         Path:
           description: Path of the mutation; empty for resource-level conflicts
           type: string
@@ -29434,10 +29729,6 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
-        BridgeState:
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -29467,11 +29758,6 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
-        DriftReconciliationMode:
-          description: The drift reconciliation mode for the unit at the time of the
-            operation.
-          type: string
-          x-go-type-skip-optional-pointer: true
         DryRun:
           description: DryRun indicates whether the action is a dry run.
           type: boolean
@@ -29485,14 +29771,6 @@ components:
         ExtraParams:
           description: ExtraParams contains additional parameters for the operation
             in string format.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveData:
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveState:
-          format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         OrganizationID:
@@ -29587,20 +29865,33 @@ components:
           x-go-type-skip-optional-pointer: true
       type: object
     Release:
-      description: Release is an immutable, published bundle of the configuration
-        of the Units in a Space that are assigned to a Target. It is created by publishing,
-        taken out of service by withdrawing, and removed by deleting; its bundled
-        content is never updated. The bundle is stored as an OCI image (a tar.gz layer
-        plus manifest) so it can be served to and consumed by the Target.
+      description: Release is a published bundle of the configuration of the Units
+        in a Space that are assigned to a Target. It is created by publishing, taken
+        out of service by withdrawing, and removed by deleting; its bundled content
+        is never updated, though its Labels, Annotations, and DeleteGates can be.
+        The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it
+        can be served to and consumed by the Target.
       properties:
+        Annotations:
+          additionalProperties:
+            maxLength: 1024
+            pattern: ^(.|\n)*$
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         BundleBaseName:
           description: Base filename used for the Release's stored bundle, without
-            the .tar.gz suffix.
+            the .tar.gz suffix. Set at publish time and recorded in the Release's
+            OCI manifest, so it cannot be changed afterwards. (readonly)
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         CreatedAt:
@@ -29620,11 +29911,20 @@ components:
         Data:
           description: The stored tar.gz bundle of the released Units' configuration.
           format: base64
+          readOnly: true
           type: string
+          x-go-type-skip-optional-pointer: true
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion.
+          type: object
           x-go-type-skip-optional-pointer: true
         Digest:
           description: OCI content digest (sha256:...) of the Release's stored tar.gz
             bundle.
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         EntityType:
@@ -29632,8 +29932,19 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
+          x-go-type-skip-optional-pointer: true
         ManifestDigest:
           description: OCI digest (sha256:...) of the Release's OCI image manifest.
+          readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         OrganizationID:
@@ -29645,6 +29956,7 @@ components:
           description: Whether the Release is currently served to its consuming Target.
             Set when the Release is published and cleared when it is withdrawn; a
             withdrawn Release is retained until deleted.
+          readOnly: true
           type: boolean
           x-go-type-skip-optional-pointer: true
         ReleaseID:
@@ -29658,6 +29970,7 @@ components:
             its Target, assigned at publish time. The highest ReleaseNum is the latest
             Release for the Target.
           format: int64
+          readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
         SpaceID:
@@ -29677,11 +29990,13 @@ components:
             it to each bundled Revision, and sets it here.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
+          readOnly: true
           type: string
         UnitCount:
           description: Number of Units bundled in the Release, captured at publish
             time.
           format: int64
+          readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -29702,9 +30017,30 @@ components:
       type: object
     ReleasePublishRequest:
       properties:
+        Annotations:
+          additionalProperties:
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-go-type-skip-optional-pointer: true
         BundleBaseName:
           description: Optional override of the name of the Release's tar.gz bundle.
           type: string
+          x-go-type-skip-optional-pointer: true
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
           x-go-type-skip-optional-pointer: true
         TagID:
           description: Optional Tag ID identifying the tagged Revision to bundle.
@@ -30424,7 +30760,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -30831,7 +31167,7 @@ components:
             An example conjunction is:
             `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-            Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+            Supported attributes for filtering on Trigger: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
 
             The whole string must be query-encoded.
           type: string
@@ -31021,6 +31357,16 @@ components:
             Values; transient, not persisted
           type: object
           x-go-type-skip-optional-pointer: true
+        Protect:
+          description: Protect indicates whether the paths this trigger's function
+            writes are recorded as protected local overrides, so a later merge from
+            upstream does not overwrite them. A change claims nothing by default and
+            so does a trigger; set this for a trigger that decides a value on the
+            Unit's behalf and will not be back to decide it again, such as a PostClone
+            trigger customizing a variant. Only meaningful for a mutating trigger.
+          example: "false"
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -31168,12 +31514,6 @@ components:
           readOnly: true
           type: array
           x-go-type-skip-optional-pointer: true
-        BridgeState:
-          description: Additional state used by the Bridge; content is ProviderType-specific.
-          format: base64
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: ID of the BridgeWorker from the Target assigned to this Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -31237,21 +31577,6 @@ components:
           description: Friendly name for the entity.
           type: string
           x-go-type-skip-optional-pointer: true
-        DriftReconciliationMode:
-          description: When the drift reconciliation mode is OnDemand, then the live
-            state of the Target is updated only on Apply actions and the unit Data
-            is updated only on Refresh actions. When the mode is ContinuousApply the
-            live state is updated to match the last applied state when it has drifted
-            from that state. When the mode is ContinuousRefresh, the unit Data is
-            updated when it has drifted from the live state. The mode can be changed
-            via the drift_mode parameter on Apply and Refresh operations. If the drift
-            reconciliation mode is set in the opposing direction on the Unit (i.e.,
-            ContinuousApply when Refresh is invoked or ContinuousRefresh when Apply
-            is invoked) and is not changed to a compatible value, then the operation
-            will fail.
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
@@ -31310,26 +31635,12 @@ components:
             is changed.
           type: string
           x-go-type-skip-optional-pointer: true
-        LiveData:
-          description: The live resources as of the most recent non-dry-run action
-            in the same representation as Data.
-          format: base64
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
         LiveRevisionNum:
           description: Sequence number the last Revision applied once apply has completed.
             0 if no live revision.
           format: int64
           readOnly: true
           type: integer
-          x-go-type-skip-optional-pointer: true
-        LiveState:
-          description: The live state as of the most recent non-dry-run action; content
-            is ProviderType-specific.
-          format: base64
-          readOnly: true
-          type: string
           x-go-type-skip-optional-pointer: true
         MutationSources:
           $ref: '#/components/schemas/ResourceMutationList'
@@ -31493,10 +31804,6 @@ components:
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
-        BridgeState:
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -31526,11 +31833,6 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
-        DriftReconciliationMode:
-          description: The drift reconciliation mode for the unit at the time of the
-            operation.
-          type: string
-          x-go-type-skip-optional-pointer: true
         DryRun:
           description: DryRun indicates whether the action is a dry run.
           type: boolean
@@ -31544,14 +31846,6 @@ components:
         ExtraParams:
           description: ExtraParams contains additional parameters for the operation
             in string format.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveData:
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveState:
-          format: base64
           type: string
           x-go-type-skip-optional-pointer: true
         OrganizationID:

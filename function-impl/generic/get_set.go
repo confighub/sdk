@@ -88,6 +88,7 @@ func registerSetPath(fh handler.FunctionRegistry, converter configkit.ConfigConv
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Set the YAML document at the specified path, replacing all fields there; a terminal ?key=value segment find-or-appends a merge-keyed list element",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -238,6 +239,7 @@ func registerSetStringPath(fh handler.FunctionRegistry, converter configkit.Conf
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -341,6 +343,7 @@ func registerSetIntPath(fh handler.FunctionRegistry, converter configkit.ConfigC
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -444,6 +447,7 @@ func registerSetBoolPath(fh handler.FunctionRegistry, converter configkit.Config
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Set the value of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -496,6 +500,7 @@ func registerSetPathComment(fh handler.FunctionRegistry, converter configkit.Con
 			Validating:            false,
 			Hermetic:              true,
 			Idempotent:            true,
+			Replayable:            true,
 			Description:           "Set the comment of the specified attribute path",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
@@ -592,11 +597,16 @@ func RegisterPathSetterAndGetter(
 				setterParameters[i].Description += "set"
 			}
 			setterSignature := &api.FunctionSignature{
-				FunctionName:          "set-" + name,
-				Parameters:            setterParameters,
-				Mutating:              true,
-				Hermetic:              true,
-				Idempotent:            true,
+				FunctionName: "set-" + name,
+				Parameters:   setterParameters,
+				Mutating:     true,
+				Hermetic:     true,
+				Idempotent:   true,
+				// Replayable as a class: a path-visitor setter locates what it writes
+				// through the registered path for its attribute, whose array segments are
+				// associative selectors, so it matches by identity rather than position.
+				// That is the property replay asks for.
+				Replayable:            true,
 				Description:           "Set" + description,
 				FunctionType:          api.FunctionTypePathVisitor,
 				AttributeName:         attributeName,
@@ -660,12 +670,16 @@ func RegisterPathSetterAndGetter(
 		}
 	}
 	setterSignature := &api.FunctionSignature{
-		FunctionName:          "set-" + name,
-		Parameters:            setterParameters,
-		Mutating:              true,
-		Validating:            false,
-		Hermetic:              true,
-		Idempotent:            true,
+		FunctionName: "set-" + name,
+		Parameters:   setterParameters,
+		Mutating:     true,
+		Validating:   false,
+		Hermetic:     true,
+		Idempotent:   true,
+		// Replayable as a class, for the same reason as the defaults setters above: the
+		// registered path selects by merge key, so the setter finds its target in a variant
+		// shaped differently from the Unit it was first run against.
+		Replayable:            true,
 		Description:           "Set" + description,
 		FunctionType:          api.FunctionTypePathVisitor,
 		AttributeName:         attributeName,

@@ -31,6 +31,10 @@ var (
 	linkWhereResource                string
 	linkMergeEnableSubtraction       bool
 	linkNoMergeEnableSubtraction     bool
+	linkProtect                      bool
+	linkNoProtect                    bool
+	linkSquash                       bool
+	linkNoSquash                     bool
 	linkMakeCurrent                  bool
 	linkUpstreamLastMergedRevision   int64
 	linkDownstreamLastMergedRevision int64
@@ -45,6 +49,10 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the stored path protection that preserves overrides by default")
 	cmd.Flags().BoolVar(&linkNoMergeEnableSubtraction, "no-merge-enable-subtraction", false, "return this link to the default: no subtraction step")
+	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the paths this link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them; refused on UpgradeUnit and MergeUnits links")
+	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
+	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")
+	cmd.Flags().BoolVar(&linkNoSquash, "no-squash", false, "return this link to the default: its resolve walks the range")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
 	cmd.Flags().Int64Var(&linkUpstreamLastMergedRevision, "upstream-last-merged-revision", 0, "set UpstreamLastMergedRevisionNum explicitly: the upstream revision the link is treated as merged through")
 	cmd.Flags().Int64Var(&linkDownstreamLastMergedRevision, "downstream-last-merged-revision", 0, "set DownstreamLastMergedRevisionNum explicitly: the downstream revision the last merge produced")
@@ -57,6 +65,12 @@ func validateLinkFieldFlags(cmd *cobra.Command) error {
 	}
 	if linkMergeEnableSubtraction && linkNoMergeEnableSubtraction {
 		return fmt.Errorf("--merge-enable-subtraction and --no-merge-enable-subtraction are mutually exclusive")
+	}
+	if linkProtect && linkNoProtect {
+		return fmt.Errorf("--protect and --no-protect are mutually exclusive")
+	}
+	if linkSquash && linkNoSquash {
+		return fmt.Errorf("--squash and --no-squash are mutually exclusive")
 	}
 	// --make-current writes the same two fields, computed from the Units. Letting both
 	// through would make the winner depend on ordering rather than on what was asked for.
@@ -125,6 +139,12 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 	if linkMergeEnableSubtraction {
 		link.MergeEnableSubtraction = true
 	}
+	if linkProtect {
+		link.Protect = true
+	}
+	if linkSquash {
+		link.Squash = true
+	}
 	if cmd.Flags().Changed("upstream-last-merged-revision") {
 		link.UpstreamLastMergedRevisionNum = linkUpstreamLastMergedRevision
 	}
@@ -163,6 +183,16 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		link.MergeEnableSubtraction = true
 	} else if linkNoMergeEnableSubtraction {
 		link.MergeEnableSubtraction = false
+	}
+	if linkProtect {
+		link.Protect = true
+	} else if linkNoProtect {
+		link.Protect = false
+	}
+	if linkSquash {
+		link.Squash = true
+	} else if linkNoSquash {
+		link.Squash = false
 	}
 	if cmd.Flags().Changed("upstream-last-merged-revision") {
 		link.UpstreamLastMergedRevisionNum = linkUpstreamLastMergedRevision
@@ -210,6 +240,16 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		} else if linkNoMergeEnableSubtraction {
 			patchMap["MergeEnableSubtraction"] = false
 		}
+		if linkProtect {
+			patchMap["Protect"] = true
+		} else if linkNoProtect {
+			patchMap["Protect"] = false
+		}
+		if linkSquash {
+			patchMap["Squash"] = true
+		} else if linkNoSquash {
+			patchMap["Squash"] = false
+		}
 		if cmd.Flags().Changed("upstream-last-merged-revision") {
 			patchMap["UpstreamLastMergedRevisionNum"] = linkUpstreamLastMergedRevision
 		}
@@ -234,6 +274,8 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 	return cmd.Flags().Changed("update-type") || linkAutoUpdate || linkNoAutoUpdate ||
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
 		linkMergeEnableSubtraction || linkNoMergeEnableSubtraction ||
+		linkProtect || linkNoProtect ||
+		linkSquash || linkNoSquash ||
 		linkMakeCurrent ||
 		cmd.Flags().Changed("upstream-last-merged-revision") ||
 		cmd.Flags().Changed("downstream-last-merged-revision") ||
