@@ -164,7 +164,9 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// 1. Ensure the shared base component exists, installed from argobot's
 	// published OCI config bundle. --granularity per-file keeps the single
 	// manifest file as one Unit ("argobot"); --allow-exists makes it a no-op
-	// when another cluster already installed the base.
+	// when another cluster already installed the base. The pull is anonymous —
+	// local Docker credentials are never used (see ociAuthClient) — so a stale
+	// `docker login ghcr.io` can't turn into a hard 403 here.
 	fmt.Fprintf(out, "Installing argobot base component from %s...\n", o.ociRef)
 	if err := runCub("variant", "upload",
 		"--component", clusterArgobotComponent,

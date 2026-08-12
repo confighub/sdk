@@ -8901,7 +8901,7 @@ export type ApproveUnitApiArg = {
   /** Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
   revision?: string;
 };
-export type ResolveUnitConflictsApiResponse = /** status 200 OK */ UnitConflictsResponse;
+export type ResolveUnitConflictsApiResponse = /** status 200 OK */ UnitConflictsResponseRead;
 export type ResolveUnitConflictsApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -15506,6 +15506,16 @@ export type UnitConflictsResponse = {
   /** Number of conflicts dropped without changing the configuration data */
   Dismissed?: number;
   Error?: ResponseError;
+  Unit?: Unit;
+};
+export type UnitConflictsResponseRead = {
+  /** Number of conflicts whose withheld change was applied */
+  Applied?: number;
+  Conflicts?: MutationConflictList;
+  /** Number of conflicts dropped without changing the configuration data */
+  Dismissed?: number;
+  Error?: ResponseError;
+  Unit?: UnitRead;
 };
 export type UnitConflictSelector = {
   /** Match conflicts at this path; empty matches any path, including resource-level conflicts */
@@ -15518,6 +15528,8 @@ export type UnitConflictSelector = {
 export type UnitConflictsRequest = {
   /** Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data */
   Action?: string;
+  /** Report what the request would do without writing anything. The response carries the Unit as it would be. */
+  DryRun?: boolean;
   /** Which outstanding conflicts to act on. Empty acts on all of them. */
   Select?: UnitConflictSelector[];
 };

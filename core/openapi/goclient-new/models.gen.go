@@ -3260,6 +3260,9 @@ type UnitConflictsRequest struct {
 	// Action Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data
 	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
 
+	// DryRun Report what the request would do without writing anything. The response carries the Unit as it would be.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
 	// Select Which outstanding conflicts to act on. Empty acts on all of them.
 	Select []UnitConflictSelector `json:"Select,omitempty" yaml:"Select,omitempty"`
 }
@@ -3273,6 +3276,20 @@ type UnitConflictsResponse struct {
 	// Dismissed Number of conflicts dropped without changing the configuration data
 	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
+	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
+	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
+	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
+	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
+	// the underlying configuration / deployment tool. The resources must belong to a single
+	// infrastructure provider and the actuation mechanism must be able to resolve references and
+	// ordering dependencies among the resources within the document. For example, if one resource
+	// needs to be fully provisioned to provide input to another resource, then the actuation code is
+	// responsible for handling this. Revisions store historical copies of the configuration data.
+	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
+	// new variants of a configuration.
+	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.

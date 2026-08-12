@@ -31970,6 +31970,11 @@ components:
             without changing the configuration data
           type: string
           x-go-type-skip-optional-pointer: true
+        DryRun:
+          description: Report what the request would do without writing anything.
+            The response carries the Unit as it would be.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         Select:
           description: Which outstanding conflicts to act on. Empty acts on all of
             them.
@@ -31993,6 +31998,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Error:
           $ref: '#/components/schemas/ResponseError'
+        Unit:
+          $ref: '#/components/schemas/Unit'
       type: object
     UnitCreateOrUpdateResponse:
       properties:

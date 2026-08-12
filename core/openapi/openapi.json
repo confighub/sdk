@@ -35009,6 +35009,11 @@
             "description": "Apply re-applies the withheld change; Dismiss drops the conflict without changing the configuration data",
             "x-go-type-skip-optional-pointer": true
           },
+          "DryRun": {
+            "type": "boolean",
+            "description": "Report what the request would do without writing anything. The response carries the Unit as it would be.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Select": {
             "type": "array",
             "items": {
@@ -35037,6 +35042,9 @@
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
+          },
+          "Unit": {
+            "$ref": "#/components/schemas/Unit"
           }
         }
       },

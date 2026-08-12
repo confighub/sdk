@@ -41,12 +41,20 @@ With no flags this lists the outstanding conflicts. --apply replays the changes
 they withheld, with every path eligible so nothing filters them out a second
 time. --dismiss drops them without touching the configuration data. Both act on
 every outstanding conflict unless --reason, --path, or --resource narrows the
-selection.
+selection, and both take --dry-run, which reports what the request would do and
+writes nothing.
+
+Applying changes the configuration data, so the unit goes through the same
+trigger pass as any other change and may pick up an ApplyGate. --wait, on by
+default, waits for that pass to finish before returning.
 
 Examples:
 `+"```"+`
   # What did the last merge fail to apply?
   cub unit conflicts my-unit
+
+  # What would taking the upstream's value do to this unit?
+  cub unit conflicts my-unit --apply --dry-run -o mutations
 
   # Apply the upstream changes that were withheld because this unit owns the path
   cub unit conflicts my-unit --apply --reason Subtracted
@@ -81,6 +89,9 @@ func init() {
 		"select conflicts at this path")
 	unitConflictsCmd.Flags().StringVar(&conflictsResourceName, "resource", "",
 		"select conflicts on this resource, by name")
+	unitConflictsCmd.Flags().BoolVar(&dryRun, "dry-run", false,
+		"dry run mode: report what --apply or --dismiss would do without writing anything")
+	enableWaitFlag(unitConflictsCmd)
 	addStandardDisplayFlags(unitConflictsCmd)
 	unitCmd.AddCommand(unitConflictsCmd)
 }
@@ -98,15 +109,18 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		return listUnitConflicts(args[0])
 	}
 
-	configUnit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID")
+	configUnit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID,HeadMutationNum,HeadRevisionNum")
 	if err != nil {
 		return err
 	}
+	priorHeadMutationNum := configUnit.HeadMutationNum
+	priorRevision := fmt.Sprintf("%s/%d", args[0], configUnit.HeadRevisionNum)
 
 	body := goclientnew.UnitConflictsRequest{Action: "Dismiss"}
 	if conflictsApply {
 		body.Action = "Apply"
 	}
+	body.DryRun = dryRun
 	if selecting {
 		body.Select = []goclientnew.UnitConflictSelector{{
 			Reason:       conflictsReason,
@@ -124,20 +138,51 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		return nil
 	}
 	if !quiet {
+		verb := "Applied"
+		if dryRun {
+			verb = "Would apply"
+		}
 		if resp.Applied > 0 {
-			fmt.Printf("Applied %d withheld merge %s on unit %s\n",
-				resp.Applied, plural("change", resp.Applied), args[0])
+			fmt.Printf("%s %d withheld merge %s on unit %s\n",
+				verb, resp.Applied, plural("change", resp.Applied), args[0])
 		}
 		if resp.Dismissed > 0 {
-			fmt.Printf("Dismissed %d merge %s on unit %s\n",
-				resp.Dismissed, plural("conflict", resp.Dismissed), args[0])
+			verb = "Dismissed"
+			if dryRun {
+				verb = "Would dismiss"
+			}
+			fmt.Printf("%s %d merge %s on unit %s\n",
+				verb, resp.Dismissed, plural("conflict", resp.Dismissed), args[0])
 		}
 		if resp.Applied == 0 && resp.Dismissed == 0 {
 			fmt.Printf("No matching outstanding conflicts on unit %s\n", args[0])
 		}
 	}
+	// What the request wrote, or would write: a dry run returns the unit as it would be,
+	// MutationSources included, so the proposed change reads as the same per-path list a
+	// real one records.
+	if conflictsApply && resp.Unit != nil && shouldDisplayMutations() {
+		tprintRaw("")
+		against := priorRevision
+		if dryRun {
+			against = "dry-run"
+		}
+		displayMutationsForUnit(resp.Unit, priorHeadMutationNum, "apply withheld merge changes", against)
+	}
+	if !dryRun && wait && resp.Unit != nil && (resp.Applied > 0 || resp.Dismissed > 0) {
+		if !quiet && !isAlternativeOutput() {
+			tprintRaw("Awaiting triggers...")
+		}
+		if err := awaitTriggersRemoval(resp.Unit); err != nil {
+			return err
+		}
+	}
 	if resp.Conflicts != nil && len(*resp.Conflicts) > 0 {
-		fmt.Printf("\nStill outstanding:\n")
+		label := "Still outstanding:"
+		if dryRun {
+			label = "Would still be outstanding:"
+		}
+		fmt.Printf("\n%s\n", label)
 		displayConflicts(*resp.Conflicts)
 	}
 	return nil

@@ -20,7 +20,6 @@ import (
 	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
-	"oras.land/oras-go/v2/registry/remote/credentials"
 	"oras.land/oras-go/v2/registry/remote/retry"
 )
 
@@ -32,18 +31,19 @@ func isOCIRef(input string) bool {
 	return strings.HasPrefix(input, ociScheme)
 }
 
-// ociAuthClient builds an auth client that reuses the caller's Docker/registry
-// credentials (e.g. a prior `docker login ghcr.io`), falling back to anonymous
-// access when no credential store is available.
+// ociAuthClient builds an anonymous auth client. Local Docker/registry
+// credentials (e.g. a prior `docker login ghcr.io`) are deliberately NOT used:
+// ghcr.io hard-denies (403) a request presenting an expired or revoked
+// credential even for public packages, so an expired local login would break
+// pulls — differently on every machine — that work fine with no credentials.
+// Config bundles are public for now; if private-bundle support is added later,
+// credential use must be an explicit opt-in, not an ambient default.
 func ociAuthClient() *auth.Client {
 	client := &auth.Client{
 		Client: retry.DefaultClient,
 		Cache:  auth.NewCache(),
 	}
 	client.SetUserAgent("cub")
-	if store, err := credentials.NewStoreFromDocker(credentials.StoreOptions{}); err == nil {
-		client.Credential = credentials.Credential(store)
-	}
 	return client
 }
 
@@ -52,6 +52,7 @@ func ociAuthClient() *auth.Client {
 // carry its YAML as a single tar or tar+gzip layer (as `cub release publish` and
 // Flux produce) or as individual file layers (as `oras push <files>` produces);
 // both are accepted, so any bundle a GitOps toolchain can consume works here.
+// Pulls are always anonymous (see ociAuthClient).
 func pullOCIManifests(ctx context.Context, rawRef, destDir string) (string, error) {
 	repo, err := remote.NewRepository(strings.TrimPrefix(rawRef, ociScheme))
 	if err != nil {
