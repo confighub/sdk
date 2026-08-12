@@ -54,7 +54,7 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 					ParameterName: "yq-expression",
 					Required:      true,
 					Description:   "yq expression. Use `select() | ...` to get values from a subset of the documents. Params passed via the `param` argument are accessible as `$params.<key>` (e.g. `$params.foo`).",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeYQ,
 					Example:       ".spec.replicas",
 				},
 				{
@@ -99,7 +99,7 @@ func registerYQ(fh handler.FunctionRegistry, converter configkit.ConfigConverter
 					ParameterName: "yq-expression",
 					Required:      true,
 					Description:   "yq expression. Use `select() | ...` to get values from a subset of the documents. Params passed via the `param` argument are accessible as `$params.<key>` (e.g. `$params.foo`).",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeYQ,
 					Example:       ".spec.replicas",
 				},
 				{
@@ -146,7 +146,7 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 					ParameterName: "yq-expression",
 					Required:      true,
 					Description:   "yq expression. Use `with(select(); ...)` to modify values in a subset of the documents. Params passed via the `param` argument are accessible as `$params.<key>` (e.g. `$params.foo`).",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeYQ,
 					Example:       ".spec.replicas = 7",
 				},
 				{
@@ -186,7 +186,7 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 					ParameterName: "yq-expression",
 					Required:      true,
 					Description:   "yq expression. Use `with(select(); ...)` to modify values in a subset of the documents. Params passed via the `param` argument are accessible as `$params.<key>` (e.g. `$params.foo`).",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeYQ,
 					Example:       ".spec.replicas = 7",
 				},
 				{
@@ -196,11 +196,15 @@ func registerYQI(fh handler.FunctionRegistry, converter configkit.ConfigConverte
 					DataType:      api.DataTypeString,
 				},
 			},
-			VarArgs:               true,
-			Mutating:              true,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
+			VarArgs:    true,
+			Mutating:   true,
+			Validating: false,
+			Hermetic:   true,
+			Idempotent: true,
+			// Same declaration as set-yq, which this aliases. A deprecated name has to
+			// merge the way the name that replaced it does, or the same expression means
+			// two different things depending on which one was typed.
+			Replayable:            true,
 			Description:           "[Deprecated; use set-yq instead] The configuration data is updated with the result of running yq -i with the specified expression on the configuration data filtered by WhereResource.",
 			FunctionType:          api.FunctionTypeCustom,
 			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},

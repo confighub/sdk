@@ -181,10 +181,14 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(imageReferenceRegexpString)},
 				},
 			},
-			Mutating:              true,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
+			Mutating:   true,
+			Validating: false,
+			Hermetic:   true,
+			Idempotent: true,
+			// Replayable: the image URI selects what to change, so this travels to a
+			// variant regardless of how its containers are named or ordered, and matches
+			// however many of them use that image.
+			Replayable:            true,
 			Description:           "Set the reference for a specified image URI",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         api.AttributeNameContainerImage,
@@ -224,10 +228,13 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 					ValueConstraints: api.ValueConstraints{Regexp: convertToFullRegexp(containerNameRegexpString)},
 				},
 			},
-			Mutating:              true,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
+			Mutating:   true,
+			Validating: false,
+			Hermetic:   true,
+			Idempotent: true,
+			// Replayable for the same reason as set-image-reference-by-uri: the registry
+			// prefix names what to change rather than where it lives.
+			Replayable:            true,
 			Description:           "Replace the specified image registry prefix with a new registry prefix; an empty registry prepends the new registry to images that have none. Optionally restrict to a single container by name",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         api.AttributeNameContainerImage,

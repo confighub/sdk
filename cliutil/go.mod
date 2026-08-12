@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/configkit/yqkit v0.2.16
+	github.com/confighub/sdk/configkit/yqkit v0.0.0
 	github.com/google/uuid v1.6.0
 	github.com/itchyny/gojq v0.12.17
 	github.com/spf13/cobra v1.10.2
@@ -48,6 +48,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

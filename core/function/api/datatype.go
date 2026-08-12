@@ -54,7 +54,14 @@ const (
 	DataTypeEnv        = DataType("Env")
 	DataTypeText       = DataType("Text")
 	DataTypeHCL        = DataType("HCL")
-	DataTypeCEL        = DataType("CEL")
+
+	// Expression language types. A value of one of these is a program in that
+	// language rather than configuration data, which is what makes it identifiable:
+	// a parameter declaring one of them is the parameter a caller's expression
+	// arrives in. See DataTypeIsExpression.
+	DataTypeCEL      = DataType("CEL")
+	DataTypeYQ       = DataType("YQ")
+	DataTypeStarlark = DataType("Starlark")
 
 	DataTypeOpaque = DataType("Opaque") // Bytes
 )
@@ -104,6 +111,19 @@ func DataTypeIsConfigFormat(dataType DataType) bool {
 	switch dataType {
 	case DataTypeJSON, DataTypeYAML, DataTypeProperties, DataTypeTOML,
 		DataTypeINI, DataTypeEnv, DataTypeText, DataTypeHCL:
+		return true
+	}
+	return false
+}
+
+// DataTypeIsExpression reports whether dataType names an expression language. A
+// value of one of these is a program supplied by the caller, so what it does is
+// the caller's to say -- which is why replayability treats these functions as a
+// class and cannot decide per invocation what the expression selects without
+// parsing it. See docs/design/function-replayability.md 5.1.
+func DataTypeIsExpression(dataType DataType) bool {
+	switch dataType {
+	case DataTypeCEL, DataTypeYQ, DataTypeStarlark:
 		return true
 	}
 	return false

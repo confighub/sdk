@@ -274,7 +274,7 @@ func registerSetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 					ParameterName: "program",
 					Required:      true,
 					Description:   "Starlark program that mutates a resource. The variable 'r' (alias 'object') is a dict representing the current resource. Modify r in place. The program is executed once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are also available.",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeStarlark,
 				},
 				{
 					ParameterName: "param",
@@ -382,7 +382,7 @@ func registerVetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 					ParameterName: "program",
 					Required:      true,
 					Description:   "Starlark program that validates resources. Must define a 'validate(r)' function that takes a resource dict and returns a dict with 'passed' (bool) and optionally 'details' (list of strings). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available.",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeStarlark,
 					Example: `def validate(r):
   if r.get("kind") == "Deployment":
     containers = r["spec"]["template"]["spec"]["containers"]
@@ -562,7 +562,7 @@ func registerGetStarlark(fh handler.FunctionRegistry, converter configkit.Config
 					ParameterName: "program",
 					Required:      true,
 					Description:   "Starlark program that extracts values from resources. Must define an 'extract(r)' function that takes a resource dict and returns a list of dicts, each with fields: ResourceName (string), ResourceType (string), Path (string), Value (any), and optionally AttributeName (string), DataType (string). The function is called once per resource. The 'json', 're' modules, 'params' dict, and 'functionContext' dict (ConfigHub metadata, e.g. functionContext[\"TargetID\"]) are available.",
-					DataType:      api.DataTypeString,
+					DataType:      api.DataTypeStarlark,
 					Example: `def extract(r):
   values = []
   if r.get("kind") == "Deployment":
