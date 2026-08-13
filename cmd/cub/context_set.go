@@ -68,7 +68,7 @@ func contextSetCmdRun(_ *cobra.Command, args []string) error {
 	// A wildcard ("*") or empty default space selects cross-space (org-level)
 	// operations by default; there is no space to look up, so set it directly.
 	if setSpace == "*" || setSpace == "" {
-		ctx.Settings.DefaultSpace = setSpace
+		ctx.Settings.DefaultSpace = "*"
 		if ctx.Name == contextManager.ActiveContext().Name {
 			selectedSpaceID = setSpace
 			selectedSpaceSlug = setSpace

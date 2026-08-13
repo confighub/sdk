@@ -57,8 +57,6 @@ func addSpaceFlags(cmd *cobra.Command) {
 // across all spaces). It reports whether the wildcard was permitted.
 func allowWildcardSpace(cmd *cobra.Command) bool {
 	if _, orgLevel := cmd.Annotations["OrgLevel"]; orgLevel {
-		selectedSpaceID = "*"
-		selectedSpaceSlug = "*"
 		return true
 	}
 	return false
@@ -73,6 +71,8 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	if spaceFlag != "" {
 		if spaceFlag == "*" {
 			if allowWildcardSpace(cmd) {
+				selectedSpaceID = "*"
+				selectedSpaceSlug = "*"
 				return nil
 			}
 			return fmt.Errorf("space wildcard * not permitted for command %s", cmd.Name())
@@ -95,6 +95,8 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	// the user must supply a specific space via --space.
 	if ctx.Settings.DefaultSpace == "" || ctx.Settings.DefaultSpace == "*" {
 		if allowWildcardSpace(cmd) {
+			selectedSpaceID = "*"
+			selectedSpaceSlug = "*"
 			return nil
 		}
 		return fmt.Errorf("space is required. Set with --space option or set in context with the context sub-command")
@@ -105,7 +107,7 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 		space, err := apiGetSpaceFromSlug(ctx.Settings.DefaultSpace, "")
 		// Note: If the DefaultSpace has been deleted, this will fail.
 		if err != nil {
-			return fmt.Errorf("failed to resolve space %s: %w", ctx.Settings.DefaultSpace, err)
+			return fmt.Errorf("failed to resolve default space %s from context: %w", ctx.Settings.DefaultSpace, err)
 		}
 		selectedSpaceID = space.SpaceID.String()
 		selectedSpaceSlug = space.Slug

@@ -15,7 +15,7 @@ import (
 )
 
 var invocationUpdateCmd = &cobra.Command{
-	Use:   "update [<slug or id>] [<toolchain type> <function> [<arg1> ...]]",
+	Use:   "update [<slug or id>] [<toolchain type> [<function> [<arg1> ...]]]",
 	Short: "Update an invocation or multiple invocations",
 	Long: getCommandHelp(`Update an invocation or multiple invocations using bulk operations.
 
@@ -29,6 +29,17 @@ Example with named arguments:
   cub invocation update --space my-space my-invocation Kubernetes/YAML -- set-annotation --key=cloned --value=true
 `+"```"+`
 
+An Invocation can call several functions, which are executed in the order they are listed.
+The positional form replaces the list with a single function; to set a list of several,
+supply FunctionInvocations with --from-stdin or --filename and omit the function positional
+arguments:
+`+"```"+`
+  echo '{"FunctionInvocations": [
+           {"FunctionName": "set-default-names"},
+           {"FunctionName": "set-annotation", "Arguments": [{"Value": "cloned"}, {"Value": "true"}]}
+         ]}' | cub invocation update --space my-space --from-stdin my-invocation Kubernetes/YAML
+`+"```"+`
+
 Bulk update with --patch:
 
 Update multiple invocations at once based on search criteria. Requires --patch flag with no positional arguments.
@@ -38,8 +49,8 @@ Examples:
   # Update worker for all invocations of a certain type using JSON patch
   echo '{"BridgeWorkerID": "worker-uuid"}' | cub invocation update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
 
-  # Update function for specific invocations
-  echo '{"FunctionName": "no-placeholders"}' | cub invocation update --patch --where "FunctionName = 'cel-validate'" --from-stdin
+  # Repoint every invocation still on a deprecated function to its replacement
+  echo '{"FunctionInvocations": [{"FunctionName": "vet-cel"}]}' | cub invocation update --patch --where "FunctionInvocations.*.FunctionName = 'cel-validate'" --from-stdin
 
   # Update specific invocations by slug
   cub invocation update --patch --invocation my-invocation,another-invocation --worker new-worker
@@ -80,9 +91,14 @@ func checkInvocationConflictingArgs(args []string) bool {
 		}
 
 	} else {
-		// Single create mode validation
-		if len(args) < 3 {
-			failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...]"))
+		// Single update mode validation. The function positional argument is required unless the
+		// body supplies the function list, which is how a multi-function Invocation is set.
+		minArgs := 3
+		if flagPopulateModelFromStdin || flagFilename != "" {
+			minArgs = 2
+		}
+		if len(args) < minArgs {
+			failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with FunctionInvocations supplied by --from-stdin or --filename"))
 		}
 
 		if filter != "" || where != "" || len(invocationIdentifiers) > 0 {
@@ -219,13 +235,6 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			workerID = &workerUUIDConverted
 		}
 
-		// Parse function arguments if needed
-		var newArgs []goclientnew.FunctionArgument
-		if len(args) > 3 {
-			invokeArgs := args[3:]
-			newArgs = parseFunctionArguments(invokeArgs)
-		}
-
 		// Build patch data using BuildPatchData with invocation enhancer
 		invocationEnhancer := func(patchData map[string]interface{}) {
 			// Add invocation-specific fields
@@ -235,9 +244,13 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 			// Add function details from args
 			patchData["ToolchainType"] = args[1]
-			patchData["FunctionName"] = args[2]
-			if newArgs != nil {
-				patchData["Arguments"] = newArgs
+			if len(args) > 2 {
+				// A named function replaces the whole list: the positional form is the
+				// one-function form.
+				patchData["FunctionInvocations"] = goclientnew.FunctionInvocationList{{
+					FunctionName: args[2],
+					Arguments:    parseFunctionArguments(args[3:]),
+				}}
 			}
 		}
 
@@ -300,10 +313,13 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	currentInvocation.ToolchainType = args[1]
-	currentInvocation.FunctionName = args[2]
-	invokeArgs := args[3:]
-	newArgs := parseFunctionArguments(invokeArgs)
-	currentInvocation.Arguments = newArgs
+	if len(args) > 2 {
+		// A named function replaces the whole list: the positional form is the one-function form.
+		currentInvocation.FunctionInvocations = &goclientnew.FunctionInvocationList{{
+			FunctionName: args[2],
+			Arguments:    parseFunctionArguments(args[3:]),
+		}}
+	}
 	invocationRes, err := cubClientNew.UpdateInvocationWithResponse(ctx, spaceID, currentInvocation.InvocationID, *currentInvocation)
 	if cubapi.IsAPIError(err, invocationRes) {
 		return cubapi.InterpretErrorGeneric(err, invocationRes)

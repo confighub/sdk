@@ -34,7 +34,7 @@ Key information provided:
 - Affected resource types (which Kubernetes resources this function operates on)
 
 Usage pattern:
-  cub function explain set-image --toolchain Kubernetes/YAML
+  cub function explain set-container-image --toolchain Kubernetes/YAML
 
 The output includes a ready-to-use command template showing required and optional parameters.
 
@@ -117,8 +117,19 @@ func displayFunctionDetails(toolchainType, functionName string, functionDetails 
 		view.Append([]string{"Affected Resource Types", affectedTypes})
 	}
 
-	// Generate usage string
-	usageStr := fmt.Sprintf("Usage: cub function do -- %s", functionName)
+	// Generate usage string. Name the verb that matches the function's kind, since
+	// that is the command the reader should actually run: it rejects a wrong-kind
+	// function before invoking anything, and it is what scopes an agent's or role's
+	// permissions to an operation class. `do` accepts any kind and stays the escape
+	// hatch for a request that must mix them.
+	verb := "get"
+	switch {
+	case functionDetails.Mutating:
+		verb = "set"
+	case functionDetails.Validating:
+		verb = "vet"
+	}
+	usageStr := fmt.Sprintf("Usage: cub function %s -- %s", verb, functionName)
 	for _, param := range functionDetails.Parameters {
 		if param.Required {
 			usageStr += fmt.Sprintf(" <%s>", param.ParameterName)

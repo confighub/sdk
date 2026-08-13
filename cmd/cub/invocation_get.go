@@ -5,6 +5,9 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/olekukonko/tablewriter"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -81,7 +84,6 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 	}
 
 	view.Append([]string{"Toolchain Type", invocationDetails.ToolchainType})
-	view.Append([]string{"Function Name", invocationDetails.FunctionName})
 	for i := range invocationDetails.Parameters {
 		p := invocationDetails.Parameters[i]
 		req := "optional"
@@ -94,17 +96,50 @@ func displayExtendedInvocationDetails(extendedInvocation *goclientnew.ExtendedIn
 		}
 		view.Append([]string{fmt.Sprintf("Parameter %d (%s)", i, p.ParameterName), detail})
 	}
-	for i := range invocationDetails.Arguments {
-		argLabel := fmt.Sprintf("Argument %d", i)
-		if invocationDetails.Arguments[i].ParameterName != nil {
-			argLabel = fmt.Sprintf("Argument %d (%s)", i, *invocationDetails.Arguments[i].ParameterName)
-		}
-		view.Append([]string{argLabel, formatFunctionArgumentValue(invocationDetails.Arguments[i].Value)})
-	}
+	appendFunctionInvocationRows(view, invocationDetails.FunctionInvocations)
 	if invocationDetails.Hash != "" {
 		view.Append([]string{"Hash", invocationDetails.Hash})
 	}
 	view.Render()
+}
+
+// appendFunctionInvocationRows lists the functions an Invocation calls, in the order they are
+// executed, one row per function plus one per argument. The functions are numbered only when
+// there is more than one, so a single-function Invocation reads as it always has.
+func appendFunctionInvocationRows(view *tablewriter.Table, functionInvocations *goclientnew.FunctionInvocationList) {
+	if functionInvocations == nil {
+		return
+	}
+	functions := *functionInvocations
+	for f := range functions {
+		prefix := ""
+		if len(functions) > 1 {
+			prefix = fmt.Sprintf("%d. ", f)
+		}
+		view.Append([]string{prefix + "Function Name", functions[f].FunctionName})
+		if functions[f].WhereResource != "" {
+			view.Append([]string{prefix + "Where Resource", functions[f].WhereResource})
+		}
+		for i, argument := range functions[f].Arguments {
+			argLabel := fmt.Sprintf("%sArgument %d", prefix, i)
+			if argument.ParameterName != nil {
+				argLabel = fmt.Sprintf("%sArgument %d (%s)", prefix, i, *argument.ParameterName)
+			}
+			view.Append([]string{argLabel, formatFunctionArgumentValue(argument.Value)})
+		}
+	}
+}
+
+// functionInvocationsSummary names the functions an Invocation calls, for one table cell.
+func functionInvocationsSummary(functionInvocations *goclientnew.FunctionInvocationList) string {
+	if functionInvocations == nil {
+		return ""
+	}
+	names := make([]string, 0, len(*functionInvocations))
+	for _, function := range *functionInvocations {
+		names = append(names, function.FunctionName)
+	}
+	return strings.Join(names, ", ")
 }
 
 func apiGetInvocation(invocationID string, selectParam string) (*goclientnew.Invocation, error) {

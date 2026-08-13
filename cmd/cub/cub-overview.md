@@ -177,7 +177,7 @@ cub space create -o json --from-stdin space-slug < spacemetadata.json
 Create a trigger that validates that all Kubernetes Deployments have more than one replica:
 
 ```
-cub trigger create --space $SPACE --verbose replicated Mutation "Kubernetes/YAML" vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
+cub trigger create --space $SPACE --verbose replicated Mutation "Kubernetes/YAML" vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1'
 ```
 
 Create a trigger to ensure that no placeholder values remain before you apply:
@@ -359,24 +359,35 @@ function signatures (refreshed at login and by `cub function list`):
 - `cub function set` — mutating functions (Mutating=true) only
 
 `cub function do` (and `cub function exec`) remain available as a mixed escape
-hatch that accepts any kind.
+hatch that accepts any kind. Prefer a verb: it catches a wrong-kind call before
+anything is written, and it scopes what a role or agent is permitted to run.
+
+Each verb also supplies a missing prefix, so `cub function set replicas 3`
+invokes `set-replicas`.
 
 Set an image for the `nginx` container of a Kubernetes Deployment:
 
 ```
-cub function set --space $SPACE --where "Slug = 'mydeployment'" set-image nginx nginx:mainline-otel
+cub function set --space $SPACE --where "Slug = 'mydeployment'" --change-desc "Move nginx to mainline-otel" set-container-image nginx nginx:mainline-otel
 ```
 
 Preview what would change without applying:
 
 ```
-cub function set --space $SPACE --where "Slug = 'mydeployment'" --dry-run -o mutations set-image nginx nginx:1.25
+cub function set --space $SPACE --where "Slug = 'mydeployment'" --dry-run -o mutations set-container-image nginx nginx:1.25
 ```
 
-Get the image attribute using `yq`:
+Hold a value against the next merge from upstream, by recording the paths the
+change writes as protected local overrides:
 
 ```
-cub function get --space $SPACE --where "Slug = 'mydeployment'" --show output yq '.spec.template.spec.containers[0].image'
+cub function set --space $SPACE --where "Slug = 'mydeployment'" --protect --change-desc "Prod owns its replica count" set-replicas 5
+```
+
+Get the image attribute using `get-yq`:
+
+```
+cub function get --space $SPACE --where "Slug = 'mydeployment'" --show output get-yq '.spec.template.spec.containers[0].image'
 ```
 
 Get the replica counts of all units in a space:

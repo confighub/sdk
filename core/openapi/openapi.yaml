@@ -5330,7 +5330,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
           The whole string must be query-encoded.
         in: query
@@ -5493,7 +5495,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
           The whole string must be query-encoded.
         in: query
@@ -5651,7 +5655,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
           The whole string must be query-encoded.
         in: query
@@ -5725,13 +5731,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                Arguments:
-                  description: Function arguments
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 BridgeWorkerID:
                   description: ""
                   format: uuid
@@ -5749,10 +5748,13 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
-                FunctionName:
-                  description: Function name
+                FunctionInvocations:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
                   nullable: true
-                  type: string
+                  type: array
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -5769,11 +5771,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                Params:
-                  description: Caller-supplied parameter values for expanding templated
-                    argument Values; transient, not persisted
-                  nullable: true
-                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -5787,12 +5784,6 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
-                WhereResource:
-                  description: Per-invocation resource filter. AND-combined with the
-                    request-level WhereResource. Same path syntax as the request-level
-                    field (see ParseAndValidateWhereResource).
-                  nullable: true
-                  type: string
               type: object
       responses:
         "200":
@@ -5893,7 +5884,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
           The whole string must be query-encoded.
         in: query
@@ -6055,13 +6048,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                Arguments:
-                  description: Function arguments
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 BridgeWorkerID:
                   description: ""
                   format: uuid
@@ -6079,10 +6065,13 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
-                FunctionName:
-                  description: Function name
+                FunctionInvocations:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
                   nullable: true
-                  type: string
+                  type: array
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -6099,11 +6088,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                Params:
-                  description: Caller-supplied parameter values for expanding templated
-                    argument Values; transient, not persisted
-                  nullable: true
-                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -6117,12 +6101,6 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
-                WhereResource:
-                  description: Per-invocation resource filter. AND-combined with the
-                    request-level WhereResource. Same path syntax as the request-level
-                    field (see ParseAndValidateWhereResource).
-                  nullable: true
-                  type: string
               type: object
       responses:
         "200":
@@ -13237,7 +13215,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 
           The whole string must be query-encoded.
         in: query
@@ -13387,7 +13367,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+          description: Defines a stored, reusable call to one or more functions, executed
+            in the order they are listed.
         "400":
           content:
             application/json:
@@ -13634,13 +13615,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                Arguments:
-                  description: Function arguments
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 BridgeWorkerID:
                   description: ""
                   format: uuid
@@ -13658,10 +13632,13 @@ paths:
                   description: Friendly name for the entity.
                   nullable: true
                   type: string
-                FunctionName:
-                  description: Function name
+                FunctionInvocations:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
                   nullable: true
-                  type: string
+                  type: array
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -13678,11 +13655,6 @@ paths:
                     type: object
                   nullable: true
                   type: array
-                Params:
-                  description: Caller-supplied parameter values for expanding templated
-                    argument Values; transient, not persisted
-                  nullable: true
-                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
                   nullable: true
@@ -13696,12 +13668,6 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
-                WhereResource:
-                  description: Per-invocation resource filter. AND-combined with the
-                    request-level WhereResource. Same path syntax as the request-level
-                    field (see ParseAndValidateWhereResource).
-                  nullable: true
-                  type: string
               type: object
       responses:
         "200":
@@ -13709,7 +13675,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+          description: Defines a stored, reusable call to one or more functions, executed
+            in the order they are listed.
         "400":
           content:
             application/json:
@@ -13784,7 +13751,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Invocation'
-          description: Defines a function invocation.
+          description: Defines a stored, reusable call to one or more functions, executed
+            in the order they are listed.
         "400":
           content:
             application/json:
@@ -28752,7 +28720,8 @@ components:
           x-go-type-skip-optional-pointer: true
       type: object
     Invocation:
-      description: Defines a function invocation.
+      description: Defines a stored, reusable call to one or more functions, executed
+        in the order they are listed.
       properties:
         Annotations:
           additionalProperties:
@@ -28763,15 +28732,8 @@ components:
             attach information to entities.
           type: object
           x-go-type-skip-optional-pointer: true
-        Arguments:
-          description: Function arguments
-          items:
-            $ref: '#/components/schemas/FunctionArgument'
-          nullable: true
-          type: array
-          x-go-type-skip-optional-pointer: true
         BridgeWorkerID:
-          description: Unique identifier for a Bridge Worker to execute the function
+          description: Unique identifier for a Bridge Worker to execute the functions
             specified by the Invocation. If unspecified, use the builtin function
             executor.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -28807,12 +28769,11 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        FunctionName:
-          description: Function name
-          type: string
-          x-go-type-skip-optional-pointer: true
+        FunctionInvocations:
+          $ref: '#/components/schemas/FunctionInvocationList'
         Hash:
-          description: SHA256 hash of the function name and arguments encoded as hexadecimal.
+          description: SHA256 hash of the functions and their arguments encoded as
+            hexadecimal.
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
@@ -28842,12 +28803,6 @@ components:
           items:
             $ref: '#/components/schemas/FunctionParameter'
           type: array
-          x-go-type-skip-optional-pointer: true
-        Params:
-          additionalProperties: {}
-          description: Caller-supplied parameter values for expanding templated argument
-            Values; transient, not persisted
-          type: object
           x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
@@ -28890,14 +28845,10 @@ components:
           readOnly: false
           type: integer
           x-go-type-skip-optional-pointer: true
-        WhereResource:
-          description: Per-invocation resource filter. AND-combined with the request-level
-            WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
-          type: string
-          x-go-type-skip-optional-pointer: true
       required:
       - Slug
       - ToolchainType
+      - FunctionInvocations
       type: object
     InvocationCreateOrUpdateResponse:
       properties:

@@ -845,7 +845,7 @@ type ExtendedInvocation struct {
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Invocation Defines a function invocation.
+	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
@@ -903,7 +903,7 @@ type ExtendedLink struct {
 	// new variants of a configuration.
 	ToUnit *Unit `json:"ToUnit,omitempty" yaml:"ToUnit,omitempty"`
 
-	// TransformInvocation Defines a function invocation.
+	// TransformInvocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	TransformInvocation *Invocation `json:"TransformInvocation,omitempty" yaml:"TransformInvocation,omitempty"`
 }
 
@@ -911,7 +911,7 @@ type ExtendedLink struct {
 type ExtendedMutation struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Invocation Defines a function invocation.
+	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
@@ -1157,7 +1157,7 @@ type ExtendedTrigger struct {
 	BridgeWorker *BridgeWorker  `json:"BridgeWorker,omitempty" yaml:"BridgeWorker,omitempty"`
 	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Invocation Defines a function invocation.
+	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
@@ -1573,15 +1573,12 @@ type FunctionWorkerInfo struct {
 	ToolchainTypes []string `json:"ToolchainTypes" yaml:"ToolchainTypes"`
 }
 
-// Invocation Defines a function invocation.
+// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 type Invocation struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
-	// Arguments Function arguments
-	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
-
-	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor.
+	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If unspecified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -1597,12 +1594,10 @@ type Invocation struct {
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
 	// EntityType The type of entity.
-	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	EntityType          string                  `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	FunctionInvocations *FunctionInvocationList `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
-	// FunctionName Function name
-	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-
-	// Hash SHA256 hash of the function name and arguments encoded as hexadecimal.
+	// Hash SHA256 hash of the functions and their arguments encoded as hexadecimal.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
 	// InvocationID InvocationID uniquely identifies a invocation within the system.
@@ -1614,9 +1609,6 @@ type Invocation struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1636,16 +1628,13 @@ type Invocation struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-
-	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
-	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 }
 
 // InvocationCreateOrUpdateResponse defines model for InvocationCreateOrUpdateResponse.
 type InvocationCreateOrUpdateResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Invocation Defines a function invocation.
+	// Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 	Invocation *Invocation `json:"Invocation,omitempty" yaml:"Invocation,omitempty"`
 }
 
@@ -6122,7 +6111,9 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6200,7 +6191,9 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6258,27 +6251,19 @@ type ListAllInvocationsParams struct {
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
 type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-
-	// Arguments Function arguments
-	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-
-	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
+	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
 	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -6286,9 +6271,6 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
-
-	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
-	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkPatchInvocationsParams defines parameters for BulkPatchInvocations.
@@ -6324,7 +6306,9 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6372,27 +6356,19 @@ type BulkPatchInvocationsParams struct {
 // BulkCreateInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateInvocations.
 type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-
-	// Arguments Function arguments
-	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-
-	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
+	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
 	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -6400,9 +6376,6 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
-
-	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
-	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // BulkCreateInvocationsParams defines parameters for BulkCreateInvocations.
@@ -6438,7 +6411,9 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8572,7 +8547,9 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+	//
+	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8658,27 +8635,19 @@ type GetInvocationParams struct {
 // PatchInvocationApplicationMergePatchPlusJSONBody defines parameters for PatchInvocation.
 type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-
-	// Arguments Function arguments
-	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
-	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Annotations    *map[string]*string `json:"Annotations" yaml:"Annotations"`
+	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
-
-	// FunctionName Function name
-	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
+	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
 	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params *map[string]interface{} `json:"Params" yaml:"Params"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -8686,9 +8655,6 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
-
-	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
-	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 }
 
 // ListLinksParams defines parameters for ListLinks.

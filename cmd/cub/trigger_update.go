@@ -37,7 +37,7 @@ Update multiple triggers at once based on search criteria. Requires --patch flag
 Examples:
 `+"```"+`
   # Disable all triggers for a specific function
-  cub trigger update --patch --where "FunctionName = 'cel-validate'" --disable
+  cub trigger update --patch --where "FunctionName = 'vet-cel'" --disable
 
   # Enable all disabled triggers
   cub trigger update --patch --where "Disabled = true" --enable

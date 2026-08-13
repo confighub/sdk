@@ -4824,7 +4824,9 @@ export type BulkDeleteInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    
+    The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4898,7 +4900,9 @@ export type ListAllInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    
+    The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4983,7 +4987,9 @@ export type BulkPatchInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    
+    The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5028,8 +5034,6 @@ export type BulkPatchInvocationsApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
-    /** Function arguments */
-    Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
@@ -5037,22 +5041,17 @@ export type BulkPatchInvocationsApiArg = {
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    /** Function name */
-    FunctionName?: string | null;
+    FunctionInvocations?: (object | null)[] | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
     } | null;
     Parameters?: (object | null)[] | null;
-    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
-    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-    WhereResource?: string | null;
   };
 };
 export type BulkCreateInvocationsApiResponse = /** status 200 OK */
@@ -5090,7 +5089,9 @@ export type BulkCreateInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    
+    The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5192,8 +5193,6 @@ export type BulkCreateInvocationsApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
-    /** Function arguments */
-    Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
@@ -5201,22 +5200,17 @@ export type BulkCreateInvocationsApiArg = {
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    /** Function name */
-    FunctionName?: string | null;
+    FunctionInvocations?: (object | null)[] | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
     } | null;
     Parameters?: (object | null)[] | null;
-    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
-    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-    WhereResource?: string | null;
   };
 };
 export type BulkDeleteLinksApiResponse = /** status 200 OK */
@@ -7437,7 +7431,9 @@ export type ListInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionName, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt.
+    
+    The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7488,7 +7484,7 @@ export type ListInvocationsApiArg = {
   select?: string;
 };
 export type CreateInvocationApiResponse =
-  /** status 200 Defines a function invocation. */ InvocationRead;
+  /** status 200 Defines a stored, reusable call to one or more functions, executed in the order they are listed. */ InvocationRead;
 export type CreateInvocationApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7529,7 +7525,7 @@ export type GetInvocationApiArg = {
   invocationId: string;
 };
 export type PatchInvocationApiResponse =
-  /** status 200 Defines a function invocation. */ InvocationRead;
+  /** status 200 Defines a stored, reusable call to one or more functions, executed in the order they are listed. */ InvocationRead;
 export type PatchInvocationApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7540,8 +7536,6 @@ export type PatchInvocationApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
-    /** Function arguments */
-    Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
@@ -7549,26 +7543,21 @@ export type PatchInvocationApiArg = {
     } | null;
     /** Friendly name for the entity. */
     DisplayName?: string | null;
-    /** Function name */
-    FunctionName?: string | null;
+    FunctionInvocations?: (object | null)[] | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
     } | null;
     Parameters?: (object | null)[] | null;
-    /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-    Params?: object | null;
     /** Unique URL-safe identifier for the entity. */
     Slug?: string | null;
     ToolchainType?: string | null;
     /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
     Version?: number | null;
-    /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-    WhereResource?: string | null;
   };
 };
 export type UpdateInvocationApiResponse =
-  /** status 200 Defines a function invocation. */ InvocationRead;
+  /** status 200 Defines a stored, reusable call to one or more functions, executed in the order they are listed. */ InvocationRead;
 export type UpdateInvocationApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -13709,9 +13698,7 @@ export type Invocation = {
   Annotations?: {
     [key: string]: string;
   };
-  /** Function arguments */
-  Arguments?: FunctionArgument[] | null;
-  /** Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor. */
+  /** Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If unspecified, use the builtin function executor. */
   BridgeWorkerID?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
@@ -13719,8 +13706,7 @@ export type Invocation = {
   };
   /** Friendly name for the entity. */
   DisplayName?: string;
-  /** Function name */
-  FunctionName?: string;
+  FunctionInvocations: FunctionInvocationList;
   /** InvocationID uniquely identifies a invocation within the system. */
   InvocationID?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -13730,10 +13716,6 @@ export type Invocation = {
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Parameters?: FunctionParameter[];
-  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-  Params?: {
-    [key: string]: any;
-  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13743,17 +13725,13 @@ export type Invocation = {
   ToolchainType: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
-  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-  WhereResource?: string;
 };
 export type InvocationRead = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
     [key: string]: string;
   };
-  /** Function arguments */
-  Arguments?: FunctionArgument[] | null;
-  /** Unique identifier for a Bridge Worker to execute the function specified by the Invocation. If unspecified, use the builtin function executor. */
+  /** Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If unspecified, use the builtin function executor. */
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
@@ -13767,9 +13745,8 @@ export type InvocationRead = {
   DisplayName?: string;
   /** The type of entity. */
   EntityType?: string;
-  /** Function name */
-  FunctionName?: string;
-  /** SHA256 hash of the function name and arguments encoded as hexadecimal. */
+  FunctionInvocations: FunctionInvocationList;
+  /** SHA256 hash of the functions and their arguments encoded as hexadecimal. */
   Hash?: string;
   /** InvocationID uniquely identifies a invocation within the system. */
   InvocationID?: string;
@@ -13780,10 +13757,6 @@ export type InvocationRead = {
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   Parameters?: FunctionParameter[];
-  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-  Params?: {
-    [key: string]: any;
-  };
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */
@@ -13797,8 +13770,6 @@ export type InvocationRead = {
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
   Version?: number;
-  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-  WhereResource?: string;
 };
 export type ExtendedInvocation = {
   BridgeWorker?: BridgeWorker;

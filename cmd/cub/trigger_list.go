@@ -42,7 +42,10 @@ Examples:
   cub trigger list --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
 
   # List triggers using a specific function
-  cub trigger list --space my-space --where "FunctionName = 'cel-validate'"
+  cub trigger list --space my-space --where "FunctionName = 'vet-cel'"
+
+  # Find triggers still using a deprecated function
+  cub trigger list --space "*" --where "FunctionName = 'cel-validate'"
 
   # List disabled triggers across all spaces
   cub trigger list --space "*" --where "Disabled = true"

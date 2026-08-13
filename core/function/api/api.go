@@ -81,6 +81,10 @@ const FunctionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
 // TODO: Validate these
 const MaxFunctionNameLength = 128
 const MaxNumFunctionArguments = 32
+
+// MaxNumFunctionInvocations bounds a stored list of function invocations, such as an
+// Invocation's FunctionInvocations.
+const MaxNumFunctionInvocations = 32
 const MaxFunctionParameterNameLength = 128
 const MaxFunctionDescriptionLength = 1024
 

@@ -15,7 +15,7 @@ import (
 )
 
 var invocationCreateCmd = &cobra.Command{
-	Use:         "create [<slug> <toolchain type> <function> [<arg1> ...]]",
+	Use:         "create [<slug> <toolchain type> [<function> [<arg1> ...]]]",
 	Short:       "Create a new invocation or bulk create invocations",
 	Long:        getInvocationCreateHelp(),
 	Args:        cobra.MinimumNArgs(0), // Allow 0 args for bulk mode
@@ -44,7 +44,7 @@ Toolchain Types:
 
 Example Functions:
 
-  - vet-celexpr: Validate resources using CEL expressions
+  - vet-cel: Validate resources using CEL expressions
   - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
   - set-default-names: Set default names for resources
@@ -54,6 +54,11 @@ Example Functions:
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
 
+An Invocation can call several functions, which are executed in the order they are listed.
+The positional form creates an Invocation that calls one function; to create one that calls
+several, supply the FunctionInvocations list with --from-stdin or --filename and omit the
+function positional arguments.
+
 BULK INVOCATION CREATION:
 
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
@@ -62,10 +67,10 @@ invocations based on filters and creates multiple new invocations with optional 
 Single Invocation Examples:
 ` + "```" + `
   # Create an invocation to validate replicas > 1 for Deployments
-  cub invocation create --space my-space -o json replicated Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub invocation create --space my-space -o json replicated Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create an invocation to enforce low resource usage (replicas < 10)
-  cub invocation create --space my-space -o json lowcost Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub invocation create --space my-space -o json lowcost Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create an invocation to ensure no placeholders exist in resources
   cub invocation create --space my-space -o json complete Kubernetes/YAML vet-placeholders
@@ -78,12 +83,18 @@ Single Invocation Examples:
 
   # Using named arguments for clarity (note the "--" separator)
   cub invocation create --space my-space -o json stamp Kubernetes/YAML -- set-annotation --key=cloned --value=true
+
+  # Create an invocation that calls several functions in order
+  echo '{"FunctionInvocations": [
+           {"FunctionName": "set-default-names"},
+           {"FunctionName": "set-annotation", "Arguments": [{"Value": "cloned"}, {"Value": "true"}]}
+         ]}' | cub invocation create --space my-space --from-stdin stamp-and-name Kubernetes/YAML
 ` + "```" + `
 
 Bulk Create Examples:
 ` + "```" + `
   # Clone all invocations matching a pattern with name prefixes
-  cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix dev-,staging- --dest-space dev-space
+  cub invocation create --where "FunctionInvocations.*.FunctionName = 'vet-cel'" --name-prefix dev-,staging- --dest-space dev-space
 
   # Clone specific invocations to multiple spaces
   cub invocation create --invocation my-invocation --dest-space dev-space,staging-space
@@ -92,7 +103,7 @@ Bulk Create Examples:
   cub invocation create --where "ToolchainType = 'Kubernetes/YAML'" --where-space "Labels.Environment IN ('dev', 'staging')"
 
   # Clone invocations with modifications via JSON patch
-  echo '{"FunctionName": "vet-placeholders"}' | cub invocation create --where "FunctionName = 'vet-celexpr'" --name-prefix v2- --from-stdin
+  echo '{"FunctionInvocations": [{"FunctionName": "vet-placeholders"}]}' | cub invocation create --where "FunctionInvocations.*.FunctionName = 'vet-cel'" --name-prefix v2- --from-stdin
 ` + "```" + `
 `
 
@@ -160,9 +171,15 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--variant-labels needs to be set when using --name-pattern")
 		}
 	} else {
-		// Single create mode validation
-		if len(args) < 3 {
-			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...]")
+		// Single create mode validation. The function positional argument is required unless
+		// the body supplies the function list, which is how a multi-function Invocation is
+		// created.
+		minArgs := 3
+		if flagPopulateModelFromStdin || flagFilename != "" {
+			minArgs = 2
+		}
+		if len(args) < minArgs {
+			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with FunctionInvocations supplied by --from-stdin or --filename")
 		}
 
 		if filter != "" || where != "" ||
@@ -248,15 +265,23 @@ func runSingleInvocationCreate(args []string) error {
 	}
 
 	newBody.ToolchainType = args[1]
-	newBody.FunctionName = args[2]
-	invokeArgs := args[3:]
-	newArgs := parseFunctionArguments(invokeArgs)
-	newBody.Arguments = newArgs
+	if len(args) > 2 {
+		// A named function replaces whatever the body supplied: the positional form is the
+		// one-function form.
+		newBody.FunctionInvocations = &goclientnew.FunctionInvocationList{{
+			FunctionName: args[2],
+			Arguments:    parseFunctionArguments(args[3:]),
+		}}
+	}
 	declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
 	if err != nil {
 		return err
 	}
-	newBody.Parameters = declaredParams
+	if len(declaredParams) > 0 {
+		// --parameter declares the whole parameter namespace. Without it, keep whatever the
+		// body supplied, so a Parameters list read from stdin or a file survives.
+		newBody.Parameters = declaredParams
+	}
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateInvocationParams{}
 	if allowExists {

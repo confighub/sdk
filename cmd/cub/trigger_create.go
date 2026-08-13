@@ -51,9 +51,11 @@ Toolchain Types:
 
 Example Functions:
 
-  - vet-celexpr: Validate resources using CEL expressions
+  - vet-cel: Validate resources using CEL expressions
   - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
+  - vet-schemas: Validate resources against their OpenAPI schemas
+  - vet-no-merge-conflicts: Fail while a merge has changes still withheld on the unit
   - set-default-names: Set default names for cloned resources
   - set-annotation: Set annotations on resources
   - ensure-context: Ensure context annotations are present
@@ -69,10 +71,10 @@ triggers based on filters and creates multiple new triggers with optional modifi
 Single Trigger Examples:
 ` + "```" + `
   # Create a trigger to validate replicas > 1 for Deployments
-  cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1'
+  cub trigger create --space my-space --json replicated Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1'
 
   # Create a trigger to enforce low resource usage (replicas < 10)
-  cub trigger create --space my-space --json lowcost Mutation Kubernetes/YAML vet-celexpr 'r.kind != "Deployment" || r.spec.replicas < 10'
+  cub trigger create --space my-space --json lowcost Mutation Kubernetes/YAML vet-cel 'r.kind != "Deployment" || r.spec.replicas < 10'
 
   # Create a trigger to ensure no placeholders exist in resources
   cub trigger create --space my-space --json complete Mutation Kubernetes/YAML vet-placeholders
@@ -108,7 +110,7 @@ Bulk Create Examples:
   echo '{"Disabled": false}' | cub trigger create --where "Event = 'Mutation'" --name-prefix active- --from-stdin
 
   # Clone triggers matching specific criteria
-  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'vet-celexpr'" --name-prefix v2-
+  cub trigger create --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName = 'vet-cel'" --name-prefix v2-
 ` + "```" + `
 `
 

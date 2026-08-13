@@ -22,8 +22,17 @@ Only functions whose signature has Mutating=true are accepted; non-mutating
 functions are rejected. For inspection use 'cub function get'; for validation
 use 'cub function vet'.
 
+A missing set- prefix is supplied, so 'cub function set replicas 3' invokes
+set-replicas.
+
+Pass --change-desc to record why the change was made; it becomes the new
+revision's description. Pass --protect to record the paths this change writes as
+protected local overrides, so a later merge from upstream does not overwrite
+them -- leave it off when applying a value decided elsewhere, such as
+propagating a release.
+
 Common idioms:
-  cub function set --dry-run -o mutations set-image nginx nginx:1.25
+  cub function set --dry-run -o mutations set-container-image nginx nginx:1.25
   cub function set --show data set-replicas 3`
 
 func init() {

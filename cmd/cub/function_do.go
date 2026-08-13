@@ -25,11 +25,14 @@ var functionDoCmd = &cobra.Command{
 }
 
 func getFunctionDoHelp() string {
-	baseHelp := `Invoke a function on units in a space, or across all spaces if the selected space is "*". 
+	baseHelp := `Invoke a function on units in a space, or across all spaces if the selected space is "*".
 
-Functions can be used to modify, validate, or inspect unit configurations. Use cub function set,
-cub function vet, or cub function get to validate that the invoked functions perform the desired type
-of operation.
+This is the mixed escape hatch: it accepts any kind of function. Prefer the
+verb that matches the kind -- cub function set for mutating functions, cub
+function get for non-mutating ones, cub function vet for validating ones. Those
+reject a function of the wrong kind before invoking anything, so a misremembered
+name is an error rather than an unintended write. Reach for do only when a
+single command must invoke functions of more than one kind.
 
 Function argument values may be simply listed in order so long as no optional parameters are skipped.
 Parameters may be specified out of order using the "--parameter-name=value" syntax.  These are not cub
@@ -52,6 +55,7 @@ Example Functions:
   - set-int-path: Set an integer value at a specific path in the configuration
   - get-replicas: Get the number of replicas for deployments
   - set-replicas: Set the number of replicas for deployments
+  - get-yq: Read a value with a yq expression
   - where-filter: Filter units based on a condition
   - vet-cel: Validate resources using CEL expressions
 
@@ -64,12 +68,13 @@ Examples:
     set-container-image nginx nginx:mainline-otel \
     --wait
 
-  # Use yq function to get container image from a deployment
+  # Read the container image with get-yq. Non-mutating, so cub function get
+  # would be the better verb; do accepts it too.
   cub function do \
     --space my-space \
     --where "Slug = 'my-deployment'" \
     --show output \
-    yq '.spec.template.spec.containers[0].image'
+    get-yq '.spec.template.spec.containers[0].image'
 
   # Use set-int-path to update replica count for a deployment
   # There's also set-replicas function to do the same
@@ -95,7 +100,7 @@ Examples:
 
   # Validate deployment replicas using CEL
   cub function do --space my-space \
-    vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1' \
+    vet-cel 'r.kind != "Deployment" || r.spec.replicas > 1' \
     --quiet \
     --show output -o jq='. as $e | .Output[] | select(.Passed == true) | {space: $e.SpaceSlug, unit: $e.UnitSlug}'
 ` + "```" + `
@@ -108,25 +113,35 @@ Prerequisites:
 - Space context: Set with 'cub context set --space SPACE_SLUG' or use --space flag
 - Discovery: Use 'cub function list' to see available functions for each toolchain
 
-Common agent workflows:
+Common agent workflows. Each uses the verb for the function's kind rather than
+do, which is what an agent should emit unless one command must mix kinds:
 
 1. Inspect configuration before making changes:
-   cub function do --space SPACE --where "Slug = 'UNIT'" get-placeholders
-   cub function do --space SPACE --where "Slug = 'UNIT'" yq '.spec.replicas'
+   cub function get --space SPACE --unit UNIT get-placeholders
+   cub function get --space SPACE --unit UNIT get-yq '.spec.replicas'
 
 2. Modify configuration:
-   cub function do --space SPACE --where "Slug = 'UNIT'" set-container-image nginx nginx:1.25-alpine --wait
+   cub function set --space SPACE --unit UNIT -o mutations \
+     --change-desc "Bump nginx to 1.25-alpine" \
+     set-container-image nginx nginx:1.25-alpine --wait
 
 3. Validate after changes:
-   cub function do --space SPACE --where "Slug = 'UNIT'" vet-placeholders
-   cub function do --space SPACE --where "Slug = 'UNIT'" vet-celexpr 'r.spec.replicas > 0'
+   cub function vet --space SPACE --unit UNIT vet-placeholders
+   cub function vet --space SPACE --unit UNIT vet-cel 'r.spec.replicas > 0'
 
 Key flags for agents:
+- --unit: Target units by slug or UUID (repeatable or comma-separated); shorter
+  than --where "Slug = '...'" when the space is pinned
 - --where: Filter units (use quotes around expressions)
 - --space: Target space ("*" for all spaces where supported)
 - --show output: Show just function output, not execution details
 - --quiet: Suppress status messages
 - --wait: Wait for async triggers to complete
+- --change-desc: Record why a mutating invocation was made; it becomes the revision description
+- -o mutations: Show the per-path diff, with or without --dry-run
+- --protect: Record the paths written as protected local overrides that a later
+  merge from upstream must not overwrite. Leave it off when applying a value
+  decided elsewhere, such as propagating a release.
 
 Error handling:
 - Functions return Success: true/false in response
@@ -197,7 +212,7 @@ func init() {
 }
 
 // Resolved Trigger / Invocation entities from the most recent call to
-// newFunctionInvocationsRequest. validateFunctionKinds reads FunctionName off
+// newFunctionInvocationsRequest. validateFunctionKinds reads the function names off
 // these so vet/get/set don't have to re-fetch entities we already looked up
 // when building the request body.
 var (
@@ -262,7 +277,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
 			functionInvocationIdentifiers,
 			EntityTypeInvocation,
-			"InvocationID,FunctionName",
+			"InvocationID,FunctionInvocations",
 			apiGetInvocationFromSlugInSpace,
 			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
 		)
@@ -282,12 +297,12 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 
 	// Resolve a single parameterized Invocation (cub invocation get/set/vet),
 	// attaching the supplied parameter values. Resolved into resolvedInvocations
-	// too, so verb-scoped kind validation sees its FunctionName.
+	// too, so verb-scoped kind validation sees the functions it calls.
 	if parameterizedInvocationIdentifier != "" {
 		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
 			[]string{parameterizedInvocationIdentifier},
 			EntityTypeInvocation,
-			"InvocationID,FunctionName",
+			"InvocationID,FunctionInvocations",
 			apiGetInvocationFromSlugInSpace,
 			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
 		)

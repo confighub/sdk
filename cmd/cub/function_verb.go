@@ -120,9 +120,15 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 			names = append(names, t.FunctionName)
 		}
 	}
+	// An Invocation calls a list of functions, and the verb has to permit every one of them.
 	for _, inv := range resolvedInvocations {
-		if inv.FunctionName != "" {
-			names = append(names, inv.FunctionName)
+		if inv.FunctionInvocations == nil {
+			continue
+		}
+		for _, function := range *inv.FunctionInvocations {
+			if function.FunctionName != "" {
+				names = append(names, function.FunctionName)
+			}
 		}
 	}
 

@@ -34,8 +34,8 @@ flags, so specify "--" before the filename if using that syntax for function arg
 
 Examples:
 `+"```"+`
-  # Execute set-image function on local file
-  cub function local deployment.yaml set-image nginx nginx:1.25-alpine --toolchain Kubernetes/YAML
+  # Execute set-container-image function on local file
+  cub function local deployment.yaml set-container-image nginx nginx:1.25-alpine --toolchain Kubernetes/YAML
 
   # Execute yq function on local file to extract a field
   cub function local config.yaml yq '.spec.replicas' --toolchain Kubernetes/YAML

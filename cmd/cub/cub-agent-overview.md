@@ -155,7 +155,7 @@ The following constraints apply but are not expressible in pure EBNF:
 --where "LEN(ApprovedBy) > 0"
 
 # ApplyGates map access
---where "ApplyGates.low-cost/vet-celexpr = true"
+--where "ApplyGates.low-cost/vet-cel = true"
 
 # String pattern matching
 --where "Slug LIKE 'app-%'"
@@ -405,33 +405,52 @@ you are not familiar with, use `cub function explain FUNCTION_NAME`.
 
 ### Function Categories
 
-#### Inspection Functions (Read-only)
+The kind decides the verb. `cub function list` prints Mutating and Validating
+for every function, and marks deprecated names in their descriptions.
+
+#### Inspection Functions (Read-only) -- `cub function get`
 
 - `get-placeholders`: Find placeholder values ("confighubplaceholder" or 999999999) that need replacement
-- `get-image`: Extract container image information
-- `get-attributes`: List significant configuration attributes
+- `get-container-image CONTAINER_NAME`: Extract container image information
+- `get-container-image-reference CONTAINER_NAME`: Just the tag/digest portion
+- `get-replicas`: Replica counts for workloads
+- `get-attribute`: Read a registered attribute
 - `get-resources`: List all resources and their types
 - `get-needed`/`get-provided`: Show needs/provides relationships
-- `yq EXPRESSION`: Apply yq queries to YAML configuration
+- `get-yq EXPRESSION`: Apply yq queries to YAML configuration
 
-#### Modification Functions (Mutating)
+#### Modification Functions (Mutating) -- `cub function set`
 
-- `set-image CONTAINER_NAME IMAGE`: Update container images
-- `set-image-reference CONTAINER_NAME REFERENCE`: Update container tags (prefix the reference with `:`) and digests (prefix the reference with `@`)
+- `set-container-image CONTAINER_NAME IMAGE`: Update container images
+- `set-container-image-reference CONTAINER_NAME REFERENCE`: Update container tags (prefix the reference with `:`) and digests (prefix the reference with `@`)
+- `set-image-reference-by-uri REPOSITORY_URI REFERENCE`: Retag every image matching a repository URI, wherever it sits
 - `set-replicas COUNT`: Set replica counts for workloads
 - `set-namespace NAMESPACE`: Set namespace for resources
 - `set-annotation KEY VALUE`: Add/update annotations
 - `set-label KEY VALUE`: Add/update labels
 - `search-replace SEARCH REPLACE`: Text replacement across configuration
+- `set-yq EXPRESSION`: Apply an in-place yq expression; the escape hatch when no purpose-built setter fits
 - `ensure-context true|false`: Add/remove ConfigHub context metadata
+- Defaults family, all idempotent and parameterless: `set-container-resources-defaults`,
+  `set-container-probe-defaults`, `set-pod-container-security-context-defaults`,
+  `set-pod-security-defaults`, `ensure-namespaces`
 
-#### Validation Functions (Validating)
+#### Validation Functions (Validating) -- `cub function vet`
 
 - `vet-placeholders`: Verify no placeholder values remain
-- `vet-celexpr EXPRESSION`: Custom CEL validation expressions
+- `vet-schemas`: OpenAPI schema validation
+- `vet-cel EXPRESSION`: Custom CEL validation, with the Kubernetes CEL libraries and structured per-path failures
 - `vet-approvedby COUNT`: Check if sufficient approvals exist
-- `validate`: Schema validation
+- `vet-format`, `vet-merge-keys`: YAML hygiene and duplicate merge keys
+- `vet-no-merge-conflicts`: No merge left changes withheld on this unit
 - `where-filter RESOURCE_TYPE EXPRESSION`: Filter resources by criteria
+
+#### Deprecated aliases -- do not use in new work
+
+`yq` (use `get-yq`), `yq-i` (use `set-yq`), `set-image`/`get-image` (use
+`set-container-image`/`get-container-image`), `set-image-reference` (use
+`set-container-image-reference`), `cel-validate` (use `vet-cel`),
+`no-placeholders` (use `vet-placeholders`), `is-approved` (use `vet-approvedby`).
 
 ### Advanced Usage Patterns
 
@@ -439,8 +458,9 @@ you are not familiar with, use `cub function explain FUNCTION_NAME`.
 
 ```bash
 # Update images across multiple units across all spaces
-cub function set --space "*" --where "Labels.app = 'myapp'" \
-  set-image nginx nginx:1.25-alpine
+cub function set --space "*" --where "Labels.app = 'myapp'" -o mutations \
+  --change-desc "Retag nginx to 1.25-alpine" \
+  set-container-image nginx nginx:1.25-alpine
 
 # Find all units with placeholders across all spaces
 cub function get --space "*" --show values get-placeholders
@@ -481,37 +501,39 @@ cub trigger create --space SPACE_SLUG vet-placeholders Mutation \
 
 # Custom CEL validation. "r." refers to the current resource.
 cub trigger create --space SPACE_SLUG replicated Mutation \
-  "Kubernetes/YAML" vet-celexpr 'r.kind != "Deployment" || r.spec.template.spec.containers.all(container, container.securityContext.runAsNonRoot == true)'
+  "Kubernetes/YAML" vet-cel 'r.kind != "Deployment" || r.spec.template.spec.containers.all(container, container.securityContext.runAsNonRoot == true)'
 ```
 
 ## Function Selection Guide
 
+Every mutating invocation should carry `--change-desc` and `-o mutations`.
+
 ### To Find Issues in Configuration:
 
-1. **Check for placeholders**: `cub function do --space SPACE get-placeholders`
-2. **Validate schema**: `cub function do --space SPACE validate`
-3. **Custom validation**: `cub function do --space SPACE vet-celexpr 'YOUR_EXPRESSION'`
+1. **Check for placeholders**: `cub function get --space SPACE get-placeholders`
+2. **Validate schema**: `cub function vet --space SPACE vet-schemas`
+3. **Custom validation**: `cub function vet --space SPACE vet-cel 'YOUR_EXPRESSION'`
 
 ### To Modify Configuration:
 
-1. **Container images**: `cub function do --space SPACE set-image CONTAINER IMAGE`
-2. **Scaling**: `cub function do --space SPACE set-replicas COUNT`
-3. **Namespaces**: `cub function do --space SPACE set-namespace NAMESPACE`
-4. **Labels/Annotations**: `cub function do --space SPACE set-label KEY VALUE`
-5. **Text replacement**: `cub function do --space SPACE search-replace OLD NEW`
+1. **Container images**: `cub function set --space SPACE -o mutations --change-desc "..." set-container-image CONTAINER IMAGE`
+2. **Scaling**: `cub function set --space SPACE -o mutations --change-desc "..." set-replicas COUNT`
+3. **Namespaces**: `cub function set --space SPACE -o mutations --change-desc "..." set-namespace NAMESPACE`
+4. **Labels/Annotations**: `cub function set --space SPACE -o mutations --change-desc "..." set-label KEY VALUE`
+5. **Text replacement**: `cub function set --space SPACE -o mutations --change-desc "..." search-replace OLD NEW`
 
 ### To Inspect Configuration:
 
-1. **List resources**: `cub function do --space SPACE get-resources`
-2. **Extract values**: `cub function do --space SPACE yq '.spec.replicas'`
-3. **Get specific attributes**: `cub function do --space SPACE get-image CONTAINER`
-4. **Check dependencies**: `cub function do --space SPACE get-needed`
+1. **List resources**: `cub function get --space SPACE get-resources`
+2. **Extract values**: `cub function get --space SPACE get-yq '.spec.replicas'`
+3. **Get specific attributes**: `cub function get --space SPACE get-container-image CONTAINER`
+4. **Check dependencies**: `cub function get --space SPACE get-needed`
 
 ### To Validate Configuration:
 
-1. **No placeholders**: `cub function do --space SPACE vet-placeholders`
-2. **Approval status**: `cub function do --space SPACE vet-approvedby MIN_COUNT`
-3. **Resource filtering**: `cub function do --space SPACE where-filter RESOURCE_TYPE 'EXPRESSION'`
+1. **No placeholders**: `cub function vet --space SPACE vet-placeholders`
+2. **Approval status**: `cub function vet --space SPACE vet-approvedby MIN_COUNT`
+3. **Resource filtering**: `cub function vet --space SPACE where-filter RESOURCE_TYPE 'EXPRESSION'`
 
 ## Supported Configuration Formats
 
@@ -535,13 +557,14 @@ Functions are toolchain-specific, so ensure you're using the right function for 
 cub unit create --space myspace --verbose myapp app.yaml
 
 # Check for placeholders
-cub function do --space myspace --where "Slug = 'myapp'" get-placeholders
+cub function get --space myspace --unit myapp get-placeholders
 
 # Replace placeholders
-cub function do --space myspace --where "Slug = 'myapp'" set-namespace production
+cub function set --space myspace --unit myapp -o mutations \
+  --change-desc "Set namespace to production" set-namespace production
 
 # Validate configuration
-cub function do --space myspace --where "Slug = 'myapp'" vet-placeholders
+cub function vet --space myspace --unit myapp vet-placeholders
 ```
 
 ### 2. Updating Images Across Multiple Units
@@ -551,7 +574,8 @@ cub function do --space myspace --where "Slug = 'myapp'" vet-placeholders
 cub unit list --space myspace --where "Labels.app = 'myapp'"
 
 # Update all matching units
-cub function do --space myspace --where "Labels.app = 'myapp'" \
+cub function set --space myspace --where "Labels.app = 'myapp'" -o mutations \
+  --change-desc "Retag nginx to 1.25-alpine" \
   set-image-reference-by-uri nginx ":1.25-alpine"
 ```
 
@@ -562,7 +586,7 @@ cub function do --space myspace --where "Labels.app = 'myapp'" \
 cub unit get --space myspace myapp
 
 # Validate configuration
-cub function do --space myspace --where "Slug = 'myapp'" vet-schemas
+cub function vet --space myspace --unit myapp vet-schemas
 
 # Approve unit
 cub unit approve --space myspace myapp

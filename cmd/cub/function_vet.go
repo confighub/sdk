@@ -22,9 +22,15 @@ Only functions whose signature has Validating=true are accepted; others are
 rejected before invocation. Use 'cub function list' to see which functions
 are validating.
 
-For invoking non-mutating inspection functions (e.g. get-image), use
-'cub function get'. For mutating functions (e.g. set-image), use
-'cub function set'. 'cub function do' is the mixed escape hatch.`
+A missing vet- prefix is supplied, so 'cub function vet placeholders' invokes
+vet-placeholders.
+
+For invoking non-mutating inspection functions (e.g. get-container-image), use
+'cub function get'. For mutating functions (e.g. set-container-image), use
+'cub function set'. 'cub function do' is the mixed escape hatch.
+
+The same validating functions are what a Trigger runs to attach an ApplyGate;
+running one here is the ad hoc audit of the same check. See 'cub trigger create'.`
 
 func init() {
 	registerFunctionVerbFlags(functionVetCmd)

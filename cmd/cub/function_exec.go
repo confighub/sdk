@@ -29,14 +29,18 @@ To display usage details of a specific function, run:
 
 Example Functions:
 
-  - set-image: Update container image in a deployment
+  - set-container-image: Update container image in a deployment
   - set-int-path: Set an integer value at a specific path in the configuration
   - get-replicas: Get the number of replicas for deployments
   - set-replicas: Set the number of replicas for deployments
   - where-filter: Filter units based on a condition
-  - cel-validate: Validate resources using CEL expressions
+  - vet-cel: Validate resources using CEL expressions
 
 The syntax is the same as the cub function do command line, but without "cub function do" and without flags.
+
+Like do, exec accepts any kind of function and applies no kind restriction to the
+list, which is the point of it: one request can inspect, mutate, and validate. For
+a single invocation, prefer cub function get/set/vet.
 
 Example:
 `+"```"+`
@@ -46,7 +50,7 @@ Example:
 Where functions.txt contains:
 `+"```"+`
 set-replicas 3
-set-image nginx nginx:v234
+set-container-image nginx nginx:v234
 set-namespace myns
 `+"```"+`
 `, ""),

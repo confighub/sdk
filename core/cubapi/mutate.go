@@ -92,6 +92,35 @@ func Arguments(args []api.FunctionArgument) []goclientnew.FunctionArgument {
 	return out
 }
 
+// FunctionInvocations converts canonical function invocations into the generated
+// FunctionInvocationList, for the fields that hold one -- notably an Invocation's
+// FunctionInvocations, which names the functions it calls in the order they execute.
+func FunctionInvocations(invocations ...api.FunctionInvocation) *goclientnew.FunctionInvocationList {
+	out := make(goclientnew.FunctionInvocationList, 0, len(invocations))
+	for _, invocation := range invocations {
+		out = append(out, goclientnew.FunctionInvocation{
+			FunctionName:  invocation.FunctionName,
+			Arguments:     Arguments(invocation.Arguments),
+			WhereResource: invocation.WhereResource,
+		})
+	}
+	return &out
+}
+
+// InvocationFunctionNames names the functions an Invocation calls, in the order it executes
+// them. An Invocation usually calls one function, in which case this is just its name.
+func InvocationFunctionNames(invocation *goclientnew.Invocation) []string {
+	if invocation == nil || invocation.FunctionInvocations == nil {
+		return nil
+	}
+	functions := *invocation.FunctionInvocations
+	names := make([]string, 0, len(functions))
+	for _, function := range functions {
+		names = append(names, function.FunctionName)
+	}
+	return names
+}
+
 // UnitOutcome is the per-unit result of a mutation or function invocation.
 type UnitOutcome struct {
 	UnitID       string

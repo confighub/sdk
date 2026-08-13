@@ -22,8 +22,13 @@ Only functions whose signature has Mutating=false are accepted (includes both
 plain read-only and validating functions). Mutating functions are rejected;
 use 'cub function set' for those.
 
+A missing get- prefix is supplied, so 'cub function get replicas' invokes
+get-replicas.
+
 Default output is the Outputs section of each function response. Select other
-sections with --show: output (default), values, data.`
+sections with --show: output (default), values, data. --show values strips the
+per-unit envelope and emits the raw scalars from an AttributeValueList, which is
+usually what you want when reading one attribute across many units.`
 
 func init() {
 	registerFunctionVerbFlags(functionGetCmd)

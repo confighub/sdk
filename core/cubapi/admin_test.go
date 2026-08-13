@@ -97,10 +97,12 @@ func TestEnsureInvocationCarriesParametersAndTemplatedArgs(t *testing.T) {
 		SpaceID:       spaceID,
 		Slug:          "rbac-add-verb",
 		ToolchainType: "Kubernetes/YAML",
-		FunctionName:  "set-yq",
-		Arguments: Arguments([]api.FunctionArgument{
-			{ParameterName: "yq-expression", Value: "..."},
-			{ParameterName: "param", Value: "role={{ .Params.role }}", Evaluator: api.EvaluatorTemplate},
+		FunctionInvocations: FunctionInvocations(api.FunctionInvocation{
+			FunctionName: "set-yq",
+			Arguments: []api.FunctionArgument{
+				{ParameterName: "yq-expression", Value: "..."},
+				{ParameterName: "param", Value: "role={{ .Params.role }}", Evaluator: api.EvaluatorTemplate},
+			},
 		}),
 		Parameters: []goclientnew.FunctionParameter{{ParameterName: "role", DataType: "string", Required: true}},
 	})
@@ -112,8 +114,12 @@ func TestEnsureInvocationCarriesParametersAndTemplatedArgs(t *testing.T) {
 	if len(sent.Parameters) != 1 || sent.Parameters[0].ParameterName != "role" {
 		t.Fatalf("parameters = %+v", sent.Parameters)
 	}
-	if len(sent.Arguments) != 2 || sent.Arguments[1].Evaluator == nil || *sent.Arguments[1].Evaluator != api.EvaluatorTemplate {
-		t.Fatalf("arguments = %+v", sent.Arguments)
+	if sent.FunctionInvocations == nil || len(*sent.FunctionInvocations) != 1 {
+		t.Fatalf("function invocations = %+v", sent.FunctionInvocations)
+	}
+	args := (*sent.FunctionInvocations)[0].Arguments
+	if len(args) != 2 || args[1].Evaluator == nil || *args[1].Evaluator != api.EvaluatorTemplate {
+		t.Fatalf("arguments = %+v", args)
 	}
 }
 

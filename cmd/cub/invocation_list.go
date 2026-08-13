@@ -4,8 +4,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -23,7 +21,7 @@ Examples:
   cub invocation list --space my-space
 
   # List invocations across all spaces (requires --space "*")
-  cub invocation list --space "*" --where "FunctionName = 'cel-validate'"
+  cub invocation list --space "*" --where "FunctionName = 'vet-cel'"
 
   # List invocations without headers for scripting
   cub invocation list --space my-space --no-headers
@@ -37,8 +35,14 @@ Examples:
   # List invocations for a specific toolchain
   cub invocation list --space my-space --where "ToolchainType = 'Kubernetes/YAML'"
 
-  # List invocations using a specific function
-  cub invocation list --space my-space --where "FunctionName = 'cel-validate'"
+  # List invocations that call a specific function, anywhere in their function list
+  cub invocation list --space my-space --where "FunctionInvocations.*.FunctionName = 'vet-cel'"
+
+  # Find invocations still calling a deprecated function
+  cub invocation list --space "*" --where "FunctionInvocations.*.FunctionName = 'cel-validate'"
+
+  # Find invocations whose first function is set-image
+  cub invocation list --space my-space --where "FunctionInvocations.0.FunctionName = 'set-image'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),
@@ -47,7 +51,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Invocation.ToolchainType", "Invocation.FunctionName", "Invocation.Arguments"}
+var defaultInvocationColumns = []string{"Invocation.Slug", "Space.Slug", "BridgeWorker.Slug", "Invocation.ToolchainType", "Invocation.FunctionInvocations"}
 
 // invocationListInclude is the Include parameter for invocation list queries (the
 // related entities expanded into each ExtendedInvocation).
@@ -97,7 +101,7 @@ func getInvocationSlug(invocation *goclientnew.ExtendedInvocation) string {
 func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Worker", "Toolchain-Type", "Function-Name", "Num-Args"})
+		table.SetHeader([]string{"Name", "Space", "Worker", "Toolchain-Type", "Functions"})
 	}
 	for _, i := range invocations {
 		invocation := i.Invocation
@@ -116,8 +120,7 @@ func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
 			spaceSlug,
 			workerSlug,
 			invocation.ToolchainType,
-			invocation.FunctionName,
-			fmt.Sprintf("%d", len(invocation.Arguments)),
+			functionInvocationsSummary(invocation.FunctionInvocations),
 		})
 	}
 	table.Render()

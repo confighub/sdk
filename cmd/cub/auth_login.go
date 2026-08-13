@@ -129,6 +129,8 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	displayContextDetails(contextManager.ActiveContext())
 
 	// Preload builtin functions
+	// Don't use the default space in case it is not valid
+	selectedSpaceID = "*"
 	if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err != nil {
 		return err
 	}
@@ -610,8 +612,8 @@ func setSpaceContext() error {
 	// A wildcard ("*") or empty default space selects cross-space (org-level)
 	// operations by default; there is no space to resolve, so honor it directly.
 	if ctx.Settings.DefaultSpace == "*" || ctx.Settings.DefaultSpace == "" {
-		selectedSpaceID = ctx.Settings.DefaultSpace
-		selectedSpaceSlug = ctx.Settings.DefaultSpace
+		selectedSpaceID = "*"
+		selectedSpaceSlug = "*"
 		return nil
 	}
 
