@@ -11,11 +11,12 @@ import (
 )
 
 var functionExplainCmd = &cobra.Command{
-	Use:   "explain <function>",
-	Short: "Explain a function",
-	Long:  getFunctionExplainHelp(),
-	Args:  cobra.ExactArgs(1),
-	RunE:  functionExplainCmdRun,
+	Use:         "explain <function>",
+	Short:       "Explain a function",
+	Long:        getFunctionExplainHelp(),
+	Args:        cobra.ExactArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
+	RunE:        functionExplainCmdRun,
 }
 
 func getFunctionExplainHelp() string {

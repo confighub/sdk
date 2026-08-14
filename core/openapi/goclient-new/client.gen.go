@@ -15542,6 +15542,22 @@ func NewCreateUnitRequestWithBody(server string, spaceId openapi_types.UUID, par
 
 		}
 
+		if params.Syncback != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "syncback", runtime.ParamLocationQuery, *params.Syncback); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.MergeExternalSource != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "merge_external_source", runtime.ParamLocationQuery, *params.MergeExternalSource); err != nil {
@@ -20660,6 +20676,22 @@ func NewBulkCreateUnitsRequestWithBody(server string, params *BulkCreateUnitsPar
 		if params.UpstreamRevision != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "upstream_revision", runtime.ParamLocationQuery, *params.UpstreamRevision); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Syncback != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "syncback", runtime.ParamLocationQuery, *params.Syncback); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

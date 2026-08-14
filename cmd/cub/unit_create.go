@@ -73,6 +73,10 @@ Single Unit Examples:
   # Clone it as it stood before a change order, so a following upgrade replays the change into it
   cub unit create --space my-space myclone --upstream-unit sample-deployment \
       --upstream-revision Before:ChangeOrder:base-space/release-42
+
+  # Clone a unit as a draft to change and review, with a link back to merge the change home
+  cub unit create --space drafts mydraft --upstream-unit sample-deployment \
+      --upstream-space my-space --syncback
 ` + "```" + `
 
 Bulk Create Examples:
@@ -91,6 +95,9 @@ Bulk Create Examples:
 
   # Clone units with JSON patch modifications
   echo '{"DisplayName": "Updated Name"}' | cub unit create --where "Slug = 'myapp'" --name-prefix v2- --from-stdin
+
+  # Clone a space's units as drafts, each linked back to the unit it was cloned from
+  cub unit create --where "SpaceID = '<space-uuid>'" --dest-space drafts --syncback
 ` + "```" + `
 `
 
@@ -144,6 +151,7 @@ var unitCreateArgs struct {
 	changesetSlug       string
 	changeDescription   string
 	mergeExternalSource string
+	syncback            bool
 	// Bulk create specific flags
 	destSpaces    []string
 	whereSpace    string
@@ -172,6 +180,7 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.mergeExternalSource, "merge-external-source", "", "external source identifier (sets source type to MergeExternal)")
+	unitCreateCmd.Flags().BoolVar(&unitCreateArgs.syncback, "syncback", false, "also link each clone back to the unit it was cloned from, with a MergeUnits link in the upstream unit's space, so changes made in the clone can be merged home with \"cub unit update --patch --resolve\"; requires cloning (--upstream-unit in single mode)")
 	enableOptionFlag(unitCreateCmd)
 
 	// Bulk create specific flags
@@ -245,6 +254,10 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 		// Validate conflicting options
 		if unitCreateArgs.mergeExternalSource != "" && unitCreateArgs.upstreamUnitSlug != "" {
 			return false, errors.New("--merge-external-source and --upstream-unit are mutually exclusive")
+		}
+
+		if unitCreateArgs.syncback && unitCreateArgs.upstreamUnitSlug == "" {
+			return false, errors.New("--syncback requires --upstream-unit; it links the new unit back to the one it was cloned from")
 		}
 
 		// if 2nd arg is "-" (stdin for config), can't also read metadata from stdin
@@ -432,6 +445,9 @@ func runSingleUnitCreate(args []string) error {
 		}
 		newParams.UpstreamRevision = &upstreamRevision
 	}
+	if unitCreateArgs.syncback {
+		newParams.Syncback = &unitCreateArgs.syncback
+	}
 	if unitCreateArgs.mergeExternalSource != "" {
 		newParams.MergeExternalSource = &unitCreateArgs.mergeExternalSource
 	}
@@ -585,6 +601,10 @@ func runBulkUnitCreate() error {
 			return err
 		}
 		params.UpstreamRevision = &upstreamRevision
+	}
+
+	if unitCreateArgs.syncback {
+		params.Syncback = &unitCreateArgs.syncback
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space

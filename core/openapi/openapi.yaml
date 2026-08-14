@@ -43,6 +43,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -222,6 +225,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -463,6 +469,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -725,6 +734,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -888,6 +900,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1046,6 +1061,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1276,6 +1294,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1374,6 +1395,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1579,6 +1603,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1742,6 +1769,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -1870,6 +1900,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2100,6 +2133,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2372,6 +2408,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2535,6 +2574,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2693,6 +2735,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2915,6 +2960,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3028,6 +3076,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3225,6 +3276,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3388,6 +3442,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3546,6 +3603,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3759,6 +3819,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3872,6 +3935,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4060,6 +4126,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4223,6 +4292,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4394,6 +4466,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4619,6 +4694,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4730,6 +4808,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4937,6 +5018,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5081,6 +5165,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5319,6 +5406,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5484,6 +5574,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5644,6 +5737,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5873,6 +5969,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5988,6 +6087,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6190,6 +6292,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6355,6 +6460,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6512,6 +6620,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6816,6 +6927,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6882,6 +6996,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6924,6 +7041,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7467,6 +7587,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7922,6 +8045,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8264,6 +8390,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8422,6 +8551,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8639,6 +8771,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8703,7 +8838,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -8851,6 +8986,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9490,6 +9628,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10127,6 +10268,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10942,6 +11086,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11559,6 +11706,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12167,6 +12317,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12815,6 +12968,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12973,6 +13129,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -13204,6 +13363,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -13831,6 +13993,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -14542,6 +14707,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -15240,6 +15408,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -15842,6 +16013,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -16532,6 +16706,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -17231,6 +17408,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -17472,6 +17652,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Also create a MergeUnits Link from each upstream Unit back to
+          its clone, alongside the UpgradeUnit Link a clone always gets. The upgrade
+          Link carries changes from the upstream Unit into the clone; this one carries
+          them the other way, which is what makes a clone usable as a draft: change
+          it, review it, then resolve the Link (resolve=Link:...) on the upstream
+          Unit to merge the change home. A Unit may be the source of several of these
+          -- one per outstanding draft -- so each is named for the clone it takes
+          changes from (syncback-<space>-<unit>) rather than for the Unit they all
+          point at. The Link is created in the upstream Unit''s Space, which the caller
+          must be allowed to create Links in. Requires upstream_unit_id (or, in bulk,
+          a source Unit to clone).'
+        in: query
+        name: syncback
+        required: false
+        schema:
+          type: boolean
       - description: Identifier of the external source. Sets the source type to MergeExternal
           and appends the source name to the change description.
         in: query
@@ -17919,6 +18115,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -18352,6 +18551,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -18835,6 +19037,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -19185,6 +19390,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -19562,6 +19770,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -19626,7 +19837,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -19756,7 +19967,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -19979,6 +20190,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -20202,6 +20416,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -20491,6 +20708,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21111,6 +21331,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21274,6 +21497,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21431,6 +21657,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21635,6 +21864,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21747,6 +21979,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -21926,6 +22161,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -22089,6 +22327,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -22246,6 +22487,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -22519,6 +22763,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -22682,6 +22929,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -22839,6 +23089,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -23116,6 +23369,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -23213,6 +23469,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -23465,6 +23724,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -23637,6 +23899,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -23863,6 +24128,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24092,6 +24360,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24366,6 +24637,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24480,6 +24754,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24546,6 +24823,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24582,6 +24862,22 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Also create a MergeUnits Link from each upstream Unit back to
+          its clone, alongside the UpgradeUnit Link a clone always gets. The upgrade
+          Link carries changes from the upstream Unit into the clone; this one carries
+          them the other way, which is what makes a clone usable as a draft: change
+          it, review it, then resolve the Link (resolve=Link:...) on the upstream
+          Unit to merge the change home. A Unit may be the source of several of these
+          -- one per outstanding draft -- so each is named for the clone it takes
+          changes from (syncback-<space>-<unit>) rather than for the Unit they all
+          point at. The Link is created in the upstream Unit''s Space, which the caller
+          must be allowed to create Links in. Requires upstream_unit_id (or, in bulk,
+          a source Unit to clone).'
+        in: query
+        name: syncback
+        required: false
+        schema:
+          type: boolean
       requestBody:
         content:
           application/merge-patch+json:
@@ -24778,6 +25074,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -24947,6 +25246,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25113,6 +25415,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25279,6 +25584,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25415,6 +25723,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25598,6 +25909,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25787,6 +26101,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -25950,6 +26267,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -26107,6 +26427,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -26339,6 +26662,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -26451,6 +26777,9 @@ paths:
           Arrays support the `?` operator to to match any element of the array,
           as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
           Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
           Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
           Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
           as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -27981,12 +28310,22 @@ components:
       type: object
     ExtendedRevision:
       properties:
+        ChangeOrders:
+          items:
+            $ref: '#/components/schemas/ChangeOrder'
+          type: array
+          x-go-type-skip-optional-pointer: true
         ChangeSet:
           $ref: '#/components/schemas/ChangeSet'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        Releases:
+          items:
+            $ref: '#/components/schemas/Release'
+          type: array
+          x-go-type-skip-optional-pointer: true
         Revision:
           $ref: '#/components/schemas/Revision'
         Space:
@@ -30662,6 +31001,9 @@ components:
             Arrays support the `?` operator to to match any element of the array,
             as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
             Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+            An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+            as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+            Without the `*` such a reference is an error, since it names no single value to compare.
             Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
             Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
             as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -30700,6 +31042,9 @@ components:
             Arrays support the `?` operator to to match any element of the array,
             as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
             Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+            An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+            as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+            Without the `*` such a reference is an error, since it names no single value to compare.
             Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
             Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
             as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -31107,6 +31452,9 @@ components:
             Arrays support the `?` operator to to match any element of the array,
             as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
             Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+            An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+            as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+            Without the `*` such a reference is an error, since it names no single value to compare.
             Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
             Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
             as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).

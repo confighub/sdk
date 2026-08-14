@@ -667,7 +667,17 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 	case DataTypeUUID:
 		leftUUIDValue, ok := leftValue.(uuid.UUID)
 		if !ok {
-			return false, fmt.Errorf("internal error: expected uuid.UUID but got %T", leftValue)
+			// A nullable column arrives as a pointer. An absent one has no value to compare,
+			// so no comparison holds of it -- IS NULL and IS NOT NULL are what ask about its
+			// absence, and they are handled before this.
+			ptr, isPtr := leftValue.(*uuid.UUID)
+			if !isPtr {
+				return false, fmt.Errorf("internal error: expected uuid.UUID but got %T", leftValue)
+			}
+			if ptr == nil {
+				return false, nil
+			}
+			leftUUIDValue = *ptr
 		}
 		var rightUUIDValue uuid.UUID
 		switch rv := rightValue.(type) {
@@ -695,7 +705,15 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 	case DataTypeTime:
 		leftTimeValue, ok := leftValue.(time.Time)
 		if !ok {
-			return false, fmt.Errorf("internal error: expected time.Time but got %T", leftValue)
+			// Nullable the same way a UUID column is; see the DataTypeUUID case above.
+			ptr, isPtr := leftValue.(*time.Time)
+			if !isPtr {
+				return false, fmt.Errorf("internal error: expected time.Time but got %T", leftValue)
+			}
+			if ptr == nil {
+				return false, nil
+			}
+			leftTimeValue = *ptr
 		}
 		var rightTimeValue time.Time
 		if rightValue != nil {
@@ -1060,6 +1078,19 @@ func valueToStringWithReflection(value any) (string, error) {
 	if u, ok := value.(uuid.UUID); ok {
 		return u.String(), nil
 	}
+	// A time is a struct, which reflection cannot stringify either. RFC3339 with nanoseconds
+	// is how one is written when serialized, which is the form a literal takes.
+	if t, ok := value.(time.Time); ok {
+		return t.Format(time.RFC3339Nano), nil
+	}
+	// A nullable column arrives as a pointer to one of the above. A nil one has no text form,
+	// which the caller reports rather than guessing at an empty string.
+	if v := reflect.ValueOf(value); v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return "", fmt.Errorf("no value: %T is nil", value)
+		}
+		return valueToStringWithReflection(v.Elem().Interface())
+	}
 
 	// Use reflection to check if the underlying type is string
 	v := reflect.ValueOf(value)
@@ -1087,6 +1118,13 @@ func valueToStringWithReflection(value any) (string, error) {
 
 // evaluateInExpression evaluates IN and NOT IN expressions against any value type
 func evaluateInExpression(operator string, value any, inValues []string) (bool, error) {
+	// A nullable column arrives as a pointer, and an absent one is in no list and out of every
+	// one -- the same answer SQL gives, where NULL IN (...) is unknown and so matches neither
+	// IN nor NOT IN.
+	if v := reflect.ValueOf(value); v.Kind() == reflect.Ptr && v.IsNil() {
+		return false, nil
+	}
+
 	// Convert the value to string for comparison
 	valueStr, err := valueToString(value)
 	if err != nil {
@@ -1126,14 +1164,36 @@ func evaluateUUIDExpression(operator string, leftValue uuid.UUID, rightValue uui
 	}
 }
 
+// timeLiteralLayouts are the forms a time literal may take, most complete first.
+//
+// A time is written the way it serializes as JSON, which is RFC 3339 -- but the documented
+// example, `CreatedAt > '2025-02-18T23:16:34'`, carries no zone, and a date alone is the form
+// anyone reaches for when the time of day does not matter. Postgres accepts all three, so the
+// SQL path always has; these are here so the in-memory path agrees with it rather than
+// rejecting what the docs tell people to write. A literal without a zone is read as UTC, which
+// is what the server stores.
+var timeLiteralLayouts = []string{
+	time.RFC3339Nano,
+	time.RFC3339,
+	"2006-01-02T15:04:05",
+	"2006-01-02 15:04:05",
+	"2006-01-02",
+}
+
 func parseTimeLiteral(literal string) (time.Time, error) {
 	// Parse literal as time string (remove quotes if present)
 	literalStr := strings.Trim(literal, "'")
-	literalTime, err := time.Parse(time.RFC3339, literalStr)
-	if err != nil {
-		return literalTime, errors.Wrap(err, "invalid time literal")
+	for _, layout := range timeLiteralLayouts {
+		literalTime, err := time.Parse(layout, literalStr)
+		if err == nil {
+			return literalTime, nil
+		}
 	}
-	return literalTime, nil
+	// Naming the forms rather than reporting whichever layout was tried last, which describes
+	// the parser's search order and not what the reader should have written.
+	return time.Time{}, errors.Errorf(
+		"invalid time literal %q: expected a date such as '2025-02-18', or a time such as '2025-02-18T23:16:34' or '2025-02-18T23:16:34Z'",
+		literalStr)
 }
 
 // evaluateTimeExpression evaluates time relational expressions

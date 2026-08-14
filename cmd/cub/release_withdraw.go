@@ -12,9 +12,10 @@ import (
 )
 
 var releaseWithdrawCmd = &cobra.Command{
-	Use:   "withdraw <release-id>",
-	Short: "Withdraw a release",
-	Args:  cobra.ExactArgs(1),
+	Use:         "withdraw <release-id>",
+	Short:       "Withdraw a release",
+	Args:        cobra.ExactArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Withdraw a release, identified by its globally-unique release ID.
 
 Withdrawal takes the release out of service: it is no longer published for download,

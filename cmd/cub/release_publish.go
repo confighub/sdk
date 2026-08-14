@@ -10,9 +10,10 @@ import (
 )
 
 var releasePublishCmd = &cobra.Command{
-	Use:   "publish <space-slug>",
-	Short: "Publish a release",
-	Args:  cobra.ExactArgs(1),
+	Use:         "publish <space-slug>",
+	Short:       "Publish a release",
+	Args:        cobra.ExactArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Publish a Release for the Space's release Target, bundling the Units in <space-slug> that are assigned to that Target.
 
 <space-slug> is the Space whose Units are bundled (and becomes the Release's

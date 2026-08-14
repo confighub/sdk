@@ -1028,12 +1028,15 @@ type ExtendedResource struct {
 
 // ExtendedRevision defines model for ExtendedRevision.
 type ExtendedRevision struct {
+	ChangeOrders []ChangeOrder `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
+
 	// ChangeSet Defines an entity changeset.
 	ChangeSet *ChangeSet     `json:"ChangeSet,omitempty" yaml:"ChangeSet,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+	Releases     []Release     `json:"Releases,omitempty" yaml:"Releases,omitempty"`
 
 	// Revision Revision is a historial view of a Config Unit.
 	Revision *Revision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
@@ -2561,6 +2564,9 @@ type Space struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2597,6 +2603,9 @@ type Space struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -2819,6 +2828,9 @@ type Target struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3578,6 +3590,9 @@ type BulkDeleteSpacesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3689,6 +3704,9 @@ type BulkPatchSpacesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3797,6 +3815,9 @@ type BulkCreateSpacesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3887,6 +3908,9 @@ type BulkDeleteAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -3965,6 +3989,9 @@ type ListAllAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4079,6 +4106,9 @@ type BulkPatchAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4183,6 +4213,9 @@ type BulkCreateAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4261,6 +4294,9 @@ type BulkCreateAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4318,6 +4354,9 @@ type BulkDeleteBridgeWorkersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4396,6 +4435,9 @@ type ListAllBridgeWorkersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4512,6 +4554,9 @@ type BulkPatchBridgeWorkersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4590,6 +4635,9 @@ type ListQueuedOperationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4659,6 +4707,9 @@ type BulkDeleteChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4737,6 +4788,9 @@ type ListAllChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4850,6 +4904,9 @@ type BulkPatchChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -4953,6 +5010,9 @@ type BulkCreateChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5037,6 +5097,9 @@ type BulkCreateChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5094,6 +5157,9 @@ type BulkDeleteChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5172,6 +5238,9 @@ type ListAllChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5283,6 +5352,9 @@ type BulkPatchChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5384,6 +5456,9 @@ type BulkCreateChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5468,6 +5543,9 @@ type BulkCreateChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5525,6 +5603,9 @@ type BulkDeleteFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5603,6 +5684,9 @@ type ListAllFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5723,6 +5807,9 @@ type BulkPatchFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5827,6 +5914,9 @@ type BulkCreateFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5911,6 +6001,9 @@ type BulkCreateFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -5971,6 +6064,9 @@ type ListOrgFunctionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6028,6 +6124,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6100,6 +6199,9 @@ type BulkDeleteInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6180,6 +6282,9 @@ type ListAllInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6295,6 +6400,9 @@ type BulkPatchInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6400,6 +6508,9 @@ type BulkCreateInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6486,6 +6597,9 @@ type BulkCreateInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6543,6 +6657,9 @@ type BulkDeleteLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6623,6 +6740,9 @@ type SearchListLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6750,6 +6870,9 @@ type BulkPatchLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6872,6 +6995,9 @@ type BulkCreateLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6926,6 +7052,9 @@ type BulkCreateLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -6964,6 +7093,9 @@ type BulkCreateLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7008,6 +7140,9 @@ type ListOrganizationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7124,6 +7259,9 @@ type ListOrganizationMembersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7193,6 +7331,9 @@ type ListAllReleasesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7281,6 +7422,9 @@ type ListAllResourcesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7396,6 +7540,9 @@ type ListAllRevisionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7448,7 +7595,7 @@ type ListAllRevisionsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -7517,6 +7664,9 @@ type ListSpacesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7687,6 +7837,9 @@ type ListAttributesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7829,6 +7982,9 @@ type ListBridgeWorkersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -7970,6 +8126,9 @@ type ListChangeOrdersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8111,6 +8270,9 @@ type ListChangeSetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8250,6 +8412,9 @@ type ListFiltersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8404,6 +8569,9 @@ type ListFunctionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8464,6 +8632,9 @@ type InvokeFunctionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8536,6 +8707,9 @@ type ListInvocationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8679,6 +8853,9 @@ type ListLinksParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8840,6 +9017,9 @@ type ListExtendedReleasesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -8965,6 +9145,9 @@ type ListTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9102,6 +9285,9 @@ type ListTargetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9263,6 +9449,9 @@ type ListTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9424,6 +9613,9 @@ type ListUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9520,6 +9712,9 @@ type CreateUnitParams struct {
 
 	// UpstreamRevision Revision of the upstream Unit to copy. The default is its head, which is what a clone has always taken. Takes the same forms as merge_end and restore -- a revision number, a named revision, 'Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Before:...' -- resolved against the Unit being cloned from, so a bulk clone lands on a different revision of each source Unit. 'Before:ChangeOrder:uuid' is what a promotion uses: it names the state the change starts from, which for a Unit no target has taken yet is its first revision, so the upgrade that follows replays the change into the clone rather than the clone arriving with the change already folded in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
 	UpstreamRevision *string `form:"upstream_revision,omitempty" json:"upstream_revision,omitempty" yaml:"upstream_revision,omitempty"`
+
+	// Syncback Also create a MergeUnits Link from each upstream Unit back to its clone, alongside the UpgradeUnit Link a clone always gets. The upgrade Link carries changes from the upstream Unit into the clone; this one carries them the other way, which is what makes a clone usable as a draft: change it, review it, then resolve the Link (resolve=Link:...) on the upstream Unit to merge the change home. A Unit may be the source of several of these -- one per outstanding draft -- so each is named for the clone it takes changes from (syncback-<space>-<unit>) rather than for the Unit they all point at. The Link is created in the upstream Unit's Space, which the caller must be allowed to create Links in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
+	Syncback *bool `form:"syncback,omitempty" json:"syncback,omitempty" yaml:"syncback,omitempty"`
 
 	// MergeExternalSource Identifier of the external source. Sets the source type to MergeExternal and appends the source name to the change description.
 	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
@@ -9651,6 +9846,9 @@ type PatchUnitParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9753,6 +9951,9 @@ type UpdateUnitParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9825,6 +10026,9 @@ type ListExtendedMutationsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -9935,6 +10139,9 @@ type ListExtendedResourcesParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10097,6 +10304,9 @@ type ListExtendedRevisionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10149,7 +10359,7 @@ type ListExtendedRevisionsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10190,7 +10400,7 @@ type GetExtendedRevisionParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeSetID, OrganizationID, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10247,6 +10457,9 @@ type ListUnitActionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10316,6 +10529,9 @@ type ListUnitEventsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10426,6 +10642,9 @@ type ListViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10569,6 +10788,9 @@ type BulkDeleteTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10647,6 +10869,9 @@ type ListAllTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10756,6 +10981,9 @@ type BulkPatchTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10855,6 +11083,9 @@ type BulkCreateTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10939,6 +11170,9 @@ type BulkCreateTagsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -10996,6 +11230,9 @@ type BulkDeleteTargetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11074,6 +11311,9 @@ type ListAllTargetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11195,6 +11435,9 @@ type BulkPatchTargetsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11276,6 +11519,9 @@ type BulkDeleteTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11354,6 +11600,9 @@ type ListAllTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11487,6 +11736,9 @@ type BulkPatchTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11610,6 +11862,9 @@ type BulkCreateTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11688,6 +11943,9 @@ type BulkCreateTriggersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11745,6 +12003,9 @@ type BulkDeleteUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11825,6 +12086,9 @@ type ListAllUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -11976,6 +12240,9 @@ type BulkPatchUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12086,6 +12353,9 @@ type BulkPatchUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12195,6 +12465,9 @@ type BulkCreateUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12281,6 +12554,9 @@ type BulkCreateUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12335,6 +12611,9 @@ type BulkCreateUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12355,6 +12634,9 @@ type BulkCreateUnitsParams struct {
 
 	// UpstreamRevision Revision of the upstream Unit to copy. The default is its head, which is what a clone has always taken. Takes the same forms as merge_end and restore -- a revision number, a named revision, 'Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Before:...' -- resolved against the Unit being cloned from, so a bulk clone lands on a different revision of each source Unit. 'Before:ChangeOrder:uuid' is what a promotion uses: it names the state the change starts from, which for a Unit no target has taken yet is its first revision, so the upgrade that follows replays the change into the clone rather than the clone arriving with the change already folded in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
 	UpstreamRevision *string `form:"upstream_revision,omitempty" json:"upstream_revision,omitempty" yaml:"upstream_revision,omitempty"`
+
+	// Syncback Also create a MergeUnits Link from each upstream Unit back to its clone, alongside the UpgradeUnit Link a clone always gets. The upgrade Link carries changes from the upstream Unit into the clone; this one carries them the other way, which is what makes a clone usable as a draft: change it, review it, then resolve the Link (resolve=Link:...) on the upstream Unit to merge the change home. A Unit may be the source of several of these -- one per outstanding draft -- so each is named for the clone it takes changes from (syncback-<space>-<unit>) rather than for the Unit they all point at. The Link is created in the upstream Unit's Space, which the caller must be allowed to create Links in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
+	Syncback *bool `form:"syncback,omitempty" json:"syncback,omitempty" yaml:"syncback,omitempty"`
 }
 
 // BulkApproveUnitsParams defines parameters for BulkApproveUnits.
@@ -12379,6 +12661,9 @@ type BulkApproveUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12462,6 +12747,9 @@ type BulkCancelUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12542,6 +12830,9 @@ type BulkTagUnitsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12622,6 +12913,9 @@ type ListAllUnitActionsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12691,6 +12985,9 @@ type ListAllUnitEventsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12791,6 +13088,9 @@ type ListUsersParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12860,6 +13160,9 @@ type BulkDeleteViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -12938,6 +13241,9 @@ type ListAllViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -13053,6 +13359,9 @@ type BulkPatchViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -13158,6 +13467,9 @@ type BulkCreateViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
@@ -13242,6 +13554,9 @@ type BulkCreateViewsParams struct {
 	// Arrays support the `?` operator to to match any element of the array,
 	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
 	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
 	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
 	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
 	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).

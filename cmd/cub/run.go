@@ -17,6 +17,7 @@ var runCmd = &cobra.Command{
 	Use:               "run",
 	Short:             "invoke a function",
 	Long:              getCommandHelp(`invoke a function`, ""),
+	Annotations:       map[string]string{"OrgLevel": ""},
 	PersistentPreRunE: spacePreRunE,
 	RunE:              RunRunCmd,
 }
@@ -168,7 +169,7 @@ func RegisterFunctionsAsCobraCommands() {
 					var changesetID string
 					var changesetUUID uuid.UUID
 					if functionChangesetSlug != "" {
-						changesetUUID, err := parseChangeSetSlug(functionChangesetSlug)
+						changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
 						if err != nil {
 							return err
 						}

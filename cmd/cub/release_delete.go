@@ -12,9 +12,10 @@ import (
 )
 
 var releaseDeleteCmd = &cobra.Command{
-	Use:   "delete <release-id>",
-	Short: "Delete a release",
-	Args:  cobra.ExactArgs(1),
+	Use:         "delete <release-id>",
+	Short:       "Delete a release",
+	Args:        cobra.ExactArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Delete a release, identified by its globally-unique release ID.
 
 Deletion removes the release and its stored bundle. To take a release out of

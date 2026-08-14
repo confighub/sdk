@@ -18,9 +18,10 @@ var releaseUpdateArgs struct {
 }
 
 var releaseUpdateCmd = &cobra.Command{
-	Use:   "update <release-id>",
-	Short: "Update a release",
-	Args:  cobra.ExactArgs(1),
+	Use:         "update <release-id>",
+	Short:       "Update a release",
+	Args:        cobra.ExactArgs(1),
+	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Update a release, identified by its globally-unique release ID.
 
 Only a release's labels, annotations, and delete gates can be updated. The bundled

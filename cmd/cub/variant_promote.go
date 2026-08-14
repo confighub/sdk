@@ -23,8 +23,9 @@ var variantPromoteArgs struct {
 }
 
 var variantPromoteCmd = &cobra.Command{
-	Use:   "promote <space>",
-	Short: "Promote a variant space to match its upstream space",
+	Use:         "promote <space>",
+	Short:       "Promote a variant space to match its upstream space",
+	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Promote a variant space to match changes in its upstream space.
 
 The space must have been created by "cub variant create", which stamps an "UpstreamSpaceID"
@@ -37,7 +38,8 @@ with that upstream in three steps:
   2. Clone any units added to the upstream space since the variant was created or last
      promoted, linking each clone to its upstream unit.
   3. Copy the new units' non-UpgradeUnit links, retargeting a link to its downstream copy
-     when it points at another unit in the upstream space.
+     when it points at another unit in the upstream space. A link that already points into
+     this variant is left alone rather than copied into it.
 
 Promote waits for triggers to complete. Use --dry-run to preview: the units that would be
 upgraded (add -o mutations to see the changes) and the units that would be added.
@@ -456,7 +458,8 @@ func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
 // promoteCopyLinks copies the non-UpgradeUnit links of the newly-added units into
 // the downstream space, retargeting their endpoints to the downstream copies. A
 // link that points at another unit in the upstream space is retargeted to that
-// unit's downstream copy; a link that points elsewhere keeps its target.
+// unit's downstream copy; a link that points elsewhere keeps its target, and a link
+// that already points into the downstream space is not copied at all.
 func promoteCopyLinks(downstreamSpaceID, upstreamSpaceID uuid.UUID, newUnits []*goclientnew.Unit) error {
 	if len(newUnits) == 0 {
 		return nil
@@ -487,9 +490,16 @@ func promoteCopyLinks(downstreamSpaceID, upstreamSpaceID uuid.UUID, newUnits []*
 
 	// Cross-space links (to a unit outside the upstream space): retarget only the
 	// FromUnit, keeping the original target.
+	//
+	// A link that already points into this variant is not one of those. Copying it would
+	// retarget its FromUnit and leave the target alone, landing a link from the new unit to
+	// a unit beside it -- a relationship that belongs to the variant, arriving as though the
+	// upstream had asked for it. A syncback link (cub variant create --syncback) is what
+	// points this way: it runs from an upstream unit to its clone, so a promotion that
+	// copied it would give the new unit a syncback link nobody asked for.
 	crossWhere := fmt.Sprintf(
-		"SpaceID = '%s' AND UpdateType != 'UpgradeUnit' AND ToSpaceID != '%s' AND FromUnitID IN (%s)",
-		upstreamSpaceID.String(), upstreamSpaceID.String(), idList)
+		"SpaceID = '%s' AND UpdateType != 'UpgradeUnit' AND ToSpaceID != '%s' AND ToSpaceID != '%s' AND FromUnitID IN (%s)",
+		upstreamSpaceID.String(), upstreamSpaceID.String(), downstreamSpaceID.String(), idList)
 	return promoteBulkCopyLinks(upstreamSpaceID, crossWhere, fromDownstream, "")
 }
 
