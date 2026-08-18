@@ -6220,6 +6220,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "Clearance": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -6542,6 +6551,15 @@
                     "nullable": true
                   },
                   "Bindings": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Clearance": {
                     "type": "array",
                     "items": {
                       "type": "object",
@@ -15806,6 +15824,15 @@
                     "description": "",
                     "nullable": true
                   },
+                  "Clearance": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -21372,6 +21399,129 @@
           },
           "404": {
             "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/unit/{unit_id}/guard": {
+      "post": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Set path guards on a unit",
+        "description": "Set or remove guards on the unit's PathAnnotations. A guard names a reason a path's value is what it is, so a later operation can be required to know about that reason before overwriting it. Nothing enforces guards yet: setting one records the reason and changes no behavior. A guard may name a path or resource the unit does not have, since it is policy about the configuration rather than a statement about its current contents. Creates a new revision only if the guards actually change. Requires Edit permission.",
+        "operationId": "SetUnitGuard",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnitGuardRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitGuardResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -30323,6 +30473,35 @@
           }
         }
       },
+      "Clearance": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ClearanceRequirement"
+        }
+      },
+      "ClearanceRequirement": {
+        "type": "object",
+        "properties": {
+          "Key": {
+            "type": "string",
+            "description": "The guard key this requirement is about",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Operator": {
+            "type": "string",
+            "description": "Exists, In, NotIn, or DoesNotExist",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Values": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The values In and NotIn compare against; unused by Exists and DoesNotExist",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "Column": {
         "required": [
           "Name"
@@ -31623,6 +31802,32 @@
           }
         }
       },
+      "GuardDelta": {
+        "type": "object",
+        "properties": {
+          "Path": {
+            "type": "string",
+            "description": "The path whose guards changed; empty for the resource as a whole",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Remove": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Guard keys removed",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Set": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Guard keys added or changed, with their new values",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "Invocation": {
         "required": [
           "Slug",
@@ -31819,6 +32024,9 @@
           },
           "Bindings": {
             "$ref": "#/components/schemas/BindingList"
+          },
+          "Clearance": {
+            "$ref": "#/components/schemas/Clearance"
           },
           "CreatedAt": {
             "type": "string",
@@ -32246,6 +32454,12 @@
             "description": "Explanation the Reason alone cannot carry, such as the error text of a failed replay",
             "x-go-type-skip-optional-pointer": true
           },
+          "Guard": {
+            "$ref": "#/components/schemas/WithheldGuard"
+          },
+          "GuardChange": {
+            "$ref": "#/components/schemas/GuardDelta"
+          },
           "Path": {
             "type": "string",
             "description": "Path of the mutation; empty for resource-level conflicts",
@@ -32575,6 +32789,21 @@
             "type": "object",
             "additionalProperties": {},
             "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "PathAnnotationList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/ResourcePathAnnotations"
+        }
+      },
+      "PathAnnotations": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
           }
         }
       },
@@ -33128,6 +33357,36 @@
         },
         "description": "Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only."
       },
+      "ResourceGuards": {
+        "type": "object",
+        "properties": {
+          "Remove": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": "Guard keys to remove, by path. Removing a key that is not there is not an error",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          },
+          "Set": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "description": "Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "ResourceInfo": {
         "type": "object",
         "properties": {
@@ -33223,6 +33482,41 @@
         "type": "array",
         "items": {
           "$ref": "#/components/schemas/ResourceMutation"
+        }
+      },
+      "ResourcePathAnnotations": {
+        "type": "object",
+        "properties": {
+          "Aliases": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            },
+            "description": "Names (with scopes, if any) used in current and prior revisions of this resource",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "AliasesWithoutScopes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object"
+            },
+            "description": "Names without scopes used in current and prior revisions of this resource",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "PathAnnotationMap": {
+            "type": "object",
+            "additionalProperties": {
+              "$ref": "#/components/schemas/PathAnnotations"
+            },
+            "description": "Annotations by path. Paths are canonical: an associative segment names its element by merge key, with no positional fallback",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          },
+          "ResourceAnnotations": {
+            "$ref": "#/components/schemas/PathAnnotations"
+          }
         }
       },
       "ResourceProtection": {
@@ -33480,6 +33774,9 @@
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
+          },
+          "PathAnnotations": {
+            "$ref": "#/components/schemas/PathAnnotationList"
           },
           "Releases": {
             "type": "object",
@@ -34657,6 +34954,9 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
+          "PathAnnotations": {
+            "$ref": "#/components/schemas/PathAnnotationList"
+          },
           "PreviousLiveRevisionNum": {
             "type": "integer",
             "description": "Sequence number the previous Revision applied. 0 if no live revision.",
@@ -35200,6 +35500,31 @@
           }
         }
       },
+      "UnitGuardRequest": {
+        "type": "object",
+        "properties": {
+          "Clearance": {
+            "$ref": "#/components/schemas/Clearance"
+          },
+          "ResourceGuards": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceGuards"
+            },
+            "description": "Per-resource guard edits to apply to the Unit's PathAnnotations",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UnitGuardResponse": {
+        "type": "object",
+        "properties": {
+          "PathAnnotations": {
+            "$ref": "#/components/schemas/PathAnnotationList"
+          }
+        }
+      },
       "UnitProtectionRequest": {
         "type": "object",
         "properties": {
@@ -35549,6 +35874,26 @@
           },
           "View": {
             "$ref": "#/components/schemas/View"
+          }
+        }
+      },
+      "WithheldGuard": {
+        "type": "object",
+        "properties": {
+          "Key": {
+            "type": "string",
+            "description": "The guard key the operation was not cleared for",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Precondition": {
+            "type": "boolean",
+            "description": "True when the clearance forbade this key with DoesNotExist rather than simply not covering it",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Value": {
+            "type": "string",
+            "description": "The guard value",
+            "x-go-type-skip-optional-pointer": true
           }
         }
       },

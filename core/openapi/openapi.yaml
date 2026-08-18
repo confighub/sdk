@@ -6727,6 +6727,13 @@ paths:
                     type: object
                   nullable: true
                   type: array
+                Clearance:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -7092,6 +7099,13 @@ paths:
                   nullable: true
                   type: boolean
                 Bindings:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Clearance:
                   description: ""
                   items:
                     nullable: true
@@ -14426,6 +14440,13 @@ paths:
                     type: object
                   nullable: true
                   type: array
+                Clearance:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -18995,6 +19016,88 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Get Unit details with expanded relationships
+      tags:
+      - Unit
+  /space/{space_id}/unit/{unit_id}/guard:
+    post:
+      description: 'Set or remove guards on the unit''s PathAnnotations. A guard names
+        a reason a path''s value is what it is, so a later operation can be required
+        to know about that reason before overwriting it. Nothing enforces guards yet:
+        setting one records the reason and changes no behavior. A guard may name a
+        path or resource the unit does not have, since it is policy about the configuration
+        rather than a statement about its current contents. Creates a new revision
+        only if the guards actually change. Requires Edit permission.'
+      operationId: SetUnitGuard
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitGuardRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitGuardResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Set path guards on a unit
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/mutation:
@@ -28062,6 +28165,28 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
       type: object
+    Clearance:
+      items:
+        $ref: '#/components/schemas/ClearanceRequirement'
+      type: array
+    ClearanceRequirement:
+      properties:
+        Key:
+          description: The guard key this requirement is about
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Operator:
+          description: Exists, In, NotIn, or DoesNotExist
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Values:
+          description: The values In and NotIn compare against; unused by Exists and
+            DoesNotExist
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
     Column:
       properties:
         ColumnSource:
@@ -29058,6 +29183,26 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
+    GuardDelta:
+      properties:
+        Path:
+          description: The path whose guards changed; empty for the resource as a
+            whole
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Remove:
+          description: Guard keys removed
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Set:
+          additionalProperties:
+            type: string
+          description: Guard keys added or changed, with their new values
+          type: object
+          x-go-type-skip-optional-pointer: true
+      type: object
     Invocation:
       description: Defines a stored, reusable call to one or more functions, executed
         in the order they are listed.
@@ -29234,6 +29379,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Bindings:
           $ref: '#/components/schemas/BindingList'
+        Clearance:
+          $ref: '#/components/schemas/Clearance'
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -29653,6 +29800,10 @@ components:
             text of a failed replay
           type: string
           x-go-type-skip-optional-pointer: true
+        Guard:
+          $ref: '#/components/schemas/WithheldGuard'
+        GuardChange:
+          $ref: '#/components/schemas/GuardDelta'
         Path:
           description: Path of the mutation; empty for resource-level conflicts
           type: string
@@ -29933,6 +30084,16 @@ components:
           additionalProperties: {}
           type: object
           x-go-type-skip-optional-pointer: true
+      type: object
+    PathAnnotationList:
+      items:
+        $ref: '#/components/schemas/ResourcePathAnnotations'
+      type: array
+    PathAnnotations:
+      additionalProperties:
+        additionalProperties:
+          type: string
+        type: object
       type: object
     PathExpression:
       properties:
@@ -30449,6 +30610,29 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
+    ResourceGuards:
+      properties:
+        Remove:
+          additionalProperties:
+            items:
+              type: string
+            type: array
+          description: Guard keys to remove, by path. Removing a key that is not there
+            is not an error
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+        Set:
+          additionalProperties:
+            additionalProperties:
+              type: string
+            type: object
+          description: Guard key/value pairs to add or overwrite, by path. The empty
+            path addresses the resource as a whole
+          type: object
+          x-go-type-skip-optional-pointer: true
+      type: object
     ResourceInfo:
       properties:
         ResourceCategory:
@@ -30545,6 +30729,34 @@ components:
       items:
         $ref: '#/components/schemas/ResourceMutation'
       type: array
+    ResourcePathAnnotations:
+      properties:
+        Aliases:
+          additionalProperties:
+            type: object
+          description: Names (with scopes, if any) used in current and prior revisions
+            of this resource
+          type: object
+          x-go-type-skip-optional-pointer: true
+        AliasesWithoutScopes:
+          additionalProperties:
+            type: object
+          description: Names without scopes used in current and prior revisions of
+            this resource
+          type: object
+          x-go-type-skip-optional-pointer: true
+        PathAnnotationMap:
+          additionalProperties:
+            $ref: '#/components/schemas/PathAnnotations'
+          description: 'Annotations by path. Paths are canonical: an associative segment
+            names its element by merge key, with no positional fallback'
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+        ResourceAnnotations:
+          $ref: '#/components/schemas/PathAnnotations'
+      type: object
     ResourceProtection:
       properties:
         Protected:
@@ -30758,6 +30970,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        PathAnnotations:
+          $ref: '#/components/schemas/PathAnnotationList'
         Releases:
           additionalProperties:
             type: string
@@ -31957,6 +32171,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        PathAnnotations:
+          $ref: '#/components/schemas/PathAnnotationList'
         PreviousLiveRevisionNum:
           description: Sequence number the previous Revision applied. 0 if no live
             revision.
@@ -32459,6 +32675,23 @@ components:
         Unit:
           $ref: '#/components/schemas/Unit'
       type: object
+    UnitGuardRequest:
+      properties:
+        Clearance:
+          $ref: '#/components/schemas/Clearance'
+        ResourceGuards:
+          description: Per-resource guard edits to apply to the Unit's PathAnnotations
+          items:
+            $ref: '#/components/schemas/ResourceGuards'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UnitGuardResponse:
+      properties:
+        PathAnnotations:
+          $ref: '#/components/schemas/PathAnnotationList'
+      type: object
     UnitProtectionRequest:
       properties:
         ResourceProtection:
@@ -32755,6 +32988,22 @@ components:
           $ref: '#/components/schemas/ResponseError'
         View:
           $ref: '#/components/schemas/View'
+      type: object
+    WithheldGuard:
+      properties:
+        Key:
+          description: The guard key the operation was not cleared for
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Precondition:
+          description: True when the clearance forbade this key with DoesNotExist
+            rather than simply not covering it
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Value:
+          description: The guard value
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     WorkerInfo:
       properties:

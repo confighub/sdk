@@ -98,6 +98,10 @@ Bulk Create Examples:
 
   # Clone a space's units as drafts, each linked back to the unit it was cloned from
   cub unit create --where "SpaceID = '<space-uuid>'" --dest-space drafts --syncback
+
+  # Clone units and bring their links to units left behind, so the clones read from the same producers
+  cub unit create --where "Labels.Tier = 'backend'" --dest-space prod-space \
+      --include-outgoing-links-where "UpdateType = 'TransformPaths'"
 ` + "```" + `
 `
 
@@ -153,12 +157,13 @@ var unitCreateArgs struct {
 	mergeExternalSource string
 	syncback            bool
 	// Bulk create specific flags
-	destSpaces    []string
-	whereSpace    string
-	namePrefixes  []string
-	filterSpace   string
-	variantLabels []string
-	namePattern   string
+	destSpaces                []string
+	whereSpace                string
+	namePrefixes              []string
+	filterSpace               string
+	variantLabels             []string
+	namePattern               string
+	includeOutgoingLinksWhere string
 }
 
 func init() {
@@ -191,6 +196,7 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.variantLabels, "variant-labels", []string{}, "labels with multiple values for bulk creation in the format of key1=value1|value2,key2=value1|value2|value3")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Unit and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.includeOutgoingLinksWhere, "include-outgoing-links-where", "", "where expression selecting which of each cloned unit's links to units outside the cloned set to copy onto its clones; the copy keeps the original upstream unit as its to-unit, so the clone tracks the same one. Links within the cloned set are always copied and retargeted at the clones")
 
 	unitCmd.AddCommand(unitCreateCmd)
 }
@@ -245,9 +251,10 @@ func checkUnitCreateConflictingArgs(args []string) (bool, error) {
 		if filter != "" || where != "" ||
 			unitCreateArgs.namePattern != "" || len(unitIdentifiers) > 0 ||
 			len(unitCreateArgs.destSpaces) > 0 || unitCreateArgs.whereSpace != "" ||
-			len(unitCreateArgs.namePrefixes) > 0 || len(unitCreateArgs.variantLabels) > 0 {
+			len(unitCreateArgs.namePrefixes) > 0 || len(unitCreateArgs.variantLabels) > 0 ||
+			unitCreateArgs.includeOutgoingLinksWhere != "" {
 			return false, errors.New(
-				"bulk create flags (--where, --unit, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
+				"bulk create flags (--where, --unit, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern, --include-outgoing-links-where) can only be used without positional arguments",
 			)
 		}
 
@@ -621,6 +628,10 @@ func runBulkUnitCreate() error {
 
 	if whereSpaceExpr != "" {
 		params.WhereSpace = &whereSpaceExpr
+	}
+
+	if unitCreateArgs.includeOutgoingLinksWhere != "" {
+		params.IncludeOutgoingLinksWhere = &unitCreateArgs.includeOutgoingLinksWhere
 	}
 
 	// Parse and set filter_space parameter if specified

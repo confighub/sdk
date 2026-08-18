@@ -687,6 +687,21 @@ type ChangeSetCreateOrUpdateResponse struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
 
+// Clearance defines model for Clearance.
+type Clearance = []ClearanceRequirement
+
+// ClearanceRequirement defines model for ClearanceRequirement.
+type ClearanceRequirement struct {
+	// Key The guard key this requirement is about
+	Key string `json:"Key,omitempty" yaml:"Key,omitempty"`
+
+	// Operator Exists, In, NotIn, or DoesNotExist
+	Operator string `json:"Operator,omitempty" yaml:"Operator,omitempty"`
+
+	// Values The values In and NotIn compare against; unused by Exists and DoesNotExist
+	Values []string `json:"Values,omitempty" yaml:"Values,omitempty"`
+}
+
 // Column defines model for Column.
 type Column struct {
 	ColumnSource     *ColumnSource `json:"ColumnSource,omitempty" yaml:"ColumnSource,omitempty"`
@@ -1576,6 +1591,18 @@ type FunctionWorkerInfo struct {
 	ToolchainTypes []string `json:"ToolchainTypes" yaml:"ToolchainTypes"`
 }
 
+// GuardDelta defines model for GuardDelta.
+type GuardDelta struct {
+	// Path The path whose guards changed; empty for the resource as a whole
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Remove Guard keys removed
+	Remove []string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
+
+	// Set Guard keys added or changed, with their new values
+	Set map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
+}
+
 // Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 type Invocation struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1662,6 +1689,7 @@ type Link struct {
 	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility.
 	AutoUpdate bool         `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
 	Bindings   *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
+	Clearance  *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1860,7 +1888,9 @@ type Mutation struct {
 // MutationConflict defines model for MutationConflict.
 type MutationConflict struct {
 	// Details Explanation the Reason alone cannot carry, such as the error text of a failed replay
-	Details string `json:"Details,omitempty" yaml:"Details,omitempty"`
+	Details     string         `json:"Details,omitempty" yaml:"Details,omitempty"`
+	Guard       *WithheldGuard `json:"Guard,omitempty" yaml:"Guard,omitempty"`
+	GuardChange *GuardDelta    `json:"GuardChange,omitempty" yaml:"GuardChange,omitempty"`
 
 	// Path Path of the mutation; empty for resource-level conflicts
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
@@ -2018,6 +2048,12 @@ type ParameterizedInvocationRef struct {
 	InvocationID openapi_types.UUID     `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 	Parameters   map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 }
+
+// PathAnnotationList defines model for PathAnnotationList.
+type PathAnnotationList = []ResourcePathAnnotations
+
+// PathAnnotations defines model for PathAnnotations.
+type PathAnnotations map[string]map[string]string
 
 // PathExpression defines model for PathExpression.
 type PathExpression struct {
@@ -2274,6 +2310,16 @@ type Resource struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
+// ResourceGuards defines model for ResourceGuards.
+type ResourceGuards struct {
+	// Remove Guard keys to remove, by path. Removing a key that is not there is not an error
+	Remove   map[string][]string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
+	Resource *ResourceInfo       `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Set Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole
+	Set map[string]map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
+}
+
 // ResourceInfo defines model for ResourceInfo.
 type ResourceInfo struct {
 	// ResourceCategory Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig
@@ -2323,6 +2369,20 @@ type ResourceMutation struct {
 
 // ResourceMutationList defines model for ResourceMutationList.
 type ResourceMutationList = []ResourceMutation
+
+// ResourcePathAnnotations defines model for ResourcePathAnnotations.
+type ResourcePathAnnotations struct {
+	// Aliases Names (with scopes, if any) used in current and prior revisions of this resource
+	Aliases map[string]map[string]interface{} `json:"Aliases,omitempty" yaml:"Aliases,omitempty"`
+
+	// AliasesWithoutScopes Names without scopes used in current and prior revisions of this resource
+	AliasesWithoutScopes map[string]map[string]interface{} `json:"AliasesWithoutScopes,omitempty" yaml:"AliasesWithoutScopes,omitempty"`
+
+	// PathAnnotationMap Annotations by path. Paths are canonical: an associative segment names its element by merge key, with no positional fallback
+	PathAnnotationMap   map[string]PathAnnotations `json:"PathAnnotationMap,omitempty" yaml:"PathAnnotationMap,omitempty"`
+	Resource            *ResourceInfo              `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+	ResourceAnnotations *PathAnnotations           `json:"ResourceAnnotations,omitempty" yaml:"ResourceAnnotations,omitempty"`
+}
 
 // ResourceProtection defines model for ResourceProtection.
 type ResourceProtection struct {
@@ -2438,7 +2498,8 @@ type Revision struct {
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
 
 	// Releases A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now.
 	Releases map[string]string `json:"Releases,omitempty" yaml:"Releases,omitempty"`
@@ -3103,7 +3164,8 @@ type Unit struct {
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
 
 	// PreviousLiveRevisionNum Sequence number the previous Revision applied. 0 if no live revision.
 	PreviousLiveRevisionNum int64 `json:"PreviousLiveRevisionNum,omitempty" yaml:"PreviousLiveRevisionNum,omitempty"`
@@ -3393,6 +3455,19 @@ type UnitExtended struct {
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
+// UnitGuardRequest defines model for UnitGuardRequest.
+type UnitGuardRequest struct {
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// ResourceGuards Per-resource guard edits to apply to the Unit's PathAnnotations
+	ResourceGuards []ResourceGuards `json:"ResourceGuards" yaml:"ResourceGuards"`
+}
+
+// UnitGuardResponse defines model for UnitGuardResponse.
+type UnitGuardResponse struct {
+	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
+}
+
 // UnitProtectionRequest defines model for UnitProtectionRequest.
 type UnitProtectionRequest struct {
 	// ResourceProtection Per-resource Protected edits to apply to the Unit's MutationSources
@@ -3554,6 +3629,18 @@ type ViewCreateOrUpdateResponse struct {
 
 	// View Defines an entity view.
 	View *View `json:"View,omitempty" yaml:"View,omitempty"`
+}
+
+// WithheldGuard defines model for WithheldGuard.
+type WithheldGuard struct {
+	// Key The guard key the operation was not cleared for
+	Key string `json:"Key,omitempty" yaml:"Key,omitempty"`
+
+	// Precondition True when the clearance forbade this key with DoesNotExist rather than simply not covering it
+	Precondition bool `json:"Precondition,omitempty" yaml:"Precondition,omitempty"`
+
+	// Value The guard value
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
 }
 
 // WorkerInfo defines model for WorkerInfo.
@@ -6815,6 +6902,7 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string       `json:"Annotations" yaml:"Annotations"`
 	AutoUpdate  *bool                     `json:"AutoUpdate" yaml:"AutoUpdate"`
 	Bindings    *[]map[string]interface{} `json:"Bindings" yaml:"Bindings"`
+	Clearance   *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6940,6 +7028,7 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string       `json:"Annotations" yaml:"Annotations"`
 	AutoUpdate  *bool                     `json:"AutoUpdate" yaml:"AutoUpdate"`
 	Bindings    *[]map[string]interface{} `json:"Bindings" yaml:"Bindings"`
+	Clearance   *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -8956,6 +9045,7 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	Annotations *map[string]*string       `json:"Annotations" yaml:"Annotations"`
 	AutoUpdate  *bool                     `json:"AutoUpdate" yaml:"AutoUpdate"`
 	Bindings    *[]map[string]interface{} `json:"Bindings" yaml:"Bindings"`
+	Clearance   *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -13777,6 +13867,9 @@ type UpdateUnitJSONRequestBody = Unit
 
 // ResolveUnitConflictsJSONRequestBody defines body for ResolveUnitConflicts for application/json ContentType.
 type ResolveUnitConflictsJSONRequestBody = UnitConflictsRequest
+
+// SetUnitGuardJSONRequestBody defines body for SetUnitGuard for application/json ContentType.
+type SetUnitGuardJSONRequestBody = UnitGuardRequest
 
 // SetUnitProtectionJSONRequestBody defines body for SetUnitProtection for application/json ContentType.
 type SetUnitProtectionJSONRequestBody = UnitProtectionRequest

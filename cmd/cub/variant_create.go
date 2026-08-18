@@ -28,6 +28,8 @@ var variantCreateArgs struct {
 	unitDestroyGates []string
 	noArgoApp        bool
 	syncback         bool
+
+	includeOutgoingLinksWhere string
 }
 
 var variantCreateCmd = &cobra.Command{
@@ -81,6 +83,11 @@ run during the clone. Trigger arguments can reference space metadata in Go templ
 "template:{{.SpaceLabels.Region}}" or "template:{{.SpaceAnnotations.host}}" — set the latter with
 --space-annotation. Any other changes can be made after the clone completes.
 
+Links between units of the cloned space are copied into the new space and retargeted at the clones.
+Links pointing out of it are not, unless --include-outgoing-links-where selects them: a copied
+outgoing link keeps the original unit as its to-unit, so the variant reads from the same producer
+the upstream reads from.
+
 A variant is normally downstream of its upstream space: changes flow from the upstream units into
 the clones, through the UpgradeUnit links this command creates ("cub variant promote"). --syncback
 additionally creates a MergeUnits link the other way, from each upstream unit back to its clone,
@@ -122,6 +129,10 @@ Examples:
   # Clone a space as a draft to change and review, with links to merge the changes back.
   cub variant create draft website-prod --syncback
 
+  # Carry the units' links to producers in other spaces into the variant, so its units read
+  # from the same ones.
+  cub variant create prod website-base --include-outgoing-links-where "UpdateType = 'TransformPaths'"
+
   # Set a space annotation a PostClone trigger reads, and protect the prod clones with a delete gate.
   cub variant create prod website-base \
     --space-annotation host=website.prod.example.com \
@@ -147,6 +158,7 @@ func init() {
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDestroyGates, "unit-destroy-gate", []string{}, "destroy gate key[=true] to set on every cloned unit (repeatable); destroy gates are unit-only (spaces have no destroy gates)")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application when --target is a cub-cluster Argo target")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.syncback, "syncback", false, "also link each cloned unit back to its upstream unit, with a MergeUnits link in the upstream space, so changes made in the variant can be merged back into the upstream units (see the draft workflow in the long help)")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.includeOutgoingLinksWhere, "include-outgoing-links-where", "", "where expression selecting which of the upstream units' links to units in other spaces to copy onto the clones; each copy keeps the original unit as its to-unit, so the variant reads from the same producers. Links within the cloned space are always copied and retargeted at the clones")
 	enableWaitFlag(variantCreateCmd)
 	variantCmd.AddCommand(variantCreateCmd)
 }
@@ -363,6 +375,9 @@ func cloneVariantUnits(upstreamSpaceID, newSpaceID uuid.UUID, targetID *uuid.UUI
 	}
 	if variantCreateArgs.syncback {
 		params.Syncback = &variantCreateArgs.syncback
+	}
+	if variantCreateArgs.includeOutgoingLinksWhere != "" {
+		params.IncludeOutgoingLinksWhere = &variantCreateArgs.includeOutgoingLinksWhere
 	}
 
 	// Build the unit merge patch via the shared EnhancePatchData, which

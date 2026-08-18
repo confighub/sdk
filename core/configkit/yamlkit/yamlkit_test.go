@@ -863,6 +863,58 @@ func TestResolveAssociativeSegments(t *testing.T) {
 	}
 }
 
+// TestResolveIdentityRequiresOneMatch covers the stage that finds an element whose digest
+// has stopped matching — the target edited it — by the identity the anchor carries. An
+// identity locates an element only when it names one of them: a flag an application accepts
+// more than once wears the same name on every occurrence, and picking the occurrence at the
+// recorded index would write the patch over an element it never named.
+func TestResolveIdentityRequiresOneMatch(t *testing.T) {
+	// An anchor for an element that is no longer in the array: its digest matches
+	// nothing, its identity is the flag name, and its array context is the array as it
+	// stood upstream, which is not the array here.
+	staleAnchor := func(identity string) string {
+		gone, err := gaby.ParseYAML([]byte("\"--set=a=1\"\n"))
+		require.NoError(t, err)
+		return "spec.args." + AssociativePathSegment(
+			[]string{anchorDigestKey, anchorIdentityKey, anchorPreviousKey, anchorNextKey, anchorLengthKey},
+			[]string{ElementDigest(gone), identity, arrayEdgeDigest, arrayEdgeDigest, "1"}, 1)
+	}
+
+	t.Run("one element carries the identity", func(t *testing.T) {
+		doc := parseDocs(t, argsDoc(`"--log.level=WARN"`, `"--set=b=2"`))
+		resolved, ok := ResolveAssociativeSegments(doc[0], staleAnchor(EscapeDotsInPathSegment("--log.level")))
+		assert.True(t, ok)
+		assert.Equal(t, "spec.args.0", resolved,
+			"the identity names one element, which is where the patch goes however the array has moved")
+	})
+
+	t.Run("several elements carry the identity", func(t *testing.T) {
+		doc := parseDocs(t, argsDoc(`"--set=a=9"`, `"--set=b=2"`))
+		_, ok := ResolveAssociativeSegments(doc[0], staleAnchor("--set"))
+		assert.False(t, ok,
+			"a repeated flag names no element in particular, so the path is left unresolved")
+	})
+}
+
+// TestResolveInsertionKeepsItsIndex covers the difference between naming an element of the
+// target and naming a place in it. An insertion's anchor digests the element the patch is
+// about to create, so an identical element already in the array is a coincidence rather
+// than the thing the path meant.
+func TestResolveInsertionKeepsItsIndex(t *testing.T) {
+	doc := parseDocs(t, argsDoc(`"--set"`, `"a=1"`))
+	inserted, err := gaby.ParseYAML([]byte("\"--set\"\n"))
+	require.NoError(t, err)
+	path := "spec.args." + AssociativePathSegment([]string{anchorDigestKey}, []string{ElementDigest(inserted)}, 2)
+
+	resolved, ok := ResolveAssociativeSegments(doc[0], path)
+	require.True(t, ok)
+	assert.Equal(t, "spec.args.0", resolved, "matching by content finds the copy already there")
+
+	resolved, ok = ResolveAssociativeSegmentsForInsertion(doc[0], path)
+	require.True(t, ok)
+	assert.Equal(t, "spec.args.2", resolved, "an insertion goes where the patch put it")
+}
+
 func TestStripAssociativeSegments(t *testing.T) {
 	tests := []struct {
 		name     string

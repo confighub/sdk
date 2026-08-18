@@ -136,6 +136,26 @@ const (
 	// removed value. This is the reverse of every other reason: the patch
 	// applied, and what is reported is what the target lost to it.
 	ConflictReasonExclusiveCleared ConflictReason = "ExclusiveCleared"
+	// ConflictReasonGuarded: a path in the patch carried a guard -- a recorded reason its
+	// value is what it is -- that the operation's Clearance did not cover, so the write was
+	// withheld. The conflict carries the guard in Guard, so the report can say which reason
+	// stopped it rather than only that something did.
+	//
+	// Distinct from ProtectedPath, which says the target claimed the path and gives no
+	// reason. A guarded path names its reason, and an operation that knows about that reason
+	// may write it.
+	ConflictReasonGuarded ConflictReason = "Guarded"
+	// ConflictReasonGuardWithheld: a guard *change* the source made did not propagate,
+	// because the operation was not cleared for the guards the target already has at that
+	// path. GuardChange carries the withheld delta.
+	//
+	// Distinct from Guarded, which is a *value* a guard stopped. The two occur
+	// independently: a merge can land the value and withhold the guard change, or the
+	// reverse. Reporting it is not optional -- a base that adds a policy exception and a
+	// variant that silently does not receive it is exactly the failure the guard exists to
+	// prevent, and it would otherwise be invisible, since the data merged cleanly and
+	// nothing else would say a word.
+	ConflictReasonGuardWithheld ConflictReason = "GuardWithheld"
 	// ConflictReasonReplayFailed: a replayed function errored against the target,
 	// as distinct from finding nothing to do. The merge falls back to the anchored
 	// patch for that Mutation, and reports this so the failure is visible: a
@@ -197,6 +217,14 @@ type MutationConflict struct {
 	// reported, for ReplayFailed. The path-level reasons need no explanation beyond Reason,
 	// Resource, and Path, and leave this empty.
 	Details string `json:",omitempty" description:"Explanation the Reason alone cannot carry, such as the error text of a failed replay"`
+	// Guard is the guard that withheld the write, for Guarded. Typed rather than folded into
+	// Details because it is matched on, not only read: deciding what to do about a withheld
+	// change starts with which class of reason stopped it.
+	Guard *WithheldGuard `json:",omitempty" description:"For Guarded: the guard the operation's clearance did not cover"`
+	// GuardChange is the withheld guard delta, for GuardWithheld. Typed rather than
+	// serialized into Source.Value, which is a MutationInfo and cannot describe a delta:
+	// applying this conflict has to know the direction, so that an applied removal removes.
+	GuardChange *GuardDelta `json:",omitempty" description:"For GuardWithheld: the guard change that did not propagate"`
 }
 
 type MutationConflictList []MutationConflict

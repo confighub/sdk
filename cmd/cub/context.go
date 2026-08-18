@@ -147,6 +147,18 @@ func (cm *ContextManager) ActiveContext() *Context {
 	return ctx
 }
 
+// ActiveContextName returns the name of the active context — the override if one
+// is set, otherwise the current context — or "" when there is none. Unlike
+// ActiveContext it does not panic, so display code can mark the active row
+// without turning a hand-edited config into a stack trace.
+func (cm *ContextManager) ActiveContextName() string {
+	ctx, err := cm.store.ActiveContext()
+	if err != nil {
+		return ""
+	}
+	return ctx.Name
+}
+
 // SetCurrentContext sets the current context (stamping its LastUsed). Call
 // SaveConfig to persist.
 func (cm *ContextManager) SetCurrentContext(name string) error {

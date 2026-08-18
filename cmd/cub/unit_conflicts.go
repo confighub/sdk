@@ -25,6 +25,19 @@ downstream change displaced by an upstream deletion (DeleteShadowed). The
 merged data is correct as it stands -- a conflict says what the source wanted
 to change and couldn't.
 
+Guarded is one of those, for a value the source wanted to write at a path
+carrying a guard -- a recorded reason its value is what it is -- that the merge
+was not cleared for. The conflict names the guard, so the report says which
+reason stopped it rather than only that something did.
+
+GuardWithheld is the other half, and is about a guard rather than a value: the
+source changed the guards at a path and this merge was not cleared for the
+guards this unit already has there, so the guard change did not propagate.
+Reported because a base that adds a policy exception and a variant that
+silently does not receive it is exactly the failure guards exist to prevent,
+and the data merging cleanly would otherwise hide it. Applying one writes the
+guard change rather than any configuration data.
+
 ExclusiveWithheld is one of those, for a change that could not be made because
 this unit owns a field mutually exclusive with it -- the source switched a
 volume to a secret and this unit had already chosen an emptyDir. Applying it

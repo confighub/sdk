@@ -42,6 +42,13 @@ When no positional arguments are provided with --where or --filter plus at least
 --from-downstream-where, bulk create mode is activated. This mode copies existing links and
 retargets their From and/or To units using downstream UpgradeUnit links.
 
+A copy starts with no merge history and no delete gates of its own: the source link's
+merged-revision pointers name revisions of the units it connects, which a retargeted copy
+does not share. An UpgradeUnit copy is set to its new units' current revisions instead.
+--make-current is rejected here because its values are per-link; pass
+--upstream-last-merged-revision / --downstream-last-merged-revision if the copies need
+specific pointers, or run cub link update --make-current on them afterward.
+
 Single Link Examples:
 `+"```"+`
   # Create a link between a deployment and its namespace in the same space
@@ -103,6 +110,14 @@ func checkLinkCreateConflictingArgs(cmd *cobra.Command, args []string) (bool, er
 
 		if !linkCreateArgs.reverse && linkCreateArgs.fromDownstreamWhere == "" {
 			return false, errors.New("bulk create mode requires either --reverse or --from-downstream-where")
+		}
+
+		// The pointers --make-current writes are per-link, computed from the Units each
+		// copy connects, so the single merge patch bulk create sends cannot carry them.
+		// Copies already start with no merged Revisions, which is what the flag asks for
+		// on create everywhere else.
+		if linkMakeCurrent {
+			return false, errors.New("--make-current is not supported in bulk create mode; copied links start with no merged revisions")
 		}
 	} else if len(args) > 0 {
 		// Single create mode validation

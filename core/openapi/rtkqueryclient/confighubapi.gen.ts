@@ -1730,6 +1730,14 @@ const injectedRtkApi = api
         }),
         providesTags: ['Unit'],
       }),
+      setUnitGuard: build.mutation<SetUnitGuardApiResponse, SetUnitGuardApiArg>({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/guard`,
+          method: 'POST',
+          body: queryArg.unitGuardRequest,
+        }),
+        invalidatesTags: ['Unit'],
+      }),
       listExtendedMutations: build.query<
         ListExtendedMutationsApiResponse,
         ListExtendedMutationsApiArg
@@ -5573,6 +5581,7 @@ export type BulkPatchLinksApiArg = {
     } | null;
     AutoUpdate?: boolean | null;
     Bindings?: (object | null)[] | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -5752,6 +5761,7 @@ export type BulkCreateLinksApiArg = {
     } | null;
     AutoUpdate?: boolean | null;
     Bindings?: (object | null)[] | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -7882,6 +7892,7 @@ export type PatchLinkApiArg = {
     } | null;
     AutoUpdate?: boolean | null;
     Bindings?: (object | null)[] | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -9101,6 +9112,14 @@ export type GetUnitExtendedApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+};
+export type SetUnitGuardApiResponse = /** status 200 OK */ UnitGuardResponse;
+export type SetUnitGuardApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  unitGuardRequest: UnitGuardRequest;
 };
 export type ListExtendedMutationsApiResponse = /** status 200 OK */ ExtendedMutationRead[];
 export type ListExtendedMutationsApiArg = {
@@ -14108,9 +14127,29 @@ export type InvocationCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Invocation?: InvocationRead;
 };
+export type WithheldGuard = {
+  /** The guard key the operation was not cleared for */
+  Key?: string;
+  /** True when the clearance forbade this key with DoesNotExist rather than simply not covering it */
+  Precondition?: boolean;
+  /** The guard value */
+  Value?: string;
+};
+export type GuardDelta = {
+  /** The path whose guards changed; empty for the resource as a whole */
+  Path?: string;
+  /** Guard keys removed */
+  Remove?: string[];
+  /** Guard keys added or changed, with their new values */
+  Set?: {
+    [key: string]: string;
+  };
+};
 export type MutationConflict = {
   /** Explanation the Reason alone cannot carry, such as the error text of a failed replay */
   Details?: string;
+  Guard?: WithheldGuard;
+  GuardChange?: GuardDelta;
   /** Path of the mutation; empty for resource-level conflicts */
   Path?: string;
   /** Why the mutation was dropped */
@@ -14122,6 +14161,28 @@ export type MutationConflict = {
   UnitID?: string;
 };
 export type MutationConflictList = MutationConflict[];
+export type PathAnnotations = {
+  [key: string]: {
+    [key: string]: string;
+  };
+};
+export type ResourcePathAnnotations = {
+  /** Names (with scopes, if any) used in current and prior revisions of this resource */
+  Aliases?: {
+    [key: string]: object;
+  };
+  /** Names without scopes used in current and prior revisions of this resource */
+  AliasesWithoutScopes?: {
+    [key: string]: object;
+  };
+  /** Annotations by path. Paths are canonical: an associative segment names its element by merge key, with no positional fallback */
+  PathAnnotationMap?: {
+    [key: string]: PathAnnotations;
+  };
+  Resource?: ResourceInfo;
+  ResourceAnnotations?: PathAnnotations;
+};
+export type PathAnnotationList = ResourcePathAnnotations[];
 export type Unit = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
   Annotations?: {
@@ -14151,6 +14212,7 @@ export type Unit = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  PathAnnotations?: PathAnnotationList;
   /** ProviderType identifies which bridge to use in the case that the Target supports multiple ProviderTypes. */
   ProviderType?: string;
   /** Unique URL-safe identifier for the entity. */
@@ -14310,6 +14372,7 @@ export type UnitRead = {
   NeededPaths?: AttributeValue[];
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  PathAnnotations?: PathAnnotationList;
   /** Sequence number the previous Revision applied. 0 if no live revision. */
   PreviousLiveRevisionNum?: number;
   /** Attribute paths that this Unit provides to downstream Units via NeedsProvides Links. Computed from get-provided and stored on data updates. */
@@ -14368,6 +14431,15 @@ export type Binding = {
   ProvidedResource?: ResourceInfo;
 };
 export type BindingList = Binding[];
+export type ClearanceRequirement = {
+  /** The guard key this requirement is about */
+  Key?: string;
+  /** Exists, In, NotIn, or DoesNotExist */
+  Operator?: string;
+  /** The values In and NotIn compare against; unused by Exists and DoesNotExist */
+  Values?: string[];
+};
+export type Clearance = ClearanceRequirement[];
 export type PathExpression = {
   /** Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type. */
   DataType?: string;
@@ -14406,6 +14478,7 @@ export type Link = {
   /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
   AutoUpdate?: boolean;
   Bindings?: BindingList;
+  Clearance?: Clearance;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14467,6 +14540,7 @@ export type LinkRead = {
   /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
   AutoUpdate?: boolean;
   Bindings?: BindingList;
+  Clearance?: Clearance;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
@@ -15114,6 +15188,7 @@ export type Revision = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  PathAnnotations?: PathAnnotationList;
   /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
   Releases?: {
     [key: string]: string;
@@ -15175,6 +15250,7 @@ export type RevisionRead = {
   MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
+  PathAnnotations?: PathAnnotationList;
   /** A set (map) of ReleaseIDs of any Releases that have bundled this Revision. The string values have no particular meaning for now. */
   Releases?: {
     [key: string]: string;
@@ -15841,6 +15917,27 @@ export type UnitExtendedRead = {
   ToLinks?: LinkRead[] | null;
   Unit?: UnitRead;
 };
+export type UnitGuardResponse = {
+  PathAnnotations?: PathAnnotationList;
+};
+export type ResourceGuards = {
+  /** Guard keys to remove, by path. Removing a key that is not there is not an error */
+  Remove?: {
+    [key: string]: string[];
+  };
+  Resource?: ResourceInfo;
+  /** Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole */
+  Set?: {
+    [key: string]: {
+      [key: string]: string;
+    };
+  };
+};
+export type UnitGuardRequest = {
+  Clearance?: Clearance;
+  /** Per-resource guard edits to apply to the Unit's PathAnnotations */
+  ResourceGuards?: ResourceGuards[] | null;
+};
 export type ExtendedMutation = {
   Error?: ResponseError;
   Invocation?: Invocation;
@@ -16200,6 +16297,7 @@ export const {
   useLazyDownloadUnitDataQuery,
   useGetUnitExtendedQuery,
   useLazyGetUnitExtendedQuery,
+  useSetUnitGuardMutation,
   useListExtendedMutationsQuery,
   useLazyListExtendedMutationsQuery,
   useGetExtendedMutationQuery,

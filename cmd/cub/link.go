@@ -33,6 +33,7 @@ var (
 	linkNoMergeEnableSubtraction     bool
 	linkProtect                      bool
 	linkNoProtect                    bool
+	linkClearance                    []string
 	linkSquash                       bool
 	linkNoSquash                     bool
 	linkMakeCurrent                  bool
@@ -51,6 +52,8 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkNoMergeEnableSubtraction, "no-merge-enable-subtraction", false, "return this link to the default: no subtraction step")
 	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the paths this link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them; refused on UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
+	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
+		"class of guarded reason this link's merges are cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
 	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoSquash, "no-squash", false, "return this link to the default: its resolve walks the range")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
@@ -142,6 +145,13 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 	if linkProtect {
 		link.Protect = true
 	}
+	if cmd.Flags().Changed("clearance") {
+		clearance, err := parseClearanceSpecs(linkClearance)
+		if err != nil {
+			return err
+		}
+		link.Clearance = &clearance
+	}
 	if linkSquash {
 		link.Squash = true
 	}
@@ -188,6 +198,13 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		link.Protect = true
 	} else if linkNoProtect {
 		link.Protect = false
+	}
+	if cmd.Flags().Changed("clearance") {
+		clearance, err := parseClearanceSpecs(linkClearance)
+		if err != nil {
+			return err
+		}
+		link.Clearance = &clearance
 	}
 	if linkSquash {
 		link.Squash = true
@@ -240,6 +257,12 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		} else if linkNoMergeEnableSubtraction {
 			patchMap["MergeEnableSubtraction"] = false
 		}
+		if cmd.Flags().Changed("clearance") {
+			clearance, err := parseClearanceSpecs(linkClearance)
+			if err == nil {
+				patchMap["Clearance"] = clearance
+			}
+		}
 		if linkProtect {
 			patchMap["Protect"] = true
 		} else if linkNoProtect {
@@ -275,6 +298,7 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 		cmd.Flags().Changed("where-mutation") || cmd.Flags().Changed("where-resource") ||
 		linkMergeEnableSubtraction || linkNoMergeEnableSubtraction ||
 		linkProtect || linkNoProtect ||
+		cmd.Flags().Changed("clearance") ||
 		linkSquash || linkNoSquash ||
 		linkMakeCurrent ||
 		cmd.Flags().Changed("upstream-last-merged-revision") ||

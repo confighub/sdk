@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -14,6 +15,10 @@ var contextListCmd = &cobra.Command{
 	Aliases: []string{"get-contexts"},
 	Short:   "List all contexts",
 	Long: getCommandHelp(`List all available contexts showing current context, server, organization, user, and default space.
+
+SELECTED names everything that asked for a context — the --context flag, the
+CUB_CONTEXT environment variable, config.yaml — and stars the one in effect, which
+is the highest-precedence of them in that order.
 
 Examples:
 `+"```"+`
@@ -46,29 +51,33 @@ func contextListCmdRun(_ *cobra.Command, _ []string) error {
 	}
 
 	displayListResults(contexts, func(ctx *Context) string { return ctx.Name }, displayContextList)
-
-	// The CURRENT column marks the persisted current context. When an override
-	// (--context flag or $CUB_CONTEXT) is in effect, that marker is not the
-	// context commands actually run against, so spell out the active one.
-	if activeContextOverrideSource != "" {
-		active := contextManager.ActiveContext().Name
-		if active != contextManager.CurrentContextName() {
-			tprint(fmt.Sprintf("\nActive context is %q, selected by %s (overriding the current context above).",
-				active, activeContextOverrideSource))
-		}
-	}
 	return nil
 }
 
 func displayContextList(ctxs []*Context) {
+	header, rows := contextListTable(ctxs)
 	table := tableView()
-	table.SetHeader([]string{"CURRENT", "NAME", "SERVER", "ORGANIZATION", "USER", "SPACE"})
+	table.SetHeader(header)
+	for _, row := range rows {
+		table.Append(row)
+	}
+	table.Render()
+}
+
+// contextListTable builds the header and rows of the context listing. SELECTED
+// names every source that asked for a context — config.yaml, $CUB_CONTEXT, the
+// --context flag — and stars the one in effect, which is the highest-precedence
+// of them. Showing only the winner would leave a reader unable to tell a
+// $CUB_CONTEXT that was obeyed from one that was outranked; showing them without
+// the star would leave them to apply the precedence rules by hand, which is the
+// ambiguity this listing exists to settle.
+func contextListTable(ctxs []*Context) (header []string, rows [][]string) {
+	active := contextManager.ActiveContextName()
+
+	header = []string{"SELECTED", "NAME", "SERVER", "ORGANIZATION", "USER", "SPACE"}
 
 	for _, ctx := range ctxs {
-		current := ""
-		if ctx.Name == contextManager.CurrentContextName() {
-			current = "*"
-		}
+		selected := contextSelectedBy(ctx.Name, ctx.Name == active)
 
 		user := ctx.Coordinate.User
 		if user == "" {
@@ -91,8 +100,8 @@ func displayContextList(ctxs []*Context) {
 			org = ctx.Coordinate.OrganizationID
 		}
 
-		table.Append([]string{
-			current,
+		rows = append(rows, []string{
+			selected,
 			ctx.Name,
 			ctx.Coordinate.ServerURL,
 			org,
@@ -101,5 +110,26 @@ func displayContextList(ctxs []*Context) {
 		})
 	}
 
-	table.Render()
+	return header, rows
+}
+
+// contextSelectedBy renders the SELECTED cell for a context: the sources that
+// named it, highest precedence first, starred when it is the one in effect. A
+// context nothing named gets an empty cell.
+func contextSelectedBy(name string, inEffect bool) string {
+	var sources []string
+	for _, sel := range activeContextSelectors {
+		if sel.Context == name {
+			sources = append(sources, sel.Source)
+		}
+	}
+	if len(sources) == 0 {
+		return ""
+	}
+	// The two spaces align the unstarred rows under the starred one.
+	mark := "  "
+	if inEffect {
+		mark = "* "
+	}
+	return mark + strings.Join(sources, ", ")
 }

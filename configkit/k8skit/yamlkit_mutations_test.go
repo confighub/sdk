@@ -181,6 +181,122 @@ spec:
 	}
 }
 
+// TestAddMutationsCarriesPatchOntoARepeatedPath states which way the two branches of
+// AddMutations' path merge were made to agree.
+//
+// The new-path branch assigned the incoming MutationInfo whole while the exact-match branch
+// rebuilt it field by field and left Patch out, so a line-level patch survived accumulation
+// onto a path with no prior entry and was dropped onto one that had been written before.
+// Both branches now take the whole record: an accumulated entry should describe its change
+// the same way whichever it is, and the difference was not one anything meant.
+func TestAddMutationsCarriesPatchOntoARepeatedPath(t *testing.T) {
+	configMap := func(body string) string {
+		return `apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: settings
+  namespace: default
+data:
+  app.conf: |
+` + body
+	}
+	base := configMap("    listen: 8080\n    workers: 2\n    log: info\n")
+	first := configMap("    listen: 8080\n    workers: 4\n    log: info\n")
+	second := configMap("    listen: 8080\n    workers: 8\n    log: info\n")
+
+	provider := k8skit.NewK8sResourceProvider()
+	parse := func(data string) gaby.Container {
+		parsed, err := gaby.ParseAll([]byte(data))
+		require.NoError(t, err)
+		return parsed
+	}
+
+	path := api.ResolvedPath("data.app~1conf")
+	firstMutations, err := yamlkit.ComputeMutations(parse(base), parse(first), 1, provider)
+	require.NoError(t, err)
+	require.Len(t, firstMutations, 1)
+	require.NotEmpty(t, firstMutations[0].PathMutationMap[path].Patch,
+		"a multi-line string update carries a line-level patch")
+
+	secondMutations, err := yamlkit.ComputeMutations(parse(first), parse(second), 2, provider)
+	require.NoError(t, err)
+
+	combined, _ := yamlkit.AddMutations(firstMutations, secondMutations)
+	require.Len(t, combined, 1)
+	accumulated := combined[0].PathMutationMap[path]
+	assert.Equal(t, secondMutations[0].PathMutationMap[path].Patch, accumulated.Patch,
+		"the second edit's patch is what the accumulated entry carries")
+	assert.Equal(t, secondMutations[0].PathMutationMap[path].Value, accumulated.Value)
+}
+
+// TestMutationPathFormsAgainstADocument covers the two rewrites that need the configuration
+// itself: naming an array element that a stored path addresses by position, and putting the
+// position back on one that names it. The first is what the migration does to records written
+// before the associative encoding; the second is that migration's rollback.
+func TestMutationPathFormsAgainstADocument(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	parsed, err := gaby.ParseAll([]byte(`apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: ns
+spec:
+  template:
+    spec:
+      containers:
+      - name: logger
+        image: fluentd:1.0
+      - name: app
+        image: nginx:1.19
+`))
+	require.NoError(t, err)
+	resource := api.ResourceInfo{
+		ResourceType:             "apps/v1/Deployment",
+		ResourceName:             "ns/web",
+		ResourceNameWithoutScope: "web",
+	}
+	doc, _ := yamlkit.FindResourceDoc(parsed, provider, &resource)
+	require.NotNil(t, doc)
+	mergeKeyLookup := yamlkit.MergeKeyLookup(func(path string) ([]string, bool) {
+		return provider.MergeKeysForPath(resource.ResourceType, path)
+	})
+
+	named, changed := yamlkit.NameArrayElementsByMergeKey(doc,
+		"spec.template.spec.containers.1.image", mergeKeyLookup)
+	assert.True(t, changed)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.?name=app.image"), named)
+
+	anchored, changed := yamlkit.AnchorMutationPath(doc, named)
+	assert.True(t, changed)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.?name=app;@1.image"), anchored)
+
+	// An index the document has nothing at keeps its position: positional resolution still
+	// works for such a path, so leaving it is safer than guessing.
+	unresolvable, changed := yamlkit.NameArrayElementsByMergeKey(doc,
+		"spec.template.spec.containers.7.image", mergeKeyLookup)
+	assert.False(t, changed)
+	assert.Equal(t, api.ResolvedPath("spec.template.spec.containers.7.image"), unresolvable)
+
+	// FindMutationIndex is asked for positional paths -- that is the form NeededPaths records
+	// -- while the stored entry names the element, so it resolves the stored path to match.
+	stored := api.ResourceMutationList{{
+		Resource:             resource,
+		ResourceMutationInfo: api.MutationInfo{MutationType: api.MutationTypeAdd, Index: 1},
+		PathMutationMap: api.MutationMap{
+			"spec.template.spec.containers.?name=app.image": {MutationType: api.MutationTypeUpdate, Index: 9},
+		},
+	}}
+	index, found := yamlkit.FindMutationIndex(parsed, stored, resource,
+		"spec.template.spec.containers.1.image", provider)
+	require.True(t, found)
+	assert.Equal(t, int64(9), index, "position 1 is the container the stored entry names")
+
+	index, found = yamlkit.FindMutationIndex(parsed, stored, resource,
+		"spec.template.spec.containers.0.image", provider)
+	require.True(t, found)
+	assert.Equal(t, int64(1), index, "the sidecar has no entry of its own, so the resource's index stands")
+}
+
 func TestSubtractMutations(t *testing.T) {
 	tests := []struct {
 		name           string

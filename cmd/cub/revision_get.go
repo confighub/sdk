@@ -28,6 +28,9 @@ Examples:
 
   # Get only the configuration data of a revision (use the dedicated subcommand)
   cub revision data --space my-space my-ns 2
+
+  # Show the mutations recorded on a revision
+  cub revision get --space my-space -o mutations my-deployment 3
 `+"```"+`
 `, ""),
 	RunE: revisionGetCmdRun,
@@ -35,6 +38,7 @@ Examples:
 
 func init() {
 	addStandardGetFlags(revisionGetCmd)
+	enableDisplayMutationsFlag(revisionGetCmd)
 	revisionGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	_ = revisionGetCmd.Flags().MarkDeprecated("data-only", "use 'cub revision data <unit> <revision-num>'")
 	revisionCmd.AddCommand(revisionGetCmd)
@@ -52,6 +56,14 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	rev, err := apiGetExtendedRevisionFromNumber(num, unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
+	}
+
+	// -o mutations replaces the default summary with the mutations recorded on the
+	// revision. The deprecated --display-mutations flag remains additive and is
+	// handled inside displayExtendedRevisionDetails.
+	if effectiveOutput().Kind == OutputMutations {
+		displayMutationsForRevision(rev.Revision)
+		return nil
 	}
 
 	displayGetResults(rev, displayExtendedRevisionDetails)
@@ -139,10 +151,14 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		}
 		view.Render()
 		tprintRaw("---")
-		if len(*rev.MutationSources) != 0 {
+		if rev.MutationSources != nil && len(*rev.MutationSources) != 0 {
 			tprintRaw("Mutation Sources:")
-			// TODO: Make this prettier
-			displayJSON(rev.MutationSources)
+			if shouldDisplayMutations() {
+				lookupMutationsUnitID = rev.UnitID.String()
+				displayResourceMutationList(rev.MutationSources, true, 0, "", "")
+			} else {
+				displayJSON(rev.MutationSources)
+			}
 			tprintRaw("---")
 		}
 	}

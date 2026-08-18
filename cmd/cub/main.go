@@ -21,24 +21,97 @@ var rootCmd = &cobra.Command{
 // Global context flag
 var globalContextFlag string
 
-// activeContextOverrideSource describes how the active context was overridden for
-// this invocation (e.g. by the --context flag or $CUB_CONTEXT), or is empty when
-// the persisted current context is in effect. Set by applyContextOverride and
-// read by the context display commands so the override is never invisible.
+// What can select the context a command runs against, named as `cub context
+// list` prints it in its SELECTED column.
+const (
+	contextSourceConfig = "config.yaml"
+	contextSourceEnv    = "CUB_CONTEXT"
+	contextSourceFlag   = "--context"
+)
+
+// activeContextOverrideSource is the source that overrode the active context for
+// this invocation (contextSourceFlag or contextSourceEnv), or is empty when the
+// persisted current context is in effect. Set by applyContextOverride and read by
+// the context display commands so the override is never invisible.
 var activeContextOverrideSource string
 
-// resolveContextOverride determines the context override for this invocation and a
-// human description of its source. Precedence, highest first: the --context flag,
-// then the $CUB_CONTEXT environment variable. An empty name means no override (the
-// persisted current context is used).
-func resolveContextOverride() (name, source string) {
+// contextSelector is a source that named a context for this invocation, paired
+// with the context it named.
+type contextSelector struct {
+	Source  string // contextSourceFlag, contextSourceEnv or contextSourceConfig
+	Context string
+}
+
+// activeContextSelectors lists every source that named a context for this
+// invocation, highest precedence first, so the display commands can show all of
+// them and mark the one that won. Recorded by applyContextOverride before it
+// rewrites $CUB_CONTEXT for child processes, which would otherwise erase what
+// the environment originally asked for.
+var activeContextSelectors []contextSelector
+
+// recordContextSelectors collects the sources that named a context, highest
+// precedence first: the --context flag, then $CUB_CONTEXT, then the current
+// context config.yaml records. The first entry is the one in effect.
+func recordContextSelectors() {
+	activeContextSelectors = nil
 	if globalContextFlag != "" {
-		return globalContextFlag, "--context flag"
+		activeContextSelectors = append(activeContextSelectors,
+			contextSelector{contextSourceFlag, globalContextFlag})
 	}
-	if env := os.Getenv("CUB_CONTEXT"); env != "" {
-		return env, "CUB_CONTEXT environment variable"
+	if env := os.Getenv(contextSourceEnv); env != "" {
+		activeContextSelectors = append(activeContextSelectors,
+			contextSelector{contextSourceEnv, env})
 	}
-	return "", ""
+	if stored := contextManager.CurrentContextName(); stored != "" {
+		activeContextSelectors = append(activeContextSelectors,
+			contextSelector{contextSourceConfig, stored})
+	}
+}
+
+// contextSelectionSummary describes what selected the context in effect, naming
+// the sources it outranked and what they asked for, so a --context flag or a
+// $CUB_CONTEXT that lost is never invisible. It is empty when nothing named a
+// context, which means there is none to run against.
+func contextSelectionSummary() string {
+	if len(activeContextSelectors) == 0 {
+		return ""
+	}
+	var outranked []string
+	for _, sel := range activeContextSelectors[1:] {
+		verb := "selects"
+		if sel.Source == contextSourceConfig {
+			verb = "records"
+		}
+		outranked = append(outranked, fmt.Sprintf("%s %s %q", sel.Source, verb, sel.Context))
+	}
+	summary := contextSourcePhrase(activeContextSelectors[0].Source)
+	if len(outranked) > 0 {
+		summary += " (" + strings.Join(outranked, "; ") + ")"
+	}
+	return summary
+}
+
+// contextSourcePhrase spells a source out for prose, where the bare name of a
+// flag or an environment variable reads as a fragment.
+func contextSourcePhrase(source string) string {
+	switch source {
+	case contextSourceFlag:
+		return "--context flag"
+	case contextSourceEnv:
+		return "CUB_CONTEXT environment variable"
+	default:
+		return source
+	}
+}
+
+// resolveContextOverride determines the context override for this invocation and
+// its source, from the selectors recorded by recordContextSelectors. An empty
+// name means no override (the persisted current context is used).
+func resolveContextOverride() (name, source string) {
+	if len(activeContextSelectors) == 0 || activeContextSelectors[0].Source == contextSourceConfig {
+		return "", ""
+	}
+	return activeContextSelectors[0].Context, activeContextSelectors[0].Source
 }
 
 // applyContextOverride applies the resolved context override (if any) to the
@@ -59,17 +132,18 @@ func resolveContextOverride() (name, source string) {
 // Only an actual override is exported. With none, parent and child both resolve
 // the persisted current context and already agree.
 func applyContextOverride() error {
+	recordContextSelectors()
 	name, source := resolveContextOverride()
 	if name == "" {
 		return nil
 	}
 	if err := contextManager.OverrideCurrentContext(name); err != nil {
-		return fmt.Errorf("%s: %w", source, err)
+		return fmt.Errorf("%s: %w", contextSourcePhrase(source), err)
 	}
 	activeContextOverrideSource = source
-	// resolveContextOverride reads $CUB_CONTEXT, but only ever before this point
-	// (globalPreRun runs once), so setting it here cannot feed back into it.
-	if err := os.Setenv("CUB_CONTEXT", name); err != nil {
+	// recordContextSelectors read $CUB_CONTEXT above, so the selectors keep what
+	// the environment originally asked for even though this replaces it.
+	if err := os.Setenv(contextSourceEnv, name); err != nil {
 		return fmt.Errorf("export CUB_CONTEXT for child cub processes: %w", err)
 	}
 	return nil

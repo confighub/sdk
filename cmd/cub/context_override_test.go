@@ -31,12 +31,15 @@ func setupContextOverrideTest(t *testing.T) *ContextManager {
 	}
 
 	prevManager, prevSource, prevFlag := contextManager, activeContextOverrideSource, globalContextFlag
+	prevSelectors := activeContextSelectors
 	t.Cleanup(func() {
 		contextManager, activeContextOverrideSource, globalContextFlag = prevManager, prevSource, prevFlag
+		activeContextSelectors = prevSelectors
 	})
 	contextManager = cm
 	activeContextOverrideSource = ""
 	globalContextFlag = ""
+	activeContextSelectors = nil
 	return cm
 }
 

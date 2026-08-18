@@ -584,6 +584,34 @@ func matchArrayElement(elements []*gaby.YamlDoc, keys, values []string, fallback
 	return -1
 }
 
+// matchSoleArrayElement returns the index of the only element matching every key=value
+// pair, or -1 when none does or more than one does.
+//
+// This is how an element is matched by identity alone, and identity is only identity where
+// it names one element of the array. An application may accept the same flag more than
+// once — helm's --set, kubectl's --from-file — so the flag name is a type rather than a
+// name there, and a person can write confighub:id on two elements as easily as on one.
+//
+// The recorded index is deliberately not a tie-breaker here, though it is one for a match
+// on every pair. What brings a segment to this stage is its digest no longer matching,
+// which says the array has changed underneath the index: taking the occurrence that
+// happens to sit there means overwriting an element the patch never named. An ambiguous
+// identity is no identity, so the caller falls back to the position, where the array
+// context can veto it.
+func matchSoleArrayElement(elements []*gaby.YamlDoc, keys, values []string) int {
+	match := -1
+	for index, element := range elements {
+		if !elementMatchesPairs(element, keys, values) {
+			continue
+		}
+		if match >= 0 {
+			return -1
+		}
+		match = index
+	}
+	return match
+}
+
 // identifyingPairs returns the pairs of an anchored segment that identify the element
 // independently of its current content — everything but the digest. Returns nothing for a
 // segment that has only a digest, or for a merge-key segment, whose pairs are all identity
@@ -674,6 +702,23 @@ func elementMatchesPairs(element *gaby.YamlDoc, keys, values []string) bool {
 // Returns the resolved path and a bool that is true only when every associative segment
 // was resolved (by merge-key match, by out-of-bounds index, or by legacy fallback).
 func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
+	return resolveAssociativeSegments(doc, path, false)
+}
+
+// ResolveAssociativeSegmentsForInsertion is ResolveAssociativeSegments for the path of an
+// element a patch adds to a positional array, whose last segment is an anchor.
+//
+// The anchor on such a segment digests the element the patch is about to create, not one to
+// go looking for. Matching it against the target finds an element that merely has the same
+// content — a repeated argument, a duplicated list entry — and puts the new element beside
+// that one instead of at the position the patch named. So the last segment keeps its
+// recorded index, which is the only thing that says where an insertion goes. Everything
+// ahead of it is a path to an element that does exist, and resolves as usual.
+func ResolveAssociativeSegmentsForInsertion(doc *gaby.YamlDoc, path string) (string, bool) {
+	return resolveAssociativeSegments(doc, path, true)
+}
+
+func resolveAssociativeSegments(doc *gaby.YamlDoc, path string, lastSegmentIsInsertion bool) (string, bool) {
 	if !strings.Contains(path, "?") {
 		return path, true
 	}
@@ -681,7 +726,7 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 	var resolvedSegments []string
 	currentNode := doc
 	allResolved := true
-	for _, segment := range segments {
+	for segmentIndex, segment := range segments {
 		kv, isAssociative := strings.CutPrefix(segment, "?")
 		if !isAssociative {
 			resolvedSegments = append(resolvedSegments, EscapeDotsInPathSegment(segment))
@@ -711,6 +756,13 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 		// element itself.
 		keys, values, context := splitAnchorContext(keys, values)
 
+		if lastSegmentIsInsertion && segmentIndex == len(segments)-1 && segmentIsAnchor(segment) &&
+			fallbackIndex != "" {
+			resolvedSegments = append(resolvedSegments, fallbackIndex)
+			currentNode = nil
+			continue
+		}
+
 		resolved := false
 		if currentNode != nil {
 			elements := currentNode.Children()
@@ -728,7 +780,7 @@ func ResolveAssociativeSegments(doc *gaby.YamlDoc, path string) (string, bool) {
 			matchIndex := matchArrayElement(elements, keys, values, fallbackIndex)
 			if matchIndex < 0 {
 				if identityKeys, identityValues := identifyingPairs(keys, values); len(identityKeys) > 0 {
-					matchIndex = matchArrayElement(elements, identityKeys, identityValues, fallbackIndex)
+					matchIndex = matchSoleArrayElement(elements, identityKeys, identityValues)
 				}
 			}
 			if matchIndex >= 0 {
@@ -1348,15 +1400,137 @@ func CanonicalMutationPath(path api.ResolvedPath) api.ResolvedPath {
 
 // canonicalMutationMap re-keys a MutationMap by CanonicalMutationPath, and returns a map
 // from each canonical path back to the path it came from.
+//
+// Two raw paths can canonicalize to the same key: the same element recorded at two
+// positions, which is what a map accumulated before AddMutations keyed canonically holds
+// for an element something was inserted ahead of. Entries are folded in sorted-path order
+// so which one lands is not a function of map iteration, and Protected is kept if either
+// carried it. Every other field describes a change that can be re-derived from the data;
+// a lost Protected silently reopens a path its owner had closed, which is the failure this
+// whole canonicalization exists to stop.
 func canonicalMutationMap(m api.MutationMap) (api.MutationMap, map[api.ResolvedPath]api.ResolvedPath) {
 	canonical := make(api.MutationMap, len(m))
 	originals := make(map[api.ResolvedPath]api.ResolvedPath, len(m))
-	for path, info := range m {
-		canonicalPath := CanonicalMutationPath(path)
+	for _, entry := range api.SortedMutationMapEntries(m) {
+		canonicalPath := CanonicalMutationPath(entry.Path)
+		info := *entry.MutationInfo
+		if existing, collides := canonical[canonicalPath]; collides {
+			info.Protected = info.Protected || existing.Protected
+		}
 		canonical[canonicalPath] = info
-		originals[canonicalPath] = path
+		originals[canonicalPath] = entry.Path
 	}
 	return canonical, originals
+}
+
+// NameArrayElementsByMergeKey rewrites the bare numeric segments of a path into associative
+// segments naming each element by its merge keys, resolved against doc. It is the inverse of
+// what ResolveAssociativeSegments does, and reports whether anything changed.
+//
+// It exists for the records written before the associative encoding did. An entry that says
+// containers.0.image names whatever is first in line rather than the container, so it drifts
+// with every insertion ahead of it, and no string rewrite can repair that: recovering the
+// element's identity needs the document the entry was computed against, which only the caller
+// can supply.
+//
+// A segment is left numeric when the array declares no merge keys, when the element does not
+// carry them, or when the document has nothing at that position. Positional resolution still
+// works for such a path, which is what makes leaving it alone the safe answer rather than a
+// failure. Segments are resolved against the path as it arrived, so a rewrite that could not be
+// made never costs the ones after it.
+func NameArrayElementsByMergeKey(doc *gaby.YamlDoc, path api.ResolvedPath,
+	mergeKeyLookup MergeKeyLookup) (api.ResolvedPath, bool) {
+	if doc == nil || mergeKeyLookup == nil {
+		return path, false
+	}
+	original := gaby.DotPathToSlice(string(path))
+	rewritten := slices.Clone(original)
+	changed := false
+	for i, segment := range original {
+		index, err := strconv.Atoi(segment)
+		if err != nil || index < 0 {
+			continue
+		}
+		arrayPath := JoinPathSegments(original[:i])
+		mergeKeys, declared := mergeKeyLookup(arrayPath)
+		if !declared {
+			continue
+		}
+		arrayNode := doc
+		if i > 0 {
+			resolvedArrayPath, resolved := ResolveAssociativeSegments(doc, arrayPath)
+			if !resolved {
+				continue
+			}
+			if arrayNode = doc.Path(resolvedArrayPath); arrayNode == nil {
+				continue
+			}
+		}
+		children := arrayNode.Children()
+		if index >= len(children) {
+			continue
+		}
+		values, identified := MergeKeyValues(children[index], mergeKeys)
+		if !identified {
+			continue
+		}
+		rewritten[i] = string(CanonicalMutationPath(
+			api.ResolvedPath(AssociativePathSegment(mergeKeys, values, index))))
+		changed = true
+	}
+	if !changed {
+		return path, false
+	}
+	return api.ResolvedPath(JoinPathSegments(rewritten)), true
+}
+
+// AnchorMutationPath re-attaches the positional fallback to every associative segment of a
+// path, resolved against doc, and reports whether anything changed. It is CanonicalMutationPath
+// undone against a particular document, for the one caller that needs the stored form back: a
+// migration rolling the canonical keying of MutationSources backwards.
+//
+// The index it writes is where the element sits in doc, which is what a diff computed against
+// doc would have recorded, not necessarily what the path carried before it was canonicalized.
+// Nothing is written when the path does not fully resolve, since a fallback pointing at the
+// wrong element is worse than none.
+func AnchorMutationPath(doc *gaby.YamlDoc, path api.ResolvedPath) (api.ResolvedPath, bool) {
+	if doc == nil || !strings.Contains(string(path), "?") {
+		return path, false
+	}
+	resolvedPath, resolved := ResolveAssociativeSegments(doc, string(path))
+	if !resolved {
+		return path, false
+	}
+	segments := gaby.DotPathToSlice(string(path))
+	resolvedSegments := gaby.DotPathToSlice(resolvedPath)
+	if len(segments) != len(resolvedSegments) {
+		return path, false
+	}
+	changed := false
+	for i, segment := range segments {
+		if !strings.HasPrefix(segment, "?") || strings.Contains(segment, ";@") {
+			continue
+		}
+		if _, err := strconv.Atoi(resolvedSegments[i]); err != nil {
+			continue
+		}
+		segments[i] = segment + ";@" + resolvedSegments[i]
+		changed = true
+	}
+	if !changed {
+		return path, false
+	}
+	return api.ResolvedPath(JoinPathSegments(segments)), true
+}
+
+// canonicalPathKeys returns rm with its PathMutationMap re-keyed by CanonicalMutationPath.
+// The map is replaced rather than edited in place, so a list the caller still holds is not
+// disturbed by the rewrite.
+func canonicalPathKeys(rm api.ResourceMutation) api.ResourceMutation {
+	if len(rm.PathMutationMap) > 0 {
+		rm.PathMutationMap, _ = canonicalMutationMap(rm.PathMutationMap)
+	}
+	return rm
 }
 
 // arrayIndexBeyondEnd reports whether a resolved path addresses an element more than one
@@ -2395,7 +2569,52 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 // ProtectedPath (resource-level and path-level), and UnresolvedPath (when an
 // associative segment couldn't be matched against the target). The conflicts are
 // advisory — the returned data already reflects the drops.
+// guardResourceMutations projects an annotation table into the shape ResourceMutationIndex
+// takes, so resource matching -- including across a rename -- is the same code for both.
+// Only the identity fields are carried; the index reads nothing else.
+func guardResourceMutations(annotations api.PathAnnotationList) api.ResourceMutationList {
+	mutations := make(api.ResourceMutationList, 0, len(annotations))
+	for i := range annotations {
+		mutations = append(mutations, api.ResourceMutation{
+			Resource:             annotations[i].Resource,
+			Aliases:              annotations[i].Aliases,
+			AliasesWithoutScopes: annotations[i].AliasesWithoutScopes,
+		})
+	}
+	return mutations
+}
+
+// GuardFilter is what an operation brings to a patch about guards: the target's annotation
+// table, and the clearance the operation carries. Both are needed together -- a table with no
+// clearance withholds every guarded write, and a clearance with no table has nothing to clear.
+//
+// A nil filter, or one whose table holds no annotations, costs nothing: the guard check is
+// skipped entirely, which is the state every Unit is in until someone guards something.
+type GuardFilter struct {
+	Annotations api.PathAnnotationList
+	Clearance   api.Clearance
+}
+
+// active reports whether there is any guard to consult.
+func (g *GuardFilter) active() bool {
+	return g != nil && api.HasPathAnnotations(g.Annotations)
+}
+
+// PatchMutations applies a patch with no guard filtering. Equivalent to PatchMutationsGuarded
+// with no filter, and the form every caller that predates guards uses.
 func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPatch, mutationsToSubtract api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
+	return PatchMutationsGuarded(parsedData, mutationsProtection, mutationsPatch, mutationsToSubtract, nil, resourceProvider, options)
+}
+
+// PatchMutationsGuarded is PatchMutations with the guard filter applied: a path whose guards the
+// operation's clearance does not cover is not written, and the withheld change is reported as a
+// ConflictReasonGuarded carrying the guard that stopped it.
+//
+// The guard check sits beside the protection check rather than replacing it. The two say
+// different things -- protection says the target claimed a path and gives no reason, a guard
+// names the reason and can be cleared by an operation that knows it -- and Protected does not
+// migrate onto a guard key until guards carry the traffic.
+func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutationsPatch, mutationsToSubtract api.ResourceMutationList, guards *GuardFilter, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
 	var conflicts api.MutationConflictList
 	if len(mutationsToSubtract) > 0 {
 		var subtractConflicts api.MutationConflictList
@@ -2427,6 +2646,16 @@ func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPat
 	// target claimed, which is how a merge with subtraction on expresses the ownership a
 	// merge without it expresses as stored protection.
 	subtractIdx := api.NewResourceMutationIndex(mutationsToSubtract)
+
+	// The annotation table is keyed by resource the same way the mutation lists are, which is
+	// what ResourcePathAnnotations was shaped for: one index implementation, one set of rename
+	// semantics.
+	var guardIdx *api.ResourceMutationIndex
+	var guardClearance api.Clearance
+	if guards.active() {
+		guardIdx = api.NewResourceMutationIndex(guardResourceMutations(guards.Annotations))
+		guardClearance = guards.Clearance
+	}
 
 	// Track which patch mutations were matched to existing documents.
 	// Unmatched Add/Replace mutations need to be appended as new documents.
@@ -2502,10 +2731,19 @@ func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPat
 		if subtractIndex, ok := subtractIdx.Find(*docResourceInfo, protectionAliases); ok {
 			subtractedPaths = mutationsToSubtract[subtractIndex].PathMutationMap
 		}
+		// The guards on this resource, matched the way every resource lookup matches so a
+		// rename does not lose them.
+		var resourceGuards *api.ResourcePathAnnotations
+		if guards.active() {
+			if annotationIndex, ok := guardIdx.Find(*docResourceInfo, protectionAliases); ok {
+				resourceGuards = &guards.Annotations[annotationIndex]
+			}
+		}
 		visitorErrs, pathConflicts = applyPathMutations(doc, mutationsPatch[mutationPatchIndex].PathMutationMap,
 			hasProtection, mutationsProtection, protectionIndex, mutationsPatch[mutationPatchIndex].Resource,
 			mutationsPatch[mutationPatchIndex].ArrayOrders, mutationsPatch[mutationPatchIndex].ArrayElementAliases,
 			mergeKeyLookup, exclusiveLookup, subtractedPaths,
+			resourceGuards, guardClearance,
 			visitorErrs)
 		conflicts = append(conflicts, pathConflicts...)
 		return nil, visitorErrs
@@ -2595,10 +2833,20 @@ func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPat
 			exclusiveLookup := ExclusiveFieldsLookup(func(path string) (ExclusiveFields, bool) {
 				return resourceProvider.ExclusiveFieldsForPath(mutationsPatch[i].Resource.ResourceType, path)
 			})
+			// A resource the target does not have can still be guarded: a guard may be
+			// written before the thing it is about exists, which is the same rule that lets
+			// one cover a path added later.
+			var resourceGuards *api.ResourcePathAnnotations
+			if guardIdx != nil {
+				if annotationIndex, ok := guardIdx.Find(mutationsPatch[i].Resource, mutationsPatch[i].AliasesWithoutScopes); ok {
+					resourceGuards = &guards.Annotations[annotationIndex]
+				}
+			}
 			errs, pathConflicts = applyPathMutations(valueDoc, mutationsPatch[i].PathMutationMap,
 				false, nil, 0, mutationsPatch[i].Resource,
 				mutationsPatch[i].ArrayOrders, mutationsPatch[i].ArrayElementAliases,
 				mergeKeyLookup, exclusiveLookup, nil,
+				resourceGuards, guardClearance,
 				errs)
 			conflicts = append(conflicts, pathConflicts...)
 			parsedData = append(parsedData, valueDoc)
@@ -2714,7 +2962,8 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 		}
 		return a.index - b.index
 	})
-	for _, op := range ops {
+	alreadyApplied := map[string]bool{}
+	for i, op := range ops {
 		elementPath := op.arrayPath + "." + strconv.Itoa(op.index)
 		if op.remove {
 			if !doc.ExistsP(elementPath) {
@@ -2725,13 +2974,24 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 			}
 			continue
 		}
-		// Skip an insertion whose element is already sitting at the target index. An
-		// insertion carries no identity beyond its position, so replaying a patch that
-		// has already been applied — a re-run of the same merge, a retried resolve, an
-		// upgrade whose cursor didn't advance — would otherwise add the element a
-		// second time. Matching on content is the only identity available here: if the
-		// element is already there, the insertion has nothing left to do.
-		if existing := doc.Path(elementPath); existing != nil && existing.String() == op.value.String() {
+		// Skip an array's insertions when the patch has already been applied to it — a
+		// re-run of the same merge, a retried resolve, an upgrade whose cursor didn't
+		// advance — since an insertion carries no identity beyond its position and would
+		// otherwise add its element a second time.
+		//
+		// The question is asked of the array as a whole, before any of its insertions
+		// run, rather than of one element at a time. Content at the index is the only
+		// evidence available, and one element of it is weak: the patch's own updates
+		// write into the same array, so a change that rewrites a list into repeated
+		// tokens — args ["--set=a=1", "--set=b=2"] becoming ["--set", "a=1", "--set",
+		// "b=2"] — leaves an update's result sitting where an insertion of the same
+		// token is about to go, and the insertion reads as already applied. A patch
+		// that has run leaves every one of its insertions in place, so requiring all of
+		// them is what tells the two apart.
+		if _, decided := alreadyApplied[op.arrayPath]; !decided {
+			alreadyApplied[op.arrayPath] = arrayInsertionsAreInPlace(doc, ops[i:], op.arrayPath)
+		}
+		if alreadyApplied[op.arrayPath] {
 			continue
 		}
 		if err := doc.ArrayInsertP(op.value.YNode(), op.index, op.arrayPath); err != nil {
@@ -2754,6 +3014,25 @@ func applyArrayElementOps(doc *gaby.YamlDoc, ops []arrayElementOp, errs []error)
 		}
 	}
 	return errs
+}
+
+// arrayInsertionsAreInPlace reports whether every element one patch inserts into one array
+// already sits at the index it names. ops must start at that array's first insertion; the
+// array's own ops are contiguous, so the scan stops at the first op belonging to another.
+func arrayInsertionsAreInPlace(doc *gaby.YamlDoc, ops []arrayElementOp, arrayPath string) bool {
+	for _, op := range ops {
+		if op.arrayPath != arrayPath {
+			break
+		}
+		if op.remove {
+			continue
+		}
+		existing := doc.Path(arrayPath + "." + strconv.Itoa(op.index))
+		if existing == nil || existing.String() != op.value.String() {
+			return false
+		}
+	}
+	return true
 }
 
 // exclusiveTouch records that a patch set something inside a union: the path of the object
@@ -3099,6 +3378,7 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	mergeKeyLookup MergeKeyLookup,
 	exclusiveLookup ExclusiveFieldsLookup,
 	mutationsSubtracted api.MutationMap,
+	resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
 	errs []error) ([]error, api.MutationConflictList) {
 
 	var conflicts api.MutationConflictList
@@ -3175,9 +3455,16 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	}
 
 	for i := range patches {
-		resolvedPath, resolved := ResolveAssociativeSegments(doc, string(patches[i].Path))
-		patchPath := api.ResolvedPath(resolvedPath)
 		patchMutation := patches[i].MutationInfo
+		// An Add names a place in the target rather than an element of it, so its path
+		// resolves by position where it ends in an anchor. See
+		// ResolveAssociativeSegmentsForInsertion.
+		resolve := ResolveAssociativeSegments
+		if patchMutation.MutationType == api.MutationTypeAdd {
+			resolve = ResolveAssociativeSegmentsForInsertion
+		}
+		resolvedPath, resolved := resolve(doc, string(patches[i].Path))
+		patchPath := api.ResolvedPath(resolvedPath)
 		if !resolved {
 			// The path contains an associative segment whose merge-key value didn't
 			// match any element in the current doc, and the element at the fallback
@@ -3235,6 +3522,25 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 					Path:     patches[i].Path,
 					Source:   *patchMutation,
 					Target:   &protectedMutCopy,
+				})
+				continue
+			}
+		}
+		// Then the guards in force at this path. Resolved on the canonical form, as the
+		// table is keyed: the annotation names the element, and the patch path says where
+		// the element sat on the side the patch came from.
+		if resourceGuards != nil {
+			pathGuards := resourceGuards.GuardsForPath(CanonicalMutationPath(patches[i].Path))
+			if admitted, withheld := clearance.Admits(pathGuards); !admitted {
+				slog.Debug("path guarded", "path", string(patchPath), "guard", withheld.Key)
+				withheldCopy := withheld
+				conflicts = append(conflicts, api.MutationConflict{
+					Reason:   api.ConflictReasonGuarded,
+					Resource: resource,
+					Path:     patches[i].Path,
+					Source:   *patchMutation,
+					Guard:    &withheldCopy,
+					Details:  api.WithheldGuardDetails(withheld),
 				})
 				continue
 			}
@@ -3601,7 +3907,8 @@ func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationLi
 //     | Add/Update       | Add/Update            | Merge path mutations|
 //
 //  3. Path-level merge: process newMutations' paths sorted least-specific to most-specific
-//     so parent paths land before children. For each new path:
+//     so parent paths land before children. Paths are keyed canonically -- see
+//     canonicalPathKeys. For each new path:
 //
 //     - Exact match in existing: replace the existing entry, taking the new MutationType
 //     (so a later edit's intent — e.g., an Update on a previously-Added field — is
@@ -3614,7 +3921,11 @@ func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationLi
 //
 //     Because the new MutationType replaces the existing one on exact match, when this
 //     accumulated record is later used as a patch, PatchMutations sees the latest intent
-//     (e.g., Update to merge with the target's value rather than wholesale Replace).
+//     (e.g., Update to merge with the target's value rather than wholesale Replace). Both
+//     branches take the whole incoming MutationInfo, Patch included: an accumulated entry
+//     should describe the change the same way whether or not the path had been written
+//     before, and a line-level patch that survives on a fresh path and is dropped on a
+//     repeated one is a difference nothing means.
 //
 //  4. Alias tracking: union of both sides' Aliases / AliasesWithoutScopes so a resource
 //     can still be matched after another rename.
@@ -3633,17 +3944,17 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 		hasMutations = true
 		mi, present := idx.Find(newMutations[i].Resource, newMutations[i].AliasesWithoutScopes)
 		if !present {
-			mutations = append(mutations, newMutations[i])
+			mutations = append(mutations, canonicalPathKeys(newMutations[i]))
 			continue
 		}
 		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeDelete ||
 			newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeReplace ||
 			mutations[mi].ResourceMutationInfo.MutationType == api.MutationTypeNone {
-			mutations[mi] = newMutations[i]
+			mutations[mi] = canonicalPathKeys(newMutations[i])
 			continue
 		}
 		if mutations[mi].ResourceMutationInfo.MutationType == api.MutationTypeDelete {
-			mutations[mi] = newMutations[i]
+			mutations[mi] = canonicalPathKeys(newMutations[i])
 			mutations[mi].ResourceMutationInfo.MutationType = api.MutationTypeReplace
 			continue
 		}
@@ -3698,9 +4009,18 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 		// Otherwise we add the path.
 		// Process new paths sorted from least to most specific so that parent paths are
 		// processed before children, ensuring child cleanup is correct.
+		//
+		// Both sides are keyed canonically before they meet. An associative segment's
+		// ;@index says where the element sat in the document the diff was computed
+		// against, not which element it is, so keyed raw the same container would
+		// acquire a second entry the moment anything was inserted ahead of it -- and
+		// the two entries disagree about Protected, which is how a hand-edited image
+		// came out overwritable after an unrelated insertion. The positional fallback
+		// is kept where a patch is applied, the only place it resolves anything.
+		mutations[mi] = canonicalPathKeys(mutations[mi])
 		existingIdx := api.NewPathPrefixIndex(mutations[mi].PathMutationMap)
 		for _, entry := range api.SortedMutationMapEntries(newMutations[i].PathMutationMap) {
-			path := entry.Path
+			path := CanonicalMutationPath(entry.Path)
 			mutation := *entry.MutationInfo
 			// Exact match: update in place.
 			// We originally preserved the original mutation type (either Add or Replace),
@@ -3710,17 +4030,12 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 			// accurately represent the latest change, so now we update the mutation type, which
 			// will cause PatchMutations to attempt to merge if used as a patch.
 			if existing, ok := mutations[mi].PathMutationMap[path]; ok {
-				mutationType := mutation.MutationType
+				accumulated := mutation
 				if existing.MutationType == api.MutationTypeDelete &&
 					mutation.MutationType != api.MutationTypeDelete {
-					mutationType = api.MutationTypeReplace
+					accumulated.MutationType = api.MutationTypeReplace
 				}
-				mutations[mi].PathMutationMap[path] = api.MutationInfo{
-					MutationType: mutationType,
-					Index:        mutation.Index,
-					Protected:    mutation.Protected,
-					Value:        mutation.Value,
-				}
+				mutations[mi].PathMutationMap[path] = accumulated
 				if mutation.MutationType == api.MutationTypeDelete || mutation.MutationType == api.MutationTypeReplace {
 					// Remove any existing child paths it supersedes.
 					for _, childPath := range existingIdx.ChildPaths(path) {
@@ -4014,7 +4329,12 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) (a
 // For the path, it walks up parent paths to find the most specific mutation index,
 // falling back to the resource-level index if no path-level match is found.
 // Returns the mutation index and true if found.
-func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.ResourceInfo, path api.ResolvedPath) (int64, bool) {
+//
+// parsedData and resourceProvider locate the resource's document, which is what turns a stored
+// path into the positional form callers look up by -- NeededPaths addresses array elements by
+// index. Both may be nil; the lookup then covers only the paths that match textually.
+func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMutationList,
+	resource api.ResourceInfo, path api.ResolvedPath, resourceProvider ResourceProvider) (int64, bool) {
 	idx := api.NewResourceMutationIndex(mutationSources)
 	mi, found := idx.Find(resource, nil)
 	if !found {
@@ -4023,15 +4343,27 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 
 	rm := mutationSources[mi]
 
-	// Build a reverse lookup from stripped (numeric-only) paths to mutation info,
-	// so that incoming resolved paths with numeric indices can match mutation entries
-	// that use ?key=value;@index format.
-	strippedPathMap := make(map[api.ResolvedPath]*api.MutationInfo, len(rm.PathMutationMap))
+	var doc *gaby.YamlDoc
+	if parsedData != nil && resourceProvider != nil {
+		doc, _ = FindResourceDoc(parsedData, resourceProvider, &resource)
+	}
+
+	// Build a reverse lookup from positional paths to mutation info, so that an incoming path
+	// with numeric indices matches a stored entry that names the element instead. Two ways in:
+	// a stored ?key=value;@index carries the position, and a canonical ?key=value -- which is
+	// what AddMutations now writes, and has no index to strip -- resolves to one against the
+	// document.
+	positionalPathMap := make(map[api.ResolvedPath]*api.MutationInfo, len(rm.PathMutationMap))
 	for p, info := range rm.PathMutationMap {
-		stripped := api.ResolvedPath(StripAssociativeSegments(string(p)))
-		if stripped != p {
-			infoCopy := info
-			strippedPathMap[stripped] = &infoCopy
+		infoCopy := info
+		if stripped := api.ResolvedPath(StripAssociativeSegments(string(p))); stripped != p {
+			positionalPathMap[stripped] = &infoCopy
+		}
+		if doc == nil {
+			continue
+		}
+		if resolved, ok := ResolveAssociativeSegments(doc, string(p)); ok && api.ResolvedPath(resolved) != p {
+			positionalPathMap[api.ResolvedPath(resolved)] = &infoCopy
 		}
 	}
 
@@ -4043,8 +4375,8 @@ func FindMutationIndex(mutationSources api.ResourceMutationList, resource api.Re
 		if mutInfo, ok := rm.PathMutationMap[candidatePath]; ok {
 			return mutInfo.Index, true
 		}
-		// Also try matching against stripped (numeric-only) paths
-		if mutInfo, ok := strippedPathMap[candidatePath]; ok {
+		// Also try matching against the positional forms of the stored paths
+		if mutInfo, ok := positionalPathMap[candidatePath]; ok {
 			return mutInfo.Index, true
 		}
 		pathSegments = pathSegments[:len(pathSegments)-1]
@@ -4097,15 +4429,20 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 	}
 	doc, _ := FindResourceDoc(parsedData, resourceProvider, &resource)
 	for path, protected := range protection {
+		// Stored keys are canonical, as AddMutations writes them: an authored path already
+		// is, and one that arrives carrying a ;@index fallback names the same element. The
+		// original path is what gets resolved against the data below, where the fallback
+		// still earns its keep.
+		key := CanonicalMutationPath(path)
 		// Exact match: the entry's Value is already correct; just flip the flag.
-		if info, ok := rm.PathMutationMap[path]; ok {
+		if info, ok := rm.PathMutationMap[key]; ok {
 			info.Protected = protected
-			rm.PathMutationMap[path] = info
+			rm.PathMutationMap[key] = info
 			continue
 		}
 		// Split: inherit MutationType+Index from the closest ancestor (or the
 		// resource-level mutation), take Value from the data at path, leave Patch empty.
-		_, ancInfo, hasAncestor := api.FindAncestorPath(rm.PathMutationMap, path)
+		_, ancInfo, hasAncestor := api.FindAncestorPath(rm.PathMutationMap, key)
 		if !hasAncestor {
 			if rm.ResourceMutationInfo.MutationType == api.MutationTypeNone {
 				unresolved = append(unresolved, path)
@@ -4127,7 +4464,7 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 			unresolved = append(unresolved, path)
 			continue
 		}
-		rm.PathMutationMap[path] = api.MutationInfo{
+		rm.PathMutationMap[key] = api.MutationInfo{
 			MutationType: ancInfo.MutationType,
 			Index:        ancInfo.Index,
 			Protected:    protected,

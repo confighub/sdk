@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"maps"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -554,6 +555,108 @@ func TestMergeCorpusCommandLineArgs(t *testing.T) {
 				argPath(3): "true",
 				argPath(5): "warn",
 			},
+		},
+		{
+			// A flag an application accepts more than once — helm's --set, kubectl's
+			// --from-file — repeated in the inline-value form. The name is a type here
+			// rather than a name, so no occurrence identifies itself and every case
+			// below turns on position, as a textual patch would.
+			//
+			// This one rewrites the pairs into the separate-token form, which is the
+			// change that must produce as many "--set" elements as it names: two
+			// insertions of the same token, one of them at an index an update in the
+			// same patch just wrote.
+			name:       "repeated flag rewritten into separate tokens",
+			base:       withArgs("--set=a=1", "--set=b=2"),
+			upstream:   withArgs("--set", "a=1", "--set", "b=2"),
+			downstream: withArgs("--set=a=1", "--set=b=2"),
+			want: map[string]string{
+				argPath(0): "--set",
+				argPath(1): "a=1",
+				argPath(2): "--set",
+				argPath(3): "b=2",
+				argPath(4): absent,
+			},
+		},
+		{
+			// The separate-token form throughout, with each side tuning a different
+			// occurrence's value.
+			name:       "repeated flag in separate tokens, each side changed a value",
+			base:       withArgs("--set", "a=1", "--set", "b=2"),
+			upstream:   withArgs("--set", "a=5", "--set", "b=2"),
+			downstream: withArgs("--set", "a=1", "--set", "b=7"),
+			want: map[string]string{
+				argPath(0): "--set",
+				argPath(1): "a=5",
+				argPath(2): "--set",
+				argPath(3): "b=7",
+				argPath(4): absent,
+			},
+		},
+		{
+			// An upstream append in the separate-token form: the flag token it adds
+			// already appears in the array, and the insertion belongs where the patch
+			// put it rather than beside the copy that was already there.
+			name:       "repeated flag, upstream appends another pair",
+			base:       withArgs("--set", "a=1"),
+			upstream:   withArgs("--set", "a=1", "--set", "b=2"),
+			downstream: withArgs("--set", "a=1"),
+			want: map[string]string{
+				argPath(0): "--set",
+				argPath(1): "a=1",
+				argPath(2): "--set",
+				argPath(3): "b=2",
+				argPath(4): absent,
+			},
+		},
+		{
+			// Each side added an occurrence of its own. Both are additions, so both
+			// survive: nothing here asks the merge to decide that two elements are the
+			// same one.
+			name:       "each side added an occurrence of a repeated flag",
+			base:       withArgs("--log.level=INFO", "--set=a=1"),
+			upstream:   withArgs("--log.level=INFO", "--set=a=1", "--set=b=2"),
+			downstream: withArgs("--log.level=INFO", "--set=a=1", "--set=c=3"),
+			want: map[string]string{
+				argPath(1): "--set=a=1",
+				argPath(2): "--set=b=2",
+				argPath(3): "--set=c=3",
+				argPath(4): absent,
+			},
+		},
+		{
+			// The downstream edited one occurrence and dropped an earlier flag, so the
+			// upstream's change to the other occurrence has no digest to match and a
+			// stale index to fall back on. The flag name is the same on both, which is
+			// no help: an identity that names two elements names neither, and the
+			// merge reports the change rather than writing it over the occurrence that
+			// happens to sit at the index.
+			name:       "repeated flag, downstream dropped the flag ahead of it",
+			base:       withArgs("--log.level=INFO", "--set=a=1", "--set=b=2"),
+			upstream:   withArgs("--log.level=INFO", "--set=a=5", "--set=b=2"),
+			downstream: withArgs("--set=a=9", "--set=b=2"),
+			want: map[string]string{
+				argPath(0): "--set=a=9",
+				argPath(1): "--set=b=2",
+				argPath(2): absent,
+			},
+			wantConflicts: []api.ConflictReason{api.ConflictReasonUnresolvedPath},
+		},
+		{
+			// The flag is repeated only downstream, which is where an occurrence the
+			// upstream has never seen comes from. The upstream's edit of the one
+			// occurrence it knows about must not land on the new one.
+			name:       "flag repeated only downstream",
+			base:       withArgs("--log.level=INFO", "--set=a=1"),
+			upstream:   withArgs("--log.level=INFO", "--set=a=2"),
+			downstream: withArgs("--log.level=INFO", "--set=b=3", "--set=a=9"),
+			want: map[string]string{
+				argPath(0): "--log.level=INFO",
+				argPath(1): "--set=b=3",
+				argPath(2): "--set=a=9",
+				argPath(3): absent,
+			},
+			wantConflicts: []api.ConflictReason{api.ConflictReasonUnresolvedPath},
 		},
 		{
 			// Positional arguments and the `--` separator, none of which carry identity.
@@ -1859,6 +1962,297 @@ func TestMergeProtectionProtectsMergeKeyedPath(t *testing.T) {
 	assert.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.0.image").Data(),
 		"a protected path inside a merge-keyed array must survive the merge")
 	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
+}
+
+// sidecarContainer is a second container, added ahead of app so that app moves from index
+// 0 to index 1 without anything about app itself changing.
+const sidecarContainer = `      - name: logger
+        image: fluentd:1.0
+`
+
+// TestMutationSourcesKeepOneEntryPerElementAcrossAnInsertion is the accumulation half of
+// what protects a leaf inside a merge-keyed array.
+//
+// A Unit's MutationSources is built by folding each edit's diff onto the record with
+// AddMutations, keyed by path. An associative segment's ;@index says where the element sat
+// in the document the diff was computed against, not which element it is -- so keyed raw,
+// one container acquired a second entry the moment a sidecar was inserted ahead of it. The
+// first entry said ?name=app;@0.image and carried whatever protection its owner set; the
+// second said ?name=app;@1.image and carried none. Nothing reconciled them: the protection
+// lookups walked raw ancestors and missed the stale entry, and applyPathMutations folded
+// both onto one canonical key with map iteration deciding which survived.
+//
+// Keying canonically is what collapses them, and it is a property of the record itself, so
+// it is stated here rather than through a merge.
+func TestMutationSourcesKeepOneEntryPerElementAcrossAnInsertion(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	withImage := func(containers, tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(containers, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base := baseDep().String()
+	// The downstream sets its own image, then takes a sidecar ahead of it, then changes
+	// its image again -- the second edit naming the same container at its new position.
+	edited := withImage(oneContainer, "nginx:custom")
+	withSidecar := withImage(sidecarContainer+oneContainer, "nginx:custom")
+	editedAgain := withImage(sidecarContainer+oneContainer, "nginx:custom2")
+
+	stored := api.ResourceMutationList{}
+	for step, pair := range [][2]string{{base, edited}, {edited, withSidecar}, {withSidecar, editedAgain}} {
+		diff, err := yamlkit.ComputeMutations(parseCorpus(t, pair[0]), parseCorpus(t, pair[1]),
+			int64(step+1), provider)
+		require.NoError(t, err, "computing the downstream's diff for step %d", step+1)
+		stored, _ = yamlkit.AddMutations(stored, diff)
+	}
+
+	require.Len(t, stored, 1, "one resource was edited")
+	var imagePaths []api.ResolvedPath
+	for path := range stored[0].PathMutationMap {
+		if strings.HasSuffix(string(path), ".image") {
+			imagePaths = append(imagePaths, path)
+		}
+	}
+	slices.Sort(imagePaths)
+	assert.Equal(t, []api.ResolvedPath{"spec.template.spec.containers.?name=app.image"}, imagePaths,
+		"one element, one entry, named by merge key and not by where it sat")
+}
+
+// TestMergeProtectionSurvivesAnInsertionAheadOfIt is the merge half: a protected leaf
+// inside a merge-keyed array stays the downstream's after a sidecar is inserted ahead of
+// it upstream and the upstream also changes the leaf.
+//
+// Whether the entry carrying the protection is still there to be found is the accumulation
+// half above, and stamping a newly written path with what the Unit already recorded for it
+// is internal/views' preserveMutationProtection. What this states is the part yamlkit owns:
+// given a record that protects the element, the merge withholds the change wherever the
+// element has moved to.
+func TestMergeProtectionSurvivesAnInsertionAheadOfIt(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	withImage := func(containers, tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(containers, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base := baseDep().String()
+	downstream := withImage(oneContainer, "nginx:custom")
+	// The upstream adds a sidecar ahead of app and bumps app's image in the same change.
+	upstream := withImage(sidecarContainer+oneContainer, "nginx:1.21")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+	require.NoError(t, err)
+	for i := range protection {
+		for path, info := range protection[i].PathMutationMap {
+			info.Protected = true
+			protection[i].PathMutationMap[path] = info
+		}
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), protection, patch, nil, provider, nil)
+	require.NoError(t, err)
+
+	assert.Equal(t, "fluentd:1.0", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+		"the upstream's sidecar lands")
+	assert.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.1.image").Data(),
+		"the protected image is still the downstream's, at the position the insertion moved it to")
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
+}
+
+// TestMergeProtectionSurvivesDuplicateStoredEntries covers the record a Unit already has
+// when this code first runs against it: the two entries for one element that raw keying
+// left behind, disagreeing about Protected.
+//
+// applyPathMutations folds stored protection onto canonical keys, and used to do it in map
+// iteration order, so which of the two decided the merge was a coin flip -- hence the
+// repetition, which is what makes the old behavior fail rather than pass half the time.
+// The rule is that protection wins: an entry saying a path is its owner's is the one piece
+// of the record a merge cannot re-derive from the data.
+func TestMergeProtectionSurvivesDuplicateStoredEntries(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	image := func(tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base, upstream, downstream := image("nginx:1.19"), image("nginx:1.21"), image("nginx:custom")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	storedProtection := func() api.ResourceMutationList {
+		protection, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, downstream), 2, provider)
+		require.NoError(t, err)
+		require.Len(t, protection, 1)
+		imagePath := api.ResolvedPath("spec.template.spec.containers.?name=app;@0.image")
+		info, ok := protection[0].PathMutationMap[imagePath]
+		require.True(t, ok, "the downstream's diff names the image where it sat")
+		info.Protected = true
+		protection[0].PathMutationMap[imagePath] = info
+		// The stale twin: the same element, recorded again after something was inserted
+		// ahead of it, with no protection of its own.
+		protection[0].PathMutationMap["spec.template.spec.containers.?name=app;@1.image"] = api.MutationInfo{
+			MutationType: api.MutationTypeUpdate,
+			Index:        3,
+			Value:        "nginx:custom\n",
+		}
+		return protection
+	}
+
+	for range 20 {
+		merged, conflicts, err := yamlkit.PatchMutations(parseCorpus(t, downstream), storedProtection(), patch, nil, provider, nil)
+		require.NoError(t, err)
+		require.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+			"the protected entry decides, whichever order the duplicates are folded in")
+		assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonProtectedPath})
+	}
+}
+
+// guardTable builds a one-resource annotation table for the corpus Deployment.
+func guardTable(guards map[api.ResolvedPath]map[string]string) api.PathAnnotationList {
+	entry := api.ResourcePathAnnotations{
+		Resource: api.ResourceInfo{
+			ResourceType:             "apps/v1/Deployment",
+			ResourceName:             "ns/web",
+			ResourceNameWithoutScope: "web",
+		},
+		PathAnnotationMap: map[api.ResolvedPath]api.PathAnnotations{},
+	}
+	for path, entries := range guards {
+		entry.PathAnnotationMap[path] = api.PathAnnotations{api.AnnotationKindGuard: entries}
+	}
+	return api.PathAnnotationList{entry}
+}
+
+// TestMergeWithheldByAGuard is the first thing a guard has to do: stop a merge from overwriting
+// a value whose reason the merge does not know about, and say which reason stopped it.
+//
+// The motivating case from the design, in the form it actually occurs: the image is maintained
+// by a TransformPaths Link, and an UpgradeUnit merge from the base must not overwrite it. Today
+// that needs a WhereMutation expression restating the arrangement on the Link; the guard states
+// it once, on the path.
+func TestMergeWithheldByAGuard(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	image := func(tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base, upstream, downstream := image("nginx:1.19"), image("nginx:1.21"), image("nginx:custom")
+	const imagePath = api.ResolvedPath("spec.template.spec.containers.?name=app.image")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			imagePath: {"owner": "transform-link"},
+		}),
+	}
+
+	// The upgrade carries no clearance, so it is not cleared for the reason the image holds
+	// its value, and the write is withheld.
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+		"a guarded path the merge is not cleared for keeps its value")
+	require.Len(t, conflicts, 1)
+	assert.Equal(t, api.ConflictReasonGuarded, conflicts[0].Reason)
+	require.NotNil(t, conflicts[0].Guard, "the report says which reason stopped the write")
+	assert.Equal(t, "owner", conflicts[0].Guard.Key)
+	assert.Equal(t, "transform-link", conflicts[0].Guard.Value)
+
+	// The Link that maintains the field carries the matching clearance, so it writes.
+	guards.Clearance = api.Clearance{{
+		Key: "owner", Operator: api.ClearanceOperatorIn, Values: []string{"transform-link"},
+	}}
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "nginx:1.21", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+		"an operation cleared for the reason may write the path")
+	assert.Empty(t, conflicts)
+}
+
+// TestGuardCoversAPathAddedLater is what makes a guard policy rather than a description: guard a
+// subtree, and something added inside it afterwards is guarded too. A per-path record written
+// when the guard was set could not do this, because the path did not exist to be recorded.
+func TestGuardCoversAPathAddedLater(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	base := baseDep().String()
+	// The upstream adds a sidecar with its own image.
+	upstream := func() string {
+		d := baseDep()
+		d.Containers = sidecarContainer + oneContainer
+		return d.String()
+	}()
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	// The guard is on the containers array, written before the sidecar existed.
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec.containers": {"policy-exception": "reviewed-images"},
+		}),
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, conflicts, "the guard on the array covers what the patch adds inside it")
+	for _, conflict := range conflicts {
+		assert.Equal(t, api.ConflictReasonGuarded, conflict.Reason)
+		require.NotNil(t, conflict.Guard)
+		assert.Equal(t, "policy-exception", conflict.Guard.Key)
+	}
+	assert.Equal(t, 1, len(merged[0].Path("spec.template.spec.containers").Children()),
+		"the sidecar was not added")
+}
+
+// TestUnguardedPathsAreUntouchedByTheFilter is the property that makes this affordable: a Unit
+// with no guards merges exactly as it did before, and a guard on one path does not disturb any
+// other.
+func TestUnguardedPathsAreUntouchedByTheFilter(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	base := baseDep().String()
+	upstream := func() string {
+		d := baseDep()
+		d.Replicas = 7
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", "nginx:1.21", 1)
+		return d.String()
+	}()
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	// Guard the image only. The replica count is not guarded and must merge untouched.
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec.containers.?name=app.image": {"owner": "transform-link"},
+		}),
+	}
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 7, merged[0].Path("spec.replicas").Data(), "an unguarded path is the merge's to update")
+	assert.Equal(t, "nginx:1.19", merged[0].Path("spec.template.spec.containers.0.image").Data())
+	require.Len(t, conflicts, 1, "only the guarded path is reported")
+
+	// And an empty table is the same as no filter at all.
+	empty := &yamlkit.GuardFilter{Annotations: api.PathAnnotationList{}}
+	mergedUnguarded, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		empty, provider, nil)
+	require.NoError(t, err)
+	assert.Empty(t, conflicts)
+	mergedPlain, _, err := yamlkit.PatchMutations(parseCorpus(t, base), nil, patch, nil, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, mergedPlain.String(), mergedUnguarded.String(),
+		"a Unit that has never been guarded merges exactly as it did before")
 }
 
 // ---------------------------------------------------------------------------

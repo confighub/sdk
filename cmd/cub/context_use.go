@@ -71,5 +71,12 @@ func contextUseCmdRun(_ *cobra.Command, args []string) error {
 		fmt.Printf("Run 'cub auth login' to authenticate.\n")
 	}
 
+	// An override outranks what was just persisted, so the switch does not take
+	// effect here. Saying so beats letting the next command run somewhere else.
+	if active := contextManager.ActiveContextName(); activeContextOverrideSource != "" && active != name {
+		tprintErr("Warning: commands still use context %q, selected by the %s. Clear the override to use %q.",
+			active, contextSourcePhrase(activeContextOverrideSource), name)
+	}
+
 	return nil
 }

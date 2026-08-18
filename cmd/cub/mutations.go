@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/confighub/sdk/core/function/api"
@@ -731,13 +732,28 @@ func extractOldValues(resp *[]goclientnew.FunctionInvocationsResponse, requests 
 				}
 			}
 			if !matched {
-				for _, req := range requests {
-					if string(req.info.ResourceType) == string(av.ResourceType) &&
-						string(req.info.ResourceName) == string(av.ResourceName) &&
-						pathsMatchResolved(string(req.info.Path), string(av.Path)) {
-						result[req.inputKey] = fmt.Sprintf("%v", av.Value)
+				// A stored path names an array element by merge key while get-paths answers
+				// with the position it resolved to, so the two are reconciled segment by
+				// segment. A canonical path -- one carrying no recorded index -- matches any
+				// position, so it is only accepted when exactly one request could have asked
+				// for this value: pairing the wrong container's old value would be worse than
+				// showing none.
+				var only *pathRequest
+				for i := range requests {
+					req := &requests[i]
+					if string(req.info.ResourceType) != string(av.ResourceType) ||
+						string(req.info.ResourceName) != string(av.ResourceName) ||
+						!pathsMatchResolved(string(req.info.Path), string(av.Path)) {
+						continue
+					}
+					if only != nil {
+						only = nil
 						break
 					}
+					only = req
+				}
+				if only != nil {
+					result[only.inputKey] = fmt.Sprintf("%v", av.Value)
 				}
 			}
 		}
@@ -836,15 +852,21 @@ func pathsMatchResolved(mutationPath, responsePath string) bool {
 			continue
 		}
 
-		// Check if mutSeg is a selector like "?name=x;@N" and respSeg is "N"
+		// Check if mutSeg is a selector like "?name=x;@N" and respSeg is "N". A selector
+		// with no ";@N" -- the canonical form stored MutationSources now uses -- names the
+		// element without saying where it sits, so it matches any position; the caller is
+		// what keeps that from pairing the wrong element.
 		if strings.HasPrefix(mutSeg, "?") {
 			if atIdx := strings.LastIndex(mutSeg, ";@"); atIdx >= 0 {
-				resolvedIndex := mutSeg[atIdx+2:]
-				if resolvedIndex == respSeg {
+				if mutSeg[atIdx+2:] == respSeg {
 					mi++
 					ri++
 					continue
 				}
+			} else if _, err := strconv.Atoi(respSeg); err == nil {
+				mi++
+				ri++
+				continue
 			}
 		}
 
@@ -876,6 +898,18 @@ func displayMutationsForUnit(unit *goclientnew.Unit, priorHeadMutationNum int64,
 	}
 	lookupMutationsUnitID = unit.UnitID.String()
 	displayResourceMutationList(unit.MutationSources, true, priorHeadMutationNum, newChangeDescription, priorRevision)
+}
+
+// displayMutationsForRevision displays the mutations recorded on a revision, in the
+// same form as the head-revision mutations shown for a unit. The recorded indices are
+// the unit's MutationNums, so mutation details resolve against the same unit.
+func displayMutationsForRevision(rev *goclientnew.Revision) {
+	if rev.MutationSources == nil || len(*rev.MutationSources) == 0 {
+		tprintRaw("No mutations")
+		return
+	}
+	lookupMutationsUnitID = rev.UnitID.String()
+	displayResourceMutationList(rev.MutationSources, true, 0, "", "")
 }
 
 // displayMutationsFromDryRun computes and displays mutations from a dry-run operation.

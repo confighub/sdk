@@ -49,6 +49,18 @@ func registerPatchMutations(fh handler.FunctionRegistry, converter configkit.Con
 					DataType:         api.DataTypeResourceMutationList,
 					ValueConstraints: api.ValueConstraints{Schema: &api.ResourceMutationListSchema},
 				},
+				{
+					ParameterName: "path-annotations",
+					Required:      false,
+					Description:   "The target's PathAnnotations, whose guards say which paths this operation must be cleared for before it may write them. Pass an empty list or omit when the target has none, which costs nothing.",
+					DataType:      api.DataTypeString,
+				},
+				{
+					ParameterName: "clearance",
+					Required:      false,
+					Description:   "The classes of reason this operation is cleared for, as a JSON Clearance. An absent or empty clearance clears nothing, so every guarded path is withheld.",
+					DataType:      api.DataTypeString,
+				},
 			},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "conflicts",
@@ -95,7 +107,27 @@ func genericFnPatchMutations(resourceProvider yamlkit.ResourceProvider, _ *api.F
 		}
 	}
 
-	parsedData, conflicts, err := yamlkit.PatchMutations(parsedData, mutationsProtection, mutationsPatch, mutationsToSubtract, resourceProvider, options)
+	// The guard filter is optional on both halves: a target with no annotations needs no
+	// clearance, and an operation with no clearance is still cleared for every unguarded path.
+	var guards *yamlkit.GuardFilter
+	if len(args) > 3 {
+		if annotationsString, ok := args[3].Value.(string); ok && annotationsString != "" {
+			var annotations api.PathAnnotationList
+			if err := json.Unmarshal([]byte(annotationsString), &annotations); err != nil {
+				return parsedData, nil, err
+			}
+			guards = &yamlkit.GuardFilter{Annotations: annotations}
+		}
+	}
+	if len(args) > 4 && guards != nil {
+		if clearanceString, ok := args[4].Value.(string); ok && clearanceString != "" {
+			if err := json.Unmarshal([]byte(clearanceString), &guards.Clearance); err != nil {
+				return parsedData, nil, err
+			}
+		}
+	}
+
+	parsedData, conflicts, err := yamlkit.PatchMutationsGuarded(parsedData, mutationsProtection, mutationsPatch, mutationsToSubtract, guards, resourceProvider, options)
 	if err != nil {
 		return parsedData, nil, err
 	}

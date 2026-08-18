@@ -640,6 +640,11 @@ type ClientInterface interface {
 	// GetUnitExtended request
 	GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetUnitGuardWithBody request with any body
+	SetUnitGuardWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	SetUnitGuard(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListExtendedMutations request
 	ListExtendedMutations(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -3227,6 +3232,30 @@ func (c *Client) DownloadUnitData(ctx context.Context, spaceId openapi_types.UUI
 
 func (c *Client) GetUnitExtended(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetUnitExtendedRequest(c.Server, spaceId, unitId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetUnitGuardWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitGuardRequestWithBody(c.Server, spaceId, unitId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SetUnitGuard(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetUnitGuardRequest(c.Server, spaceId, unitId, body)
 	if err != nil {
 		return nil, err
 	}
@@ -16618,6 +16647,60 @@ func NewGetUnitExtendedRequest(server string, spaceId openapi_types.UUID, unitId
 	return req, nil
 }
 
+// NewSetUnitGuardRequest calls the generic SetUnitGuard builder with application/json body
+func NewSetUnitGuardRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetUnitGuardRequestWithBody(server, spaceId, unitId, "application/json", bodyReader)
+}
+
+// NewSetUnitGuardRequestWithBody generates requests for SetUnitGuard with any type of body
+func NewSetUnitGuardRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/guard", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListExtendedMutationsRequest generates requests for ListExtendedMutations
 func NewListExtendedMutationsRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams) (*http.Request, error) {
 	var err error
@@ -22495,6 +22578,11 @@ type ClientWithResponsesInterface interface {
 	// GetUnitExtendedWithResponse request
 	GetUnitExtendedWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetUnitExtendedResponse, error)
 
+	// SetUnitGuardWithBodyWithResponse request with any body
+	SetUnitGuardWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error)
+
+	SetUnitGuardWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error)
+
 	// ListExtendedMutationsWithResponse request
 	ListExtendedMutationsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedMutationsParams, reqEditors ...RequestEditorFn) (*ListExtendedMutationsResponse, error)
 
@@ -26736,6 +26824,35 @@ func (r GetUnitExtendedResponse) StatusCode() int {
 	return 0
 }
 
+type SetUnitGuardResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnitGuardResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r SetUnitGuardResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetUnitGuardResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListExtendedMutationsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -29779,6 +29896,23 @@ func (c *ClientWithResponses) GetUnitExtendedWithResponse(ctx context.Context, s
 		return nil, err
 	}
 	return ParseGetUnitExtendedResponse(rsp)
+}
+
+// SetUnitGuardWithBodyWithResponse request with arbitrary body returning *SetUnitGuardResponse
+func (c *ClientWithResponses) SetUnitGuardWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error) {
+	rsp, err := c.SetUnitGuardWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetUnitGuardResponse(rsp)
+}
+
+func (c *ClientWithResponses) SetUnitGuardWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error) {
+	rsp, err := c.SetUnitGuard(ctx, spaceId, unitId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetUnitGuardResponse(rsp)
 }
 
 // ListExtendedMutationsWithResponse request returning *ListExtendedMutationsResponse
@@ -40781,6 +40915,81 @@ func ParseGetUnitExtendedResponse(rsp *http.Response) (*GetUnitExtendedResponse,
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSetUnitGuardResponse parses an HTTP response from a SetUnitGuardWithResponse call
+func ParseSetUnitGuardResponse(rsp *http.Response) (*SetUnitGuardResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetUnitGuardResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitGuardResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
