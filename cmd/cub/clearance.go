@@ -4,8 +4,11 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -96,4 +99,52 @@ func splitClearanceValues(values string) []string {
 		trimmed = append(trimmed, strings.TrimSpace(part))
 	}
 	return trimmed
+}
+
+// changeClearance holds the --clearance flag shared by the commands that change configuration
+// data: a function invocation, a run, a unit update. Declared once because the flag means the
+// same thing on each of them, and an operator should not have to learn three spellings.
+var changeClearance []string
+
+// addClearanceFlag registers --clearance on a command that writes configuration data.
+func addClearanceFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&changeClearance, "clearance", nil,
+		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+}
+
+// clearanceJSON renders the --clearance flag for the wire, or "" when none was given. The
+// clearance travels as a JSON query parameter rather than a repeated scalar because a
+// requirement is a triple, and flattening it into a string grammar the server would have to
+// re-parse is how two grammars drift apart.
+func clearanceJSON() string {
+	if len(changeClearance) == 0 {
+		return ""
+	}
+	clearance, err := parseClearanceSpecs(changeClearance)
+	if err != nil || len(clearance) == 0 {
+		return ""
+	}
+	encoded, err := json.Marshal(clearance)
+	if err != nil {
+		return ""
+	}
+	return string(encoded)
+}
+
+// addPersistentClearanceFlag is addClearanceFlag for a command whose subcommands all write
+// configuration data.
+func addPersistentClearanceFlag(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringArrayVar(&changeClearance, "clearance", nil,
+		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+}
+
+// triggerClearance holds the --clearance flag on trigger create and update. Separate from
+// changeClearance because a Trigger's clearance is stored on the Trigger and applies to every
+// run of it, where the others describe one operation.
+var triggerClearance []string
+
+// addTriggerClearanceFlag registers --clearance on a trigger command.
+func addTriggerClearanceFlag(cmd *cobra.Command) {
+	cmd.Flags().StringArrayVar(&triggerClearance, "clearance", nil,
+		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash, unlike --protect: changing it changes what a re-run lands")
 }

@@ -1401,6 +1401,7 @@ type FunctionArgument_Value struct {
 type FunctionInvocation struct {
 	// Arguments Function arguments
 	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
+	Clearance *Clearance         `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// FunctionName Function name
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -2960,6 +2961,7 @@ type Trigger struct {
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
+	Clearance      *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -6182,6 +6184,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
 	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
 
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -8692,6 +8697,9 @@ type InvokeFunctionsParams struct {
 	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
 	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
 
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -9644,6 +9652,7 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -9889,6 +9898,9 @@ type PatchUnitParams struct {
 	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
 	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
 
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
@@ -9993,6 +10005,9 @@ type UpdateUnitParams struct {
 
 	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
 	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
 
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
@@ -11767,6 +11782,7 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -11893,6 +11909,7 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	// Arguments Function arguments
 	Arguments      *[]map[string]interface{} `json:"Arguments" yaml:"Arguments"`
 	BridgeWorkerID *openapi_types.UUID       `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	Clearance      *[]map[string]interface{} `json:"Clearance" yaml:"Clearance"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -12395,6 +12412,9 @@ type BulkPatchUnitsParams struct {
 
 	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
 	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
 
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`

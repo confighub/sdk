@@ -58,21 +58,21 @@ Examples:
 }
 
 var (
-	disableTrigger       bool
-	enableTrigger        bool
-	warnTrigger          bool
-	unwarnTrigger        bool
-	protectTrigger       bool
-	unprotectTrigger     bool
-	workerSlug           string
-	triggerPatch         bool
-	triggerIdentifiers   []string
-	invocationSlug       string
-	triggerDescription   string
-	triggerWhereUnit     string
-	triggerUnitFilter    string
-	triggerWhereResource  string
-	triggerFailOpenAfter  string
+	disableTrigger         bool
+	enableTrigger          bool
+	warnTrigger            bool
+	unwarnTrigger          bool
+	protectTrigger         bool
+	unprotectTrigger       bool
+	workerSlug             string
+	triggerPatch           bool
+	triggerIdentifiers     []string
+	invocationSlug         string
+	triggerDescription     string
+	triggerWhereUnit       string
+	triggerUnitFilter      string
+	triggerWhereResource   string
+	triggerFailOpenAfter   string
 	triggerOtherDataSource string
 )
 
@@ -82,6 +82,7 @@ func init() {
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
 	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
 	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ApplyGates (default, use with --patch for bulk)")
+	addTriggerClearanceFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
@@ -230,6 +231,12 @@ func runBulkTriggerUpdate() error {
 		}
 
 		// Add protect/unprotect flags
+		if len(triggerClearance) > 0 {
+			clearance, cerr := parseClearanceSpecs(triggerClearance)
+			if cerr == nil {
+				patchMap["Clearance"] = clearance
+			}
+		}
 		if protectTrigger {
 			patchMap["Protect"] = true
 		} else if unprotectTrigger {
@@ -371,6 +378,12 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchData["Warn"] = false
 			}
 
+			if len(triggerClearance) > 0 {
+				clearance, cerr := parseClearanceSpecs(triggerClearance)
+				if cerr == nil {
+					patchData["Clearance"] = clearance
+				}
+			}
 			if protectTrigger {
 				patchData["Protect"] = true
 			} else if unprotectTrigger {

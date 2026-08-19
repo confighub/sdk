@@ -465,6 +465,7 @@ const injectedRtkApi = api
             executor_space: queryArg.executorSpace,
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
+            clearance: queryArg.clearance,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1214,6 +1215,7 @@ const injectedRtkApi = api
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
+            clearance: queryArg.clearance,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1650,6 +1652,7 @@ const injectedRtkApi = api
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
+            clearance: queryArg.clearance,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -1678,6 +1681,7 @@ const injectedRtkApi = api
             revision_id: queryArg.revisionId,
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
+            clearance: queryArg.clearance,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -2172,6 +2176,7 @@ const injectedRtkApi = api
             include: queryArg.include,
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
+            clearance: queryArg.clearance,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -4811,6 +4816,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   dryRun?: string;
   /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). */
   protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -7495,6 +7502,8 @@ export type InvokeFunctionsApiArg = {
   dryRun?: string;
   /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). */
   protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -8621,6 +8630,7 @@ export type PatchTriggerApiArg = {
     /** Function arguments */
     Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -8860,6 +8870,8 @@ export type PatchUnitApiArg = {
   dryRun?: boolean;
   /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
   protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -9002,6 +9014,8 @@ export type UpdateUnitApiArg = {
   dryRun?: boolean;
   /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
   protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -10897,6 +10911,7 @@ export type BulkPatchTriggersApiArg = {
     /** Function arguments */
     Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -11072,6 +11087,7 @@ export type BulkCreateTriggersApiArg = {
     /** Function arguments */
     Arguments?: (object | null)[] | null;
     BridgeWorkerID?: string | null;
+    Clearance?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -11370,6 +11386,8 @@ export type BulkPatchUnitsApiArg = {
   dryRun?: boolean;
   /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
   protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -12944,9 +12962,19 @@ export type FunctionArgument = {
   ParameterName?: string;
   Value?: string | number | boolean;
 };
+export type ClearanceRequirement = {
+  /** The guard key this requirement is about */
+  Key?: string;
+  /** Exists, In, NotIn, or DoesNotExist */
+  Operator?: string;
+  /** The values In and NotIn compare against; unused by Exists and DoesNotExist */
+  Values?: string[];
+};
+export type Clearance = ClearanceRequirement[];
 export type FunctionInvocation = {
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
+  Clearance?: Clearance;
   /** Function name */
   FunctionName?: string;
   /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
@@ -14431,15 +14459,6 @@ export type Binding = {
   ProvidedResource?: ResourceInfo;
 };
 export type BindingList = Binding[];
-export type ClearanceRequirement = {
-  /** The guard key this requirement is about */
-  Key?: string;
-  /** Exists, In, NotIn, or DoesNotExist */
-  Operator?: string;
-  /** The values In and NotIn compare against; unused by Exists and DoesNotExist */
-  Values?: string[];
-};
-export type Clearance = ClearanceRequirement[];
 export type PathExpression = {
   /** Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type. */
   DataType?: string;
@@ -15355,6 +15374,7 @@ export type Trigger = {
   Arguments?: FunctionArgument[] | null;
   /** Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor. */
   BridgeWorkerID?: string;
+  Clearance?: Clearance;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -15417,6 +15437,7 @@ export type TriggerRead = {
   Arguments?: FunctionArgument[] | null;
   /** Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor. */
   BridgeWorkerID?: string;
+  Clearance?: Clearance;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */

@@ -7153,6 +7153,22 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
+		if params.Clearance != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clearance", runtime.ParamLocationQuery, *params.Clearance); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
@@ -12491,6 +12507,22 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
+		if params.Clearance != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clearance", runtime.ParamLocationQuery, *params.Clearance); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
@@ -15847,6 +15879,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.Clearance != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clearance", runtime.ParamLocationQuery, *params.Clearance); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Squash != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "squash", runtime.ParamLocationQuery, *params.Squash); err != nil {
@@ -16182,6 +16230,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.Protect != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Clearance != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clearance", runtime.ParamLocationQuery, *params.Clearance); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20281,6 +20345,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 		if params.Protect != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "protect", runtime.ParamLocationQuery, *params.Protect); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Clearance != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "clearance", runtime.ParamLocationQuery, *params.Clearance); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

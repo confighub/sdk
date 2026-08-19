@@ -564,6 +564,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if protectChange {
 		newParams.Protect = &protectChange
 	}
+	if clearance := clearanceJSON(); clearance != "" {
+		newParams.Clearance = &clearance
+	}
 	if squashMerge {
 		newParams.Squash = &squashMerge
 	}
@@ -973,6 +976,9 @@ func runBulkUnitUpdate() error {
 	}
 	if protectChange {
 		params.Protect = &protectChange
+	}
+	if clearance := clearanceJSON(); clearance != "" {
+		params.Clearance = &clearance
 	}
 	if squashMerge {
 		params.Squash = &squashMerge

@@ -110,6 +110,14 @@ type FunctionInvocation struct {
 	// Transient and per-invocation: not persisted on stored Invocations/Triggers
 	// (bun:"-"), and never part of an Invocation's identity hash.
 	Params map[string]any `json:",omitempty" bun:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
+	// Clearance is the set of guarded reasons this invocation is cleared for. A path whose
+	// guards it does not cover is not written, and the withheld change is reported.
+	//
+	// Per invocation, so a stored Invocation can carry the clearance for the reasons its own
+	// function is meant to disturb, rather than every Trigger that runs it having to restate
+	// them. An execution combines it with the clearance of whatever drove it -- the Trigger,
+	// the Link, or the API call -- by union.
+	Clearance Clearance `json:",omitempty" description:"Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"`
 }
 
 type OtherDataSource string

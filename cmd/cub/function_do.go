@@ -193,6 +193,7 @@ func init() {
 	functionDoCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionDoCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
+	addClearanceFlag(functionDoCmd)
 	functionDoCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
@@ -526,7 +527,10 @@ type invokeArgs struct {
 	DryRun       bool
 	// Protect records the written paths as protected local overrides. Without it the
 	// invocation claims nothing and each path keeps the protection it already has.
-	Protect     bool
+	Protect bool
+	// Clearance names the classes of guarded reason this invocation is cleared for. A path
+	// whose guards it does not cover is not written, and the withheld change is reported.
+	Clearance   string
 	ChangeSetID uuid.UUID
 	Body        *goclientnew.FunctionInvocationsRequest
 }
@@ -556,6 +560,11 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.Protect {
 			newParams.Protect = &invokeArgs.Protect
+		}
+		// Independent of Protect: one says what the invocation claims about what it wrote, the
+		// other what it understands about what was already there.
+		if invokeArgs.Clearance != "" {
+			newParams.Clearance = &invokeArgs.Clearance
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -593,6 +602,11 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 		if invokeArgs.Protect {
 			newParams.Protect = &invokeArgs.Protect
+		}
+		// Independent of Protect: one says what the invocation claims about what it wrote, the
+		// other what it understands about what was already there.
+		if invokeArgs.Clearance != "" {
+			newParams.Clearance = &invokeArgs.Clearance
 		}
 		if invokeArgs.ChangeSetID != uuid.Nil {
 			newParams.ChangeSetId = &invokeArgs.ChangeSetID
@@ -723,6 +737,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 			WhereData:    whereData,
 			DryRun:       dryRun,
 			Protect:      protectChange,
+			Clearance:    clearanceJSON(),
 			ChangeSetID:  changesetUUID,
 			Body:         newBody,
 		}

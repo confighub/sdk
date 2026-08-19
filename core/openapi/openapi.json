@@ -4787,6 +4787,15 @@
             }
           },
           {
+            "name": "clearance",
+            "in": "query",
+            "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "change_set_id",
             "in": "query",
             "description": "Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions",
@@ -14181,6 +14190,15 @@
             }
           },
           {
+            "name": "clearance",
+            "in": "query",
+            "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "change_set_id",
             "in": "query",
             "description": "Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions",
@@ -19331,6 +19349,15 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "Clearance": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -20331,6 +20358,15 @@
             }
           },
           {
+            "name": "clearance",
+            "in": "query",
+            "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "squash",
             "in": "query",
             "description": "Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.",
@@ -20722,6 +20758,15 @@
             "required": false,
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "clearance",
+            "in": "query",
+            "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -25839,6 +25884,15 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "Clearance": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
+                    "nullable": true
+                  },
                   "DeleteGates": {
                     "type": "object",
                     "additionalProperties": {
@@ -26158,6 +26212,15 @@
                     "type": "string",
                     "description": "",
                     "format": "uuid",
+                    "nullable": true
+                  },
+                  "Clearance": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "nullable": true
+                    },
+                    "description": "",
                     "nullable": true
                   },
                   "DeleteGates": {
@@ -26780,6 +26843,15 @@
             "required": false,
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "clearance",
+            "in": "query",
+            "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -31414,6 +31486,9 @@
             "nullable": true,
             "x-go-type-skip-optional-pointer": true
           },
+          "Clearance": {
+            "$ref": "#/components/schemas/Clearance"
+          },
           "FunctionName": {
             "type": "string",
             "description": "Function name",
@@ -34542,6 +34617,9 @@
             "description": "Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "Clearance": {
+            "$ref": "#/components/schemas/Clearance"
           },
           "CreatedAt": {
             "type": "string",

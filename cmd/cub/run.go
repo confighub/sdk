@@ -63,6 +63,7 @@ func init() {
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
+	addPersistentClearanceFlag(runCmd)
 	runCmd.PersistentFlags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	runCmd.PersistentFlags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	runCmd.PersistentFlags().StringVar(&executorSpace, "executor-space", "", "Space ID or slug whose executor to use for builtin functions (org-level only)")
@@ -263,6 +264,7 @@ func RegisterFunctionsAsCobraCommands() {
 						WhereData:    whereData,
 						DryRun:       dryRun,
 						Protect:      protectChange,
+						Clearance:    clearanceJSON(),
 						ChangeSetID:  changesetUUID,
 						Body:         newBody,
 					}

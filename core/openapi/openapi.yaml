@@ -5119,6 +5119,17 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -13097,6 +13108,17 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
       - description: Must match ChangeSetID of affected Units unless in dry run mode;
           not valid when invoked on Revisions
         in: query
@@ -17159,6 +17181,13 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -17998,6 +18027,17 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -18434,6 +18474,17 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -23292,6 +23343,13 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -23647,6 +23705,13 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
+                Clearance:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -24325,6 +24390,17 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
       - description: 'Merge the range as one rebased diff and record it as one Revision,
           instead of walking it. By default a merge replays: it takes the source''s
           Revisions in order and, where a Revision records function invocations that
@@ -28851,6 +28927,8 @@ components:
           nullable: true
           type: array
           x-go-type-skip-optional-pointer: true
+        Clearance:
+          $ref: '#/components/schemas/Clearance'
         FunctionName:
           description: Function name
           type: string
@@ -31773,6 +31851,8 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+        Clearance:
+          $ref: '#/components/schemas/Clearance'
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
