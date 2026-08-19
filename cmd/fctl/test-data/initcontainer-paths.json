@@ -1,0 +1,14 @@
+[
+  {
+    "ResourceName": "default/myapp",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.template.spec.initContainers.1.image",
+    "DataType": "string"
+  },
+  {
+    "ResourceName": "default/myapp",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.template.spec.initContainers.?name=db-migrate.image",
+    "DataType": "string"
+  }
+]

@@ -48,7 +48,7 @@ OUTPUT
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "Path": "spec.template.spec.containers.0.image",
+    "Path": "spec.template.spec.containers.?name=nginx.image",
     "AttributeName": "container-image",
     "DataType": "string",
     "Value": "nginx:latest",

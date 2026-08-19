@@ -87,10 +87,12 @@ spec:
 	}{
 		{"metadata.namespace", "v1/Namespace"},
 		{"spec.template.spec.serviceAccountName", "v1/ServiceAccount"},
-		{"spec.template.spec.imagePullSecrets.0.name", "v1/Secret"},
-		{"spec.template.spec.volumes.0.configMap.name", "v1/ConfigMap"},
-		{"spec.template.spec.volumes.1.secret.secretName", "v1/Secret"},
-		{"spec.template.spec.containers.0.envFrom.0.secretRef.name", "v1/Secret"},
+		// Array elements come back named by their merge key, not by the position they
+		// happened to sit at. envFrom declares none, so that segment keeps its index.
+		{"spec.template.spec.imagePullSecrets.?name=regcred.name", "v1/Secret"},
+		{"spec.template.spec.volumes.?name=cfg.configMap.name", "v1/ConfigMap"},
+		{"spec.template.spec.volumes.?name=tls.secret.secretName", "v1/Secret"},
+		{"spec.template.spec.containers.?name=main.envFrom.0.secretRef.name", "v1/Secret"},
 	}
 	for _, exp := range expected {
 		matches := findReferencesAtPath(values, "prod/web", exp.path)

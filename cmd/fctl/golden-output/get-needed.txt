@@ -36,7 +36,7 @@ OUTPUT
     "ResourceNameWithoutScope": "confighubplaceholder",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "Path": "spec.template.spec.containers.0.envFrom.0.configMapRef.name",
+    "Path": "spec.template.spec.containers.?name=main.envFrom.0.configMapRef.name",
     "AttributeName": "resource-name",
     "DataType": "string",
     "Details": {

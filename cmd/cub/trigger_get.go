@@ -67,8 +67,12 @@ func formatFunctionArgumentValue(value *goclientnew.FunctionArgument_Value) stri
 		return strconv.FormatBool(boolVal)
 	}
 
-	// Fallback: return the raw JSON
-	return fmt.Sprintf("%v", value)
+	// Fallback: the raw JSON, since the union type holds its payload in an
+	// unexported field that %v would render as Go bytes.
+	if raw, err := value.MarshalJSON(); err == nil {
+		return string(raw)
+	}
+	return "<unknown>"
 }
 
 func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger) {

@@ -114,7 +114,12 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	if mutationDetails.FunctionInvocation.FunctionName != "" {
 		view.Append([]string{"Function Name", mutationDetails.FunctionInvocation.FunctionName})
 		for i := range mutationDetails.FunctionInvocation.Arguments {
-			view.Append([]string{fmt.Sprintf("Argument %d", i), fmt.Sprintf("%v", (mutationDetails.FunctionInvocation.Arguments)[i].Value)})
+			argument := mutationDetails.FunctionInvocation.Arguments[i]
+			argLabel := fmt.Sprintf("Argument %d", i)
+			if argument.ParameterName != nil && *argument.ParameterName != "" {
+				argLabel = fmt.Sprintf("Argument %d (%s)", i, *argument.ParameterName)
+			}
+			view.Append([]string{argLabel, formatFunctionArgumentValue(argument.Value)})
 		}
 	}
 

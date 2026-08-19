@@ -601,6 +601,24 @@ func GetPathsAnyType(
 			attributeValue.Details = nil
 		}
 
+		// Name array elements by merge key. The path a getter returns is what writes the value
+		// back through set-attributes, what is stored as NeededPaths/ProvidedPaths, and what is
+		// matched against recorded MutationSources -- all of which identify an element by merge
+		// key. An index names a position instead, and stops denoting the same element as soon as
+		// anything is inserted ahead of it, so a value read at one index can be written to a
+		// different element. Elements of an array with no declared merge key keep their index;
+		// there is nothing else to call them by.
+		//
+		// Last, because the comment lookup and the Enricher above both read the element's
+		// position out of the path.
+		resourceType := attributeValue.ResourceType
+		if named, renamed := NameArrayElementsByMergeKey(resourceDoc, attributeValue.Path,
+			func(arrayPath string) ([]string, bool) {
+				return resourceProvider.MergeKeysForPath(resourceType, arrayPath)
+			}); renamed {
+			attributeValue.Path = named
+		}
+
 		visitorValues = append(visitorValues, attributeValue)
 		return visitorValues, nil
 	}

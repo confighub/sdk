@@ -231,16 +231,12 @@ func k8sResourceWhere(types *resourceTypeFilter, names []string) (cubapi.Where, 
 		}
 	}
 	if k8sQueryNamespace != "" {
-		clauses = clauses.And("ResourceName LIKE '" + escapeSQLLiteral(k8sQueryNamespace) + "/%'")
+		clauses = clauses.And("ResourceName LIKE '" + k8sQueryNamespace + "/%'")
 	}
 	if len(names) > 0 {
 		// Accept a bare name or a namespace-qualified one: ResourceName is "<namespace>/<name>",
 		// or "/<name>" for cluster-scoped resources.
-		quoted := make([]string, 0, len(names))
-		for _, name := range names {
-			quoted = append(quoted, escapeSQLLiteral(name))
-		}
-		clauses = clauses.And("ResourceName ~ '(^|/)(" + strings.Join(quoted, "|") + ")$'")
+		clauses = clauses.And("ResourceName ~ '(^|/)(" + strings.Join(names, "|") + ")$'")
 	}
 	if whereResource != "" {
 		translated, err := whereResourceToResourceClause(whereResource)
@@ -284,13 +280,6 @@ func whereResourceToResourceClause(expression string) (string, error) {
 		clauses = append(clauses, path+" "+expr.Operator+" "+expr.Literal)
 	}
 	return strings.Join(clauses, " AND "), nil
-}
-
-// escapeSQLLiteral doubles single quotes so a value can be embedded in the filter expression.
-// The filter parser rejects a literal containing a quote outright, so this turns a name that
-// would be refused into one that matches nothing, rather than a parse error.
-func escapeSQLLiteral(value string) string {
-	return strings.ReplaceAll(value, "'", "''")
 }
 
 // newK8sResourceFromEntity builds the command's view of a resource from a Resource row.

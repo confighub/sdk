@@ -97,6 +97,10 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-int-path apps/v1/Deploym
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-bool-path apps/v1/Deployment spec.paused > ${DIR}/get-bool-path.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-bool-path apps/v1/Deployment spec.paused true > ${DIR}/set-bool-path.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-attributes "$(<test-data/imageuri.json)" > ${DIR}/set-attributes.txt
+# get-paths answers by merge key, whichever way it was asked, so that its output is a
+# key the requester can match and a path set-attributes can write through an insertion.
+${FCTL} do test-data/deployment-initcontainers.yaml "MyDeployment" get-paths "$(<test-data/initcontainer-paths.json)" > ${DIR}/get-paths.txt
+${FCTL} do test-data/deployment-initcontainers.yaml "MyDeployment" set-attributes "$(<test-data/initcontainer-setattrs.json)" > ${DIR}/set-attributes-mergekey.txt
 ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/valfuncs.json)" > ${DIR}/doseqval.txt
 ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/getfuncs.json)" > ${DIR}/doseqget.txt
 ${FCTL} doseq test-data/deployment.yaml "MyDeployment" "$(<test-data/mutatefuncs.json)" > ${DIR}/doseqmutate.txt

@@ -94,3 +94,48 @@ func TestMarshalYAMLFunctionArgumentValueRoundtrips(t *testing.T) {
 		})
 	}
 }
+
+// TestFormatFunctionArgumentValue is a regression test for `cub mutation get`
+// rendering arguments as Go objects. FunctionArgument_Value keeps its payload
+// in an unexported json.RawMessage, so %v prints the raw bytes.
+func TestFormatFunctionArgumentValue(t *testing.T) {
+	str := func() *goclientnew.FunctionArgument_Value {
+		v := &goclientnew.FunctionArgument_Value{}
+		if err := v.FromFunctionArgumentValue0("nginx:1.27"); err != nil {
+			t.Fatalf("FromFunctionArgumentValue0: %v", err)
+		}
+		return v
+	}
+	num := func() *goclientnew.FunctionArgument_Value {
+		v := &goclientnew.FunctionArgument_Value{}
+		if err := v.FromFunctionArgumentValue1(3); err != nil {
+			t.Fatalf("FromFunctionArgumentValue1: %v", err)
+		}
+		return v
+	}
+	boolean := func() *goclientnew.FunctionArgument_Value {
+		v := &goclientnew.FunctionArgument_Value{}
+		if err := v.FromFunctionArgumentValue2(true); err != nil {
+			t.Fatalf("FromFunctionArgumentValue2: %v", err)
+		}
+		return v
+	}
+
+	cases := []struct {
+		name  string
+		value *goclientnew.FunctionArgument_Value
+		want  string
+	}{
+		{"string", str(), `"nginx:1.27"`},
+		{"int", num(), "3"},
+		{"bool", boolean(), "true"},
+		{"nil", nil, "<nil>"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := formatFunctionArgumentValue(tc.value); got != tc.want {
+				t.Fatalf("formatFunctionArgumentValue = %s, want %s", got, tc.want)
+			}
+		})
+	}
+}

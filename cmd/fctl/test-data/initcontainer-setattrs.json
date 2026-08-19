@@ -1,0 +1,10 @@
+[
+  {
+    "ResourceName": "default/myapp",
+    "ResourceType": "apps/v1/Deployment",
+    "Path": "spec.template.spec.initContainers.?name=db-init.image",
+    "AttributeName": "container-image",
+    "DataType": "string",
+    "Value": "ghcr.io/example/app:v2.0.0"
+  }
+]

@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -631,7 +632,8 @@ func argFromString(name, value string) goclientnew.FunctionArgument {
 
 type pathRequest struct {
 	info     api.AttributeInfo
-	inputKey string // key using the original mutation path
+	inputKey string // key using the original mutation path, which is how the display looks it up
+	matchKey string // key using the canonical path, which is how a get-paths answer is matched
 }
 
 // collectPathRequests collects paths from new mutations that have Update/Replace/Delete.
@@ -670,6 +672,8 @@ func collectPathRequests(mutations *goclientnew.ResourceMutationList, priorHeadM
 						},
 					},
 					inputKey: pathValueKey(resourceType, resourceName, path),
+					matchKey: pathValueKey(resourceType, resourceName,
+						string(yamlkit.CanonicalMutationPath(api.ResolvedPath(path)))),
 				})
 			}
 		}
@@ -703,6 +707,20 @@ func buildGetPathsBody(requests []pathRequest) *goclientnew.FunctionInvocationsR
 // original path requests. Returns a map of "resourceType/resourceName:path" → old value.
 func extractOldValues(resp *[]goclientnew.FunctionInvocationsResponse, requests []pathRequest) map[string]string {
 	result := make(map[string]string)
+	// Returned values are matched to input requests on the canonical path: get-paths names
+	// array elements by merge key, as recorded mutation paths do, so the two agree once any
+	// positional fallback a stored path still carries is dropped from both sides. Two requests
+	// can canonicalize alike -- the same element recorded at two positions -- and those stay
+	// unmatched rather than being paired arbitrarily.
+	byMatchKey := make(map[string]*pathRequest, len(requests))
+	for i := range requests {
+		key := requests[i].matchKey
+		if _, duplicate := byMatchKey[key]; duplicate {
+			byMatchKey[key] = nil
+			continue
+		}
+		byMatchKey[key] = &requests[i]
+	}
 	for _, r := range *resp {
 		if !r.Success {
 			continue
@@ -719,25 +737,20 @@ func extractOldValues(resp *[]goclientnew.FunctionInvocationsResponse, requests 
 		if err := json.Unmarshal(outputBytes, &attrValues); err != nil {
 			continue
 		}
-		// Match returned values to input requests by resource+response path,
-		// falling back to path resolution matching for selector-style paths.
 		for _, av := range attrValues {
-			respKey := pathValueKey(string(av.ResourceType), string(av.ResourceName), string(av.Path))
+			respKey := pathValueKey(string(av.ResourceType), string(av.ResourceName),
+				string(yamlkit.CanonicalMutationPath(av.Path)))
 			matched := false
-			for _, req := range requests {
-				if req.inputKey == respKey {
-					result[req.inputKey] = fmt.Sprintf("%v", av.Value)
-					matched = true
-					break
-				}
+			if req := byMatchKey[respKey]; req != nil {
+				result[req.inputKey] = fmt.Sprintf("%v", av.Value)
+				matched = true
 			}
 			if !matched {
-				// A stored path names an array element by merge key while get-paths answers
-				// with the position it resolved to, so the two are reconciled segment by
-				// segment. A canonical path -- one carrying no recorded index -- matches any
-				// position, so it is only accepted when exactly one request could have asked
-				// for this value: pairing the wrong container's old value would be worse than
-				// showing none.
+				// A server older than the merge-key answer still replies with the position it
+				// resolved to, so those are reconciled segment by segment. A canonical path --
+				// one carrying no recorded index -- matches any position, so it is only
+				// accepted when exactly one request could have asked for this value: pairing
+				// the wrong container's old value would be worse than showing none.
 				var only *pathRequest
 				for i := range requests {
 					req := &requests[i]

@@ -38,7 +38,7 @@ OUTPUT
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "Path": "spec.template.spec.containers.0.env.1.value",
+    "Path": "spec.template.spec.containers.?name=nginx.env.?name=HOPE.value",
     "AttributeName": "env-value",
     "DataType": "string",
     "Value": "false",

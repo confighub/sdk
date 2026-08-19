@@ -48,7 +48,7 @@ OUTPUT
     "ResourceNameWithoutScope": "mydep",
     "ResourceType": "apps/v1/Deployment",
     "ResourceCategory": "Resource",
-    "Path": "spec.template.spec.containers.0.image#uri",
+    "Path": "spec.template.spec.containers.?name=nginx.image#uri",
     "AttributeName": "container-repository-uri",
     "DataType": "string",
     "Value": "nginx",
