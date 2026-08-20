@@ -129,16 +129,11 @@ func displayFilterList(filters []*goclientnew.ExtendedFilter) {
 			fromSpaceSlug = f.FromSpace.Slug
 		}
 
-		// Truncate long where clauses for display
-		whereDisplay := filter.Where
-		if len(whereDisplay) > 50 {
-			whereDisplay = whereDisplay[:47] + "..."
-		}
-
-		whereDataDisplay := filter.WhereData
-		if len(whereDataDisplay) > 30 {
-			whereDataDisplay = whereDataDisplay[:27] + "..."
-		}
+		// The data clause gets a narrower column than the metadata one, which is the one
+		// people read first.
+		const maxWhereDataWidth = 30
+		whereDisplay := truncateWithEllipsis(filter.Where, defaultColumnWidth)
+		whereDataDisplay := truncateWithEllipsis(filter.WhereData, maxWhereDataWidth)
 
 		table.Append([]string{
 			filter.Slug,

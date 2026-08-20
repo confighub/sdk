@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -88,11 +90,63 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if extendedChangeOrder.SpaceFilter != nil {
 		view.Append([]string{"Space Filter", extendedChangeOrder.SpaceFilter.Slug})
 	}
+	if changeorderDetails.WhereSpace != "" {
+		view.Append([]string{"Where Space", changeorderDetails.WhereSpace})
+	}
 	if changeorderDetails.Description != "" {
 		view.Append([]string{"Description", changeorderDetails.Description})
 	}
+	if changeorderDetails.AbortedReason != "" {
+		view.Append([]string{"Aborted Reason", changeorderDetails.AbortedReason})
+	}
+	if len(changeorderDetails.SkippedUnits) > 0 {
+		view.Append([]string{"Skipped Units", changeorderSkippedUnits(changeorderDetails.SkippedUnits, changeorderDetails.SpaceID.String())})
+	}
+	// Where the change has got to, which the server derives when it reads the change order.
+	// In-scope first: it is what the other two are measured against.
+	view.Append([]string{"State", changeorderDetails.State})
+	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
+	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
+	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})
 
 	view.Render()
+}
+
+// changeorderSkippedUnits renders what the change order covers nothing of, by unit slug and
+// reason. The server stores the reason against the unit's id, since a slug can be renamed.
+// The generated client keys a uuid-keyed map by string, since JSON object keys are strings --
+// the same shape resolveTagSlugs handles for Revision.Tags.
+func changeorderSkippedUnits(skipped map[string]string, spaceID string) string {
+	lines := make([]string, 0, len(skipped))
+	for unitID, reason := range skipped {
+		name := unitID
+		// A skipped unit is always in the change order's own space -- they are the units the
+		// derivation walked.
+		if unit, err := apiGetUnitInSpace(unitID, spaceID, "UnitID,Slug"); err == nil && unit != nil {
+			name = unit.Slug
+		}
+		lines = append(lines, fmt.Sprintf("%s (%s)", name, reason))
+	}
+	// By name: the map has no order, and the same change order should read the same way twice.
+	sort.Strings(lines)
+	return strings.Join(lines, ", ")
+}
+
+// changeorderSpaceSlugs names Spaces by slug, falling back to the ID for one that cannot be read --
+// a change order can reach a Space the caller has no View permission on.
+func changeorderSpaceSlugs(spaceIDs []uuid.UUID) string {
+	slugs := make([]string, 0, len(spaceIDs))
+	for _, spaceID := range spaceIDs {
+		space, err := apiGetSpace(spaceID.String(), "SpaceID,Slug")
+		if err != nil || space == nil {
+			slugs = append(slugs, spaceID.String())
+			continue
+		}
+		slugs = append(slugs, space.Slug)
+	}
+	// By name: the server answers in ID order, which is stable but says nothing.
+	sort.Strings(slugs)
+	return strings.Join(slugs, ", ")
 }
 
 func apiGetChangeOrder(changeorderID string, selectParam string) (*goclientnew.ChangeOrder, error) {

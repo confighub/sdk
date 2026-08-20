@@ -111,11 +111,7 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 			endTagSlug = cs.EndTag.Slug
 		}
 
-		// Truncate long descriptions for display
-		descriptionDisplay := changeset.Description
-		if len(descriptionDisplay) > 50 {
-			descriptionDisplay = descriptionDisplay[:47] + "..."
-		}
+		descriptionDisplay := truncateWithEllipsis(changeset.Description, defaultColumnWidth)
 
 		table.Append([]string{
 			changeset.Slug,

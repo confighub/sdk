@@ -133,6 +133,31 @@ func uuidPtrToString(uuidPtr *goclientnew.UUID) string {
 }
 
 // tprint stands for terminal print
+// defaultColumnWidth is where the list commands cut free text -- descriptions, where clauses --
+// so that one long value does not push every other column off the terminal.
+const defaultColumnWidth = 50
+
+// truncateWithEllipsis shortens text to at most maxLen bytes, ending in an ellipsis when it had to
+// cut. The ellipsis counts against maxLen, so the result never exceeds it -- which is what lets a
+// caller lay a table out against maxLen as a column width.
+//
+// The cut lands on a rune boundary: slicing a UTF-8 string by bytes can land inside a rune, and a
+// cell holding half of one renders as a replacement character.
+//
+// This is not truncateWithHash, which shortens a name and must stay unique, so it spends its
+// budget on a checksum rather than an ellipsis.
+func truncateWithEllipsis(text string, maxLen int) string {
+	if maxLen <= 0 || len(text) <= maxLen {
+		return text
+	}
+	const ellipsis = "..."
+	if maxLen <= len(ellipsis) {
+		return strings.ToValidUTF8(text[:maxLen], "")
+	}
+	// ToValidUTF8 drops a rune the cut landed in the middle of.
+	return strings.ToValidUTF8(text[:maxLen-len(ellipsis)], "") + ellipsis
+}
+
 func tprint(format string, args ...interface{}) {
 	// Ensure there are no leading newlines and exactly one trailing newline.
 	format = strings.Trim(format, "\n") + "\n"

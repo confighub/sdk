@@ -6,6 +6,7 @@ package main
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	sigsyaml "sigs.k8s.io/yaml"
@@ -135,6 +136,46 @@ func TestFormatFunctionArgumentValue(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := formatFunctionArgumentValue(tc.value); got != tc.want {
 				t.Fatalf("formatFunctionArgumentValue = %s, want %s", got, tc.want)
+			}
+		})
+	}
+}
+
+// truncateWithEllipsis is what every list command cuts free text with, so maxLen has to be a
+// width a table can be laid out against: the ellipsis counts against it rather than being added
+// on top. Cutting UTF-8 by bytes is the other hazard -- a cut inside a rune leaves a byte that
+// renders as a replacement character.
+func TestTruncateWithEllipsis(t *testing.T) {
+	testCases := []struct {
+		name   string
+		text   string
+		maxLen int
+		want   string
+	}{
+		{name: "short enough is left alone", text: "release 42", maxLen: 50, want: "release 42"},
+		{name: "exactly the limit is left alone", text: "abcde", maxLen: 5, want: "abcde"},
+		{name: "the ellipsis counts against the limit", text: "abcdefghij", maxLen: 5, want: "ab..."},
+		{name: "one over", text: "abcdef", maxLen: 5, want: "ab..."},
+		{name: "no room for an ellipsis", text: "abcdef", maxLen: 2, want: "ab"},
+		{name: "no room at all", text: "abcdef", maxLen: 0, want: "abcdef"},
+		{name: "empty", text: "", maxLen: 10, want: ""},
+		// The cut lands mid-rune: "é" is two bytes, so a 5-byte budget minus the ellipsis
+		// leaves two, and the second is half of it. The partial rune is dropped rather than
+		// emitted.
+		{name: "a cut inside a rune drops it", text: "aébcdef", maxLen: 5, want: "a..."},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := truncateWithEllipsis(tc.text, tc.maxLen)
+			if got != tc.want {
+				t.Errorf("truncateWithEllipsis(%q, %d) = %q, want %q", tc.text, tc.maxLen, got, tc.want)
+			}
+			if tc.maxLen > 0 && len(got) > tc.maxLen {
+				t.Errorf("result %q is %d bytes, over the limit of %d", got, len(got), tc.maxLen)
+			}
+			if !utf8.ValidString(got) {
+				t.Errorf("result %q is not valid UTF-8", got)
 			}
 		})
 	}

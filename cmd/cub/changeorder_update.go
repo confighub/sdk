@@ -36,6 +36,18 @@ Examples:
   # Update description for specific changeorders
   cub changeorder update --patch --changeorder cs1,cs2 --description "Updated description"
 
+  # Abort a changeorder, so that it reads as Aborted rather than still on its way
+  cub changeorder update my-changeorder --aborted-reason "superseded by the 1.43 rollout"
+
+  # Put an aborted changeorder back on its way
+  cub changeorder update my-changeorder --aborted-reason ""
+
+  # Narrow where a changeorder is headed, ANDed with its space filter
+  cub changeorder update my-changeorder --where-space-field "Labels.Region = 'use2'"
+
+  # Clear the expression, leaving the space filter (if any) to say where it is headed
+  cub changeorder update my-changeorder --where-space-field "-"
+
   # Update tags for changeorders using JSON patch
   echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeorder update --patch --where "Description LIKE 'Release%'" --from-stdin
 `+"```"+`
@@ -49,7 +61,13 @@ var (
 	changeorderPatch       bool
 	changeorderIdentifiers []string
 	changeorderUpdateArgs  struct {
-		description string
+		description     string
+		whereSpaceField string
+		abortedReason   string
+		// abortedReasonSet is whether --aborted-reason was given. The empty value is the one
+		// that un-aborts a change order, so "was it passed" is the question rather than "is it
+		// non-empty", which is what the other update flags ask.
+		abortedReasonSet bool
 	}
 )
 
@@ -62,8 +80,26 @@ func init() {
 
 	// Single update specific flags
 	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.description, "description", "", "human-readable description of the change")
+	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting the Spaces this change order propagates into, stored on it as WhereSpace and ANDed with its space filter (use '-' to clear)")
+	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.abortedReason, "aborted-reason", "", "why the change order was given up on; setting it aborts the change order, and passing an empty value puts it back on its way")
 
 	changeorderCmd.AddCommand(changeorderUpdateCmd)
+}
+
+// addChangeOrderWhereSpaceToPatch follows the convention the other where expressions use: "-"
+// clears it, since an empty value is how a flag reads when it was not given at all.
+func addChangeOrderWhereSpaceToPatch(patchData map[string]interface{}) {
+	if changeorderUpdateArgs.whereSpaceField == "-" {
+		patchData["WhereSpace"] = ""
+	} else if changeorderUpdateArgs.whereSpaceField != "" {
+		patchData["WhereSpace"] = changeorderUpdateArgs.whereSpaceField
+	}
+}
+
+func addChangeOrderAbortedReasonToPatch(patchData map[string]interface{}) {
+	if changeorderUpdateArgs.abortedReasonSet {
+		patchData["AbortedReason"] = changeorderUpdateArgs.abortedReason
+	}
 }
 
 func checkChangeOrderUpdateConflictingArgs(args []string) bool {
@@ -143,6 +179,8 @@ func runBulkChangeOrderUpdate() error {
 		if changeorderUpdateArgs.description != "" {
 			patchMap["Description"] = changeorderUpdateArgs.description
 		}
+		addChangeOrderWhereSpaceToPatch(patchMap)
+		addChangeOrderAbortedReasonToPatch(patchMap)
 	}
 
 	// Build patch data using consolidated function
@@ -177,6 +215,7 @@ func runBulkChangeOrderUpdate() error {
 }
 
 func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	changeorderUpdateArgs.abortedReasonSet = cmd.Flags().Changed("aborted-reason")
 	isBulkPatchMode := checkChangeOrderUpdateConflictingArgs(args)
 
 	if isBulkPatchMode {
@@ -204,6 +243,8 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if changeorderUpdateArgs.description != "" {
 				patchData["Description"] = changeorderUpdateArgs.description
 			}
+			addChangeOrderWhereSpaceToPatch(patchData)
+			addChangeOrderAbortedReasonToPatch(patchData)
 		}
 
 		patchData, err := BuildPatchData(changeorderEnhancer)
@@ -254,6 +295,14 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Set changeorder-specific fields from flags
 	if changeorderUpdateArgs.description != "" {
 		currentChangeOrder.Description = changeorderUpdateArgs.description
+	}
+	if changeorderUpdateArgs.whereSpaceField == "-" {
+		currentChangeOrder.WhereSpace = ""
+	} else if changeorderUpdateArgs.whereSpaceField != "" {
+		currentChangeOrder.WhereSpace = changeorderUpdateArgs.whereSpaceField
+	}
+	if changeorderUpdateArgs.abortedReasonSet {
+		currentChangeOrder.AbortedReason = changeorderUpdateArgs.abortedReason
 	}
 
 	changeorderRes, err := cubClientNew.UpdateChangeOrderWithResponse(ctx, spaceID, currentChangeOrder.ChangeOrderID, *currentChangeOrder)

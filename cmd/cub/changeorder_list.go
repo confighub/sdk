@@ -34,6 +34,14 @@ Examples:
 
   # List changeorders with matching Descriptions
   cub changeorder list --space my-space --where "Description LIKE 'Release%'"
+
+  # List the changeorders a space has taken, or has released
+  cub changeorder list --space my-space --where "ResolvedSpaceIDs ? '<space-id>'"
+  cub changeorder list --space my-space --where "ReleasedSpaceIDs ? '<space-id>'"
+
+  # List the changeorders still on their way, and the ones given up on
+  cub changeorder list --space "*" --where "State = 'InProgress'"
+  cub changeorder list --space "*" --where "State = 'Aborted'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),
@@ -42,13 +50,15 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.UpdateType", "SpaceFilter.Slug", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description"}
+var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "ChangeOrder.UpdateType", "SpaceFilter.Slug", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
 
 // changeorderListInclude is the Include parameter for change order list queries.
 const changeorderListInclude = "SpaceID,StartTagID,EndTagID,SpaceFilterID"
 
 // changeorderBaseSelectFields are the fields always returned by change order list queries.
-var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID"}
+// AbortedReason is among them because State is derived from it, and the server has to re-read a
+// change order whose select left it out.
+var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason"}
 
 // ChangeOrder-specific aliases
 var changeorderAliases = map[string]string{
@@ -90,7 +100,7 @@ func getChangeOrderSlug(changeorder *goclientnew.ExtendedChangeOrder) string {
 func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "Update-Type", "Space-Filter", "Start-Tag", "End-Tag", "Description"})
+		table.SetHeader([]string{"Name", "Space", "State", "Update-Type", "Space-Filter", "Start-Tag", "End-Tag", "Description", "Aborted-Reason"})
 	}
 	for _, cs := range changeorders {
 		changeorder := cs.ChangeOrder
@@ -116,20 +126,16 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			spaceFilterSlug = cs.SpaceFilter.Slug
 		}
 
-		// Truncate long descriptions for display
-		descriptionDisplay := changeorder.Description
-		if len(descriptionDisplay) > 50 {
-			descriptionDisplay = descriptionDisplay[:47] + "..."
-		}
-
 		table.Append([]string{
 			changeorder.Slug,
 			spaceSlug,
+			changeorder.State,
 			changeorder.UpdateType,
 			spaceFilterSlug,
 			startTagSlug,
 			endTagSlug,
-			descriptionDisplay,
+			truncateWithEllipsis(changeorder.Description, defaultColumnWidth),
+			truncateWithEllipsis(changeorder.AbortedReason, defaultColumnWidth),
 		})
 	}
 	table.Render()

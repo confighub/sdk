@@ -17,6 +17,7 @@ import (
 var variantCreateArgs struct {
 	target           string
 	spacePattern     string
+	stage            string
 	environment      string
 	region           string
 	namespace        string
@@ -47,14 +48,15 @@ This is a convenience command that combines two bulk operations:
 
 The first argument is the variant name, which becomes the value of the "Variant" label on the new
 space. The second argument is the slug (or UUID) of the upstream space to clone from. The upstream
-space is expected to have labels such as Component, Layer, Owner, Environment, Region, and Variant,
-and may have a "TargetID" annotation referencing the default target for the space, but none of these
-are required.
+space is expected to have labels such as Component, Layer, Owner, Stage, Environment, Region, and
+Variant, and may have a "TargetID" annotation referencing the default target for the space, but
+none of these are required.
 
 The new space's labels are inherited from the upstream space, with "Variant" overridden to
-<variant-name>. Use --environment and --region to add or change the "Environment" and "Region"
-labels, since some values (like Region) commonly differ between variants. The other well-known labels
-(Component, Layer, Owner) are inherited and can be overridden with --variant-labels.
+<variant-name>. Use --stage, --environment, and --region to add or change the "Stage",
+"Environment", and "Region" labels, since some values (like Region) commonly differ between
+variants. The other well-known labels (Component, Layer, Owner) are inherited and can be overridden
+with --variant-labels.
 
 The new space's slug defaults to <component>-<variant>, derived from the cloned space's Component
 and Variant labels — the same convention as "cub variant upload" and "cub helm install". When the
@@ -117,6 +119,9 @@ Examples:
   # Clone into a regional staging variant, overriding the Environment and Region labels.
   cub variant create staging website-prod --environment Staging --region us-east2
 
+  # Clone into a canary variant of production, overriding the Stage label.
+  cub variant create canary website-prod --stage Canary --environment Prod
+
   # Point the cloned units at a target and stamp the new space's TargetID annotation.
   # For an OCI target, this also sets the new space's release target, so the variant
   # can be published with "cub release publish" without further setup.
@@ -147,6 +152,7 @@ func init() {
 	enableAllowExistsFlag(variantCreateCmd)
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug and .Labels for the cloned space's labels; defaults to 'template:{{.Labels.Component}}-{{.Labels.Variant}}' when the cloned space has a Component label")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space, and for an OCI target the new space's ReleaseTargetID (required by 'cub release publish')")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.stage, "stage", "", "set the \"Stage\" label on the new space (example: \"Canary\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.environment, "environment", "", "set the \"Environment\" label on the new space (example: \"Prod\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.region, "region", "", "set the \"Region\" label on the new space (example: \"us-east2\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.namespace, "namespace", "", "run set-namespace with this value on the cloned Kubernetes/YAML units, replacing the placeholder namespace from the upstream (e.g. a base uploaded with --namespace confighubplaceholder)")
@@ -265,9 +271,13 @@ func effectiveComponent(upstreamSpace *goclientnew.Space) string {
 // <component>-<variant> when the cloned space has a Component label.
 func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*goclientnew.Space, error) {
 	upstreamSpaceID := upstreamSpace.SpaceID
-	// The Variant label is always set from the variant name. --environment and --region set the
-	// well-known Environment and Region labels. Any --variant-labels are applied last so they win.
+	// The Variant label is always set from the variant name. --stage, --environment, and --region
+	// set the well-known Stage, Environment, and Region labels. Any --variant-labels are applied
+	// last so they win.
 	variantLabels := []string{"Variant=" + variantName}
+	if variantCreateArgs.stage != "" {
+		variantLabels = append(variantLabels, "Stage="+variantCreateArgs.stage)
+	}
 	if variantCreateArgs.environment != "" {
 		variantLabels = append(variantLabels, "Environment="+variantCreateArgs.environment)
 	}

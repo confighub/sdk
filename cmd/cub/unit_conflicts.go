@@ -242,14 +242,11 @@ func displayConflicts(conflicts []goclientnew.MutationConflict) {
 	table.Render()
 }
 
-// truncateValue keeps a conflict's value to one readable line.
+// truncateValue keeps a conflict's value to one readable line: newlines would break the row it
+// sits in, whatever its length.
 func truncateValue(value string) string {
-	value = strings.ReplaceAll(value, "\n", " ")
 	const maxValueLength = 48
-	if len(value) > maxValueLength {
-		return value[:maxValueLength] + "..."
-	}
-	return value
+	return truncateWithEllipsis(strings.ReplaceAll(value, "\n", " "), maxValueLength)
 }
 
 func plural(word string, count int) string {

@@ -20,6 +20,7 @@ var spaceUpdateArgs struct {
 	releaseTarget   string
 	permissions     []string
 	refreshTriggers bool
+	spaceLabels     spaceLabelFlagValues
 }
 
 var spaceUpdateCmd = &cobra.Command{
@@ -34,6 +35,9 @@ Single space update examples:
 
   # Update a space with patch mode
   cub space update --patch my-space --label "Environment=prod"
+
+  # Set the well-known Space labels, as shown by "cub space list"
+  cub space update --patch my-space --stage Canary --environment Prod --region us-east1
 `+"```"+`
 
 Bulk update examples:
@@ -57,6 +61,7 @@ func init() {
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the selected or default Space; a Target ID is also accepted; use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	spaceUpdateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)
@@ -108,6 +113,7 @@ func checkSpaceUpdateConflictingArgs(args []string) (bool, error) {
 }
 
 func spaceUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	spaceUpdateArgs.spaceLabels.apply()
 	isBulkPatchMode, err := checkSpaceUpdateConflictingArgs(args)
 	if err != nil {
 		return err

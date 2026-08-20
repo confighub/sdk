@@ -68,7 +68,7 @@ Environment-specific operations:
 
 Key information provided:
 - Space slugs: Used for --space flag and context setting
-- Standard labels: Component, Owner, Variant, Environment, Region, Layer
+- Standard labels: Component, Owner, Variant, Stage, Environment, Region, Layer
 - Unit count: Number of units in each space; -o wide adds the remaining summary counts
 - Organization context: Which org these spaces belong to
 
@@ -101,14 +101,10 @@ var spaceAliases = map[string]string{
 	"ID":   "Space.SpaceID",
 }
 
-// spaceLabelColumns are the standard space labels, in the order they are
-// displayed as columns by the space list command.
-var spaceLabelColumns = []string{"Component", "Owner", "Variant", "Environment", "Region", "Layer"}
-
 // Space custom column dependencies (e.g. Environment comes from Labels.Environment)
 var spaceCustomColumnDependencies = func() map[string][]string {
-	deps := make(map[string][]string, len(spaceLabelColumns))
-	for _, label := range spaceLabelColumns {
+	deps := make(map[string][]string, len(standardSpaceLabels))
+	for _, label := range standardSpaceLabels {
 		deps[label] = []string{"Labels"}
 	}
 	return deps
@@ -160,7 +156,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		header := append([]string{"Name"}, spaceLabelColumns...)
+		header := append([]string{"Name"}, standardSpaceLabels...)
 		header = append(header, "#Units")
 		if wide {
 			header = append(header, wideSpaceCountColumns...)
@@ -169,7 +165,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	}
 	for _, extendedSpace := range extendedSpaces {
 		row := []string{extendedSpace.Space.Slug}
-		for _, label := range spaceLabelColumns {
+		for _, label := range standardSpaceLabels {
 			row = append(row, extendedSpace.Space.Labels[label])
 		}
 		row = append(row, fmt.Sprintf("%d", extendedSpace.TotalUnitCount))

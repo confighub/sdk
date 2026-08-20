@@ -356,8 +356,8 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		}
 
 		description := rev.Description
-		if !wide && len(description) > maxRevisionDescription {
-			description = description[:maxRevisionDescription-3] + "..."
+		if !wide {
+			description = truncateWithEllipsis(description, maxRevisionDescription)
 		}
 
 		row := []string{fmt.Sprintf("%d", rev.RevisionNum), unit}

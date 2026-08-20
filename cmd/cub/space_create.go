@@ -26,6 +26,7 @@ var spaceCreateArgs struct {
 	permissions   []string
 	variantLabels []string
 	namePattern   string
+	spaceLabels   spaceLabelFlagValues
 }
 
 var spaceCreateCmd = &cobra.Command{
@@ -45,6 +46,10 @@ Single space creation examples:
 
   # Create a space and set it as the default in the current context
   cub space create my-space --set-context
+
+  # Create a space with the well-known Space labels, as shown by "cub space list"
+  cub space create website-canary --component website --variant canary --stage Canary \
+    --environment Prod --region us-east1
 `+"```"+`
 
 Bulk creation examples:
@@ -70,6 +75,7 @@ func init() {
 	spaceCreateCmd.Flags().BoolVar(&spaceCreateArgs.setContext, "set-context", false, "set the newly created space as the default in the current context")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	spaceCreateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceCreateCmd)
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Space and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	enableWhereFlag(spaceCreateCmd)
 	enableFilterFlag(spaceCreateCmd)
@@ -131,6 +137,7 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func spaceCreateCmdRun(cmd *cobra.Command, args []string) error {
+	spaceCreateArgs.spaceLabels.apply()
 	isBulkCreateMode, err := checkSpaceCreateConflictingArgs(args)
 	if err != nil {
 		return err

@@ -20,6 +20,7 @@ import (
 type variantUploadOptions struct {
 	component    string
 	variant      string
+	stage        string
 	environment  string
 	region       string
 	layer        string
@@ -92,7 +93,7 @@ reference; a cross-scope reference before a same-namespace one) and the broken e
 reported.
 
 The Space is created if missing and stamped with the well-known labels from --component,
---variant, --environment, --region, --layer, and --owner. --component and --variant are
+--variant, --stage, --environment, --region, --layer, and --owner. --component and --variant are
 required. The Space slug comes from --space-pattern (a Go template over .Labels), or from
 --space to set it explicitly.
 
@@ -157,6 +158,7 @@ Examples:
 func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.component, "component", "", "value for the well-known \"Component\" Space label (required)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.variant, "variant", "", "value for the well-known \"Variant\" Space label (required)")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.stage, "stage", "", "value for the well-known \"Stage\" Space label (e.g. Canary)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.environment, "environment", "", "value for the well-known \"Environment\" Space label (e.g. Prod)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.region, "region", "", "value for the well-known \"Region\" Space label (e.g. us-east1)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.layer, "layer", "", "value for the well-known \"Layer\" Space label (e.g. App)")
@@ -191,6 +193,9 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	labels := map[string]string{
 		"Component": a.component,
 		"Variant":   a.variant,
+	}
+	if a.stage != "" {
+		labels["Stage"] = a.stage
 	}
 	if a.environment != "" {
 		labels["Environment"] = a.environment
@@ -376,12 +381,7 @@ func uploadSourceDescription(inputs []string) string {
 	for _, in := range inputs {
 		parts = append(parts, uploadSourceRef(in))
 	}
-	desc := strings.Join(parts, ", ")
-	if len(desc) > maxUploadSourceDescription {
-		// ToValidUTF8 drops a rune the cut landed in the middle of.
-		desc = strings.ToValidUTF8(desc[:maxUploadSourceDescription-3], "") + "..."
-	}
-	return desc
+	return truncateWithEllipsis(strings.Join(parts, ", "), maxUploadSourceDescription)
 }
 
 // createPlainUnit writes the Unit body to a temp file and runs cub unit create.

@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -123,18 +124,9 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Find the change this promotion carries, then refuse to promote it until the previous stage is
-	// already running it. A ChangeOrder is itself the change and needs no looking up; everything
-	// else has to be read off the Units the promotion would upgrade. The gate runs on a dry run
-	// too: a preview that ignored it would describe a promotion that cannot happen.
-	promoted := &promotedChange{changeOrder: changeOrder}
-	if changeOrder == nil {
-		promoted, err = newPromotedChange(downstreamSpaceID)
-		if err != nil {
-			return err
-		}
-	}
-	if err := validatePreviousStageForPromotion(downstreamSpace, promoted); err != nil {
+	// Refuse to promote until the previous stage is already running the change. The gate runs on a
+	// dry run too: a preview that ignored it would describe a promotion that cannot happen.
+	if err := validatePreviousStageForPromotion(downstreamSpace, changeOrder); err != nil {
 		return err
 	}
 
@@ -158,7 +150,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	return promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID)
 }
 
-func validatePreviousStageForPromotion(space *goclientnew.Space, promoted *promotedChange) error {
+func validatePreviousStageForPromotion(space *goclientnew.Space, changeOrder *goclientnew.ChangeOrder) error {
 	previousStage, ok := space.Labels["PreviousStage"]
 	if !ok {
 		return nil
@@ -186,261 +178,70 @@ func validatePreviousStageForPromotion(space *goclientnew.Space, promoted *promo
 			variantName = variant.Slug
 		}
 
-		liveStatusJSON, ok := variant.Annotations[livestatus.Annotation]
-		if !ok {
-			return errors.Newf("unable to promote to stage '%s', live-status not found for Variant '%s'", stage, variantName)
+		// A Space with no release target releases nothing, ever, so nothing is deployed from it
+		// and there is no live state to report: taking the change is the whole of what it can be
+		// asked for.
+		if variant.ReleaseTargetID != nil {
+			liveStatusJSON, ok := variant.Annotations[livestatus.Annotation]
+			if !ok {
+				return errors.Newf("unable to promote to stage '%s', live-status not found for Variant '%s'", stage, variantName)
+			}
+
+			var liveStatus livestatus.Status
+			if err := json.Unmarshal([]byte(liveStatusJSON), &liveStatus); err != nil {
+				return err
+			}
+
+			if liveStatus.SyncStatus != "Synced" {
+				return errors.Newf("unable to promote to stage '%s', Variant '%s' is not synced", stage, variantName)
+			}
+			if liveStatus.OperationPhase != "Succeeded" {
+				return errors.Newf("unable to promote to stage '%s', Variant '%s' has not succeeded in deployment", stage, variantName)
+			}
+			if liveStatus.HealthStatus != "Healthy" {
+				return errors.Newf("unable to promote to stage '%s', Variant '%s' is not healthy", stage, variantName)
+			}
 		}
 
-		var liveStatus livestatus.Status
-		if err := json.Unmarshal([]byte(liveStatusJSON), &liveStatus); err != nil {
-			return err
-		}
-
-		if liveStatus.SyncStatus != "Synced" {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' is not synced", stage, variantName)
-		}
-		if liveStatus.OperationPhase != "Succeeded" {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' has not succeeded in deployment", stage, variantName)
-		}
-		if liveStatus.HealthStatus != "Healthy" {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' is not healthy", stage, variantName)
-		}
-
-		if err := validateDeployedChange(variant, liveStatus.Revision, promoted, stage, variantName); err != nil {
-			return err
+		// A ChangeOrder is the change's own identity, and the server keeps track of where it has
+		// got to, so this is a question rather than a reconstruction: the Release the Variant is
+		// running does not have to be found and taken apart to answer it.
+		if changeOrder != nil {
+			if err := validateReleasedChangeOrder(variant, changeOrder, stage, variantName); err != nil {
+				return err
+			}
+			continue
 		}
 	}
 
 	return nil
 }
 
-// validateDeployedChange errors when the change being promoted is newer than what a Variant of the
-// previous stage is running.
+// validateReleasedChangeOrder errors when a Variant of the previous stage has not taken the change
+// order being promoted, or has taken it without releasing it.
 //
-// liveRevision is the OCI digest live-status reports, which names the Release the Variant is
-// actually running -- not necessarily its newest. The Revisions that Release bundles are what is
-// deployed there, and each Revision's backlink to the Releases that bundled it is what identifies
-// them: the Release's own TagID is unset on older Releases, and a Unit with no Revision carrying a
-// Tag supplied at publish time is bundled at its head, so the Tag can be missing from a Revision
-// the Release does contain.
-func validateDeployedChange(variant *goclientnew.Space, liveRevision string,
-	promoted *promotedChange, stage, variantName string) error {
-	if liveRevision == "" {
-		return errors.Newf("unable to promote to stage '%s', live-status for Variant '%s' reports no revision", stage, variantName)
+// ResolvedSpaceIDs and ReleasedSpaceIDs are the server's own answer to both questions, derived from
+// the Links the change order propagates over and the Revision each Unit is applied at. A Unit the
+// change order covers but did not change is not counted in either, and neither is one outside the
+// Space's release: what is being asked is whether this change has finished arriving there, not
+// whether the Space is otherwise up to date.
+func validateReleasedChangeOrder(variant *goclientnew.Space, changeOrder *goclientnew.ChangeOrder,
+	stage, variantName string) error {
+	if !slices.Contains(changeOrder.ResolvedSpaceIDs, variant.SpaceID) {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has not taken change order '%s'",
+			stage, variantName, changeOrder.Slug)
 	}
-
-	// argobot reports the digest of the OCI manifest it pulled, which is the Release's
-	// ManifestDigest; a reporter naming the stored bundle instead is matched by Digest.
-	var release *goclientnew.Release
-	for _, field := range []string{"ManifestDigest", "Digest"} {
-		releases, err := apiListReleases(variant.SpaceID.String(),
-			field+" = '"+liveRevision+"'",
-			"ReleaseID,SpaceID,ReleaseNum,ManifestDigest,Digest,Published", "")
-		if err != nil {
-			return err
-		}
-		if len(releases) > 0 && releases[0].Release != nil {
-			release = releases[0].Release
-			break
-		}
+	// A Space with no release target releases nothing, ever -- a base, or any Space whose Units
+	// are delivered from somewhere else -- so having taken the change is the whole of what it
+	// can be asked for.
+	if variant.ReleaseTargetID == nil {
+		return nil
 	}
-	if release == nil {
-		return errors.Newf("unable to promote to stage '%s', no Release of Variant '%s' matches the deployed revision %s", stage, variantName, liveRevision)
-	}
-
-	// The Revision of each Unit the deployed Release bundles.
-	bundled, err := apiSearchListRevisions(
-		fmt.Sprintf("SpaceID = '%s' AND Releases ? '%s'", variant.SpaceID, release.ReleaseID),
-		"RevisionID,SpaceID,UnitID,RevisionNum,ChangeSetID", "")
-	if err != nil {
-		return err
-	}
-	deployed := make(map[uuid.UUID]int64, len(bundled))
-	for _, extended := range bundled {
-		if extended.Revision != nil && extended.Revision.RevisionNum > deployed[extended.Revision.UnitID] {
-			deployed[extended.Revision.UnitID] = extended.Revision.RevisionNum
-		}
-	}
-
-	// The Variant's own Units, by the upstream Unit each one tracks, so they line up with the
-	// change being promoted.
-	units, err := apiListUnits(variant.SpaceID.String(), "", "UnitID,Slug,HeadRevisionNum,UpstreamUnitID,UpstreamRevisionNum")
-	if err != nil {
-		return err
-	}
-	byUpstream := make(map[uuid.UUID]*goclientnew.Unit, len(units))
-	byUnitID := make(map[uuid.UUID]*goclientnew.Unit, len(units))
-	for _, unit := range units {
-		byUnitID[unit.UnitID] = unit
-		if unit.UpstreamUnitID != nil {
-			byUpstream[*unit.UpstreamUnitID] = unit
-		}
-	}
-
-	// A ChangeOrder is the change's own identity and crosses Spaces, so where it reached this
-	// Variant is a query. Without one the change is a range of upstream Revisions, and the only
-	// thing comparable here is what the Variant recorded taking.
-	if promoted.changeOrder != nil {
-		return validateDeployedChangeOrder(variant, release, deployed, byUpstream, byUnitID,
-			promoted.changeOrder, stage, variantName)
-	}
-
-	for upstreamUnitID, revisionNum := range promoted.revisionNum {
-		unit, ok := byUpstream[upstreamUnitID]
-		if !ok {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' does not have unit '%s'",
-				stage, variantName, promoted.unitSlug[upstreamUnitID])
-		}
-		if unit.UpstreamRevisionNum < revisionNum {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' is at upstream revision %d for unit '%s', behind the %d being promoted",
-				stage, variantName, unit.UpstreamRevisionNum, unit.Slug, revisionNum)
-		}
-		// Without a ChangeOrder there is nothing to tell a Revision carrying the change from a
-		// local edit made after it, so the whole of what the Variant has must be deployed.
-		if deployed[unit.UnitID] < unit.HeadRevisionNum {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' has unit '%s' at revision %d but Release %d deploys revision %d",
-				stage, variantName, unit.Slug, unit.HeadRevisionNum, release.ReleaseNum, deployed[unit.UnitID])
-		}
+	if !slices.Contains(changeOrder.ReleasedSpaceIDs, variant.SpaceID) {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has taken change order '%s' but has not released it",
+			stage, variantName, changeOrder.Slug)
 	}
 	return nil
-}
-
-// validateDeployedChangeOrder errors when a Variant has not taken the change order being promoted,
-// or has taken it in Revisions its deployed Release does not include.
-//
-// The Units it has to have taken it into are the ones the change order changed in its own Space,
-// not the ones it happens to have landed on here -- driving off the latter would pass a change
-// order that reached three of five Units. Units it covers but did not change are not among them:
-// with no Revision to replay there is nothing for the Variant to have taken.
-//
-// The change order's range ends where it ends, so a Revision the Variant made afterwards need not
-// be deployed: at or after the change order is the test, not equality with the Variant's head.
-func validateDeployedChangeOrder(variant *goclientnew.Space, release *goclientnew.Release, deployed map[uuid.UUID]int64,
-	byUpstream, byUnitID map[uuid.UUID]*goclientnew.Unit,
-	changeOrder *goclientnew.ChangeOrder, stage, variantName string) error {
-	changed, err := changeOrderChangedUnits(changeOrder)
-	if err != nil {
-		return err
-	}
-
-	landed, err := apiSearchListRevisions(
-		fmt.Sprintf("SpaceID = '%s' AND ChangeOrders ? '%s'", variant.SpaceID, changeOrder.ChangeOrderID),
-		"RevisionID,SpaceID,UnitID,RevisionNum,ChangeSetID", "")
-	if err != nil {
-		return err
-	}
-	// The last Revision the change order made in each Unit: all of them have to be deployed, not
-	// just the first.
-	needed := make(map[uuid.UUID]int64, len(landed))
-	for _, extended := range landed {
-		revision := extended.Revision
-		if revision == nil {
-			continue
-		}
-		if revision.RevisionNum > needed[revision.UnitID] {
-			needed[revision.UnitID] = revision.RevisionNum
-		}
-	}
-
-	for sourceUnitID, sourceSlug := range changed {
-		// A Variant that is the change order's own Space tracks no upstream: its Units are the
-		// ones the change order changed.
-		unit, ok := byUpstream[sourceUnitID]
-		if !ok {
-			unit, ok = byUnitID[sourceUnitID]
-		}
-		if !ok {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' does not have unit '%s', which change order '%s' changed",
-				stage, variantName, sourceSlug, changeOrder.Slug)
-		}
-		revisionNum, ok := needed[unit.UnitID]
-		if !ok {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' has not taken change order '%s' into unit '%s'",
-				stage, variantName, changeOrder.Slug, unit.Slug)
-		}
-		if deployed[unit.UnitID] < revisionNum {
-			return errors.Newf("unable to promote to stage '%s', Variant '%s' took change order '%s' into unit '%s' at revision %d but Release %d deploys revision %d",
-				stage, variantName, changeOrder.Slug, unit.Slug, revisionNum, release.ReleaseNum, deployed[unit.UnitID])
-		}
-	}
-	return nil
-}
-
-// promotedChange is the change a promotion carries, named the way another Space can be asked
-// whether it already has it.
-type promotedChange struct {
-	// changeOrder is the ChangeOrder being promoted, when --change-order named one. It is the one
-	// identity a change keeps as it crosses Spaces -- promoting it stamps its ID onto every
-	// Revision it makes, wherever it lands -- so the other fields are unset when it is present:
-	// nothing has to be lined up by revision number.
-	changeOrder *goclientnew.ChangeOrder
-
-	// revisionNum is the upstream Revision the promotion takes each Unit to, keyed by upstream
-	// UnitID. Another variant of the same upstream records what it last took the same way, in its
-	// own UpstreamRevisionNum, which is what makes the two comparable.
-	revisionNum map[uuid.UUID]int64
-
-	// unitSlug names each of those upstream Units, for the diagnostics.
-	unitSlug map[uuid.UUID]string
-}
-
-// newPromotedChange finds the change a promotion carries, reading it off the Space being promoted
-// into: the Units behind their upstream are the ones it would upgrade, and each one's UpstreamUnit
-// carries the Revision it is about to take. The upstream Space is neither needed nor consulted.
-//
-// This is for a promotion without --change-order. A ChangeOrder is itself the change, and
-// promoteChangeOrder has already resolved it.
-func newPromotedChange(downstreamSpaceID uuid.UUID) (*promotedChange, error) {
-	behind, err := apiListExtendedUnits(downstreamSpaceID.String(),
-		"UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum", "", "", "", "", false,
-		"UnitID,Slug,UpstreamUnitID,UpstreamRevisionNum,UpstreamUnit.HeadRevisionNum,UpstreamUnit.Slug",
-		"", "")
-	if err != nil {
-		return nil, err
-	}
-
-	promoted := &promotedChange{
-		revisionNum: make(map[uuid.UUID]int64, len(behind)),
-		unitSlug:    make(map[uuid.UUID]string, len(behind)),
-	}
-	for _, extended := range behind {
-		unit := extended.Unit
-		if unit == nil || unit.UpstreamUnitID == nil || extended.UpstreamUnit == nil {
-			continue
-		}
-		upstreamUnitID := *unit.UpstreamUnitID
-		promoted.revisionNum[upstreamUnitID] = extended.UpstreamUnit.HeadRevisionNum
-		promoted.unitSlug[upstreamUnitID] = extended.UpstreamUnit.Slug
-	}
-	return promoted, nil
-}
-
-// changeOrderChangedUnits names the Units a change order actually changed, in the Space it resides
-// in -- the Space holding the changes to promote. Those are the Units every target has to have
-// taken it into.
-//
-// A change order's scope is wider than this: it Tags every Unit in scope at creation, including
-// ones the change never touched. Those have no Revision to replay anywhere, so requiring a target
-// to carry the change order into them would block on a change that was never made.
-func changeOrderChangedUnits(changeOrder *goclientnew.ChangeOrder) (map[uuid.UUID]string, error) {
-	revisions, err := apiSearchListRevisions(
-		fmt.Sprintf("SpaceID = '%s' AND ChangeOrders ? '%s'", changeOrder.SpaceID, changeOrder.ChangeOrderID),
-		"RevisionID,SpaceID,UnitID,RevisionNum,ChangeSetID", "")
-	if err != nil {
-		return nil, err
-	}
-	changed := make(map[uuid.UUID]string, len(revisions))
-	for _, extended := range revisions {
-		if extended.Revision == nil {
-			continue
-		}
-		slug := ""
-		if extended.Unit != nil {
-			slug = extended.Unit.Slug
-		}
-		changed[extended.Revision.UnitID] = slug
-	}
-	return changed, nil
 }
 
 // promoteChangeOrder resolves --change-order, or nil when it was not given.
