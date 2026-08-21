@@ -43,6 +43,9 @@ Examples:
 
   # List cross-space links across all spaces
   cub link list --space "*" --where "ToSpaceID != SpaceID"
+
+  # List the links that are behind their upstream unit and do not update themselves
+  cub link list --space "*" --where "Stale = true AND AutoUpdate = false"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),
@@ -51,7 +54,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.UpstreamLinkID"}
+var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.Stale", "Link.UpstreamLinkID"}
 
 // linkListInclude is the Include parameter for link list queries.
 const linkListInclude = "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
@@ -99,7 +102,7 @@ func getLinkSlug(extendedLink *goclientnew.ExtendedLink) string {
 func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Use-Live-State", "Upstream-Link-ID"})
+		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Stale", "Upstream-Link-ID"})
 	}
 	for _, extendedLink := range extendedLinks {
 		link := extendedLink.Link
@@ -125,6 +128,10 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 		if link.AutoUpdate {
 			autoUpdate = "true"
 		}
+		stale := ""
+		if link.Stale {
+			stale = "true"
+		}
 		upstreamLinkID := ""
 		if link.UpstreamLinkID != nil {
 			upstreamLinkID = link.UpstreamLinkID.String()
@@ -137,6 +144,7 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 			toSpaceSlug,
 			link.UpdateType,
 			autoUpdate,
+			stale,
 			upstreamLinkID,
 		})
 	}

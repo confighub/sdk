@@ -4,8 +4,12 @@
 package main
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -21,9 +25,24 @@ Space); a Space ID is also accepted. The consuming Target is the Space's
 ReleaseTargetID, set via `+"`cub space create/update --release-target`"+`.
 
 By default each bundled Unit is captured at its head Revision. Pass --revision
-to instead pin each Unit to the highest-numbered Revision carrying that Tag; a
-Unit with no matching tagged Revision falls back to its head Revision. The
-revision Tag slug is resolved within the bundled Units' Space (<space-slug>).
+to instead pin each Unit to the highest-numbered Revision carrying a Tag; a Unit
+with no matching tagged Revision falls back to its head Revision.
+
+Each Unit's Revision is selected by Tag, so what --revision names has to come
+down to one Tag. A Tag does; so do the boundaries of a ChangeSet and a
+ChangeOrder, which is how a whole change is released rather than a Revision
+number that means something different in every Unit:
+
+  --revision <slug> | Tag:<slug>          the Revision that Tag marks
+  --revision ChangeSet:<slug>             where a Closed ChangeSet ended
+  --revision Before:ChangeSet:<slug>      the state it started from
+  --revision ChangeOrder:<slug>           where the change arrived
+  --revision Before:ChangeOrder:<slug>    the state before it
+
+A revision number, a Revision ID and the named revisions each pick out a
+Revision of one Unit, so they are not accepted. Slugs resolve like any other
+entity slug: in --space, or in the context's default Space, unless qualified as
+space/slug.
 
 --label, --annotation and --delete-gate set the Release's metadata at publish
 time; `+"`cub release update`"+` can change it afterwards. The bundled content
@@ -36,6 +55,12 @@ Examples:
 
   # Bundle each Unit at the Revision tagged "v1.2.0"
   cub release publish --revision v1.2.0 my-space
+
+  # Bundle each Unit at the Revision a closed ChangeSet ended on
+  cub release publish --revision ChangeSet:rollout-42 my-space
+
+  # Release the state a promotion started from, to roll it back
+  cub release publish --revision Before:ChangeOrder:bump-base-image my-space
 
   # Publish with metadata, and a gate that blocks deleting the Release
   cub release publish --label env=prod --annotation ticket=OPS-1234 my-space
@@ -55,7 +80,7 @@ func init() {
 	enableLabelFlag(releasePublishCmd)
 	enableAnnotationFlag(releasePublishCmd)
 	enableDeleteGateFlag(releasePublishCmd)
-	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Tag slug identifying the tagged Revision to bundle for each Unit. Units without a matching tagged Revision fall back to their head Revision.")
+	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. Units without a matching tagged Revision fall back to their head Revision.")
 	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
 	releaseCmd.AddCommand(releasePublishCmd)
 }
@@ -85,13 +110,19 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Resolve the revision Tag slug to its ID within the bundled Units' Space (args[0]).
+	// A Release records a TagID, so the CLI resolves --revision the whole way to a Tag rather
+	// than handing the server a specification to resolve per Unit as the other revision flags
+	// do. Revision numbers and Revision IDs have no Tag to become, and are refused.
 	if releasePublishRevision != "" {
-		tag, err := apiGetTagFromSlugInSpace(releasePublishRevision, space.SpaceID.String(), "*")
+		formatted, _, err := parseSelectedRevisionParameter(releasePublishRevision, resolveToTag, 0)
+		if err != nil {
+			return fmt.Errorf("invalid --revision value: %w", err)
+		}
+		tagID, err := uuid.Parse(strings.TrimPrefix(formatted, "Tag:"))
 		if err != nil {
 			return err
 		}
-		body.TagID = &tag.TagID
+		body.TagID = &tagID
 	}
 
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.SpaceID, body)

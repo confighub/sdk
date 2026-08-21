@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -69,7 +68,7 @@ Examples:
 
 func init() {
 	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum",
-		"Which revision to tag: a named revision (HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum), a revision number, Tag:slug, ChangeSet:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
+		"Which revision to tag: a named revision (HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum), a revision number, a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
 	enableWhereFlag(unitTagCmd)
 	enableFilterFlag(unitTagCmd)
 	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{},
@@ -91,7 +90,7 @@ func checkUnitTagConflictingArgs(args []string) error {
 	// The revision is resolved per Unit by the server, so anything --restore accepts is accepted
 	// here too. Only the shape is checked locally, and Remove is ours rather than the resolver's.
 	if tagRevision != "Remove" && tagRevision != "-" {
-		if _, _, err := parseSelectedRevisionParameter(tagRevision, uuid.Nil, "*", 0); err != nil {
+		if _, _, err := parseSelectedRevisionParameter(tagRevision, serverResolvedRevision, 0); err != nil {
 			return fmt.Errorf("invalid --revision value: %w", err)
 		}
 	}
@@ -123,7 +122,7 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 	if revision == "-" || revision == "Remove" {
 		revision = "Remove"
 	} else {
-		formatted, isUUID, err := parseSelectedRevisionParameter(revision, uuid.Nil, "*", 0)
+		formatted, isUUID, err := parseSelectedRevisionParameter(revision, serverResolvedRevision, 0)
 		if err != nil {
 			return fmt.Errorf("invalid --revision value: %w", err)
 		}

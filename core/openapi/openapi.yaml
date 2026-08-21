@@ -2266,13 +2266,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/QueuedOperation'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+          description: UnitAction is a record of an operation queued for a Worker,
+            such as a function invocation on a unit. Operations are delivered to the
+            worker in creation order; if the worker is disconnected, pending operations
+            are delivered when it reconnects. One or more UnitEvents will correspond
+            to each UnitAction.
         "400":
           content:
             application/json:
@@ -6333,7 +6331,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -6501,7 +6499,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -6661,7 +6659,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           filter
 
@@ -6975,7 +6973,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to select source links to copy
 
@@ -7044,7 +7042,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -7089,7 +7087,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -14067,7 +14065,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -14222,7 +14220,6 @@ paths:
             A Link indicates that selected config data from the upstream To Unit (the producer)
             should be propagated to the downstream From Unit (the consumer).
             Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -14615,7 +14612,6 @@ paths:
             A Link indicates that selected config data from the upstream To Unit (the producer)
             should be propagated to the downstream From Unit (the consumer).
             Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -14695,7 +14691,6 @@ paths:
             A Link indicates that selected config data from the upstream To Unit (the producer)
             should be propagated to the downstream From Unit (the consumer).
             Links must be created in the same Space as the From Unit.
-            They also imply an ordering when Applied or Destroyed as a group.
         "400":
           content:
             application/json:
@@ -20508,13 +20503,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/UnitAction'
-          description: "UnitAction is a record of an action to be performed by a Bridge
-            Worker. They are queued and sent to the worker in creation order. \nIf
-            the worker is temporarily disconnected the queued actions will be sent
-            when the worker reconnects or responds.\nIf there are links between units
-            applied or destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-            in the appropriate order (reverse or forword topological order). One or
-            more UnitEvents will correspond\nto each UnitAction."
+          description: UnitAction is a record of an operation queued for a Worker,
+            such as a function invocation on a unit. Operations are delivered to the
+            worker in creation order; if the worker is disconnected, pending operations
+            are delivered when it reconnects. One or more UnitEvents will correspond
+            to each UnitAction.
         "400":
           content:
             application/json:
@@ -25040,7 +25033,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
@@ -29556,7 +29549,6 @@ components:
         A Link indicates that selected config data from the upstream To Unit (the producer)
         should be propagated to the downstream From Unit (the consumer).
         Links must be created in the same Space as the From Unit.
-        They also imply an ordering when Applied or Destroyed as a group.
       properties:
         Annotations:
           additionalProperties:
@@ -29569,8 +29561,8 @@ components:
           x-go-type-skip-optional-pointer: true
         AutoUpdate:
           description: Automatically update the downstream Unit when the upstream
-            Unit changes. Always treated as true for links with no UpdateType, for
-            backward compatibility.
+            Unit changes. A Link created without an UpdateType is a NeedsProvides
+            Link with AutoUpdate set, which is what such a Link has always done.
           type: boolean
           x-go-type-skip-optional-pointer: true
         Bindings:
@@ -29712,6 +29704,16 @@ components:
             ones with a range to walk.
           type: boolean
           x-go-type-skip-optional-pointer: true
+        Stale:
+          description: 'The upstream Unit has finished a change this Link has not
+            taken: its head Revision is past UpstreamLastMergedRevisionNum and it
+            is not partway through a ChangeSet, whose Revisions are a prefix of a
+            change nobody can take yet. Most useful on a Link with AutoUpdate false,
+            which is otherwise unchanged by anything its upstream does; on an AutoUpdate
+            Link it is transient, and stays set when a resolve fails.'
+          readOnly: true
+          type: boolean
+          x-go-type-skip-optional-pointer: true
         ToSpaceID:
           description: Unique identifier of the Space of the upstream Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -29738,11 +29740,12 @@ components:
         UpdateType:
           description: The ConfigHub operation performed using this Link. Valid values
             are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and
-            TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit
-            is like MergeUnits but also keeps the downstream unit's UpstreamRevision
-            fields in sync. Upsert pulls one or more resources produced by the upstream
-            Unit (optionally through a TransformInvocation) and inserts or replaces
-            them in the downstream Unit. TransformPaths reads values from the upstream
+            TransformPaths. A create that omits it gets NeedsProvides with AutoUpdate
+            set, which is what omitting it has always produced. UpgradeUnit is like
+            MergeUnits but also keeps the downstream unit's UpstreamRevision fields
+            in sync. Upsert pulls one or more resources produced by the upstream Unit
+            (optionally through a TransformInvocation) and inserts or replaces them
+            in the downstream Unit. TransformPaths reads values from the upstream
             Unit (UpstreamPaths) and writes expression-derived values to the downstream
             Unit (DownstreamPaths). Immutable.
           type: string
@@ -30366,13 +30369,10 @@ components:
         $ref: '#/components/schemas/Subjects'
       type: object
     QueuedOperation:
-      description: "UnitAction is a record of an action to be performed by a Bridge
-        Worker. They are queued and sent to the worker in creation order. \nIf the
-        worker is temporarily disconnected the queued actions will be sent when the
-        worker reconnects or responds.\nIf there are links between units applied or
-        destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-        in the appropriate order (reverse or forword topological order). One or more
-        UnitEvents will correspond\nto each UnitAction."
+      description: UnitAction is a record of an operation queued for a Worker, such
+        as a function invocation on a unit. Operations are delivered to the worker
+        in creation order; if the worker is disconnected, pending operations are delivered
+        when it reconnects. One or more UnitEvents will correspond to each UnitAction.
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
@@ -30397,9 +30397,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Dependencies:
-          description: Dependencies contains the list of operation IDs that this operation
-            depends on. Operations will not be delivered until all dependencies are
-            completed.
+          description: Unused. No longer populated or consulted for delivery; retained
+            for schema compatibility and scheduled for removal.
           items:
             $ref: '#/components/schemas/UUID'
           nullable: true
@@ -32507,13 +32506,10 @@ components:
       - ToolchainType
       type: object
     UnitAction:
-      description: "UnitAction is a record of an action to be performed by a Bridge
-        Worker. They are queued and sent to the worker in creation order. \nIf the
-        worker is temporarily disconnected the queued actions will be sent when the
-        worker reconnects or responds.\nIf there are links between units applied or
-        destroyed in a single API call, they will be sent to the appropriate\nworker(s)
-        in the appropriate order (reverse or forword topological order). One or more
-        UnitEvents will correspond\nto each UnitAction."
+      description: UnitAction is a record of an operation queued for a Worker, such
+        as a function invocation on a unit. Operations are delivered to the worker
+        in creation order; if the worker is disconnected, pending operations are delivered
+        when it reconnects. One or more UnitEvents will correspond to each UnitAction.
       properties:
         Action:
           $ref: '#/components/schemas/ActionType'
@@ -32538,9 +32534,8 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Dependencies:
-          description: Dependencies contains the list of operation IDs that this operation
-            depends on. Operations will not be delivered until all dependencies are
-            completed.
+          description: Unused. No longer populated or consulted for delivery; retained
+            for schema compatibility and scheduled for removal.
           items:
             $ref: '#/components/schemas/UUID'
           nullable: true

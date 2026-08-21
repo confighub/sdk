@@ -3447,11 +3447,7 @@ export type ListQueuedOperationsApiArg = {
   contains?: string;
 };
 export type GetQueuedOperationApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ QueuedOperation;
+  /** status 200 UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction. */ QueuedOperation;
 export type GetQueuedOperationApiArg = {
   /** Unique identifier for a bridge_worker_id */
   bridgeWorkerId: string;
@@ -5374,7 +5370,7 @@ export type BulkDeleteLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     filter
     
@@ -5453,7 +5449,7 @@ export type SearchListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5541,7 +5537,7 @@ export type BulkPatchLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     filter
     
@@ -5663,7 +5659,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     Where expression to select source links to copy
     
@@ -5717,7 +5713,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
     
@@ -5757,7 +5753,7 @@ export type BulkCreateLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
     
@@ -7792,7 +7788,7 @@ export type ListLinksApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -7846,8 +7842,7 @@ export type CreateLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
 A Link indicates that selected config data from the upstream To Unit (the producer)
 should be propagated to the downstream From Unit (the consumer).
-Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
+Links must be created in the same Space as the From Unit. */ LinkRead;
 export type CreateLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7891,8 +7886,7 @@ export type PatchLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
 A Link indicates that selected config data from the upstream To Unit (the producer)
 should be propagated to the downstream From Unit (the consumer).
-Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
+Links must be created in the same Space as the From Unit. */ LinkRead;
 export type PatchLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -7944,8 +7938,7 @@ export type UpdateLinkApiResponse =
   /** status 200 Link connects two config Units in a dependency / producer-consumer relationship.
 A Link indicates that selected config data from the upstream To Unit (the producer)
 should be propagated to the downstream From Unit (the consumer).
-Links must be created in the same Space as the From Unit.
-They also imply an ordering when Applied or Destroyed as a group. */ LinkRead;
+Links must be created in the same Space as the From Unit. */ LinkRead;
 export type UpdateLinkApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -9656,11 +9649,7 @@ export type ListUnitActionsApiArg = {
   contains?: string;
 };
 export type GetUnitActionApiResponse =
-  /** status 200 UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-to each UnitAction. */ UnitAction;
+  /** status 200 UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction. */ UnitAction;
 export type GetUnitActionApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -11686,7 +11675,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+    Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
     
     Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
     
@@ -13454,7 +13443,7 @@ export type QueuedOperation = {
   CreatedAt?: string;
   /** The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit. */
   Data?: string;
-  /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
+  /** Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal. */
   Dependencies?: Uuid[] | null;
   /** DryRun indicates whether the action is a dry run. */
   DryRun?: boolean;
@@ -14592,7 +14581,7 @@ export type Link = {
   Annotations?: {
     [key: string]: string;
   };
-  /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
+  /** Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done. */
   AutoUpdate?: boolean;
   Bindings?: BindingList;
   Clearance?: Clearance;
@@ -14634,7 +14623,7 @@ export type Link = {
   ToUnitID: string;
   /** Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is inserted into or upserted into the downstream Unit. Only valid when UpdateType is Insert or Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must be YAML. For Upsert the output must also match the downstream Unit's toolchain, which currently limits it to Kubernetes/YAML. */
   TransformInvocationID?: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. A create that omits it gets NeedsProvides with AutoUpdate set, which is what omitting it has always produced. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable. */
   UpdateType?: string;
   /** Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths. */
   UpstreamGetters?: NamedFunctionResult[];
@@ -14654,7 +14643,7 @@ export type LinkRead = {
   Annotations?: {
     [key: string]: string;
   };
-  /** Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility. */
+  /** Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done. */
   AutoUpdate?: boolean;
   Bindings?: BindingList;
   Clearance?: Clearance;
@@ -14700,13 +14689,15 @@ export type LinkRead = {
   SpaceSlug?: string;
   /** Merge this Link's range as one rebased diff in one Revision instead of walking it. By default a resolve replays the source's recorded function invocations against this Unit where they can be re-executed, and records each source Revision that has an effect as a Revision of its own. Only meaningful for UpgradeUnit and MergeUnits Links, which are the ones with a range to walk. */
   Squash?: boolean;
+  /** The upstream Unit has finished a change this Link has not taken: its head Revision is past UpstreamLastMergedRevisionNum and it is not partway through a ChangeSet, whose Revisions are a prefix of a change nobody can take yet. Most useful on a Link with AutoUpdate false, which is otherwise unchanged by anything its upstream does; on an AutoUpdate Link it is transient, and stays set when a resolve fails. */
+  Stale?: boolean;
   /** Unique identifier of the Space of the upstream Unit. */
   ToSpaceID?: string;
   /** Unique identifier of the upstream (producer) Unit. */
   ToUnitID: string;
   /** Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is inserted into or upserted into the downstream Unit. Only valid when UpdateType is Insert or Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must be YAML. For Upsert the output must also match the downstream Unit's toolchain, which currently limits it to Kubernetes/YAML. */
   TransformInvocationID?: string;
-  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable. */
+  /** The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. A create that omits it gets NeedsProvides with AutoUpdate set, which is what omitting it has always produced. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable. */
   UpdateType?: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
@@ -16104,7 +16095,7 @@ export type UnitAction = {
   CreatedAt?: string;
   /** The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit. */
   Data?: string;
-  /** Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed. */
+  /** Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal. */
   Dependencies?: Uuid[] | null;
   /** DryRun indicates whether the action is a dry run. */
   DryRun?: boolean;

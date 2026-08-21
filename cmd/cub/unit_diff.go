@@ -114,6 +114,9 @@ func init() {
 	unitCmd.AddCommand(unitDiffCmd)
 }
 
+// TODO: Support [Before:] Tag, ChangeSet, and ChangeOrder
+// See parseSelectedRevisionParameter.
+
 // resolveRevisionNumber resolves a revision reference to an actual revision number
 // Supports:
 // - Absolute revision numbers: 123, 456
@@ -458,12 +461,12 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Resolve revision numbers using parseSelectedRevisionParameter
-	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, unit.UnitID, unit.SpaceID.String(), unit.HeadRevisionNum)
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, serverResolvedRevision, unit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}
 
-	toFormatted, toIsUUID, err := parseSelectedRevisionParameter(revTo, toUnit.UnitID, toUnit.SpaceID.String(), toUnit.HeadRevisionNum)
+	toFormatted, toIsUUID, err := parseSelectedRevisionParameter(revTo, serverResolvedRevision, toUnit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}

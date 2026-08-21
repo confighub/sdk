@@ -43,9 +43,9 @@ var (
 )
 
 func addLinkFieldFlags(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths)")
-	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes")
-	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates")
+	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths); the default is a NeedsProvides link that updates itself")
+	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes; a link created with no --update-type gets this without asking")
+	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates; a link that does not update itself instead reports Stale when its upstream moves past it")
 	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression to filter mutations during merge")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the stored path protection that preserves overrides by default")
@@ -133,9 +133,17 @@ func withMakeCurrentPointers(base PatchEnhancer, upstream, downstream int64) Pat
 
 // setLinkFieldsOnCreate sets link-specific fields on a new Link for create operations.
 func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
-	link.UpdateType = linkUpdateType
-	if linkAutoUpdate {
-		link.AutoUpdate = true
+	// The flag's default is empty so that this can tell "no update type asked for" from a
+	// NeedsProvides one asked for by name. The first is the legacy default link -- a
+	// NeedsProvides link that updates itself -- which is now said rather than left blank for
+	// the server to infer. The second is a link whose kind the caller chose, and it gets
+	// AutoUpdate only if the caller asked for that too.
+	if linkUpdateType == "" {
+		link.UpdateType = "NeedsProvides"
+		link.AutoUpdate = !linkNoAutoUpdate
+	} else {
+		link.UpdateType = linkUpdateType
+		link.AutoUpdate = linkAutoUpdate
 	}
 	link.WhereMutation = linkWhereMutation
 	link.WhereResource = linkWhereResource
@@ -175,7 +183,10 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 // setLinkFieldsOnUpdate sets link-specific fields on an existing Link for update operations.
 // Only sets fields that were explicitly changed via flags.
 func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
-	if cmd.Flags().Changed("update-type") {
+	// Empty means the flag was not given, which on an update leaves the link's own type
+	// alone -- unlike on create, where it names the default kind. UpdateType is immutable
+	// anyway, so the only value this ever writes is the one the link already has.
+	if linkUpdateType != "" {
 		link.UpdateType = linkUpdateType
 	}
 	if linkAutoUpdate {

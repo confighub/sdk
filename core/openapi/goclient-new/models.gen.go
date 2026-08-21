@@ -949,7 +949,6 @@ type ExtendedLink struct {
 	// A Link indicates that selected config data from the upstream To Unit (the producer)
 	// should be propagated to the downstream From Unit (the consumer).
 	// Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
@@ -990,7 +989,6 @@ type ExtendedMutation struct {
 	// A Link indicates that selected config data from the upstream To Unit (the producer)
 	// should be propagated to the downstream From Unit (the consumer).
 	// Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
 	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
@@ -1739,12 +1737,11 @@ type Issue struct {
 // A Link indicates that selected config data from the upstream To Unit (the producer)
 // should be propagated to the downstream From Unit (the consumer).
 // Links must be created in the same Space as the From Unit.
-// They also imply an ordering when Applied or Destroyed as a group.
 type Link struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
-	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. Always treated as true for links with no UpdateType, for backward compatibility.
+	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done.
 	AutoUpdate bool         `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
 	Bindings   *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
 	Clearance  *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
@@ -1806,6 +1803,9 @@ type Link struct {
 	// Squash Merge this Link's range as one rebased diff in one Revision instead of walking it. By default a resolve replays the source's recorded function invocations against this Unit where they can be re-executed, and records each source Revision that has an effect as a Revision of its own. Only meaningful for UpgradeUnit and MergeUnits Links, which are the ones with a range to walk.
 	Squash bool `json:"Squash,omitempty" yaml:"Squash,omitempty"`
 
+	// Stale The upstream Unit has finished a change this Link has not taken: its head Revision is past UpstreamLastMergedRevisionNum and it is not partway through a ChangeSet, whose Revisions are a prefix of a change nobody can take yet. Most useful on a Link with AutoUpdate false, which is otherwise unchanged by anything its upstream does; on an AutoUpdate Link it is transient, and stays set when a resolve fails.
+	Stale bool `json:"Stale,omitempty" yaml:"Stale,omitempty"`
+
 	// ToSpaceID Unique identifier of the Space of the upstream Unit.
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
 
@@ -1815,7 +1815,7 @@ type Link struct {
 	// TransformInvocationID Identifier of an Invocation whose function is executed on the upstream Unit's data before the result is inserted into or upserted into the downstream Unit. Only valid when UpdateType is Insert or Upsert. The Invocation's ToolchainType must match the upstream Unit's ToolchainType, the function must be non-mutating, and its OutputType must be YAML. For Upsert the output must also match the downstream Unit's toolchain, which currently limits it to Kubernetes/YAML.
 	TransformInvocationID *openapi_types.UUID `json:"TransformInvocationID,omitempty" yaml:"TransformInvocationID,omitempty"`
 
-	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. If empty, then assumed to be NeedsProvides. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable.
+	// UpdateType The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. A create that omits it gets NeedsProvides with AutoUpdate set, which is what omitting it has always produced. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable.
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -1857,7 +1857,6 @@ type LinkCreateOrUpdateResponse struct {
 	// A Link indicates that selected config data from the upstream To Unit (the producer)
 	// should be propagated to the downstream From Unit (the consumer).
 	// Links must be created in the same Space as the From Unit.
-	// They also imply an ordering when Applied or Destroyed as a group.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 }
 
@@ -2163,11 +2162,7 @@ type PathVisitorInfo struct {
 // Permissions defines model for Permissions.
 type Permissions map[string]Subjects
 
-// QueuedOperation UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-// to each UnitAction.
+// QueuedOperation UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type QueuedOperation struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
@@ -2180,7 +2175,7 @@ type QueuedOperation struct {
 	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
-	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
+	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
 
 	// DryRun DryRun indicates whether the action is a dry run.
@@ -3281,11 +3276,7 @@ type Unit struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
-// UnitAction UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-// to each UnitAction.
+// UnitAction UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type UnitAction struct {
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
@@ -3298,7 +3289,7 @@ type UnitAction struct {
 	// Data The result of a dry-run Data-changing action like refresh and import, where the data is not stored in the Unit.
 	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
 
-	// Dependencies Dependencies contains the list of operation IDs that this operation depends on. Operations will not be delivered until all dependencies are completed.
+	// Dependencies Unused. No longer populated or consulted for delivery; retained for schema compatibility and scheduled for removal.
 	Dependencies []UUID `json:"Dependencies" yaml:"Dependencies"`
 
 	// DryRun DryRun indicates whether the action is a dry run.
@@ -3356,11 +3347,7 @@ type UnitActionStatus string
 
 // UnitActionResponse defines model for UnitActionResponse.
 type UnitActionResponse struct {
-	// Action UnitAction is a record of an action to be performed by a Bridge Worker. They are queued and sent to the worker in creation order.
-	// If the worker is temporarily disconnected the queued actions will be sent when the worker reconnects or responds.
-	// If there are links between units applied or destroyed in a single API call, they will be sent to the appropriate
-	// worker(s) in the appropriate order (reverse or forword topological order). One or more UnitEvents will correspond
-	// to each UnitAction.
+	// Action UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 	Action *QueuedOperation `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error  *ResponseError   `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
@@ -6826,7 +6813,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -6909,7 +6896,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7040,7 +7027,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -7166,7 +7153,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to select source links to copy
 	//
@@ -7223,7 +7210,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -7264,7 +7251,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -9030,7 +9017,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12801,7 +12788,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamOrganizationID, UpstreamSpaceID.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//

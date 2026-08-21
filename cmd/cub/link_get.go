@@ -97,6 +97,9 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.AutoUpdate {
 		view.Append([]string{"Auto Update", fmt.Sprintf("%t", linkDetails.AutoUpdate)})
 	}
+	if linkDetails.Stale {
+		view.Append([]string{"Stale", "true"})
+	}
 	if linkDetails.WhereMutation != "" {
 		view.Append([]string{"Where Mutation", linkDetails.WhereMutation})
 	}

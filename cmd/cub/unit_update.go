@@ -217,7 +217,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. Undo the promotion with --restore Before:ChangeOrder:<slug>")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
-	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum")
+	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
@@ -576,7 +576,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if restore != "" {
 		// Parse restore parameter - enhanced to support Tag:slug, ChangeSet:slug formats
-		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, currentUnit.UnitID, currentUnit.SpaceID.String(), currentUnit.HeadRevisionNum)
+		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, serverResolvedRevision, currentUnit.HeadRevisionNum)
 		if err != nil {
 			return err
 		}
@@ -634,13 +634,13 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		newParams.MergeSource = &mergeSourceStr
 
-		mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, mergeSourceUnit.UnitID, mergeSourceUnit.SpaceID.String(), mergeSourceUnit.HeadRevisionNum)
+		mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge base specification: %w", err)
 		}
 		newParams.MergeBase = &mergeBaseFormatted
 
-		mergeEndFormatted, _, err := parseSelectedRevisionParameter(mergeEnd, mergeSourceUnit.UnitID, mergeSourceUnit.SpaceID.String(), mergeSourceUnit.HeadRevisionNum)
+		mergeEndFormatted, _, err := parseSelectedRevisionParameter(mergeEnd, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge end specification: %w", err)
 		}
@@ -685,7 +685,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if mergeExternalSource != "" {
 		newParams.MergeExternalSource = &mergeExternalSource
 		if mergeBase != "" {
-			mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, currentUnit.UnitID, currentUnit.SpaceID.String(), currentUnit.HeadRevisionNum)
+			mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, serverResolvedRevision, currentUnit.HeadRevisionNum)
 			if err != nil {
 				return fmt.Errorf("invalid merge base specification: %w", err)
 			}
@@ -865,16 +865,12 @@ func runBulkUnitUpdate() error {
 	// Add merge parameters if specified
 	if mergeSource != "" {
 		var mergeSourceStr string
-		var mergeUnitID uuid.UUID
-		var mergeSpaceIDStr string
 		var mergeHeadRevisionNum int64
 
-		// Note: For bulk operations, "Self" means different units for each item.
-		// Pass dummy values.
+		// Note: For bulk operations, "Self" means different units for each item, so there is no
+		// single head to count a delta back from.
 		if mergeSource == "Self" {
 			mergeSourceStr = "Self"
-			mergeUnitID = uuid.Nil
-			mergeSpaceIDStr = "*"
 			mergeHeadRevisionNum = 0
 		} else {
 			// Parse merge source unit
@@ -890,12 +886,10 @@ func runBulkUnitUpdate() error {
 			}
 
 			mergeSourceStr = mergeSourceUnit.UnitID.String()
-			mergeUnitID = mergeSourceUnit.UnitID
-			mergeSpaceIDStr = mergeSourceUnit.SpaceID.String()
 			mergeHeadRevisionNum = mergeSourceUnit.HeadRevisionNum
 		}
 		params.MergeSource = &mergeSourceStr
-		mergeBaseFormatted, mergeBaseIsUUID, err := parseSelectedRevisionParameter(mergeBase, mergeUnitID, mergeSpaceIDStr, mergeHeadRevisionNum)
+		mergeBaseFormatted, mergeBaseIsUUID, err := parseSelectedRevisionParameter(mergeBase, serverResolvedRevision, mergeHeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge base specification: %w", err)
 		}
@@ -905,7 +899,7 @@ func runBulkUnitUpdate() error {
 		}
 		params.MergeBase = &mergeBaseFormatted
 
-		mergeEndFormatted, mergeEndIsUUID, err := parseSelectedRevisionParameter(mergeEnd, mergeUnitID, mergeSpaceIDStr, mergeHeadRevisionNum)
+		mergeEndFormatted, mergeEndIsUUID, err := parseSelectedRevisionParameter(mergeEnd, serverResolvedRevision, mergeHeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge end specification: %w", err)
 		}
@@ -930,9 +924,9 @@ func runBulkUnitUpdate() error {
 
 	// Add restore parameter if specified
 	if restore != "" {
-		// Parse restore using consolidated logic
-		// For bulk operations, use "*" as spaceID to prevent revision number resolution
-		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, uuid.Nil, "*", 0)
+		// Parse restore using consolidated logic. Each Unit resolves the specification against
+		// itself, so there is no single head to count a delta back from.
+		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, serverResolvedRevision, 0)
 		if err != nil {
 			return fmt.Errorf("invalid restore specification: %w", err)
 		}
@@ -1191,8 +1185,6 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 // Unit. Everything else -- a Tag, a ChangeSet, an absolute or named revision -- is resolved
 // per-Unit by the server.
 func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, isUpgrade bool) (string, error) {
-	sourceUnitID := uuid.Nil
-	sourceSpaceID := ""
 	var sourceHeadRevisionNum int64
 	if isUpgrade && currentUnit != nil {
 		if currentUnit.UpstreamUnitID == nil || currentUnit.UpstreamSpaceID == nil {
@@ -1203,13 +1195,11 @@ func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, 
 		if err != nil {
 			return "", fmt.Errorf("failed to get upstream unit for --merge-end: %w", err)
 		}
-		sourceUnitID = upstreamUnit.UnitID
-		sourceSpaceID = upstreamUnit.SpaceID.String()
 		sourceHeadRevisionNum = upstreamUnit.HeadRevisionNum
 	} else if strings.HasPrefix(revisionSpec, "-") {
 		return "", fmt.Errorf("--merge-end relative to head is not supported here, since the source is not a single unit; name a Tag, a ChangeSet, or an absolute revision")
 	}
-	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, sourceUnitID, sourceSpaceID, sourceHeadRevisionNum)
+	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, serverResolvedRevision, sourceHeadRevisionNum)
 	if err != nil {
 		return "", fmt.Errorf("invalid merge end specification: %w", err)
 	}
@@ -1230,7 +1220,7 @@ func parseUpstreamRevision(revisionSpec string, upstreamHeadRevisionNum int64) (
 	if strings.HasPrefix(revisionSpec, "-") && upstreamHeadRevisionNum == 0 {
 		return "", fmt.Errorf("--upstream-revision relative to head is not supported here, since the source is not a single unit; name a Tag, a ChangeSet, a ChangeOrder, or an absolute revision")
 	}
-	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, uuid.Nil, "", upstreamHeadRevisionNum)
+	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, serverResolvedRevision, upstreamHeadRevisionNum)
 	if err != nil {
 		return "", fmt.Errorf("invalid upstream revision specification: %w", err)
 	}
@@ -1241,12 +1231,52 @@ func parseUpstreamRevision(revisionSpec string, upstreamHeadRevisionNum int64) (
 	return formatted, nil
 }
 
-// parseSelectedRevisionParameter parses various revision formats and returns the formatted value
-// This renamed function can be used for restore, merge-base, merge-end and other revision specifications
-// Returns: (formatted string, isUUID bool, error)
-// If isUUID is true, the formatted string is a revision UUID that should be used as RevisionId
-// Otherwise, it's a formatted restore/revision specification string
-func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, spaceID string, headRevisionNum int64) (string, bool, error) {
+// revisionResolution says how far the CLI takes a revision specification.
+type revisionResolution int
+
+const (
+	// serverResolvedRevision: the CLI only turns slugs into UUIDs, which the API does not do,
+	// and the server resolves the specification to a Revision of each Unit it applies to. Every
+	// form is available, since the server can count Revisions: numbers, deltas from head, named
+	// revisions, Revision:<uuid>, and Tag/ChangeSet/ChangeOrder with or without Before:.
+	serverResolvedRevision revisionResolution = iota
+	// resolveToTag: the caller has nowhere to put anything but a Tag ID, so the CLI has to
+	// finish the job -- a Tag, or the start or end Tag bounding a ChangeSet or ChangeOrder.
+	// Whatever cannot be reduced to one Tag is refused rather than silently approximated.
+	resolveToTag
+)
+
+// resolveToTagForms is the tail of the error for a specification that cannot be reduced to one
+// Tag, and so says what can be named instead.
+const resolveToTagForms = "name a Tag, a ChangeSet or a ChangeOrder -- optionally prefixed with Before: for the two that bound an interval -- since the Revision is selected by Tag in each Unit"
+
+// isNamedRevision reports whether the identifier is one of the Unit fields that names a Revision.
+// The server resolves these per Unit, so they carry no entity type.
+func isNamedRevision(identifier string) bool {
+	switch identifier {
+	case "HeadRevisionNum", "LiveRevisionNum", "LastAppliedRevisionNum", "PreviousLiveRevisionNum":
+		return true
+	}
+	return false
+}
+
+// parseSelectedRevisionParameter parses a revision specification -- what --restore, --merge-base,
+// --merge-end, --upstream-revision and --revision accept -- and returns the value to hand to the
+// API.
+//
+// Accepted: Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, a revision number, a
+// negative delta counted back from headRevisionNum, one of the named revisions, and any of those
+// prefixed with Before:. An identifier with no entity type is a Tag slug unless it is a named
+// revision, a revision number or (where one is accepted) a Revision UUID, so plain `v1.2.0` names
+// the Tag v1.2.0.
+//
+// Slugs become UUIDs, because the API resolves neither; the entity kind is left in place for
+// the server to resolve, unless resolution is resolveToTag.
+//
+// Returns (formatted value, isRevisionUUID, error). When isRevisionUUID is true the value is a
+// bare Revision UUID: some APIs take it as a RevisionID field, and the rest want it put back
+// behind a "Revision:" prefix.
+func parseSelectedRevisionParameter(revisionSpec string, resolution revisionResolution, headRevisionNum int64) (string, bool, error) {
 	// Check for Before: prefix and remove it
 	var isBeforeModifier bool
 	originalSpec := revisionSpec
@@ -1265,10 +1295,84 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 		entityType = parts[0]
 		identifier = parts[1]
 	case 1:
-		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
+		// Simple identifier (LiveRevisionNum, Tag slug, revision number, etc.)
 		identifier = parts[0]
 	default:
 		return "", false, fmt.Errorf("invalid revision specification: %s", originalSpec)
+	}
+
+	// A revision number is recognized here because it competes with a Tag slug for an
+	// unprefixed identifier.
+	revisionNum, numErr := strconv.ParseInt(identifier, 10, 64)
+	isRevisionNum := numErr == nil
+
+	if resolution == resolveToTag {
+		// The Revision is looked up by Tag in each Unit, so whatever is named has to come down to
+		// one Tag. A ChangeSet and a ChangeOrder do -- each is bounded by a start Tag and an end
+		// Tag -- but a revision number, a Revision UUID and a named revision each pick out a
+		// Revision of one Unit at a time.
+		if isNamedRevision(identifier) || isRevisionNum {
+			return "", false, fmt.Errorf("invalid revision '%s': %s", originalSpec, resolveToTagForms)
+		}
+		var tagUUID uuid.UUID
+		var err error
+		switch entityType {
+		case "", "Tag":
+			if isBeforeModifier {
+				return "", false, fmt.Errorf("invalid revision '%s': no Tag marks the Revision before a tagged one; name the ChangeSet or ChangeOrder the Tag bounds instead", originalSpec)
+			}
+			tagUUID, err = parseTagSlug(identifier)
+			if err != nil {
+				return "", false, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
+			}
+		case "ChangeSet":
+			tagUUID, err = changeSetBoundaryTagID(identifier, isBeforeModifier)
+		case "ChangeOrder":
+			tagUUID, err = changeOrderBoundaryTagID(identifier, isBeforeModifier)
+		default:
+			return "", false, fmt.Errorf("invalid revision '%s': %s", originalSpec, resolveToTagForms)
+		}
+		if err != nil {
+			return "", false, err
+		}
+		return fmt.Sprintf("Tag:%s", tagUUID), false, nil
+	}
+
+	// Handle an identifier with no entity type. The named revisions are checked before the
+	// entity type because they never carry one, and because they have to win over the default
+	// below, which reads an unprefixed identifier as a Tag slug.
+	if entityType == "" {
+		switch {
+		case isNamedRevision(identifier):
+			if isBeforeModifier {
+				return fmt.Sprintf("Before:%s", identifier), false, nil
+			}
+			return identifier, false, nil
+
+		case isRevisionNum:
+			if revisionNum < 0 {
+				// A negative value means it's relative to head revision num
+				subtracted := headRevisionNum + revisionNum
+				if subtracted < 1 {
+					return "", false, fmt.Errorf("revision delta %d must be less than HeadRevisionNum %d", revisionNum, headRevisionNum)
+				}
+				identifier = fmt.Sprintf("%d", subtracted)
+			}
+			// The APIs take the revision number itself; it doesn't have to be resolved to an ID.
+			if isBeforeModifier {
+				return fmt.Sprintf("Before:%s", identifier), false, nil
+			}
+			return identifier, false, nil
+
+		default:
+			// A bare UUID is a Revision's, which is the one entity the caller can name directly
+			// here. Anything else is a Tag slug, optionally qualified with a space.
+			if _, err := uuid.Parse(identifier); err == nil {
+				entityType = "Revision"
+			} else {
+				entityType = "Tag"
+			}
+		}
 	}
 
 	// Handle entity type-specific parsing
@@ -1311,59 +1415,78 @@ func parseSelectedRevisionParameter(revisionSpec string, unitID uuid.UUID, space
 		return fmt.Sprintf("ChangeOrder:%s", changeorderUUID), false, nil
 
 	} else if entityType == "Revision" {
-		// Handle Revision:uuid format
-		if revisionUUID, err := uuid.Parse(identifier); err == nil {
-			// It's a UUID - return it to be used as revision ID
-			return revisionUUID.String(), true, nil
-		} else {
+		// Handle Revision:uuid format. The caller decides how to pass a revision ID on, so the
+		// Before: modifier has nowhere to go here.
+		revisionUUID, err := uuid.Parse(identifier)
+		if err != nil {
 			return "", false, fmt.Errorf("invalid revision identifier '%s': must be a UUID", identifier)
 		}
-
-	} else if entityType != "" {
-		return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, ChangeOrder, and Revision", entityType)
-	}
-
-	// Handle simple identifiers (no entity type prefix)
-	if identifier == "LiveRevisionNum" || identifier == "LastAppliedRevisionNum" ||
-		identifier == "PreviousLiveRevisionNum" || identifier == "HeadRevisionNum" {
-		// Special revision values
 		if isBeforeModifier {
-			return fmt.Sprintf("Before:%s", identifier), false, nil
+			return "", false, fmt.Errorf("Before: is not supported with a revision ID: %s", originalSpec)
 		}
-		return identifier, false, nil
+		return revisionUUID.String(), true, nil
 	}
 
-	// Fall back to original parsing logic for UUIDs and integers
-	if revisionUUID, err := uuid.Parse(identifier); err == nil {
-		// It's a UUID - return it to be used as revision ID
-		return revisionUUID.String(), true, nil
-	} else if revisionNum, err := strconv.ParseInt(identifier, 10, 64); err == nil {
-		// It's an integer - treat as revision number
-		if revisionNum < 0 {
-			// A negative value means it's relative to head revision num
-			subtracted := headRevisionNum + revisionNum
-			if subtracted < 1 {
-				return "", false, fmt.Errorf("revision delta %d must be less than HeadRevisionNum %d", revisionNum, headRevisionNum)
-			}
-			revisionNum = subtracted
-			identifier = fmt.Sprintf("%d", revisionNum)
-		}
-		// We don't actually need to pass a UUID. We can pass the number.
-		// // Check if this is a bulk operation (spaceID is "*")
-		// if spaceID == "*" {
-		// 	return "", false, fmt.Errorf("revision numbers not supported in bulk operations (use revision UUID, named revision, Tag:slug, or ChangeSet:slug instead): %s", originalSpec)
-		// }
-		// // Use the provided spaceID to resolve revision number
-		// rev, err := apiGetRevisionFromNumberInSpace(revisionNum, unitID.String(), spaceID, "RevisionID")
-		// if err != nil {
-		// 	return "", false, err
-		// }
-		// // Return the revision ID to be used
-		// return rev.RevisionID.String(), true, nil
-		return identifier, false, nil
-	} else {
-		return "", false, fmt.Errorf("invalid revision value '%s': must be a UUID (revision ID), integer (revision number), Tag:slug, ChangeSet:slug, Before:value, or one of LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum/HeadRevisionNum", revisionSpec)
+	return "", false, fmt.Errorf("unsupported entity type '%s': supported types are Tag, ChangeSet, ChangeOrder, and Revision", entityType)
+}
+
+// changeSetBoundaryTagID returns the Tag marking the Revision a ChangeSet names, for a caller that
+// can only select by Tag. It follows getSelectedRevision on the server: the ChangeSet itself is
+// the Revision its end Tag marks, and Before: the one its start Tag marks. The two cases the
+// server covers by counting Revisions have no Tag to return, so they are refused here rather than
+// released at the wrong Revision.
+func changeSetBoundaryTagID(identifier string, isBeforeModifier bool) (uuid.UUID, error) {
+	changeset, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeSet](
+		identifier,
+		EntityTypeChangeSet,
+		"*", // get all fields: the boundary Tags and the state that says whether they are placed
+		apiGetChangeSetFromSlugInSpace,
+		func(cs *goclientnew.ChangeSet) string { return cs.ChangeSetID.String() },
+	)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
 	}
+
+	if isBeforeModifier {
+		if changeset.State == "New" {
+			return uuid.Nil, fmt.Errorf("changeset '%s' has not been attached to any unit, so its start Tag marks no Revision", identifier)
+		}
+		if !changeset.StartTagIsPriorRevision {
+			// The start Tag marks the ChangeSet's first Revision under the original meaning, so
+			// the state before it is the Revision one earlier -- which carries no Tag.
+			return uuid.Nil, fmt.Errorf("changeset '%s' has a start Tag on its first Revision rather than on the one before it, and the Revision before that carries no Tag to release at", identifier)
+		}
+		return changeset.StartTagID, nil
+	}
+
+	if changeset.State != "Closed" {
+		// An open ChangeSet ends at each Unit's head, which is where publishing lands anyway
+		// with no --revision at all -- and a Revision of an unclosed ChangeSet is unreleasable.
+		return uuid.Nil, fmt.Errorf("changeset '%s' is %s, not Closed: its end Tag is placed when it closes", identifier, changeset.State)
+	}
+	return changeset.EndTagID, nil
+}
+
+// changeOrderBoundaryTagID returns the Tag marking the Revision a ChangeOrder names, for a caller
+// that can only select by Tag. A ChangeOrder is the half-open interval (start, end] on every Unit
+// it marks, and its start Tag always marks the Revision before the change, so the two ends map
+// onto Tags directly: the ChangeOrder is where the change arrived, and Before: is the state it
+// started from -- what rolls a promotion back however many Revisions it made.
+func changeOrderBoundaryTagID(identifier string, isBeforeModifier bool) (uuid.UUID, error) {
+	changeOrder, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeOrder](
+		identifier,
+		EntityTypeChangeOrder,
+		"*", // get all fields for the boundary Tags
+		apiGetChangeOrderFromSlugInSpace,
+		func(co *goclientnew.ChangeOrder) string { return co.ChangeOrderID.String() },
+	)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("failed to parse change order '%s': %w", identifier, err)
+	}
+	if isBeforeModifier {
+		return changeOrder.StartTagID, nil
+	}
+	return changeOrder.EndTagID, nil
 }
 
 // formatResolveParameter parses the resolve parameter and returns the formatted value.
