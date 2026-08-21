@@ -582,7 +582,7 @@ type ChangeOrder struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
-	// InScopeSpaceIDs InScopeSpaceIDs is where the ChangeOrder is headed: the Spaces its Space Filter selects, or, with no Filter, the Spaces its Links reach. ResolvedSpaceIDs and ReleasedSpaceIDs are measured against it. Derived when the ChangeOrder is read.
+	// InScopeSpaceIDs InScopeSpaceIDs is where the ChangeOrder is headed, recorded when its scope was last derived rather than worked out on each read: the Spaces its WhereSpace and/or SpaceFilterID selected, or, with no selection, the Spaces its Links reached. A Space that comes into scope later is taken in by an update or patch with refresh_spaces. ResolvedSpaceIDs and ReleasedSpaceIDs are measured against it. (readonly)
 	InScopeSpaceIDs []UUID `json:"InScopeSpaceIDs,omitempty" yaml:"InScopeSpaceIDs,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -5097,6 +5097,9 @@ type BulkPatchChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed
+	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
 }
 
 // BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeOrders.
@@ -8393,6 +8396,18 @@ type PatchChangeOrderApplicationMergePatchPlusJSONBody struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version    *int    `json:"Version" yaml:"Version"`
 	WhereSpace *string `json:"WhereSpace" yaml:"WhereSpace"`
+}
+
+// PatchChangeOrderParams defines parameters for PatchChangeOrder.
+type PatchChangeOrderParams struct {
+	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed
+	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
+}
+
+// UpdateChangeOrderParams defines parameters for UpdateChangeOrder.
+type UpdateChangeOrderParams struct {
+	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed
+	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
 }
 
 // ListChangeSetsParams defines parameters for ListChangeSets.

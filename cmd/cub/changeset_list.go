@@ -13,7 +13,7 @@ import (
 var changesetListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List changesets",
-	Long: getCommandHelp(`List changesets you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List changesets you have access to in a space or across all spaces. -o wide adds the start and end tags.
 
 Examples:
 `+"```"+`
@@ -41,7 +41,8 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
-// Default columns to display when no custom columns are specified
+// Default columns to display when no custom columns are specified. This is also what drives the
+// select list, so it names every field either layout shows -- the wide-only tags included.
 var defaultChangeSetColumns = []string{"ChangeSet.Slug", "Space.Slug", "ChangeSet.State", "StartTag.Slug", "EndTag.Slug", "ChangeSet.Description"}
 
 // changesetListInclude is the Include parameter for change set list queries.
@@ -87,10 +88,18 @@ func getChangeSetSlug(changeset *goclientnew.ExtendedChangeSet) string {
 	return prefixedSlug(space, changeset.ChangeSet.Slug)
 }
 
+// displayChangeSetList renders the table. The start and end tags are named after the ChangeSet
+// itself, so the default layout leaves them out and -o wide shows them.
 func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
+	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "State", "Start-Tag", "End-Tag", "Description"})
+		header := []string{"Name", "Space", "State"}
+		if wide {
+			header = append(header, "Start-Tag", "End-Tag")
+		}
+		header = append(header, "Description")
+		table.SetHeader(header)
 	}
 	for _, cs := range changesets {
 		changeset := cs.ChangeSet
@@ -101,26 +110,23 @@ func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
 			spaceSlug = selectedSpaceSlug
 		}
 
-		startTagSlug := ""
-		if cs.StartTag != nil {
-			startTagSlug = cs.StartTag.Slug
+		row := []string{changeset.Slug, spaceSlug, changeset.State}
+		if wide {
+			startTagSlug := ""
+			if cs.StartTag != nil {
+				startTagSlug = cs.StartTag.Slug
+			}
+
+			endTagSlug := ""
+			if cs.EndTag != nil {
+				endTagSlug = cs.EndTag.Slug
+			}
+
+			row = append(row, startTagSlug, endTagSlug)
 		}
+		row = append(row, truncateWithEllipsis(changeset.Description, defaultColumnWidth))
 
-		endTagSlug := ""
-		if cs.EndTag != nil {
-			endTagSlug = cs.EndTag.Slug
-		}
-
-		descriptionDisplay := truncateWithEllipsis(changeset.Description, defaultColumnWidth)
-
-		table.Append([]string{
-			changeset.Slug,
-			spaceSlug,
-			changeset.State,
-			startTagSlug,
-			endTagSlug,
-			descriptionDisplay,
-		})
+		table.Append(row)
 	}
 	table.Render()
 }

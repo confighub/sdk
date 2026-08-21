@@ -281,6 +281,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            refresh_spaces: queryArg.refreshSpaces,
           },
         }),
         invalidatesTags: ['ChangeOrder'],
@@ -1065,6 +1066,9 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/change_order/${queryArg.changeOrderId}`,
           method: 'PATCH',
           body: queryArg.body,
+          params: {
+            refresh_spaces: queryArg.refreshSpaces,
+          },
         }),
         invalidatesTags: ['ChangeOrder'],
       }),
@@ -1074,6 +1078,9 @@ const injectedRtkApi = api
             url: `/space/${queryArg.spaceId}/change_order/${queryArg.changeOrderId}`,
             method: 'PUT',
             body: queryArg.changeOrder,
+            params: {
+              refresh_spaces: queryArg.refreshSpaces,
+            },
           }),
           invalidatesTags: ['ChangeOrder'],
         },
@@ -3703,6 +3710,8 @@ export type BulkPatchChangeOrdersApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed */
+  refreshSpaces?: boolean;
   body: {
     AbortedReason?: string | null;
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -7063,6 +7072,8 @@ export type PatchChangeOrderApiArg = {
   spaceId: string;
   /** Unique identifier for a change_order_id */
   changeOrderId: string;
+  /** If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed */
+  refreshSpaces?: boolean;
   body: {
     AbortedReason?: string | null;
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -7097,6 +7108,8 @@ export type UpdateChangeOrderApiArg = {
   spaceId: string;
   /** Unique identifier for a change_order_id */
   changeOrderId: string;
+  /** If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers against the Spaces they now select, even if neither field has changed */
+  refreshSpaces?: boolean;
   changeOrder: ChangeOrder;
 };
 export type ListChangeSetsApiResponse = /** status 200 OK */ ExtendedChangeSetRead[];
@@ -13634,7 +13647,7 @@ export type ChangeOrderRead = {
   EndTagID?: string;
   /** The type of entity. */
   EntityType?: string;
-  /** InScopeSpaceIDs is where the ChangeOrder is headed: the Spaces its Space Filter selects, or, with no Filter, the Spaces its Links reach. ResolvedSpaceIDs and ReleasedSpaceIDs are measured against it. Derived when the ChangeOrder is read. */
+  /** InScopeSpaceIDs is where the ChangeOrder is headed, recorded when its scope was last derived rather than worked out on each read: the Spaces its WhereSpace and/or SpaceFilterID selected, or, with no selection, the Spaces its Links reached. A Space that comes into scope later is taken in by an update or patch with refresh_spaces. ResolvedSpaceIDs and ReleasedSpaceIDs are measured against it. (readonly) */
   InScopeSpaceIDs?: Uuid[];
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {

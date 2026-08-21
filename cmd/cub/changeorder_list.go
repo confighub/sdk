@@ -13,7 +13,7 @@ import (
 var changeorderListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List changeorders",
-	Long: getCommandHelp(`List changeorders you have access to in a space or across all spaces.
+	Long: getCommandHelp(`List changeorders you have access to in a space or across all spaces. -o wide adds the start and end tags.
 
 Examples:
 `+"```"+`
@@ -49,16 +49,18 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
-// Default columns to display when no custom columns are specified
+// Default columns to display when no custom columns are specified. This is also what drives the
+// select list, so it names every field either layout shows -- the wide-only tags included.
 var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "ChangeOrder.UpdateType", "SpaceFilter.Slug", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
 
 // changeorderListInclude is the Include parameter for change order list queries.
 const changeorderListInclude = "SpaceID,StartTagID,EndTagID,SpaceFilterID"
 
 // changeorderBaseSelectFields are the fields always returned by change order list queries.
-// AbortedReason is among them because State is derived from it, and the server has to re-read a
-// change order whose select left it out.
-var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason"}
+// AbortedReason and InScopeSpaceIDs are among them because State is derived from both, and each
+// is legitimately empty -- so the server has to re-read a change order whose select left either
+// out, rather than reading a missing value as a real one.
+var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason", "InScopeSpaceIDs"}
 
 // ChangeOrder-specific aliases
 var changeorderAliases = map[string]string{
@@ -97,10 +99,18 @@ func getChangeOrderSlug(changeorder *goclientnew.ExtendedChangeOrder) string {
 	return prefixedSlug(space, changeorder.ChangeOrder.Slug)
 }
 
+// displayChangeOrderList renders the table. The start and end tags are named after the ChangeSet
+// they came from, so the default layout leaves them out and -o wide shows them.
 func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
+	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "State", "Update-Type", "Space-Filter", "Start-Tag", "End-Tag", "Description", "Aborted-Reason"})
+		header := []string{"Name", "Space", "State", "Update-Type", "Space-Filter"}
+		if wide {
+			header = append(header, "Start-Tag", "End-Tag")
+		}
+		header = append(header, "Description", "Aborted-Reason")
+		table.SetHeader(header)
 	}
 	for _, cs := range changeorders {
 		changeorder := cs.ChangeOrder
@@ -111,32 +121,37 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			spaceSlug = selectedSpaceSlug
 		}
 
-		startTagSlug := ""
-		if cs.StartTag != nil {
-			startTagSlug = cs.StartTag.Slug
-		}
-
-		endTagSlug := ""
-		if cs.EndTag != nil {
-			endTagSlug = cs.EndTag.Slug
-		}
-
 		spaceFilterSlug := ""
 		if cs.SpaceFilter != nil {
 			spaceFilterSlug = cs.SpaceFilter.Slug
 		}
 
-		table.Append([]string{
+		row := []string{
 			changeorder.Slug,
 			spaceSlug,
 			changeorder.State,
 			changeorder.UpdateType,
 			spaceFilterSlug,
-			startTagSlug,
-			endTagSlug,
+		}
+		if wide {
+			startTagSlug := ""
+			if cs.StartTag != nil {
+				startTagSlug = cs.StartTag.Slug
+			}
+
+			endTagSlug := ""
+			if cs.EndTag != nil {
+				endTagSlug = cs.EndTag.Slug
+			}
+
+			row = append(row, startTagSlug, endTagSlug)
+		}
+		row = append(row,
 			truncateWithEllipsis(changeorder.Description, defaultColumnWidth),
 			truncateWithEllipsis(changeorder.AbortedReason, defaultColumnWidth),
-		})
+		)
+
+		table.Append(row)
 	}
 	table.Render()
 }
