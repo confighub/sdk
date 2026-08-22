@@ -177,7 +177,6 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		// Show upstream unit info if available
 		if unitDetails.Unit.UpstreamUnitID != nil && *unitDetails.Unit.UpstreamUnitID != uuid.Nil {
-			view.Append([]string{"Upstream Organization ID", unitDetails.Unit.UpstreamOrganizationID.String()})
 			view.Append([]string{"Upstream Space ID", unitDetails.Unit.UpstreamSpaceID.String()})
 			view.Append([]string{"Upstream Unit ID", unitDetails.Unit.UpstreamUnitID.String()})
 			view.Append([]string{"Upstream Revision Num", fmt.Sprintf("%d", unitDetails.Unit.UpstreamRevisionNum)})
