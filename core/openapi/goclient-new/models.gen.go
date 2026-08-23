@@ -777,6 +777,12 @@ type ColumnSource struct {
 	MetadataExpression string             `json:"MetadataExpression,omitempty" yaml:"MetadataExpression,omitempty"`
 }
 
+// CreateUserKeyRequest defines model for CreateUserKeyRequest.
+type CreateUserKeyRequest struct {
+	Description string      `json:"Description,omitempty" yaml:"Description,omitempty"`
+	PublicJWK   interface{} `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
+}
+
 // DeleteResponse Response for successful delete operation
 type DeleteResponse struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
@@ -3567,6 +3573,18 @@ type User struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// UserKey defines model for UserKey.
+type UserKey struct {
+	CreatedAt   time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	Description string             `json:"Description,omitempty" yaml:"Description,omitempty"`
+	ExpiresAt   time.Time          `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	Kid         string             `json:"Kid,omitempty" yaml:"Kid,omitempty"`
+	LastUsedAt  time.Time          `json:"LastUsedAt,omitempty" yaml:"LastUsedAt,omitempty"`
+	PublicJWK   interface{}        `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
+	UserID      openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty" yaml:"UserKeyID,omitempty"`
 }
 
 // ValidationResult defines model for ValidationResult.
@@ -13988,6 +14006,9 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody BulkCreateUnitsAppl
 
 // BulkTagUnitsJSONRequestBody defines body for BulkTagUnits for application/json ContentType.
 type BulkTagUnitsJSONRequestBody = UnitTagRequest
+
+// CreateUserKeyJSONRequestBody defines body for CreateUserKey for application/json ContentType.
+type CreateUserKeyJSONRequestBody = CreateUserKeyRequest
 
 // BulkPatchViewsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchViews for application/merge-patch+json ContentType.
 type BulkPatchViewsApplicationMergePatchPlusJSONRequestBody BulkPatchViewsApplicationMergePatchPlusJSONBody

@@ -78,6 +78,11 @@ func NewContextManagerWithPath(configPath string) (*ContextManager, error) {
 	if err := os.MkdirAll(filepath.Join(configDir, "tokens"), 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create token directory: %w", err)
 	}
+	// Private keys live beside tokens and are owner-only for the same reason:
+	// anything that can read one can authenticate as the identity it belongs to.
+	if err := os.MkdirAll(filepath.Join(configDir, "keys"), 0o700); err != nil {
+		return nil, fmt.Errorf("failed to create key directory: %w", err)
+	}
 
 	// First run: create a default context (which becomes current) and persist.
 	if len(store.Contexts()) == 0 {
@@ -200,6 +205,17 @@ func (cm *ContextManager) RenameContext(oldName, newName string) error {
 // TokenPath resolves a context's token file to an absolute path.
 func (cm *ContextManager) TokenPath(tokenFile string) string {
 	return cm.store.TokenPath(tokenFile)
+}
+
+// KeyPath resolves a private-key reference to an absolute path. A bare name is
+// an alias within the key directory; anything with a separator is a path.
+func (cm *ContextManager) KeyPath(key string) string {
+	return cm.store.KeyPath(key)
+}
+
+// KeyDir is the directory bare key aliases resolve within.
+func (cm *ContextManager) KeyDir() string {
+	return cm.store.KeyDir()
 }
 
 // LoadTokenData loads the token data for a context.

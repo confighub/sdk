@@ -26295,6 +26295,217 @@ paths:
       summary: Get User
       tags:
       - User
+  /user/{user_id}/key:
+    get:
+      description: 'List the public keys registered against an identity. Keys are
+        returned unredacted, deliberately: they are public material, and an operator
+        noticing a key nobody registered is how an injected one is caught.'
+      operationId: ListUserKeys
+      parameters:
+      - description: UUID of the identity whose keys are being managed. For a worker
+          this is its bot user, BridgeWorker.UserID, not the worker's own id.
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserKey'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing User.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List an identity's public keys
+      tags:
+      - User
+    post:
+      description: Register a public key against an identity. The holder of the matching
+        private key then authenticates by signing a short-lived assertion (RFC 7523
+        private_key_jwt), so no secret is exchanged and none is stored. Requires the
+        admin or manager role; registering a key for yourself is not permitted.
+      operationId: CreateUserKey
+      parameters:
+      - description: UUID of the identity whose keys are being managed. For a worker
+          this is its bot user, BridgeWorker.UserID, not the worker's own id.
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserKeyRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserKey'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing User.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Register a public key for an identity
+      tags:
+      - User
+  /user/{user_id}/key/{kid}:
+    delete:
+      description: Remove one registered public key by its thumbprint. This is the
+        second half of rotation, and the response to a compromised private key.
+      operationId: DeleteUserKey
+      parameters:
+      - description: UUID of the identity whose keys are being managed. For a worker
+          this is its bot user, BridgeWorker.UserID, not the worker's own id.
+        in: path
+        name: user_id
+        required: true
+        schema:
+          type: string
+      - description: RFC 7638 thumbprint of the key to remove. The key names itself,
+          so a holder can address it without asking what it was called.
+        in: path
+        name: kid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: User could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing User.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Remove a public key from an identity
+      tags:
+      - User
   /view:
     delete:
       description: Delete multiple views selected by query parameters
@@ -28434,6 +28645,14 @@ components:
           x-go-type-skip-optional-pointer: true
         MetadataExpression:
           type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    CreateUserKeyRequest:
+      properties:
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        PublicJWK:
           x-go-type-skip-optional-pointer: true
       type: object
     DeleteResponse:
@@ -33007,6 +33226,42 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
+      type: object
+    UserKey:
+      properties:
+        CreatedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Kid:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LastUsedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        PublicJWK:
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserKeyID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     ValidationResult:
       properties:

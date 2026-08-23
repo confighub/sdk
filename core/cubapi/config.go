@@ -107,6 +107,7 @@ type Store struct {
 	mu         sync.Mutex
 	configPath string
 	tokenDir   string
+	keyDir     string
 	config     *Config
 	override   string // in-memory active-context override; not persisted
 }
@@ -181,11 +182,12 @@ func resolveConfigPath(path string) (string, error) {
 }
 
 // newStore builds an empty Store for the given absolute config path, with the
-// token directory as the sibling "tokens" directory.
+// token and key directories as the sibling "tokens" and "keys" directories.
 func newStore(absPath string) *Store {
 	return &Store{
 		configPath: absPath,
 		tokenDir:   filepath.Join(filepath.Dir(absPath), "tokens"),
+		keyDir:     filepath.Join(filepath.Dir(absPath), "keys"),
 		config:     &Config{APIVersion: ConfigAPIVersion, Kind: ConfigKind},
 	}
 }
@@ -294,6 +296,34 @@ func (s *Store) TokenPath(tokenFile string) string {
 		return filepath.Join(os.Getenv("HOME"), tokenFile[1:])
 	}
 	return filepath.Join(s.tokenDir, filepath.Base(tokenFile))
+}
+
+// KeyDir is the directory bare key aliases resolve within.
+func (s *Store) KeyDir() string { return s.keyDir }
+
+// KeyPath resolves a private-key reference to an absolute path, by the same
+// three rules as TokenPath: absolute paths are used as-is, "~"-prefixed paths
+// expand against $HOME, and a bare name is an *alias* resolving within the
+// Store's key directory.
+//
+// An alias gains the ".jwk" suffix when it has no extension, so `--private-key
+// ci` and `--private-key ci.jwk` name the same key. Only a bare name is treated
+// as an alias; anything containing a separator is a path, so "./ci" is a file
+// in the working directory and never a lookup in the key directory.
+func (s *Store) KeyPath(key string) string {
+	if filepath.IsAbs(key) {
+		return key
+	}
+	if strings.HasPrefix(key, "~") {
+		return filepath.Join(os.Getenv("HOME"), key[1:])
+	}
+	if strings.ContainsRune(key, filepath.Separator) {
+		return key
+	}
+	if filepath.Ext(key) == "" {
+		key += ".jwk"
+	}
+	return filepath.Join(s.keyDir, key)
 }
 
 // TokenData loads the credentials for a context from its token file.

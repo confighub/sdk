@@ -23,6 +23,7 @@ import (
 
 var (
 	asWorker               bool
+	privateKeyRef          string
 	newContext             bool
 	serverURL              string
 	organizationSearchTerm string
@@ -57,16 +58,32 @@ Examples:
   # Login as a worker using environment variables
   cub auth login --as-worker
 
+  # Login by signing with a private key held in $CONFIGHUB_AUTH_PRIVATE_KEY
+  # (naming a key as well as setting the variable is an error, not a preference)
+  cub auth login --private-key
+
+  # Login by signing with a key stored under ~/.confighub/keys
+  cub auth login --private-key=ci-runner
+
+  # Login by signing with a key at an explicit path
+  cub auth login --private-key=./deploy.jwk
+
   # Login without automatically opening browser
   cub auth login --no-browser
 `+"```"+`
 `, ""),
-	Args: cobra.NoArgs,
+	Args: authLoginArgs,
 	RunE: authLoginCmdRun,
 }
 
 func init() {
 	authLoginCmd.Flags().BoolVar(&asWorker, "as-worker", false, "Authenticate as a worker using CONFIGHUB_WORKER_ID and CONFIGHUB_WORKER_SECRET environment variables")
+	authLoginCmd.Flags().StringVar(&privateKeyRef, "private-key", "",
+		"Authenticate by signing with a private key: an alias under ~/.confighub/keys, a path, or empty to use CONFIGHUB_AUTH_PRIVATE_KEY")
+	// The flag is usable with no value, so `--private-key` alone falls back to
+	// the environment the way --as-worker does. NoOptDefVal needs a non-empty
+	// sentinel because an empty one is indistinguishable from "not given".
+	authLoginCmd.Flags().Lookup("private-key").NoOptDefVal = privateKeyFromEnv
 	authLoginCmd.Flags().StringVar(&serverURL, "server", "", "Server URL to authenticate to (e.g., https://hub.confighub.com)")
 	authLoginCmd.Flags().StringVar(&organizationSearchTerm, "organization", "", "Organization partial name or ID to authenticate to (e.g., Fuz or org_1234567890)")
 	authLoginCmd.Flags().BoolVar(&newContext, "new-context", false, "Create a new context during login")
@@ -102,12 +119,19 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 		coordinate.ServerURL = contextManager.ActiveContext().Coordinate.ServerURL
 	}
 
+	if asWorker && privateKeyRef != "" {
+		return fmt.Errorf("cannot use both --as-worker and --private-key: they are alternative credentials, not layers")
+	}
+
 	var err error
 	var session *cubapi.AuthSession
-	if asWorker {
+	switch {
+	case privateKeyRef != "":
+		session, err = performPrivateKeyAuth(coordinate, privateKeyRef)
+	case asWorker:
 		// Handle worker authentication
 		session, err = performWorkerAuth(coordinate)
-	} else {
+	default:
 		session, err = performUserAuth(coordinate, noBrowser)
 	}
 	if err != nil {
@@ -209,6 +233,123 @@ func performWorkerAuth(coordinate Coordinate) (*cubapi.AuthSession, error) {
 	}
 	tprint("Successfully logged in as worker %s (Organization: %s)", workerID, session.OrganizationID)
 	return session, nil
+}
+
+// authLoginArgs rejects positional arguments, and catches the one mistake this
+// command invites.
+//
+// --private-key takes an optional value, which pflag can only express as
+// --private-key=NAME; written with a space the name is parsed as a positional
+// argument and cobra reports an unknown command, which says nothing about the
+// real problem. The optional value is worth that cost because it is what lets
+// the key material stay in the environment instead of on a command line other
+// processes can read.
+func authLoginArgs(cmd *cobra.Command, args []string) error {
+	if len(args) == 0 {
+		return nil
+	}
+	if cmd.Flags().Changed("private-key") && privateKeyRef == privateKeyFromEnv {
+		return fmt.Errorf("--private-key needs its value attached: --private-key=%s", args[0])
+	}
+	return cobra.NoArgs(cmd, args)
+}
+
+// privateKeyFromEnv is the sentinel `--private-key` takes when given no value.
+// It is a value the resolver recognises rather than a flag of its own, so that
+// "where does the key come from" has exactly one answer to read.
+const privateKeyFromEnv = "-"
+
+// privateKeyEnvVar holds either an Ed25519 private JWK or a path to one.
+//
+// Named for authentication rather than for workers: a key authenticates an
+// identity, and the identity does not have to be a worker.
+const privateKeyEnvVar = "CONFIGHUB_AUTH_PRIVATE_KEY"
+
+// performPrivateKeyAuth authenticates by signing an assertion with a local
+// private key. Nothing secret is sent: the server verifies the signature
+// against a public key it already holds.
+func performPrivateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSession, error) {
+	privateJWK, source, err := loadPrivateKey(ref)
+	if err != nil {
+		return nil, err
+	}
+
+	// The audience must match the server's. An assertion minted for the wrong
+	// audience is refused with the same uniform 401 as an unregistered key, so
+	// a mismatch is worth being able to fix without guessing.
+	signer, err := cubapi.NewAssertionSigner(privateJWK, "", os.Getenv("CONFIGHUB_ASSERTION_AUDIENCE"))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", source, err)
+	}
+
+	session, err := cubapi.PerformAssertionAuth(coordinate.ServerURL, signer)
+	if err != nil {
+		return nil, err
+	}
+	tprint("Successfully logged in as identity %s using key %s (Organization: %s)",
+		signer.UserID(), signer.Kid(), session.OrganizationID)
+	return session, nil
+}
+
+// loadPrivateKey resolves a --private-key reference to key material, and
+// returns a description of where it came from for error messages.
+//
+// Three sources, in the order a caller would expect them to win:
+//
+//  1. the sentinel (bare `--private-key`), meaning $CONFIGHUB_AUTH_PRIVATE_KEY;
+//  2. an inline JWK, so the environment variable can hold the key itself;
+//  3. otherwise a path or an alias, resolved by ContextManager.KeyPath.
+//
+// The environment variable takes either form too, because a CI system that can
+// only set variables should not need a file, and one that mounts a secret as a
+// file should not need to inline it. It is read only when a key was asked for:
+// an exported variable never turns an ordinary `cub auth login` into a
+// key-authenticated one, since that would silently change who you log in as.
+func loadPrivateKey(ref string) ([]byte, string, error) {
+	source := ref
+	env := os.Getenv(privateKeyEnvVar)
+
+	if ref == privateKeyFromEnv {
+		if env == "" {
+			return nil, "", fmt.Errorf(
+				"--private-key was given no value and %s is not set; pass a key alias or path, or set %s",
+				privateKeyEnvVar, privateKeyEnvVar)
+		}
+		ref = env
+		source = "$" + privateKeyEnvVar
+	} else if env != "" {
+		// Two keys named at once are refused rather than ranked, matching how
+		// --server and CONFIGHUB_URL are already handled a few lines above.
+		//
+		// Precedence would be defensible -- explicit beats ambient -- but not
+		// silent precedence, because these name whole identities rather than
+		// settings. Someone with the variable exported for a pipeline who then
+		// passes a key by hand is wrong about one of the two, and quietly
+		// picking either means authenticating as a principal they did not
+		// choose. Refusing costs one command; guessing costs an audit trail
+		// that names the wrong actor.
+		return nil, "", fmt.Errorf(
+			"cannot use both --private-key=%s and %s: they can name different identities, so unset one",
+			ref, privateKeyEnvVar)
+	}
+
+	// An inline JWK is recognised by shape rather than by a flag. A JSON object
+	// is never a valid file name here, so there is nothing to disambiguate.
+	if strings.HasPrefix(strings.TrimSpace(ref), "{") {
+		return []byte(ref), source, nil
+	}
+
+	path := contextManager.KeyPath(ref)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		if os.IsNotExist(err) && path != ref {
+			// The alias was expanded, so say what was actually looked for --
+			// otherwise "ci: no such file" names something that is not a path.
+			return nil, "", fmt.Errorf("no key %q: %s does not exist", ref, path)
+		}
+		return nil, "", fmt.Errorf("reading private key: %w", err)
+	}
+	return data, path, nil
 }
 
 // loginTargetContext returns the context a successful login must be written to.

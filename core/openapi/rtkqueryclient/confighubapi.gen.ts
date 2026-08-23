@@ -2310,6 +2310,25 @@ const injectedRtkApi = api
         query: (queryArg) => ({ url: `/user/${queryArg.userId}` }),
         providesTags: ['User'],
       }),
+      listUserKeys: build.query<ListUserKeysApiResponse, ListUserKeysApiArg>({
+        query: (queryArg) => ({ url: `/user/${queryArg.userId}/key` }),
+        providesTags: ['User'],
+      }),
+      createUserKey: build.mutation<CreateUserKeyApiResponse, CreateUserKeyApiArg>({
+        query: (queryArg) => ({
+          url: `/user/${queryArg.userId}/key`,
+          method: 'POST',
+          body: queryArg.createUserKeyRequest,
+        }),
+        invalidatesTags: ['User'],
+      }),
+      deleteUserKey: build.mutation<DeleteUserKeyApiResponse, DeleteUserKeyApiArg>({
+        query: (queryArg) => ({
+          url: `/user/${queryArg.userId}/key/${queryArg.kid}`,
+          method: 'DELETE',
+        }),
+        invalidatesTags: ['User'],
+      }),
       bulkDeleteViews: build.mutation<BulkDeleteViewsApiResponse, BulkDeleteViewsApiArg>({
         query: (queryArg) => ({
           url: `/view`,
@@ -12220,6 +12239,25 @@ export type GetUserApiArg = {
   /** Unique identifier for a user_id */
   userId: string;
 };
+export type ListUserKeysApiResponse = /** status 200 OK */ UserKey[];
+export type ListUserKeysApiArg = {
+  /** UUID of the identity whose keys are being managed. For a worker this is its bot user, BridgeWorker.UserID, not the worker's own id. */
+  userId: string;
+};
+export type CreateUserKeyApiResponse = /** status 200 OK */ UserKey;
+export type CreateUserKeyApiArg = {
+  /** UUID of the identity whose keys are being managed. For a worker this is its bot user, BridgeWorker.UserID, not the worker's own id. */
+  userId: string;
+  createUserKeyRequest: CreateUserKeyRequest;
+};
+export type DeleteUserKeyApiResponse =
+  /** status 200 Response for successful delete operation */ DeleteResponse;
+export type DeleteUserKeyApiArg = {
+  /** UUID of the identity whose keys are being managed. For a worker this is its bot user, BridgeWorker.UserID, not the worker's own id. */
+  userId: string;
+  /** RFC 7638 thumbprint of the key to remove. The key names itself, so a holder can address it without asking what it was called. */
+  kid: string;
+};
 export type BulkDeleteViewsApiResponse = /** status 200 OK */
   | DeleteResponse[]
   | /** status 207 Multi-Status: Mixed success and failure results */ DeleteResponse[];
@@ -16213,6 +16251,20 @@ export type UnitTagRequest = {
   Revision?: string;
   TagID?: string;
 };
+export type UserKey = {
+  CreatedAt?: string;
+  Description?: string;
+  ExpiresAt?: string;
+  Kid?: string;
+  LastUsedAt?: string;
+  PublicJWK?: any;
+  UserID?: string;
+  UserKeyID?: string;
+};
+export type CreateUserKeyRequest = {
+  Description?: string;
+  PublicJWK?: any;
+};
 export type ViewCreateOrUpdateResponse = {
   Error?: ResponseError;
   View?: View;
@@ -16478,6 +16530,10 @@ export const {
   useLazyListUsersQuery,
   useGetUserQuery,
   useLazyGetUserQuery,
+  useListUserKeysQuery,
+  useLazyListUserKeysQuery,
+  useCreateUserKeyMutation,
+  useDeleteUserKeyMutation,
   useBulkDeleteViewsMutation,
   useListAllViewsQuery,
   useLazyListAllViewsQuery,
