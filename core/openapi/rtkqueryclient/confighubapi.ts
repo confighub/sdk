@@ -15,6 +15,12 @@ const baseQuery = fetchBaseQuery({
     const ct = headers.get('Content-Type') ?? '';
     return ct.includes('json');
   },
+  // Decide how to read a response from what the server says it is, rather than assuming JSON.
+  // The configuration endpoints serve the document itself as application/octet-stream, and the
+  // default 'json' handler JSON.parses every body -- which fails on YAML and surfaces as a
+  // parsing error with no data, i.e. an empty config editor. 'content-type' routes through
+  // isJsonContentType above, so those come back as text and everything else is unchanged.
+  responseHandler: 'content-type',
   prepareHeaders: (headers, { endpoint }) => {
     // Set content type for operations that require merge-patch+json
     if (

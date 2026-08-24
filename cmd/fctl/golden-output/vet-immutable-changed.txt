@@ -1,26 +1,4 @@
 SUCCESS    true    
-CONFIGDATA
----------
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: mydep
-  name: mydep
-  namespace: example
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: mydep-v2
-  template:
-    metadata:
-      labels:
-        app: mydep-v2
-    spec:
-      containers:
-      - image: nginx:latest
-        name: nginx
 OUTPUT
 ------
 [

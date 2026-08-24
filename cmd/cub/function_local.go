@@ -78,14 +78,14 @@ type localFunctionInvocation struct {
 	Arguments    []string
 }
 
-func invokeLocalFunction(inputData []byte, functionName string, functionArgs []string, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
+func invokeLocalFunction(inputData string, functionName string, functionArgs []string, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
 	return invokeLocalFunctions(inputData, []localFunctionInvocation{{
 		FunctionName: functionName,
 		Arguments:    functionArgs,
 	}}, whereResource, toolchainTypeString)
 }
 
-func invokeLocalFunctions(inputData []byte, invocations []localFunctionInvocation, whereResourceFilter, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
+func invokeLocalFunctions(inputData string, invocations []localFunctionInvocation, whereResourceFilter, toolchainTypeString string) (*api.FunctionInvocationResponse, error) {
 	functionlogger.SetLevel(functionlogger.ERROR)
 
 	// Convert toolchain type string to workerapi.ToolchainType
@@ -183,25 +183,29 @@ func functionLocalCommandRun(cmd *cobra.Command, args []string) error {
 	// Remaining arguments are function parameters
 	functionArgs := args[2:]
 
-	response, err := invokeLocalFunction(inputData, functionName, functionArgs, localToolchainType)
+	response, err := invokeLocalFunction(string(inputData), functionName, functionArgs, localToolchainType)
 	if err != nil {
 		return err
 	}
 
 	// Display the results
-	displayLocalFunctionResults(response)
+	displayLocalFunctionResults(response, string(inputData))
 
 	return nil
 }
 
-func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
+func displayLocalFunctionResults(response *api.FunctionInvocationResponse, inputData string) {
 	// Check if any alternative output format is specified
 	hasAltOutput := isAlternativeOutput()
 
+	// A response carries the configuration only when an invocation changed it, so what to
+	// show is resolved against the input rather than read off the response.
+	resultData := response.ResultData(inputData)
+
 	// Handle data-only flag
 	if localDataOnly {
-		if len(response.ConfigData) > 0 {
-			fmt.Print(string(response.ConfigData))
+		if len(resultData) > 0 {
+			fmt.Print(resultData)
 		}
 		return
 	}
@@ -237,12 +241,12 @@ func displayLocalFunctionResults(response *api.FunctionInvocationResponse) {
 	}
 
 	// Display config data if modified
-	if len(response.ConfigData) > 0 && len(response.Mutators) > 0 {
+	if len(response.Mutators) > 0 && resultData != inputData {
 		if !quiet {
 			fmt.Println("\nMODIFIED CONFIG DATA:")
 			fmt.Println("--------------------")
 		}
-		fmt.Print(string(response.ConfigData))
+		fmt.Print(resultData)
 	}
 
 	// Display function output if present

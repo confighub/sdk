@@ -20,7 +20,7 @@ import (
 func invokeSetDefaultNames(t *testing.T, input, name string) string {
 	t.Helper()
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(input),
+		ConfigData: input,
 		FunctionInvocations: []api.FunctionInvocation{
 			{
 				FunctionName: "set-default-names",

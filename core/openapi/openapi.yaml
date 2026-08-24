@@ -5239,6 +5239,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the default: ConfigData for the configuration the invocation produced, carried
+          whether or not the invocation changed it. Without it, the configuration
+          is present only when the invocation changed it, and an unchanged result
+          is reported by DataHash alone.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       - description: 'Resource type: Resource type to match for the desired ToolchainType,
           for example apps/v1/Deployment'
         in: query
@@ -9005,6 +9015,441 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: List of Revisions across spaces
+      tags:
+      - Revision
+  /revision_data:
+    get:
+      description: 'Returns the configuration of every Revision the where clause selects,
+        across every Space in the organization, in one request, with each Revision''s
+        DataHash and DataSize. This is what a diff over many Units needs: fetching
+        each Revision separately would be two requests per Unit.'
+      operationId: SearchRevisionData
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Revisions returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          To list tagged Revisions use `Tags ? '<tag-id>'`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Revision list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Revision).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Revision.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Revision.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Revision entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: Number of Revision entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+
+          Supported values: Unit, Off.
+
+          If not specified, results are restricted to at most one row per Unit.
+
+          Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+        in: query
+        name: distinct_on
+        required: false
+        schema:
+          enum:
+          - Unit
+          - "Off"
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RevisionData'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Revision.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the config data of many Revisions across spaces
+      tags:
+      - Revision
+  /revision_mutation_sources:
+    get:
+      description: Returns what set each value in the configuration of every Revision
+        the where clause selects, across every Space in the organization, in one request.
+        The bulk counterpart of the per-Revision mutation-sources subresource.
+      operationId: SearchRevisionMutationSources
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Revisions returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          To list tagged Revisions use `Tags ? '<tag-id>'`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Revision list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Revision).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Revision.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Revision.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Revision entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: Number of Revision entities to skip before returning results.
+          Typically used together with 'limit' for pagination. If not specified, no
+          entities are skipped.
+        in: query
+        name: offset
+        required: false
+        schema:
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          If not specified, results are returned in the database's default order.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+
+          Supported values: Unit, Off.
+
+          If not specified, results are restricted to at most one row per Unit.
+
+          Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+        in: query
+        name: distinct_on
+        required: false
+        schema:
+          enum:
+          - Unit
+          - "Off"
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/RevisionMutationSources'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Revision.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the mutation sources of many Revisions across spaces
       tags:
       - Revision
   /space:
@@ -13252,6 +13697,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the default: ConfigData for the configuration the invocation produced, carried
+          whether or not the invocation changed it. Without it, the configuration
+          is present only when the invocation changed it, and an unchanged result
+          is reported by DataHash alone.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       - description: 'Resource type: Resource type to match for the desired ToolchainType,
           for example apps/v1/Deployment'
         in: query
@@ -15375,6 +15830,74 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Update the selected Release
+      tags:
+      - Release
+  /space/{space_id}/release/{release_id}/data:
+    get:
+      description: Download the gzip tarball a Release published. The bundle is not
+        part of the Release entity -- a list of Releases should not carry a copy of
+        every tarball -- and the response carries the Digest as an ETag.
+      operationId: DownloadReleaseData
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a release_id
+        in: path
+        name: release_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/gzip:
+              schema:
+                format: base64
+                type: string
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Release not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Release.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Download the selected Release's bundle
       tags:
       - Release
   /space/{space_id}/release/{release_id}/withdraw:
@@ -17775,6 +18298,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the Unit: ConfigData for the configuration the operation produced, and MutationSources
+          for what set each value in it. Neither is a field of a Unit, and both cost
+          something to return, so they are returned only when named. A dry run stores
+          nothing, so this is the only way to see what it would have produced.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -17785,20 +18318,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
+          description: OK
         "400":
           content:
             application/json:
@@ -18301,6 +18822,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the Unit: ConfigData for the configuration the operation produced, and MutationSources
+          for what set each value in it. Neither is a field of a Unit, and both cost
+          something to return, so they are returned only when named. A dry run stores
+          nothing, so this is the only way to see what it would have produced.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/merge-patch+json:
@@ -18321,11 +18852,6 @@ paths:
                     Revision belongs. Optional. Units are not required to belong to
                     ChangeSets.
                   format: uuid
-                  nullable: true
-                  type: string
-                Data:
-                  description: The full configuration data for this unit.
-                  format: byte
                   nullable: true
                   type: string
                 DeleteGates:
@@ -18407,20 +18933,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
+          description: OK
         "400":
           content:
             application/json:
@@ -18748,6 +19262,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the Unit: ConfigData for the configuration the operation produced, and MutationSources
+          for what set each value in it. Neither is a field of a Unit, and both cost
+          something to return, so they are returned only when named. A dry run stores
+          nothing, so this is the only way to see what it would have produced.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -18758,20 +19282,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Unit'
-          description: |-
-            Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-            of a single supported Toolchain Type (configuration format). This blob is typically a text document
-            that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-            file. Applying / deploying or destroying the configuration happens as a single *transaction*
-            from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-            the underlying configuration / deployment tool. The resources must belong to a single
-            infrastructure provider and the actuation mechanism must be able to resolve references and
-            ordering dependencies among the resources within the document. For example, if one resource
-            needs to be fully provisioned to provide input to another resource, then the actuation code is
-            responsible for handling this. Revisions store historical copies of the configuration data.
-            Configuration data can be restored from prior Revisions. Units can also be cloned to create
-            new variants of a configuration.
+                $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
+          description: OK
         "400":
           content:
             application/json:
@@ -18984,7 +19496,9 @@ paths:
       - Unit
   /space/{space_id}/unit/{unit_id}/data:
     get:
-      description: Download the config data of a unit
+      description: Download the config data of a unit. The response carries the DataHash
+        as an ETag; send it back as If-None-Match to get a 304 when the configuration
+        has not changed.
       operationId: DownloadUnitData
       parameters:
       - description: Unique identifier for a space_id
@@ -19045,6 +19559,193 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Download config data
+      tags:
+      - Unit
+    put:
+      description: 'Replace the config data of a unit. The request body is the configuration
+        itself. This is the only way configuration reaches a Unit other than a clone,
+        which copies it server-side: Data is not part of the Unit entity, so no metadata
+        write can carry one or destroy one. Send If-Match with the DataHash a read
+        served to make the write conditional on nobody having written first. Requires
+        Edit permission.'
+      operationId: UploadUnitData
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Human-readable description of this change, copied to the Revision
+          it creates.
+        in: query
+        name: last_change_description
+        required: false
+        schema:
+          type: string
+      - description: 'Comma-separated parts of the result to return in addition to
+          the Unit: ConfigData for the configuration the operation produced, and MutationSources
+          for what set each value in it. Neither is a field of a Unit, and both cost
+          something to return, so they are returned only when named. A dry run stores
+          nothing, so this is the only way to see what it would have produced.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: 'Dry run mode: return changed unit(s) but don''t update configuration
+          data'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      - description: 'Record the paths this operation writes as protected local overrides,
+          so a later merge from upstream does not overwrite them. Without it the operation
+          claims nothing: each written path keeps whatever the Unit already has for
+          it, and a path with no history is left unprotected. It only ever adds protection
+          -- re-opening a path is the /protection API (cub unit set-protection --unprotect).
+          Has no effect with restore, which rewinds MutationSources to the restored
+          Revision''s stored values wholesale.'
+        in: query
+        name: protect
+        required: false
+        schema:
+          type: boolean
+      - description: The classes of guarded reason this operation is cleared for,
+          as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where
+          Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this
+          does not cover is not written, and the withheld change is reported as a
+          Guarded conflict. An absent or empty clearance clears nothing, which only
+          matters for a Unit that has guards.
+        in: query
+        name: clearance
+        required: false
+        schema:
+          type: string
+      - description: 'Merge base revision, which provides the base configuration data
+          of the changes to merge. With merge_source, this is a revision of the merge
+          source unit. With merge_external_source, this is a revision of the unit
+          being updated and overrides the default selection of the latest MergeExternal
+          revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
+          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
+          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
+          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
+          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
+          ''Before:42''). When using Tag or ChangeSet references, the latest revision
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
+        in: query
+        name: merge_base
+        required: false
+        schema:
+          type: string
+      - description: Identifier of the external source for merge-on-update. When set,
+          computes mutations between the last MergeExternal revision and the provided
+          data, then patches the current unit data with those mutations.
+        in: query
+        name: merge_external_source
+        required: false
+        schema:
+          type: string
+      - description: Enable the subtraction (override-preservation) step of upgrade
+          and merge_source. By default (false), the source patch is applied without
+          subtraction and the target's local differences are preserved by the stored
+          Mutation Protected values; set true to additionally subtract the target's
+          local differences from the source patch. Has no effect on a self merge (merge_source=Self),
+          where subtraction is always disabled.
+        in: query
+        name: merge_enable_subtraction
+        required: false
+        schema:
+          type: boolean
+      - description: Tag ID to add to the head revision
+        in: query
+        name: tag
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: Must match ChangeSetID of affected Units if config Data is changed
+          unless in dry run mode
+        in: query
+        name: change_set_id
+        required: false
+        schema:
+          format: uuid
+          type: string
+      - description: User-defined category for the Mutation. Must be alphanumeric,
+          at most 64 characters. The prefix 'ConfigHub' is reserved.
+        in: query
+        name: subgroup
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitCreateOrUpdateResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Upload config data
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/extended:
@@ -19468,6 +20169,73 @@ paths:
       summary: Get ExtendedMutation
       tags:
       - Mutation
+  /space/{space_id}/unit/{unit_id}/mutation_sources:
+    get:
+      description: Read what set each value in a Unit's configuration, by resource
+        and path. MutationSources is the largest column on the table -- larger than
+        the configuration itself -- so it is a subresource rather than a field.
+      operationId: GetUnitMutationSources
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationSourcesResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get mutation sources
+      tags:
+      - Unit
   /space/{space_id}/unit/{unit_id}/protection:
     post:
       description: Set Protected values on the unit's MutationSources, marking paths
@@ -20345,6 +21113,80 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Download the selected Revision's data
+      tags:
+      - Revision
+  /space/{space_id}/unit/{unit_id}/revision/{revision_id}/mutation_sources:
+    get:
+      description: Read what set each value in the Revision's configuration, by resource
+        and path. A Revision snapshots its MutationSources so a restore can rewind
+        them with the data.
+      operationId: GetRevisionMutationSources
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a revision_id
+        in: path
+        name: revision_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationSourcesResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Revision not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Revision.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the selected Revision's mutation sources
       tags:
       - Revision
   /space/{space_id}/unit/{unit_id}/unit_action:
@@ -24684,11 +25526,6 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
-                Data:
-                  description: The full configuration data for this unit.
-                  format: byte
-                  nullable: true
-                  type: string
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -25118,11 +25955,6 @@ paths:
                     Revision belongs. Optional. Units are not required to belong to
                     ChangeSets.
                   format: uuid
-                  nullable: true
-                  type: string
-                Data:
-                  description: The full configuration data for this unit.
-                  format: byte
                   nullable: true
                   type: string
                 DeleteGates:
@@ -25912,6 +26744,241 @@ paths:
       summary: List of UnitActions across units
       tags:
       - QueuedOperation
+  /unit_data:
+    get:
+      description: Returns the configuration of every Unit the where clause selects,
+        across every Space in the organization, in one request, with each Unit's DataHash
+        and DataSize. This is the bulk counterpart of the single-Unit data endpoint;
+        it exists as an endpoint of its own rather than as a mode on the Unit list
+        so that no query parameter changes the shape of a response. Scope it to one
+        Space with a where clause.
+      operationId: SearchUnitData
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: 'Resource type: Resource type to match for the desired ToolchainType,
+          for example apps/v1/Deployment'
+        in: query
+        name: resource_type
+        required: false
+        schema:
+          type: string
+      - description: 'Where data: The specified string is an expression for the purpose
+          of evaluating whether the configuration data matches the filter. It supports
+          conjunctions using `AND` of relational expressions of the form *path* *operator*
+          *literal*. The path specifications are dot-separated, for both map fields
+          and array indices, as in `spec.template.spec.containers.0.image = ''ghcr.io/headlamp-k8s/headlamp:latest''
+          AND spec.replicas > 1`. Path expressions support `*` for wildcard array
+          or map segments and `?key=value` syntax for associative matches of array
+          elements containing objects with a `key` attribute. Strings support the
+          following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`,
+          `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators:
+          `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE`
+          for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex
+          operators: `~` for regex matching, `~*` for case-insensitive regex, `!~`
+          and `!~*` for regex not matching (case-sensitive and insensitive). Integers
+          support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`,
+          `NOT IN`. Boolean values support equality and inequality only. The `IN`
+          and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
+          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
+          otherwise the relation `!=` will always return true regardless what it is
+          compared with. String literals are quoted with single quotes, such as `''string''`.
+          Integer and boolean literals are also supported for attributes of those
+          types. The whole string must be query-encoded.'
+        in: query
+        name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitData'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the config data of many Units across spaces
+      tags:
+      - Unit
   /unit_event:
     get:
       description: Retrieves a list of UnitEvents across units in the Organization.
@@ -26103,6 +27170,241 @@ paths:
       summary: List of UnitEvents across units
       tags:
       - UnitEvent
+  /unit_mutation_sources:
+    get:
+      description: Returns what set each value in the configuration of every Unit
+        the where clause selects, across every Space in the organization, in one request.
+        This is the bulk counterpart of the single-Unit mutation-sources subresource,
+        and the Unit-level counterpart of /revision_mutation_sources, which cannot
+        answer for a Unit's head because "each Unit's head Revision" is not expressible
+        as a where clause over Revisions. Scope it to one Space with a where clause.
+      operationId: SearchUnitMutationSources
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Unit.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: 'Resource type: Resource type to match for the desired ToolchainType,
+          for example apps/v1/Deployment'
+        in: query
+        name: resource_type
+        required: false
+        schema:
+          type: string
+      - description: 'Where data: The specified string is an expression for the purpose
+          of evaluating whether the configuration data matches the filter. It supports
+          conjunctions using `AND` of relational expressions of the form *path* *operator*
+          *literal*. The path specifications are dot-separated, for both map fields
+          and array indices, as in `spec.template.spec.containers.0.image = ''ghcr.io/headlamp-k8s/headlamp:latest''
+          AND spec.replicas > 1`. Path expressions support `*` for wildcard array
+          or map segments and `?key=value` syntax for associative matches of array
+          elements containing objects with a `key` attribute. Strings support the
+          following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`,
+          `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators:
+          `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE`
+          for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex
+          operators: `~` for regex matching, `~*` for case-insensitive regex, `!~`
+          and `!~*` for regex not matching (case-sensitive and insensitive). Integers
+          support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`,
+          `NOT IN`. Boolean values support equality and inequality only. The `IN`
+          and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
+          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
+          otherwise the relation `!=` will always return true regardless what it is
+          compared with. String literals are quoted with single quotes, such as `''string''`.
+          Integer and boolean literals are also supported for attributes of those
+          types. The whole string must be query-encoded.'
+        in: query
+        name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitMutationSources'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the mutation sources of many Units across spaces
+      tags:
+      - Unit
   /user:
     get:
       description: List Users
@@ -29389,8 +30691,13 @@ components:
     FunctionInvocationsResponse:
       properties:
         ConfigData:
-          description: The resulting configuration data, potentially mutated
-          format: base64
+          description: The resulting configuration data; present only when the invocation
+            changed it
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataHash:
+          description: SHA256 of the resulting configuration data, whether or not
+            ConfigData is present
           type: string
           x-go-type-skip-optional-pointer: true
         Error:
@@ -30299,6 +31606,11 @@ components:
       additionalProperties:
         $ref: '#/components/schemas/MutationInfo'
       type: object
+    MutationSourcesResponse:
+      properties:
+        MutationSources:
+          $ref: '#/components/schemas/ResourceMutationList'
+      type: object
     MutationType:
       enum:
       - Add
@@ -30793,11 +32105,10 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
-        Data:
-          description: The stored tar.gz bundle of the released Units' configuration.
-          format: base64
+        DataSize:
+          format: int64
           readOnly: true
-          type: string
+          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -31351,11 +32662,6 @@ components:
           type: string
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
-        ContentHash:
-          description: 'Deprecated: Use DataHash instead. The CRC32 hash of this revision''s
-            data.'
-          type: integer
-          x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -31370,14 +32676,17 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
-        Data:
-          description: The full configuration data for this unit at this revision.
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
         DataHash:
           description: The SHA256 hash of this revision's data, encoded as hexadecimal.
+            It is also the ETag the data endpoint serves.
           type: string
+          x-go-type-skip-optional-pointer: true
+        DataSize:
+          description: The size of this revision's data in bytes. The data itself
+            is not part of the Revision; read it from the data endpoint.
+          format: int64
+          readOnly: true
+          type: integer
           x-go-type-skip-optional-pointer: true
         Description:
           description: User description of the change. It is copied from the LastChangeDescription
@@ -31396,8 +32705,6 @@ components:
           format: date-time
           type: string
           x-go-type-skip-optional-pointer: true
-        MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
         OrganizationID:
           description: Unique identifier for an Organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -31482,6 +32789,68 @@ components:
           format: int64
           readOnly: false
           type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
+    RevisionData:
+      properties:
+        Data:
+          description: The configuration data at this Revision.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataHash:
+          description: SHA256 of the configuration data, which is also the ETag the
+            single-Revision data endpoint serves.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataSize:
+          description: Size of the configuration data in bytes.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        RevisionID:
+          description: Unique identifier of the Revision.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevisionNum:
+          description: Sequence number of the Revision within its Unit.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier of the Space the Unit belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier of the Unit the Revision belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    RevisionMutationSources:
+      properties:
+        MutationSources:
+          $ref: '#/components/schemas/ResourceMutationList'
+        RevisionID:
+          description: Unique identifier of the Revision.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevisionNum:
+          description: Sequence number of the Revision within its Unit.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier of the Unit the Revision belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
           x-go-type-skip-optional-pointer: true
       type: object
     Schema: {}
@@ -32477,12 +33846,6 @@ components:
           type: string
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
-        ContentHash:
-          description: 'Deprecated: Use DataHash instead. The CRC32 hash of the configuration
-            data.'
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -32497,16 +33860,19 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
-        Data:
-          description: The full configuration data for this unit. The maximum size
-            is 67108864 bytes.
-          format: base64
-          type: string
-          x-go-type-skip-optional-pointer: true
         DataHash:
           description: The SHA256 hash of the configuration data, encoded as hexadecimal.
+            It is also the ETag the data endpoint serves, so a caller that listed
+            Units can ask for a body conditionally without fetching it first.
           readOnly: true
           type: string
+          x-go-type-skip-optional-pointer: true
+        DataSize:
+          description: The size of the configuration data in bytes. The configuration
+            itself is not part of the Unit; read it from the data endpoint.
+          format: int64
+          readOnly: true
+          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -32591,8 +33957,6 @@ components:
           readOnly: true
           type: integer
           x-go-type-skip-optional-pointer: true
-        MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
         NeededPaths:
           description: Attribute paths that this Unit needs from upstream Units via
             NeedsProvides Links. Computed from get-needed and stored on data updates.
@@ -32943,6 +34307,11 @@ components:
       type: object
     UnitCreateOrUpdateResponse:
       properties:
+        ConfigData:
+          description: The configuration the operation produced; returned when include
+            names ConfigData.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
         Error:
@@ -32952,8 +34321,47 @@ components:
             $ref: '#/components/schemas/LinkCreateOrUpdateResponse'
           type: array
           x-go-type-skip-optional-pointer: true
+        MutationSources:
+          $ref: '#/components/schemas/ResourceMutationList'
         Unit:
           $ref: '#/components/schemas/Unit'
+      type: object
+    UnitData:
+      properties:
+        Data:
+          description: The configuration data.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataHash:
+          description: SHA256 of the configuration data, which is also the ETag the
+            single-Unit data endpoint serves.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DataSize:
+          description: Size of the configuration data in bytes.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          description: Slug of the Unit.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier of the Space the Unit belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space the Unit belongs to.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier of the Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     UnitEvent:
       description: |-
@@ -33116,6 +34524,35 @@ components:
       properties:
         PathAnnotations:
           $ref: '#/components/schemas/PathAnnotationList'
+      type: object
+    UnitMutationSources:
+      properties:
+        DataHash:
+          description: SHA256 of the configuration data the MutationSources describe.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        MutationSources:
+          $ref: '#/components/schemas/ResourceMutationList'
+        Slug:
+          description: Slug of the Unit.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier of the Space the Unit belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space the Unit belongs to.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier of the Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     UnitProtectionRequest:
       properties:

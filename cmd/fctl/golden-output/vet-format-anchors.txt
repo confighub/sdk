@@ -1,25 +1,4 @@
 SUCCESS    true    
-CONFIGDATA
----------
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: anchor-test
-  namespace: example
-  labels: &common-labels
-    app: anchor-test
-    team: platform
-spec:
-  replicas: 3
-  selector:
-    matchLabels: *common-labels
-  template:
-    metadata:
-      labels: *common-labels
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:latest
 OUTPUT
 ------
 [

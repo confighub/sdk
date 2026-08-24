@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -266,14 +265,21 @@ func clusterCreateK8sYAMLUnit(spaceID, targetID uuid.UUID, slug, displayName str
 		Slug:          slug,
 		DisplayName:   displayName,
 		ToolchainType: "Kubernetes/YAML",
-		Data:          base64.StdEncoding.EncodeToString(manifest),
 		TargetID:      &targetID,
 	}
 	res, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, &goclientnew.CreateUnitParams{}, body)
 	if cubapi.IsAPIError(err, res) {
 		return uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
 	}
-	return res.JSON200.UnitID, nil
+	created, err := unitFromWrite(res.JSON200)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	unitID := created.UnitID
+	if _, err := putUnitData(spaceID, unitID, string(manifest), nil); err != nil {
+		return unitID, fmt.Errorf("unit %s was created, but its config data could not be written: %w", slug, err)
+	}
+	return unitID, nil
 }
 
 // clusterSetReleaseTarget sets the Space's ReleaseTargetID to the OCI target.

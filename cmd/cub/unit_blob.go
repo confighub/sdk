@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -12,9 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// Shared flag state for the four `cub unit <blob>` subcommands:
-// data, livedata, livestate, bridgestate. Each command resets these globals at
-// parse time; at run time exactly one command is dispatched.
+// Shared flag state for the `cub unit <blob>` subcommands. Each command resets these
+// globals at parse time; at run time exactly one command is dispatched.
 var (
 	unitBlobOutputFile string
 	unitBlobDecode     bool
@@ -38,8 +36,11 @@ func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*
 	}
 	cmd.Flags().StringVarP(&unitBlobOutputFile, "output-file", "O", "",
 		fmt.Sprintf("Write %s to file instead of stdout", section))
+	// Configuration data is text on the wire, so there is nothing left to decode. The flag
+	// stays as a no-op so a script that passes it keeps working.
 	cmd.Flags().BoolVarP(&unitBlobDecode, "decode", "d", true,
-		fmt.Sprintf("Decode base64 %s (default: true)", section))
+		fmt.Sprintf("Deprecated: %s is no longer base64-encoded", section))
+	_ = cmd.Flags().MarkDeprecated("decode", section+" is no longer base64-encoded")
 	if legacyFlags != nil {
 		legacyFlags(cmd)
 	}
@@ -47,40 +48,33 @@ func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*
 	return cmd
 }
 
-// unitBlobField returns the raw (still base64-encoded) value of a named blob
-// field on a Unit. Returns "" if the field is unknown.
-func unitBlobField(u *goclientnew.Unit, field string) string {
+// unitBlobField returns the value of a named blob field on a Unit. Returns "" if the field
+// is unknown. The configuration is not part of the Unit, so it is read from its endpoint.
+func unitBlobField(u *goclientnew.Unit, field string) (string, error) {
 	if field == "Data" {
-		return u.Data
+		return fetchUnitData(u.SpaceID, u.UnitID)
 	}
-	return ""
+	return "", nil
 }
 
-// runUnitBlob is the shared implementation for the blob subcommands.
-// Fetches the unit with just Slug and the selected blob field, optionally
-// base64-decodes, and emits either to stdout or to the configured file.
+// runUnitBlob is the shared implementation for the blob subcommands. It resolves the Unit
+// by slug and reads the blob from its own endpoint, so the metadata request carries only
+// what it needs to identify the Unit -- the blob is not a field to select any more.
 func runUnitBlob(unitSlugOrID, section, selectField string) error {
-	// TODO: Use a dedicated API endpoint when one is available, to avoid
-	// pulling the entire unit when only the blob is wanted.
-	unit, err := apiGetUnitFromSlugInSpace(unitSlugOrID, selectedSpaceID, "Slug,"+selectField)
+	unit, err := apiGetUnitFromSlugInSpace(unitSlugOrID, selectedSpaceID, "UnitID,SpaceID,Slug")
 	if err != nil {
 		return fmt.Errorf("failed to get unit: %w", err)
 	}
 
-	raw := unitBlobField(unit, selectField)
+	raw, err := unitBlobField(unit, selectField)
+	if err != nil {
+		return err
+	}
 	if raw == "" {
 		return fmt.Errorf("no %s found for unit: %s", section, unit.Slug)
 	}
 
 	out := []byte(raw)
-	if unitBlobDecode {
-		decoded, err := base64.StdEncoding.DecodeString(raw)
-		if err != nil {
-			return fmt.Errorf("failed to decode %s: %w", section, err)
-		}
-		out = decoded
-	}
-
 	if unitBlobOutputFile != "" {
 		if err := os.WriteFile(unitBlobOutputFile, out, 0o644); err != nil {
 			return fmt.Errorf("failed to write %s to file: %w", section, err)
@@ -90,7 +84,7 @@ func runUnitBlob(unitSlugOrID, section, selectField string) error {
 		}
 		return nil
 	}
-	tprintRaw(string(out))
+	tprintBytes(out)
 	return nil
 }
 

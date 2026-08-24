@@ -1,25 +1,4 @@
 SUCCESS    true    
-CONFIGDATA
----------
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: myapp
-  namespace: default
-spec:
-  replicas: 1
-  template:
-    spec:
-      initContainers:
-      - name: wait-for-db
-        image: busybox:1.36
-      - name: db-init
-        image: ghcr.io/example/app:v1.0.0
-      - name: db-migrate
-        image: ghcr.io/example/app:v1.0.0
-      containers:
-      - name: app
-        image: ghcr.io/example/app:v1.0.0
 OUTPUT
 ------
 [

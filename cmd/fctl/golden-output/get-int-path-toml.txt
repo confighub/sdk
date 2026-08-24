@@ -1,22 +1,4 @@
 SUCCESS    true    
-CONFIGDATA
----------
-[app]
-  features = ["authentication", "logging"]
-  name = "MyApplication"
-  version = "1.0.0"
-
-[configHub]
-  configName = "MyApplicationConfig"
-  configSchema = "SimpleApp"
-
-[database]
-  # One comment
-  host = "localhost"
-  port = 5432 # Two comment
-  # Three comment
-  [database.ssl]
-    enabled = true
 OUTPUT
 ------
 [

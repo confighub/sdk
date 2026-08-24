@@ -8,7 +8,6 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"hash/crc32"
 	"strings"
 
 	"github.com/confighub/sdk/core/workerapi"
@@ -16,44 +15,24 @@ import (
 	jsonschema "github.com/swaggest/jsonschema-go"
 )
 
-// RevisionHash represents a crc32.ChecksumIEEE of configuration data.
-// Deprecated: Use DataHash (SHA256) instead for new code.
-// In Go, conversion of uint32 to int32 doesn't lose information. The
-// 32 bits are retained. We use int32 because a number of languages and
-// systems don't handle unsigned integers.
-type RevisionHash int32
-
-func HashConfigData(data []byte) RevisionHash {
-	//nolint:gosec // negative numbers are fine, they just need to be unique
-	return RevisionHash(crc32.ChecksumIEEE(data))
-}
-
 // DataHash represents a SHA256 hash of configuration data, encoded as a hexadecimal string.
 // This is the same hash algorithm used by git and container images.
 type DataHash string
 
 // HashConfigDataSHA256 computes the SHA256 hash of configuration data and returns it as a hex string.
-func HashConfigDataSHA256(data []byte) DataHash {
-	hash := sha256.Sum256(data)
+func HashConfigDataSHA256(data string) DataHash {
+	hash := sha256.Sum256([]byte(data))
 	return DataHash(hex.EncodeToString(hash[:]))
 }
 
-// EmptyDataHash is the SHA256 hash of an empty byte slice.
-var EmptyDataHash = HashConfigDataSHA256(nil)
+// EmptyDataHash is the SHA256 hash of empty configuration data.
+var EmptyDataHash = HashConfigDataSHA256("")
 
 // IsEmptyDataHash returns true if the given hash represents empty configuration data.
+// Every stored row carries a real hash, so the empty string is not a value this needs
+// to accept: a CHECK constraint on units.data_hash and revisions.data_hash forbids it.
 func IsEmptyDataHash(hash DataHash) bool {
-	return hash == "" || hash == EmptyDataHash
-}
-
-// ConfigDataHasChanged returns true if the given data differs from the previous data
-// identified by the hashes in the FunctionContext. It prefers PreviousDataHash (SHA256)
-// when available, falling back to PreviousContentHash (CRC32) for legacy units.
-func ConfigDataHasChanged(functionContext *FunctionContext, data []byte) bool {
-	if functionContext.PreviousDataHash != "" {
-		return HashConfigDataSHA256(data) != functionContext.PreviousDataHash
-	}
-	return HashConfigData(data) != functionContext.PreviousContentHash
+	return hash == EmptyDataHash
 }
 
 // The worker API ToolchainType identifies the configuration serialization format

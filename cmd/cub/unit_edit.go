@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"os/exec"
@@ -65,10 +64,11 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer os.Remove(tmpFile.Name())
-	currentContent, err := base64.StdEncoding.DecodeString(currentUnit.Data)
+	currentData, err := fetchUnitData(currentUnit.SpaceID, currentUnit.UnitID)
 	if err != nil {
 		return err
 	}
+	currentContent := []byte(currentData)
 	_, err = tmpFile.Write(currentContent)
 	if err != nil {
 		return err
@@ -102,10 +102,16 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 		fmt.Println("No changes made")
 		return nil
 	}
-	updatedData := base64.StdEncoding.EncodeToString(updatedContent)
-	currentUnit.Data = updatedData
-	// Edit is a read+modify+write, so it is not considered an external merge source
-	unitDetails, err := updateUnit(spaceID, currentUnit, params)
+	// Edit is a read+modify+write, so it is not considered an external merge source. The
+	// configuration is written through the data endpoint; the Unit itself is unchanged.
+	editParams, err := unitDataParams(currentUnit.LastChangeDescription, changeSetIDForDataWrite(currentUnit))
+	if err != nil {
+		return err
+	}
+	if _, err := putUnitData(spaceID, currentUnit.UnitID, string(updatedContent), editParams); err != nil {
+		return err
+	}
+	unitDetails, err := apiGetUnitInSpace(currentUnit.UnitID.String(), spaceID.String(), "*")
 	if err != nil {
 		return err
 	}

@@ -11,7 +11,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/go-openapi/strfmt"
 	"github.com/spf13/cobra"
 )
 
@@ -138,6 +137,7 @@ func CreateUnits(dir string) error {
 			DisplayName:   record[0],
 			ToolchainType: "Kubernetes/YAML",
 		}
+		unitData := ""
 		if record[3] == "" {
 			// No upstream, so read in the config file
 			dataFile := filepath.Join(dir, "unit-data", record[1], record[0]+".yaml")
@@ -145,12 +145,14 @@ func CreateUnits(dir string) error {
 			if _, err := os.Stat(dataFile); err != nil {
 				tprint("Line %d: Error reading unit data file from location %s: %v", i+1, dataFile, err)
 			} else {
-				var content strfmt.Base64
-				content = readFile(dataFile)
-				unit.Data = content.String()
+				unitData = string(readFile(dataFile))
 			}
 		}
-		_, err = confighubApi.CreateUnit(record[0], record[1], record[2], record[3], unit)
+		created, err := confighubApi.CreateUnit(record[0], record[1], record[2], record[3], unit)
+		if err == nil && unitData != "" {
+			// Configuration is written through the data endpoint after the Unit exists.
+			_, err = putUnitData(created.SpaceID, created.UnitID, unitData, nil)
+		}
 		if err != nil {
 			tprint("Line %d: Error creating unit: %v", i+1, err)
 		}
@@ -368,8 +370,12 @@ func (c *ConfighubApi) CreateUnit(slug, spaceSlug, targetSlug, upstream string, 
 	if cubapi.IsAPIError(err, unitRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
-	c.units[spaceSlug+"/"+unitDetails.Slug] = unitRes.JSON200
-	return unitRes.JSON200, nil
+	created, err := unitFromWrite(unitRes.JSON200)
+	if err != nil {
+		return nil, err
+	}
+	c.units[spaceSlug+"/"+unitDetails.Slug] = created
+	return created, nil
 }
 
 func (c *ConfighubApi) CreateLink(slug, fromSlug, fromSpaceSlug, toSlug, toSpaceSlug string) (*goclientnew.Link, error) {

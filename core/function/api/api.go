@@ -17,26 +17,25 @@ import (
 // The FunctionContext contains metadata about the configuration Unit provided as input to a
 // function invocation sequence.
 type FunctionContext struct {
-	ToolchainType       workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
-	UnitSlug            string                  `description:"Slug of the configuration Unit"`
-	UnitID              uuid.UUID               `description:"Unique ID of the configuration Unit"`
-	UnitLabels          map[string]string       `description:"Labels of the configuration Unit"`
-	UnitAnnotations     map[string]string       `description:"Annotations of the configuration Unit"`
-	SpaceID             uuid.UUID               `description:"ID of the Space of the configuration Unit"`
-	SpaceSlug           string                  `description:"Slug of the Space of the configuration Unit"`
-	SpaceLabels         map[string]string       `description:"Labels of the Space of the configuration Unit"`
-	SpaceAnnotations    map[string]string       `description:"Annotations of the Space of the configuration Unit"`
-	OrganizationID      uuid.UUID               `description:"ID of the Organization of the configuration Unit"`
-	TargetID            uuid.UUID               `json:",omitempty" description:"ID of the Unit's Target; optional"`
-	BridgeWorkerID      uuid.UUID               `json:",omitempty" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
-	TargetFacts         map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
-	RevisionID          uuid.UUID               `description:"Unique ID of the configuration Revision"`
-	RevisionNum         int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
-	QueuedOperationID   uuid.UUID               `description:"Unique ID of the operation this function is executed under"`
-	NotLive             bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
-	PreviousContentHash RevisionHash            `description:"Deprecated: Use PreviousDataHash instead. crc32.ChecksumIEEE of the previous copy of the data, for determining whether it has been changed since it was last written"`
-	PreviousDataHash    DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
-	ApprovedBy          []string                `description:"Usernames of users that have approved this revision of the configuration data"`
+	ToolchainType     workerapi.ToolchainType `description:"ToolchainType of the configuration data and function handlers"`
+	UnitSlug          string                  `description:"Slug of the configuration Unit"`
+	UnitID            uuid.UUID               `description:"Unique ID of the configuration Unit"`
+	UnitLabels        map[string]string       `description:"Labels of the configuration Unit"`
+	UnitAnnotations   map[string]string       `description:"Annotations of the configuration Unit"`
+	SpaceID           uuid.UUID               `description:"ID of the Space of the configuration Unit"`
+	SpaceSlug         string                  `description:"Slug of the Space of the configuration Unit"`
+	SpaceLabels       map[string]string       `description:"Labels of the Space of the configuration Unit"`
+	SpaceAnnotations  map[string]string       `description:"Annotations of the Space of the configuration Unit"`
+	OrganizationID    uuid.UUID               `description:"ID of the Organization of the configuration Unit"`
+	TargetID          uuid.UUID               `json:",omitempty" description:"ID of the Unit's Target; optional"`
+	BridgeWorkerID    uuid.UUID               `json:",omitempty" description:"ID of the BridgeWorker that executes the function; optional; if not present, the function is executed by the Internal Function Executor"`
+	TargetFacts       map[string]string       `json:",omitempty" description:"Facts of the Target where the function is executed; only populated when the Unit has a Target with non-empty Facts; optional"`
+	RevisionID        uuid.UUID               `description:"Unique ID of the configuration Revision"`
+	RevisionNum       int64                   `description:"Current/previous HeadRevisionNum of the configuration Unit"`
+	QueuedOperationID uuid.UUID               `description:"Unique ID of the operation this function is executed under"`
+	NotLive           bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
+	PreviousDataHash  DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
+	ApprovedBy        []string                `description:"Usernames of users that have approved this revision of the configuration data"`
 
 	// Conflicts are the Unit's outstanding merge conflicts — the parts of a merge's patch
 	// that were not applied. Populated only when the invocation asks for them with
@@ -129,8 +128,8 @@ type FunctionInvocationList []FunctionInvocation
 // options for the invocation.
 type FunctionInvocationRequest struct {
 	FunctionContext
-	ConfigData []byte                     `swaggertype:"string" format:"byte" description:"Configuration data of the Unit to operate on"`
-	OtherData  map[OtherDataSource][]byte `swaggertype:"string" format:"byte" description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
+	ConfigData string                     `description:"Configuration data of the Unit to operate on"`
+	OtherData  map[OtherDataSource]string `description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
 	FunctionInvocationOptions
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }
@@ -243,11 +242,46 @@ type FunctionIDs struct {
 
 // FunctionInvocationSuccessResponse contains the data returned from a successful function invocation.
 type FunctionInvocationSuccessResponse struct {
-	ConfigData      []byte                `swaggertype:"string" format:"byte" description:"The resulting configuration data, potentially mutated"`
+	// ConfigData is present only when the invocation changed the configuration. Compare
+	// DataHash against the hash of what was sent to tell "unchanged" from "now empty":
+	// an absent ConfigData is not a statement on its own. ResultData does that comparison.
+	ConfigData string `json:",omitempty" description:"The resulting configuration data; present only when the invocation changed it"`
+	// DataHash is always populated, and is the SHA256 of the configuration the response
+	// describes -- the data that was sent when nothing changed it, the new data when
+	// something did. It is what makes omitting ConfigData unambiguous.
+	DataHash        DataHash              `description:"SHA256 of the resulting configuration data, whether or not ConfigData is present"`
 	Outputs         map[OutputType][]byte `description:"Map of output types to their corresponding output data as embedded JSON"`
 	HasNewMutations bool                  `description:"Functions produced new mutations (of type other than None)"`
 	Mutations       ResourceMutationList  `description:"List of mutations in the same order as the resources in ConfigData"`
 	Mutators        []int                 `description:"List of function invocation indices that resulted in mutations"`
+}
+
+// ResultData returns the configuration the response describes, given the configuration the
+// caller sent: what it sent when the invocation changed nothing, and the returned data when
+// it did. Callers should use this rather than reading ConfigData directly, which is empty
+// both when the data is unchanged and when it is genuinely empty.
+func (r *FunctionInvocationSuccessResponse) ResultData(sent string) string {
+	if r.DataHash != "" && r.DataHash == HashConfigDataSHA256(sent) {
+		return sent
+	}
+	return r.ConfigData
+}
+
+// SetResultData records what a completed invocation produced, given the configuration it
+// started from: the hash always, and the data itself only when it changed. It is the write
+// side of ResultData, so the two sides of the contract sit together.
+//
+// includeUnchanged carries the configuration even when the invocation did not change it, for a
+// caller that asked for it and is going to display the result. Omitting it is the right default
+// at the worker boundary -- re-sending what was just sent is waste -- but it makes a read-only
+// invocation, which by definition changes nothing, cost a second request to show its result.
+// The flag belongs here rather than at the call site so that nothing sets ConfigData directly
+// and the two sides of the contract stay the only place that decides.
+func (r *FunctionInvocationSuccessResponse) SetResultData(from, result string, includeUnchanged bool) {
+	r.DataHash = HashConfigDataSHA256(result)
+	if includeUnchanged || result != from {
+		r.ConfigData = result
+	}
 }
 
 // A FunctionInvocationResponse is returned by the function executor in response to a

@@ -567,7 +567,11 @@ func createEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 		if IsAPIError(err, resp) {
 			return nil, "", InterpretErrorGeneric(err, resp)
 		}
-		return resp.JSON200, resp.JSON200.UnitID.String(), nil
+		// A write to a Unit answers with the operation's result, which carries the Unit.
+		if resp.JSON200.Unit == nil {
+			return nil, "", errors.New("unit create returned no unit")
+		}
+		return resp.JSON200.Unit, resp.JSON200.Unit.UnitID.String(), nil
 
 	case EntityTypeLink:
 		params := &goclientnew.CreateLinkParams{AllowExists: &allowExistsStr}
@@ -708,7 +712,10 @@ func updateEntity(ctx context.Context, client *goclientnew.ClientWithResponses, 
 		if IsAPIError(err, resp) {
 			return nil, "", InterpretErrorGeneric(err, resp)
 		}
-		return resp.JSON200, resp.JSON200.UnitID.String(), nil
+		if resp.JSON200.Unit == nil {
+			return nil, "", errors.New("unit patch returned no unit")
+		}
+		return resp.JSON200.Unit, resp.JSON200.Unit.UnitID.String(), nil
 
 	case EntityTypeLink:
 		link := existingEntity.(*goclientnew.Link)

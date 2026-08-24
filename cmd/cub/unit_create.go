@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
@@ -358,6 +357,10 @@ func runSingleUnitCreate(args []string) error {
 	}
 
 	// Handle config data from 2nd positional argument
+	configData := ""
+	// Whether the caller supplied a configuration, not what it was: an empty one is a
+	// configuration, and creating a Unit that holds nothing is a real thing to ask for.
+	configDataSupplied := false
 	if len(args) > 1 {
 		if unitCreateArgs.upstreamUnitSlug != "" {
 			return errors.New("shouldn't specify both an upstream to clone and config data")
@@ -366,8 +369,8 @@ func runSingleUnitCreate(args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read config: %w", err)
 		}
-		var base64Content strfmt.Base64 = content
-		newUnit.Data = base64Content.String()
+		configData = string(content)
+		configDataSupplied = true
 
 		// Set the external config data source if it isn't already set
 		if unitCreateArgs.mergeExternalSource == "" {
@@ -464,7 +467,31 @@ func runSingleUnitCreate(args []string) error {
 		return cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
-	unitDetails := unitRes.JSON200
+	unitDetails, err := unitFromWrite(unitRes.JSON200)
+	if err != nil {
+		return err
+	}
+
+	// Configuration is not part of a Unit, so creating one with configuration is a create
+	// followed by a write to its data endpoint. The Unit is left in place if the write
+	// fails: it exists, somebody may already be looking at it, and deleting it would be a
+	// worse outcome than an empty Unit the caller can write to again.
+	if configDataSupplied {
+		dataParams, paramErr := unitDataParamsFromCreate(newParams,
+			newUnit.LastChangeDescription, changeSetIDForDataWrite(newUnit))
+		if paramErr != nil {
+			return paramErr
+		}
+		if _, err := putUnitData(spaceID, unitDetails.UnitID, configData, dataParams); err != nil {
+			return fmt.Errorf("unit %s was created, but its config data could not be written: %w",
+				unitDetails.Slug, err)
+		}
+		// Re-read so what is displayed reflects the configuration that was just written.
+		if refreshed, refreshErr := apiGetUnitInSpace(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
+			unitDetails = refreshed
+		}
+	}
+
 	if wait {
 		err = awaitTriggersRemoval(unitDetails)
 		if err != nil {

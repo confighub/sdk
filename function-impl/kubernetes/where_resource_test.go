@@ -85,7 +85,7 @@ func invokeGetResourcesOfType(t *testing.T, req *api.FunctionInvocationRequest) 
 // Service is excluded.
 func TestHandlerWhereResource_RequestLevelOnly(t *testing.T) {
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(twoDeploymentsAndService),
+		ConfigData: twoDeploymentsAndService,
 		FunctionInvocationOptions: api.FunctionInvocationOptions{
 			WhereResource: "ConfigHub.ResourceType = 'apps/v1/Deployment'",
 		},
@@ -105,7 +105,7 @@ func TestHandlerWhereResource_RequestLevelOnly(t *testing.T) {
 // the visible resource set to just the matching resource.
 func TestHandlerWhereResource_InvocationLevelOnly(t *testing.T) {
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(twoDeploymentsAndService),
+		ConfigData: twoDeploymentsAndService,
 		FunctionInvocations: []api.FunctionInvocation{
 			{
 				FunctionName:  "get-resources-of-type",
@@ -123,7 +123,7 @@ func TestHandlerWhereResource_InvocationLevelOnly(t *testing.T) {
 // filter on ResourceName narrows the set to resources matching both.
 func TestHandlerWhereResource_Combined(t *testing.T) {
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(twoDeploymentsAndService),
+		ConfigData: twoDeploymentsAndService,
 		FunctionInvocationOptions: api.FunctionInvocationOptions{
 			WhereResource: "ConfigHub.ResourceType = 'apps/v1/Deployment'",
 		},
@@ -147,7 +147,7 @@ func TestHandlerWhereResource_Combined(t *testing.T) {
 func TestHandlerWhereResource_PerInvocationDistinctScopes(t *testing.T) {
 	getCelArg := `[{"ResourceName": r.metadata.?namespace.orValue("") + "/" + r.metadata.name, "ResourceType": r.apiVersion + "/" + r.kind, "Path": "metadata.name", "Value": r.metadata.name}]`
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(twoDeploymentsAndService),
+		ConfigData: twoDeploymentsAndService,
 		FunctionInvocations: []api.FunctionInvocation{
 			{
 				FunctionName:  "get-cel",
@@ -186,7 +186,7 @@ func TestHandlerWhereResource_PerInvocationDistinctScopes(t *testing.T) {
 // rather than silently ignoring it.
 func TestHandlerWhereResource_InvalidInvocationLevel(t *testing.T) {
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(twoDeploymentsAndService),
+		ConfigData: twoDeploymentsAndService,
 		FunctionInvocationOptions: api.FunctionInvocationOptions{
 			StopOnError: true,
 		},

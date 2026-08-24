@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -14,8 +13,8 @@ import (
 
 var revisionDataCmd = &cobra.Command{
 	Use:   "data <unit> <revision-num>",
-	Short: "Show the decoded config data of a revision",
-	Long: getCommandHelp(`Display the decoded configuration Data of a specific unit revision.
+	Short: "Show the config data of a revision",
+	Long: getCommandHelp(`Display the configuration data of a specific unit revision, as text.
 
 Replaces 'cub revision get --data-only'.`, ""),
 	Args: cobra.ExactArgs(2),
@@ -29,7 +28,10 @@ var (
 
 func init() {
 	revisionDataCmd.Flags().StringVar(&revisionDataFilename, "filename", "", "Write config data to file instead of stdout")
-	revisionDataCmd.Flags().BoolVar(&revisionDataDecoded, "decode", true, "Decode base64 Data (default: true)")
+	// Configuration data is text on the wire, so there is nothing left to decode. The flag
+	// stays as a no-op so a script that passes it keeps working.
+	revisionDataCmd.Flags().BoolVar(&revisionDataDecoded, "decode", true, "Deprecated: Data is no longer base64-encoded")
+	_ = revisionDataCmd.Flags().MarkDeprecated("decode", "Data is no longer base64-encoded")
 	revisionCmd.AddCommand(revisionDataCmd)
 }
 
@@ -42,23 +44,19 @@ func runRevisionData(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid revision number %q: %w", args[1], err)
 	}
-	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String(), "Data")
+	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String(), "RevisionID,DataHash")
 	if err != nil {
 		return err
 	}
-	if rev.Data == "" {
+	data, err := fetchRevisionData(unit.SpaceID, unit.UnitID, rev.RevisionID)
+	if err != nil {
+		return err
+	}
+	if data == "" {
 		return fmt.Errorf("no config data for revision %d of unit %s", num, unit.Slug)
 	}
 
-	out := []byte(rev.Data)
-	if revisionDataDecoded {
-		decoded, derr := base64.StdEncoding.DecodeString(rev.Data)
-		if derr != nil {
-			return fmt.Errorf("failed to decode config data: %w", derr)
-		}
-		out = decoded
-	}
-
+	out := []byte(data)
 	if revisionDataFilename != "" {
 		if err := os.WriteFile(revisionDataFilename, out, 0o644); err != nil {
 			return fmt.Errorf("failed to write config data to file: %w", err)
@@ -68,6 +66,6 @@ func runRevisionData(cmd *cobra.Command, args []string) error {
 		}
 		return nil
 	}
-	tprintRaw(string(out))
+	tprintBytes(out)
 	return nil
 }

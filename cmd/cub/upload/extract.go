@@ -35,7 +35,7 @@ func runK8sFunctionAttributeValues(yamlData []byte, fn string) (fapi.AttributeVa
 	executor := funcimpl.NewStandardExecutor(nil, true)
 	req := &fapi.FunctionInvocationRequest{
 		FunctionContext: fapi.FunctionContext{ToolchainType: workerapi.ToolchainKubernetesYAML},
-		ConfigData:      yamlData,
+		ConfigData:      string(yamlData),
 		FunctionInvocations: []fapi.FunctionInvocation{
 			{FunctionName: fn},
 		},

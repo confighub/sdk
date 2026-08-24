@@ -78,7 +78,7 @@ spec:
 func invokeHostnameGetter(t *testing.T, fn, input string) api.AttributeValueList {
 	t.Helper()
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(input),
+		ConfigData: input,
 		FunctionInvocations: []api.FunctionInvocation{
 			{FunctionName: fn},
 		},
@@ -179,7 +179,7 @@ spec:
     hostname: gw.example.com
 `
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(input),
+		ConfigData: input,
 		FunctionInvocations: []api.FunctionInvocation{
 			{
 				FunctionName: "set-hostname-domain",

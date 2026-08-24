@@ -115,7 +115,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	}
 
 	// Convert to YAML
-	yamlData, err := fh.GetConverter().NativeToYAML(functionInvocation.ConfigData)
+	yamlData, err := fh.GetConverter().NativeToYAML([]byte(functionInvocation.ConfigData))
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	if needsOtherData && len(functionInvocation.OtherData) > 0 {
 		parsedOtherData = make(map[api.OtherDataSource]gaby.Container, len(functionInvocation.OtherData))
 		for source, data := range functionInvocation.OtherData {
-			otherYAML, err := fh.GetConverter().NativeToYAML(data)
+			otherYAML, err := fh.GetConverter().NativeToYAML([]byte(data))
 			if err != nil {
 				return nil, errors.Wrapf(err, "failed to convert OtherData[%s] to YAML", source)
 			}
@@ -338,13 +338,29 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 	resp.RevisionID = functionInvocation.FunctionContext.RevisionID
 	resp.TargetID = functionInvocation.FunctionContext.TargetID
 
-	// Convert from YAML back to the original format
-	nativeData, err := fh.GetConverter().YAMLToNative(serializedData)
-	// TODO: Handle this better
-	if err != nil {
-		return nil, err
+	// Convert back to the original format only when a function actually changed the
+	// document. mutators is appended to exactly when a mutating function produced YAML
+	// differing from what it was given, so an empty mutators covers both the invocation
+	// that could not have changed the data -- a filter, a getter, a validator -- and the
+	// mutating one that found nothing to do. Those are the same answer to the caller:
+	// what you sent is current. Saying so with the hash costs a SHA256 rather than a
+	// re-serialization of the whole document, which for a large CRD is the expensive half.
+	sentHash := api.HashConfigDataSHA256(functionInvocation.ConfigData)
+	if len(mutators) == 0 {
+		resp.DataHash = sentHash
+	} else {
+		nativeData, err := fh.GetConverter().YAMLToNative(serializedData)
+		// TODO: Handle this better
+		if err != nil {
+			return nil, err
+		}
+		resp.DataHash = api.HashConfigDataSHA256(string(nativeData))
+		// A mutation that lands on the bytes already there -- a fleet-wide set-replicas
+		// where most Units hold the value -- is still nothing for the caller to carry.
+		if resp.DataHash != sentHash {
+			resp.ConfigData = string(nativeData)
+		}
 	}
-	resp.ConfigData = nativeData
 
 	// Encode all outputs
 	encodedOutputs := make(map[api.OutputType][]byte)

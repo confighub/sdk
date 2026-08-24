@@ -13,7 +13,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/go-openapi/strfmt"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -430,6 +429,15 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	priorHeadMutationNum := currentUnit.HeadMutationNum
 	priorRevisionNum := currentUnit.HeadRevisionNum
 	unitSlug := currentUnit.Slug
+	// The configuration this update replaces, read before it is replaced. A restore shows
+	// the difference against it, and it is no longer carried on the Unit.
+	priorData := ""
+	newConfigData := ""
+	// Whether the caller supplied a configuration, as opposed to what it was. Emptying a
+	// Unit is a real operation -- `cub variant upload --prune` withdraws the resources an
+	// input no longer produces by merging empty content -- so "no configuration given" and
+	// "the configuration given is empty" cannot be the same test.
+	newConfigDataSupplied := false
 
 	newParams := &goclientnew.UpdateUnitParams{}
 
@@ -668,8 +676,8 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read config: %w", err)
 		}
-		var base64Content strfmt.Base64 = content
-		currentUnit.Data = base64Content.String()
+		newConfigData = string(content)
+		newConfigDataSupplied = true
 
 		// We don't set the external config data source automatically because there isn't a reliable
 		// way to determine whether this is an external upload or read+modify+write implicitly.
@@ -701,14 +709,56 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Perform the update
 
-	var unitDetails *goclientnew.Unit
+	if shouldDisplayMutations() {
+		priorData, _ = fetchUnitData(currentUnit.SpaceID, currentUnit.UnitID)
+		// A dry run stores nothing, so the configuration it computed comes back on the
+		// response or not at all. Asked for on every mutation display rather than only the
+		// dry-run ones, so the two take the same path and the real write's copy saves the
+		// read it would otherwise make.
+		newParams.Include = includeWriteResult()
+	}
+
+	var writeResult *goclientnew.UnitCreateOrUpdateResponse
 	if isPatch {
-		unitDetails, err = patchUnit(spaceID, currentUnit.UnitID, newParams, patchData)
+		writeResult, err = patchUnit(spaceID, currentUnit.UnitID, newParams, patchData)
 	} else {
-		unitDetails, err = updateUnit(spaceID, currentUnit, newParams)
+		writeResult, err = updateUnit(spaceID, currentUnit, newParams)
 	}
 	if err != nil {
 		return err
+	}
+	unitDetails, err := unitFromWrite(writeResult)
+	if err != nil {
+		return err
+	}
+
+	// Configuration is written through the data endpoint, after the metadata update, so a
+	// `cub unit update <unit> <file>` is two calls. The Unit keeps whatever it had if the
+	// write fails; nothing is rolled back.
+	//
+	// The parameters go with the configuration, not with the metadata. The metadata call
+	// changes no data, so protect, the external-merge trio, tag and subgroup have nothing to
+	// act on there -- and dry_run on it alone would leave this write to happen for real.
+	if newConfigDataSupplied {
+		dataParams := unitDataParamsFromUpdate(newParams, currentUnit.LastChangeDescription)
+		dataResult, dataErr := putUnitData(spaceID, unitDetails.UnitID, newConfigData, dataParams)
+		if dataErr != nil {
+			return fmt.Errorf("unit %s metadata was updated, but its config data could not be written: %w",
+				unitDetails.Slug, dataErr)
+		}
+		// This write is the one that changed the configuration, so it -- not the metadata
+		// call before it -- is what the mutation display has to describe.
+		if dataResult != nil {
+			writeResult = dataResult
+			if dataResult.Unit != nil {
+				unitDetails = dataResult.Unit
+			}
+		}
+		if !dryRun {
+			if refreshed, refreshErr := apiGetUnitInSpace(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
+				unitDetails = refreshed
+			}
+		}
 	}
 
 	// Wait for trigger+resolve completion
@@ -739,11 +789,20 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			// to show the user what changed because of this restore.
 			lookupMutationsUnitID = unitDetails.UnitID.String()
 			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
-			displayMutationsForRestore(currentUnit.Data, unitDetails.Data, unitDetails.SpaceID.String(), dryRun, priorRevision, updateDesc)
+			// The configuration the restore produced. It comes off the response, which is
+			// the only place a dry run's exists -- reading it back from the Unit would get
+			// the pre-restore data the dry run deliberately did not replace, and diff it
+			// against itself.
+			restoredData := writeResult.ConfigData
+			if restoredData == "" {
+				tprintErr("The server returned no config data for the restore")
+			} else {
+				displayMutationsForRestore(priorData, restoredData, unitDetails.SpaceID.String(), dryRun, priorRevision, updateDesc)
+			}
 		} else if dryRun {
-			// Dry-run returns the unit as it would look after the update,
-			// including MutationSources with the proposed mutations.
-			displayMutationsForUnit(unitDetails, priorHeadMutationNum, updateDesc, "dry-run")
+			// Nothing was stored, so the mutations the update would have produced are the
+			// ones on the returned Unit, and the configuration is the one on the response.
+			displayMutationsForDryRun(writeResult, priorHeadMutationNum, updateDesc)
 		} else {
 			// Fetch updated unit to get the latest MutationSources
 			updatedUnit, err := apiGetUnitInSpace(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*")
@@ -992,6 +1051,9 @@ func runBulkUnitUpdate() error {
 	var priorUnits map[string]priorUnitInfo
 	if shouldDisplayMutations() {
 		priorUnits = savePriorUnitInfoFromWhereWithData(effectiveWhere, restore != "")
+		// A dry run stores nothing, so what it produced comes back on the response or not
+		// at all.
+		params.Include = includeWriteResult()
 	}
 
 	// Call the bulk patch API (organization-level API that can be constrained by SpaceID in WHERE clause)
@@ -1030,7 +1092,7 @@ func runBulkUnitUpdate() error {
 	return bulkErr
 }
 
-func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclientnew.UpdateUnitParams) (*goclientnew.Unit, error) {
+func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclientnew.UpdateUnitParams) (*goclientnew.UnitCreateOrUpdateResponse, error) {
 	updatedRes, err := cubClientNew.UpdateUnitWithResponse(ctx, spaceID, currentUnit.UnitID, params, *currentUnit)
 	if cubapi.IsAPIError(err, updatedRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, updatedRes)
@@ -1039,7 +1101,7 @@ func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclie
 	return updatedRes.JSON200, nil
 }
 
-func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.UpdateUnitParams, patchData []byte) (*goclientnew.Unit, error) {
+func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.UpdateUnitParams, patchData []byte) (*goclientnew.UnitCreateOrUpdateResponse, error) {
 	// Convert UpdateUnitParams to PatchUnitParams
 	patchParams := &goclientnew.PatchUnitParams{}
 	patchParams.RevisionId = updateParams.RevisionId

@@ -534,7 +534,6 @@ func lookupMutations(indices []int64) map[int64]*goclientnew.ExtendedMutation {
 // This avoids passing unit ID through the display function chain.
 var lookupMutationsUnitID string
 
-
 func lookupMutationsForCurrentUnit(whereClause string) ([]*goclientnew.ExtendedMutation, error) {
 	if lookupMutationsUnitID == "" {
 		return nil, fmt.Errorf("no unit ID set for mutation lookup")
@@ -544,22 +543,16 @@ func lookupMutationsForCurrentUnit(whereClause string) ([]*goclientnew.ExtendedM
 
 // computeMutationsFromDryRun invokes compute-mutations on the server to compute a ResourceMutationList
 // from the changed config data returned by a dry-run operation.
-// previousData is the base64-encoded config data from before the change.
-// changedData is the base64-encoded config data from the dry-run response.
+// previousData is the config data from before the change.
+// changedData is the config data from the dry-run response.
 func computeMutationsFromDryRun(previousData, changedData string, unitSpaceID string) (*goclientnew.ResourceMutationList, error) {
 	if previousData == "" || changedData == "" {
 		return nil, nil
 	}
 
-	// Decode previous data
-	prevBytes, err := base64.StdEncoding.DecodeString(previousData)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode previous data: %w", err)
-	}
-
 	// Build function invocation request
 	body := newFunctionInvocationsRequest()
-	prevDataStr := string(prevBytes)
+	prevDataStr := previousData
 	functionIndex := "1"
 	alreadyConverted := "false"
 	reverse := "true"
@@ -905,24 +898,34 @@ func shouldDisplayMutations() bool {
 // new changes from prior changes if priorHeadMutationNum > 0.
 // newChangeDescription describes the operation that caused new changes.
 func displayMutationsForUnit(unit *goclientnew.Unit, priorHeadMutationNum int64, newChangeDescription string, priorRevision string) {
-	if unit.MutationSources == nil || len(*unit.MutationSources) == 0 {
+	mutationSources, err := fetchUnitMutationSources(unit.SpaceID, unit.UnitID)
+	if err != nil {
+		tprintErr("Failed to get mutation sources: %s", err.Error())
+		return
+	}
+	if mutationSources == nil || len(*mutationSources) == 0 {
 		tprintRaw("No mutations")
 		return
 	}
 	lookupMutationsUnitID = unit.UnitID.String()
-	displayResourceMutationList(unit.MutationSources, true, priorHeadMutationNum, newChangeDescription, priorRevision)
+	displayResourceMutationList(mutationSources, true, priorHeadMutationNum, newChangeDescription, priorRevision)
 }
 
 // displayMutationsForRevision displays the mutations recorded on a revision, in the
 // same form as the head-revision mutations shown for a unit. The recorded indices are
 // the unit's MutationNums, so mutation details resolve against the same unit.
 func displayMutationsForRevision(rev *goclientnew.Revision) {
-	if rev.MutationSources == nil || len(*rev.MutationSources) == 0 {
+	mutationSources, err := fetchRevisionMutationSources(rev.SpaceID, rev.UnitID, rev.RevisionID)
+	if err != nil {
+		tprintErr("Failed to get mutation sources: %s", err.Error())
+		return
+	}
+	if mutationSources == nil || len(*mutationSources) == 0 {
 		tprintRaw("No mutations")
 		return
 	}
 	lookupMutationsUnitID = rev.UnitID.String()
-	displayResourceMutationList(rev.MutationSources, true, 0, "", "")
+	displayResourceMutationList(mutationSources, true, 0, "", "")
 }
 
 // displayMutationsFromDryRun computes and displays mutations from a dry-run operation.
@@ -993,16 +996,12 @@ func displayMutationsForRestore(previousData, restoredData string, unitSpaceID s
 }
 
 // invokeComputeMutations runs the compute-mutations function on the unit
-// identified by lookupMutationsUnitID, with the given base64-encoded
-// config-doc-list argument and the given reverse flag (as a string "true"
-// or "false"). Returns the resulting ResourceMutationList.
-func invokeComputeMutations(configDocListBase64, reverse, unitSpaceID string) (*goclientnew.ResourceMutationList, error) {
-	if configDocListBase64 == "" {
+// identified by lookupMutationsUnitID, with the given config-doc-list argument
+// and the given reverse flag (as a string "true" or "false"). Returns the
+// resulting ResourceMutationList.
+func invokeComputeMutations(configDocList, reverse, unitSpaceID string) (*goclientnew.ResourceMutationList, error) {
+	if configDocList == "" {
 		return nil, nil
-	}
-	cfgBytes, err := base64.StdEncoding.DecodeString(configDocListBase64)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode config-doc-list: %w", err)
 	}
 
 	body := newFunctionInvocationsRequest()
@@ -1011,7 +1010,7 @@ func invokeComputeMutations(configDocListBase64, reverse, unitSpaceID string) (*
 	invocation := &goclientnew.FunctionInvocation{
 		FunctionName: "compute-mutations",
 		Arguments: []goclientnew.FunctionArgument{
-			argFromString("config-doc-list", string(cfgBytes)),
+			argFromString("config-doc-list", configDocList),
 			argFromString("function-index", functionIndex),
 			argFromString("already-converted", alreadyConverted),
 			argFromString("reverse", reverse),
@@ -1146,9 +1145,24 @@ func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpda
 
 		switch {
 		case isRestore:
-			displayMutationsForRestore(info.Data, unit.Data, unit.SpaceID.String(), isDryRun, priorRevision, newChangeDescription)
+			// A dry run stored nothing, so the configuration it produced is on the response;
+			// a real one is on the Unit, where the restore just put it.
+			currentData := r.ConfigData
+			if !isDryRun {
+				var dataErr error
+				currentData, dataErr = fetchUnitData(unit.SpaceID, unit.UnitID)
+				if dataErr != nil {
+					tprintErr("Failed to get config data: %s", dataErr.Error())
+					return
+				}
+			}
+			if currentData == "" {
+				tprintErr("The server returned no config data for the restore of %s", unit.Slug)
+				continue
+			}
+			displayMutationsForRestore(info.Data, currentData, unit.SpaceID.String(), isDryRun, priorRevision, newChangeDescription)
 		case isDryRun:
-			displayMutationsForUnit(unit, info.HeadMutationNum, newChangeDescription, "dry-run")
+			displayMutationsForDryRun(r, info.HeadMutationNum, newChangeDescription)
 		default:
 			updatedUnit, err := apiGetUnitInSpace(unit.UnitID.String(), unit.SpaceID.String(), "*")
 			if err != nil {
@@ -1186,13 +1200,24 @@ func savePriorUnitInfoFromWhereWithData(whereClause string, includeData bool) ma
 // is not scoped to the selected space: `variant promote` names its downstream space as a
 // positional argument rather than through --space.
 func savePriorUnitInfoInSpace(spaceID, whereClause string, includeData bool) map[string]priorUnitInfo {
-	selectList := "UnitID,HeadMutationNum,HeadRevisionNum,Slug"
-	if includeData {
-		selectList += ",Data"
-	}
-	units, err := apiListUnits(spaceID, whereClause, selectList)
+	units, err := apiListUnits(spaceID, whereClause, "UnitID,HeadMutationNum,HeadRevisionNum,Slug")
 	if err != nil {
 		return nil
+	}
+	// The configuration is not part of a Unit, so when it is wanted it comes from the bulk
+	// data endpoint -- one request for the whole selection, rather than one per Unit.
+	var dataByUnitID map[string]string
+	if includeData {
+		// The bulk endpoint spans Spaces, so the Space this call is scoped to becomes part
+		// of the where clause rather than part of the path.
+		scoped := fmt.Sprintf("SpaceID = '%s'", spaceID)
+		if whereClause != "" {
+			scoped = "(" + whereClause + ") AND " + scoped
+		}
+		dataByUnitID, err = fetchUnitDataBulk(scoped)
+		if err != nil {
+			return nil
+		}
 	}
 	result := make(map[string]priorUnitInfo, len(units))
 	for _, u := range units {
@@ -1200,8 +1225,23 @@ func savePriorUnitInfoInSpace(spaceID, whereClause string, includeData bool) map
 			HeadMutationNum: u.HeadMutationNum,
 			HeadRevisionNum: u.HeadRevisionNum,
 			Slug:            u.Slug,
-			Data:            u.Data,
+			Data:            dataByUnitID[u.UnitID.String()],
 		}
 	}
 	return result
+}
+
+// displayMutationsForDryRun shows what an update would have done. It is displayMutationsForUnit
+// with the mutations taken from the response instead of the store, which is the whole
+// difference: a dry run writes nothing, so reading them back afterwards describes the change
+// that is already on the Unit rather than the one being previewed -- a wrong answer, not a
+// missing one. Everything downstream is the same, including the prior/new split.
+func displayMutationsForDryRun(result *goclientnew.UnitCreateOrUpdateResponse,
+	priorHeadMutationNum int64, newChangeDescription string) {
+	if result == nil || result.Unit == nil {
+		tprintRaw("No mutations")
+		return
+	}
+	lookupMutationsUnitID = result.Unit.UnitID.String()
+	displayResourceMutationList(result.MutationSources, true, priorHeadMutationNum, newChangeDescription, "dry-run")
 }

@@ -145,10 +145,10 @@ var unitAliases = map[string]string{
 var unitCustomColumns = map[string]func(interface{}) string{
 	"DataBytes": func(obj interface{}) string {
 		if unit, ok := obj.(*goclientnew.ExtendedUnit); ok {
-			return fmt.Sprintf("%d", len(unit.Unit.Data))
+			return fmt.Sprintf("%d", unit.Unit.DataSize)
 		}
 		if unit, ok := obj.(*goclientnew.Unit); ok {
-			return fmt.Sprintf("%d", len(unit.Data))
+			return fmt.Sprintf("%d", unit.DataSize)
 		}
 		return "0"
 	},

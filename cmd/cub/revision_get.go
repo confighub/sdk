@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -151,20 +150,22 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		}
 		view.Render()
 		tprintRaw("---")
-		if rev.MutationSources != nil && len(*rev.MutationSources) != 0 {
+		mutationSources, msErr := fetchRevisionMutationSources(rev.SpaceID, rev.UnitID, rev.RevisionID)
+		failOnError(msErr)
+		if mutationSources != nil && len(*mutationSources) != 0 {
 			tprintRaw("Mutation Sources:")
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = rev.UnitID.String()
-				displayResourceMutationList(rev.MutationSources, true, 0, "", "")
+				displayResourceMutationList(mutationSources, true, 0, "", "")
 			} else {
-				displayJSON(rev.MutationSources)
+				displayJSON(mutationSources)
 			}
 			tprintRaw("---")
 		}
 	}
-	data, err := base64.StdEncoding.DecodeString(rev.Data)
-	failOnError(err)
-	tprintRaw(string(data))
+	revData, dataErr := fetchRevisionData(rev.SpaceID, rev.UnitID, rev.RevisionID)
+	failOnError(dataErr)
+	tprintRaw(revData)
 }
 
 func apiGetRevision(revisionID string, unitID string, selectParam string) (*goclientnew.Revision, error) {

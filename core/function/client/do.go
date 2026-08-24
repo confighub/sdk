@@ -17,7 +17,6 @@ import (
 	"github.com/confighub/sdk/core/workerapi"
 )
 
-
 func InvokeFunctions(
 	transportConfig *TransportConfig,
 	toolchain workerapi.ToolchainType,
@@ -25,9 +24,6 @@ func InvokeFunctions(
 ) (*api.FunctionInvocationResponse, error) {
 	// Create the request
 	var err error
-	if reqMsg.FunctionContext.PreviousContentHash == api.RevisionHash(0) {
-		reqMsg.PreviousContentHash = api.HashConfigData(reqMsg.ConfigData)
-	}
 	if reqMsg.FunctionContext.PreviousDataHash == api.DataHash("") {
 		reqMsg.PreviousDataHash = api.HashConfigDataSHA256(reqMsg.ConfigData)
 	}

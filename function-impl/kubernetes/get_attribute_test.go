@@ -47,7 +47,7 @@ func invokeGetAttribute(t *testing.T, config string, args ...string) api.Attribu
 		arguments[i] = api.FunctionArgument{Value: a}
 	}
 	req := &api.FunctionInvocationRequest{
-		ConfigData: []byte(config),
+		ConfigData: config,
 		FunctionInvocations: []api.FunctionInvocation{
 			{
 				FunctionName: "get-attribute",

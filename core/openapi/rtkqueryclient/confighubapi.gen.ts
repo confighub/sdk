@@ -472,6 +472,7 @@ const injectedRtkApi = api
             other_data_source: queryArg.otherDataSource,
             where: queryArg.where,
             filter: queryArg.filter,
+            include: queryArg.include,
             resource_type: queryArg.resourceType,
             where_data: queryArg.whereData,
             where_trigger: queryArg.whereTrigger,
@@ -781,6 +782,45 @@ const injectedRtkApi = api
       listAllRevisions: build.query<ListAllRevisionsApiResponse, ListAllRevisionsApiArg>({
         query: (queryArg) => ({
           url: `/revision`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+            limit: queryArg.limit,
+            offset: queryArg.offset,
+            order_by: queryArg.orderBy,
+            distinct_on: queryArg.distinctOn,
+          },
+        }),
+        providesTags: ['Revision'],
+      }),
+      searchRevisionData: build.query<SearchRevisionDataApiResponse, SearchRevisionDataApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/revision_data`,
+            params: {
+              where: queryArg.where,
+              filter: queryArg.filter,
+              contains: queryArg.contains,
+              include: queryArg.include,
+              select: queryArg.select,
+              limit: queryArg.limit,
+              offset: queryArg.offset,
+              order_by: queryArg.orderBy,
+              distinct_on: queryArg.distinctOn,
+            },
+          }),
+          providesTags: ['Revision'],
+        },
+      ),
+      searchRevisionMutationSources: build.query<
+        SearchRevisionMutationSourcesApiResponse,
+        SearchRevisionMutationSourcesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/revision_mutation_sources`,
           params: {
             where: queryArg.where,
             filter: queryArg.filter,
@@ -1228,6 +1268,7 @@ const injectedRtkApi = api
             other_data_source: queryArg.otherDataSource,
             where: queryArg.where,
             filter: queryArg.filter,
+            include: queryArg.include,
             resource_type: queryArg.resourceType,
             where_data: queryArg.whereData,
             where_trigger: queryArg.whereTrigger,
@@ -1413,6 +1454,15 @@ const injectedRtkApi = api
           body: queryArg.release,
         }),
         invalidatesTags: ['Release'],
+      }),
+      downloadReleaseData: build.query<
+        DownloadReleaseDataApiResponse,
+        DownloadReleaseDataApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}/data`,
+        }),
+        providesTags: ['Release'],
       }),
       withdrawRelease: build.mutation<WithdrawReleaseApiResponse, WithdrawReleaseApiArg>({
         query: (queryArg) => ({
@@ -1629,6 +1679,7 @@ const injectedRtkApi = api
             syncback: queryArg.syncback,
             merge_external_source: queryArg.mergeExternalSource,
             allow_exists: queryArg.allowExists,
+            include: queryArg.include,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1675,6 +1726,7 @@ const injectedRtkApi = api
             change_set_id: queryArg.changeSetId,
             change_order: queryArg.changeOrder,
             subgroup: queryArg.subgroup,
+            include: queryArg.include,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1704,6 +1756,7 @@ const injectedRtkApi = api
             change_set_id: queryArg.changeSetId,
             change_order: queryArg.changeOrder,
             subgroup: queryArg.subgroup,
+            include: queryArg.include,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -1734,6 +1787,27 @@ const injectedRtkApi = api
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/data`,
         }),
         providesTags: ['Unit'],
+      }),
+      uploadUnitData: build.mutation<UploadUnitDataApiResponse, UploadUnitDataApiArg>({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/data`,
+          method: 'PUT',
+          body: queryArg.body,
+          params: {
+            last_change_description: queryArg.lastChangeDescription,
+            include: queryArg.include,
+            dry_run: queryArg.dryRun,
+            protect: queryArg.protect,
+            clearance: queryArg.clearance,
+            merge_base: queryArg.mergeBase,
+            merge_external_source: queryArg.mergeExternalSource,
+            merge_enable_subtraction: queryArg.mergeEnableSubtraction,
+            tag: queryArg.tag,
+            change_set_id: queryArg.changeSetId,
+            subgroup: queryArg.subgroup,
+          },
+        }),
+        invalidatesTags: ['Unit'],
       }),
       getUnitExtended: build.query<GetUnitExtendedApiResponse, GetUnitExtendedApiArg>({
         query: (queryArg) => ({
@@ -1777,6 +1851,15 @@ const injectedRtkApi = api
           },
         }),
         providesTags: ['Mutation'],
+      }),
+      getUnitMutationSources: build.query<
+        GetUnitMutationSourcesApiResponse,
+        GetUnitMutationSourcesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/mutation_sources`,
+        }),
+        providesTags: ['Unit'],
       }),
       setUnitProtection: build.mutation<SetUnitProtectionApiResponse, SetUnitProtectionApiArg>(
         {
@@ -1868,6 +1951,15 @@ const injectedRtkApi = api
       >({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/revision/${queryArg.revisionId}/data`,
+        }),
+        providesTags: ['Revision'],
+      }),
+      getRevisionMutationSources: build.query<
+        GetRevisionMutationSourcesApiResponse,
+        GetRevisionMutationSourcesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/revision/${queryArg.revisionId}/mutation_sources`,
         }),
         providesTags: ['Revision'],
       }),
@@ -2280,6 +2372,25 @@ const injectedRtkApi = api
           providesTags: ['QueuedOperation'],
         },
       ),
+      searchUnitData: build.query<SearchUnitDataApiResponse, SearchUnitDataApiArg>({
+        query: (queryArg) => ({
+          url: `/unit_data`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+            resource_type: queryArg.resourceType,
+            where_data: queryArg.whereData,
+            where_trigger: queryArg.whereTrigger,
+            trigger_filter: queryArg.triggerFilter,
+            triggers_passed: queryArg.triggersPassed,
+            view: queryArg.view,
+          },
+        }),
+        providesTags: ['Unit'],
+      }),
       listAllUnitEvents: build.query<ListAllUnitEventsApiResponse, ListAllUnitEventsApiArg>({
         query: (queryArg) => ({
           url: `/unit_event`,
@@ -2294,6 +2405,28 @@ const injectedRtkApi = api
           },
         }),
         providesTags: ['UnitEvent'],
+      }),
+      searchUnitMutationSources: build.query<
+        SearchUnitMutationSourcesApiResponse,
+        SearchUnitMutationSourcesApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/unit_mutation_sources`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+            resource_type: queryArg.resourceType,
+            where_data: queryArg.whereData,
+            where_trigger: queryArg.whereTrigger,
+            trigger_filter: queryArg.triggerFilter,
+            triggers_passed: queryArg.triggersPassed,
+            view: queryArg.view,
+          },
+        }),
+        providesTags: ['Unit'],
       }),
       listUsers: build.query<ListUsersApiResponse, ListUsersApiArg>({
         query: (queryArg) => ({
@@ -4904,6 +5037,8 @@ export type InvokeFunctionsOnOrgApiArg = {
     
     If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
   filter?: string;
+  /** Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. */
+  include?: string;
   /** Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment */
   resourceType?: string;
   /** Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded. */
@@ -6380,6 +6515,231 @@ export type ListAllRevisionsApiArg = {
     Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
   distinctOn?: 'Unit' | 'Off';
 };
+export type SearchRevisionDataApiResponse = /** status 200 OK */ RevisionData[];
+export type SearchRevisionDataApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Revisions returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    To list tagged Revisions use `Tags ? '<tag-id>'`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Revision list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Revision).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Revision.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Revision.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
+  limit?: number;
+  /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+    
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderBy?: string;
+  /** Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+    
+    Supported values: Unit, Off.
+    
+    If not specified, results are restricted to at most one row per Unit.
+    
+    Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
+  distinctOn?: 'Unit' | 'Off';
+};
+export type SearchRevisionMutationSourcesApiResponse =
+  /** status 200 OK */ RevisionMutationSources[];
+export type SearchRevisionMutationSourcesApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Revisions returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    To list tagged Revisions use `Tags ? '<tag-id>'`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Revision list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Revision).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Revision.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Revision.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. */
+  limit?: number;
+  /** Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped. */
+  offset?: number;
+  /** Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+    
+    Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+    
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+    
+    Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+    
+    If not specified, results are returned in the database's default order.
+    
+    The whole string must be query-encoded. */
+  orderBy?: string;
+  /** Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+    
+    Supported values: Unit, Off.
+    
+    If not specified, results are restricted to at most one row per Unit.
+    
+    Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
+  distinctOn?: 'Unit' | 'Off';
+};
 export type ListSpacesApiResponse = /** status 200 OK */ ExtendedSpaceRead[];
 export type ListSpacesApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -7596,6 +7956,8 @@ export type InvokeFunctionsApiArg = {
     
     If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
   filter?: string;
+  /** Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. */
+  include?: string;
   /** Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment */
   resourceType?: string;
   /** Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded. */
@@ -8138,6 +8500,13 @@ export type UpdateReleaseApiArg = {
   /** Unique identifier for a release_id */
   releaseId: string;
   release: Release;
+};
+export type DownloadReleaseDataApiResponse = /** status 200 OK */ string;
+export type DownloadReleaseDataApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a release_id */
+  releaseId: string;
 };
 export type WithdrawReleaseApiResponse =
   /** status 200 Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, and DeleteGates can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target. */ ReleaseRead;
@@ -8814,19 +9183,7 @@ export type ListUnitsApiArg = {
   /** View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit. */
   view?: string;
 };
-export type CreateUnitApiResponse =
-  /** status 200 Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-of a single supported Toolchain Type (configuration format). This blob is typically a text document
-that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-file. Applying / deploying or destroying the configuration happens as a single *transaction*
-from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-the underlying configuration / deployment tool. The resources must belong to a single
-infrastructure provider and the actuation mechanism must be able to resolve references and
-ordering dependencies among the resources within the document. For example, if one resource
-needs to be fully provisioned to provide input to another resource, then the actuation code is
-responsible for handling this. Revisions store historical copies of the configuration data.
-Configuration data can be restored from prior Revisions. Units can also be cloned to create
-new variants of a configuration. */ UnitRead;
+export type CreateUnitApiResponse = /** status 200 OK */ UnitCreateOrUpdateResponseRead;
 export type CreateUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -8842,6 +9199,8 @@ export type CreateUnitApiArg = {
   mergeExternalSource?: string;
   /** Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity */
   allowExists?: string;
+  /** Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced. */
+  include?: string;
   unit: Unit;
 };
 export type DeleteUnitApiResponse =
@@ -8877,19 +9236,7 @@ export type GetUnitApiArg = {
   /** Unique identifier for a unit_id */
   unitId: string;
 };
-export type PatchUnitApiResponse =
-  /** status 200 Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-of a single supported Toolchain Type (configuration format). This blob is typically a text document
-that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-file. Applying / deploying or destroying the configuration happens as a single *transaction*
-from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-the underlying configuration / deployment tool. The resources must belong to a single
-infrastructure provider and the actuation mechanism must be able to resolve references and
-ordering dependencies among the resources within the document. For example, if one resource
-needs to be fully provisioned to provide input to another resource, then the actuation code is
-responsible for handling this. Revisions store historical copies of the configuration data.
-Configuration data can be restored from prior Revisions. Units can also be cloned to create
-new variants of a configuration. */ UnitRead;
+export type PatchUnitApiResponse = /** status 200 OK */ UnitCreateOrUpdateResponseRead;
 export type PatchUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -8981,6 +9328,8 @@ export type PatchUnitApiArg = {
   changeOrder?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
   subgroup?: string;
+  /** Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced. */
+  include?: string;
   body: {
     /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
     Annotations?: {
@@ -8988,8 +9337,6 @@ export type PatchUnitApiArg = {
     } | null;
     /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
     ChangeSetID?: string | null;
-    /** The full configuration data for this unit. */
-    Data?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -9021,19 +9368,7 @@ export type PatchUnitApiArg = {
     Version?: number | null;
   };
 };
-export type UpdateUnitApiResponse =
-  /** status 200 Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-of a single supported Toolchain Type (configuration format). This blob is typically a text document
-that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-file. Applying / deploying or destroying the configuration happens as a single *transaction*
-from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-the underlying configuration / deployment tool. The resources must belong to a single
-infrastructure provider and the actuation mechanism must be able to resolve references and
-ordering dependencies among the resources within the document. For example, if one resource
-needs to be fully provisioned to provide input to another resource, then the actuation code is
-responsible for handling this. Revisions store historical copies of the configuration data.
-Configuration data can be restored from prior Revisions. Units can also be cloned to create
-new variants of a configuration. */ UnitRead;
+export type UpdateUnitApiResponse = /** status 200 OK */ UnitCreateOrUpdateResponseRead;
 export type UpdateUnitApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
@@ -9125,6 +9460,8 @@ export type UpdateUnitApiArg = {
   changeOrder?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
   subgroup?: string;
+  /** Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced. */
+  include?: string;
   unit: Unit;
 };
 export type ApproveUnitApiResponse = /** status 200 OK */ ApproveResponseRead;
@@ -9150,6 +9487,36 @@ export type DownloadUnitDataApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+};
+export type UploadUnitDataApiResponse = /** status 200 OK */ UnitCreateOrUpdateResponseRead;
+export type UploadUnitDataApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  /** Human-readable description of this change, copied to the Revision it creates. */
+  lastChangeDescription?: string;
+  /** Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced. */
+  include?: string;
+  /** Dry run mode: return changed unit(s) but don't update configuration data */
+  dryRun?: boolean;
+  /** Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale. */
+  protect?: boolean;
+  /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
+  clearance?: string;
+  /** Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made. */
+  mergeBase?: string;
+  /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
+  mergeExternalSource?: string;
+  /** Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled. */
+  mergeEnableSubtraction?: boolean;
+  /** Tag ID to add to the head revision */
+  tag?: string;
+  /** Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode */
+  changeSetId?: string;
+  /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
+  subgroup?: string;
+  body: string;
 };
 export type GetUnitExtendedApiResponse = /** status 200 OK */ UnitExtendedRead;
 export type GetUnitExtendedApiArg = {
@@ -9281,6 +9648,13 @@ export type GetExtendedMutationApiArg = {
   select?: string;
   /** Unique identifier for a mutation_id */
   mutationId: string;
+};
+export type GetUnitMutationSourcesApiResponse = /** status 200 OK */ MutationSourcesResponse;
+export type GetUnitMutationSourcesApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
 };
 export type SetUnitProtectionApiResponse = /** status 200 OK */ UnitProtectionResponse;
 export type SetUnitProtectionApiArg = {
@@ -9600,6 +9974,16 @@ export type GetExtendedRevisionApiArg = {
 };
 export type DownloadRevisionDataApiResponse = /** status 200 OK */ string;
 export type DownloadRevisionDataApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Unique identifier for a unit_id */
+  unitId: string;
+  /** Unique identifier for a revision_id */
+  revisionId: string;
+};
+export type GetRevisionMutationSourcesApiResponse =
+  /** status 200 OK */ MutationSourcesResponse;
+export type GetRevisionMutationSourcesApiArg = {
   /** Unique identifier for a space_id */
   spaceId: string;
   /** Unique identifier for a unit_id */
@@ -11500,8 +11884,6 @@ export type BulkPatchUnitsApiArg = {
     } | null;
     /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
     ChangeSetID?: string | null;
-    /** The full configuration data for this unit. */
-    Data?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -11724,8 +12106,6 @@ export type BulkCreateUnitsApiArg = {
     } | null;
     /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
     ChangeSetID?: string | null;
-    /** The full configuration data for this unit. */
-    Data?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -12072,6 +12452,106 @@ export type ListAllUnitActionsApiArg = {
     The whole string must be query-encoded. */
   contains?: string;
 };
+export type SearchUnitDataApiResponse = /** status 200 OK */ UnitData[];
+export type SearchUnitDataApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Units returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    
+    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Unit list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Unit).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Unit.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Unit.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment */
+  resourceType?: string;
+  /** Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded. */
+  whereData?: string;
+  /** Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing). */
+  whereTrigger?: string;
+  /** Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger. */
+  triggerFilter?: string;
+  /** When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified. */
+  triggersPassed?: boolean;
+  /** View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit. */
+  view?: string;
+};
 export type ListAllUnitEventsApiResponse = /** status 200 OK */ UnitEventRead[];
 export type ListAllUnitEventsApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -12164,6 +12644,106 @@ export type ListAllUnitEventsApiArg = {
     
     Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one. */
   distinctOn?: 'Unit' | 'Off';
+};
+export type SearchUnitMutationSourcesApiResponse = /** status 200 OK */ UnitMutationSources[];
+export type SearchUnitMutationSourcesApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Units returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+    
+    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Unit list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Unit).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Unit.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Unit.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment */
+  resourceType?: string;
+  /** Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded. */
+  whereData?: string;
+  /** Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing). */
+  whereTrigger?: string;
+  /** Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger. */
+  triggerFilter?: string;
+  /** When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified. */
+  triggersPassed?: boolean;
+  /** View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit. */
+  view?: string;
 };
 export type ListUsersApiResponse = /** status 200 OK */ UserRead[];
 export type ListUsersApiArg = {
@@ -14110,8 +14690,10 @@ export type ResourceMutation = {
 };
 export type ResourceMutationList = ResourceMutation[];
 export type FunctionInvocationsResponse = {
-  /** The resulting configuration data, potentially mutated */
+  /** The resulting configuration data; present only when the invocation changed it */
   ConfigData?: string;
+  /** SHA256 of the resulting configuration data, whether or not ConfigData is present */
+  DataHash?: string;
   Error?: ResponseError;
   /** Functions produced new mutations (of type other than None) */
   HasNewMutations?: boolean;
@@ -14357,8 +14939,6 @@ export type Unit = {
   /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
   ChangeSetID?: string;
   Conflicts?: MutationConflictList;
-  /** The full configuration data for this unit. The maximum size is 67108864 bytes. */
-  Data?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14375,7 +14955,6 @@ export type Unit = {
   };
   /** LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed. */
   LastChangeDescription?: string;
-  MutationSources?: ResourceMutationList;
   /** Unique identifier for an organization. */
   OrganizationID?: string;
   PathAnnotations?: PathAnnotationList;
@@ -14491,16 +15070,14 @@ export type UnitRead = {
   /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
   ChangeSetID?: string;
   Conflicts?: MutationConflictList;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of the configuration data. */
-  ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
   CursorID?: number;
-  /** The full configuration data for this unit. The maximum size is 67108864 bytes. */
-  Data?: string;
-  /** The SHA256 hash of the configuration data, encoded as hexadecimal. */
+  /** The SHA256 hash of the configuration data, encoded as hexadecimal. It is also the ETag the data endpoint serves, so a caller that listed Units can ask for a body conditionally without fetching it first. */
   DataHash?: string;
+  /** The size of the configuration data in bytes. The configuration itself is not part of the Unit; read it from the data endpoint. */
+  DataSize?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14533,7 +15110,6 @@ export type UnitRead = {
   LastChangeDescription?: string;
   /** Sequence number the last Revision applied once apply has completed. 0 if no live revision. */
   LiveRevisionNum?: number;
-  MutationSources?: ResourceMutationList;
   /** Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates. */
   NeededPaths?: AttributeValue[];
   /** Unique identifier for an organization. */
@@ -14865,8 +15441,7 @@ export type ReleaseRead = {
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
   CursorID?: number;
-  /** The stored tar.gz bundle of the released Units' configuration. */
-  Data?: string;
+  DataSize?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -15330,17 +15905,12 @@ export type Revision = {
   /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
   ChangeSetID?: string;
   Conflicts?: MutationConflictList;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves. */
   DataHash?: string;
   /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
   Description?: string;
   /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
   LiveAt?: string;
-  MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
   PathAnnotations?: PathAnnotationList;
@@ -15386,23 +15956,20 @@ export type RevisionRead = {
   /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
   ChangeSetID?: string;
   Conflicts?: MutationConflictList;
-  /** Deprecated: Use DataHash instead. The CRC32 hash of this revision's data. */
-  ContentHash?: number;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An auto-incrementing sequence number used for pagination. */
   CursorID?: number;
-  /** The full configuration data for this unit at this revision. */
-  Data?: string;
-  /** The SHA256 hash of this revision's data, encoded as hexadecimal. */
+  /** The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves. */
   DataHash?: string;
+  /** The size of this revision's data in bytes. The data itself is not part of the Revision; read it from the data endpoint. */
+  DataSize?: number;
   /** User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision. */
   Description?: string;
   /** The type of entity. */
   EntityType?: string;
   /** Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z". */
   LiveAt?: string;
-  MutationSources?: ResourceMutationList;
   /** Unique identifier for an Organization. */
   OrganizationID?: string;
   PathAnnotations?: PathAnnotationList;
@@ -15500,6 +16067,31 @@ export type ExtendedRevisionRead = {
   Tags?: TagRead[];
   Unit?: UnitRead;
   User?: UserRead;
+};
+export type RevisionData = {
+  /** The configuration data at this Revision. */
+  Data?: string;
+  /** SHA256 of the configuration data, which is also the ETag the single-Revision data endpoint serves. */
+  DataHash?: string;
+  /** Size of the configuration data in bytes. */
+  DataSize?: number;
+  /** Unique identifier of the Revision. */
+  RevisionID?: string;
+  /** Sequence number of the Revision within its Unit. */
+  RevisionNum?: number;
+  /** Unique identifier of the Space the Unit belongs to. */
+  SpaceID?: string;
+  /** Unique identifier of the Unit the Revision belongs to. */
+  UnitID?: string;
+};
+export type RevisionMutationSources = {
+  MutationSources?: ResourceMutationList;
+  /** Unique identifier of the Revision. */
+  RevisionID?: string;
+  /** Sequence number of the Revision within its Unit. */
+  RevisionNum?: number;
+  /** Unique identifier of the Unit the Revision belongs to. */
+  UnitID?: string;
 };
 export type Trigger = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -16018,6 +16610,24 @@ export type ExtendedUnitRead = {
   View?: ViewRead;
   ViewColumns?: ViewColumn[];
 };
+export type UnitCreateOrUpdateResponse = {
+  /** The configuration the operation produced; returned when include names ConfigData. */
+  ConfigData?: string;
+  Conflicts?: MutationConflictList;
+  Error?: ResponseError;
+  Links?: LinkCreateOrUpdateResponse[];
+  MutationSources?: ResourceMutationList;
+  Unit?: Unit;
+};
+export type UnitCreateOrUpdateResponseRead = {
+  /** The configuration the operation produced; returned when include names ConfigData. */
+  ConfigData?: string;
+  Conflicts?: MutationConflictList;
+  Error?: ResponseError;
+  Links?: LinkCreateOrUpdateResponseRead[];
+  MutationSources?: ResourceMutationList;
+  Unit?: UnitRead;
+};
 export type ApproveResponse = {
   Error?: ResponseError;
   Message?: string;
@@ -16118,6 +16728,9 @@ export type ExtendedMutationRead = {
   Space?: SpaceRead;
   Trigger?: TriggerRead;
   Unit?: UnitRead;
+};
+export type MutationSourcesResponse = {
+  MutationSources?: ResourceMutationList;
 };
 export type UnitProtectionResponse = {
   Error?: ResponseError;
@@ -16226,18 +16839,6 @@ export type TriggerCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Trigger?: TriggerRead;
 };
-export type UnitCreateOrUpdateResponse = {
-  Conflicts?: MutationConflictList;
-  Error?: ResponseError;
-  Links?: LinkCreateOrUpdateResponse[];
-  Unit?: Unit;
-};
-export type UnitCreateOrUpdateResponseRead = {
-  Conflicts?: MutationConflictList;
-  Error?: ResponseError;
-  Links?: LinkCreateOrUpdateResponseRead[];
-  Unit?: UnitRead;
-};
 export type UnitActionResponse = {
   Action?: QueuedOperation;
   Error?: ResponseError;
@@ -16250,6 +16851,35 @@ export type UnitTagRequest = {
   /** Which Unit revision to tag: a named revision ('HeadRevisionNum', 'LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum'), a revision number, an entity reference ('Tag:uuid', 'ChangeSet:uuid', 'Revision:uuid'), any of those prefixed with 'Before:', or 'Remove' to remove the tag from the unit */
   Revision?: string;
   TagID?: string;
+};
+export type UnitData = {
+  /** The configuration data. */
+  Data?: string;
+  /** SHA256 of the configuration data, which is also the ETag the single-Unit data endpoint serves. */
+  DataHash?: string;
+  /** Size of the configuration data in bytes. */
+  DataSize?: number;
+  /** Slug of the Unit. */
+  Slug?: string;
+  /** Unique identifier of the Space the Unit belongs to. */
+  SpaceID?: string;
+  /** Slug of the Space the Unit belongs to. */
+  SpaceSlug?: string;
+  /** Unique identifier of the Unit. */
+  UnitID?: string;
+};
+export type UnitMutationSources = {
+  /** SHA256 of the configuration data the MutationSources describe. */
+  DataHash?: string;
+  MutationSources?: ResourceMutationList;
+  /** Slug of the Unit. */
+  Slug?: string;
+  /** Unique identifier of the Space the Unit belongs to. */
+  SpaceID?: string;
+  /** Slug of the Space the Unit belongs to. */
+  SpaceSlug?: string;
+  /** Unique identifier of the Unit. */
+  UnitID?: string;
 };
 export type UserKey = {
   CreatedAt?: string;
@@ -16348,6 +16978,10 @@ export const {
   useLazyListAllResourcesQuery,
   useListAllRevisionsQuery,
   useLazyListAllRevisionsQuery,
+  useSearchRevisionDataQuery,
+  useLazySearchRevisionDataQuery,
+  useSearchRevisionMutationSourcesQuery,
+  useLazySearchRevisionMutationSourcesQuery,
   useListSpacesQuery,
   useLazyListSpacesQuery,
   useCreateSpaceMutation,
@@ -16429,6 +17063,8 @@ export const {
   useLazyGetExtendedReleaseQuery,
   usePatchReleaseMutation,
   useUpdateReleaseMutation,
+  useDownloadReleaseDataQuery,
+  useLazyDownloadReleaseDataQuery,
   useWithdrawReleaseMutation,
   useListTagsQuery,
   useLazyListTagsQuery,
@@ -16466,6 +17102,7 @@ export const {
   useResolveUnitConflictsMutation,
   useDownloadUnitDataQuery,
   useLazyDownloadUnitDataQuery,
+  useUploadUnitDataMutation,
   useGetUnitExtendedQuery,
   useLazyGetUnitExtendedQuery,
   useSetUnitGuardMutation,
@@ -16473,6 +17110,8 @@ export const {
   useLazyListExtendedMutationsQuery,
   useGetExtendedMutationQuery,
   useLazyGetExtendedMutationQuery,
+  useGetUnitMutationSourcesQuery,
+  useLazyGetUnitMutationSourcesQuery,
   useSetUnitProtectionMutation,
   useListExtendedResourcesQuery,
   useLazyListExtendedResourcesQuery,
@@ -16484,6 +17123,8 @@ export const {
   useLazyGetExtendedRevisionQuery,
   useDownloadRevisionDataQuery,
   useLazyDownloadRevisionDataQuery,
+  useGetRevisionMutationSourcesQuery,
+  useLazyGetRevisionMutationSourcesQuery,
   useListUnitActionsQuery,
   useLazyListUnitActionsQuery,
   useGetUnitActionQuery,
@@ -16524,8 +17165,12 @@ export const {
   useBulkTagUnitsMutation,
   useListAllUnitActionsQuery,
   useLazyListAllUnitActionsQuery,
+  useSearchUnitDataQuery,
+  useLazySearchUnitDataQuery,
   useListAllUnitEventsQuery,
   useLazyListAllUnitEventsQuery,
+  useSearchUnitMutationSourcesQuery,
+  useLazySearchUnitMutationSourcesQuery,
   useListUsersQuery,
   useLazyListUsersQuery,
   useGetUserQuery,

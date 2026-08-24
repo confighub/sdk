@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -62,7 +61,7 @@ Important flags for agents:
 - -o mutations: Show the mutation diff for the current head revision
 
 For the raw configuration bytes, use the dedicated subcommand:
-- cub unit data <unit> [--filename <path>]  — prints or writes the decoded Data
+- cub unit data <unit> [--filename <path>]  — prints or writes the configuration
 
 Common agent patterns:
   # Download unit for local editing
@@ -107,17 +106,16 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func countResourcesFromExtended(unitDetails *goclientnew.ExtendedUnit) int {
-	return countResources(unitDetails.Unit)
-}
-
-func countResources(unitDetails *goclientnew.Unit) int {
-	if len(*unitDetails.MutationSources) == 0 {
+// countResources counts the resources a Unit's mutation sources describe. The list is read
+// from the mutation-sources endpoint rather than off the Unit, so the caller passes what it
+// already fetched instead of each caller fetching again.
+func countResources(mutationSources *goclientnew.ResourceMutationList) int {
+	if mutationSources == nil || len(*mutationSources) == 0 {
 		return 0
 	}
 	count := 0
-	for i := range *unitDetails.MutationSources {
-		if *(*unitDetails.MutationSources)[i].ResourceMutationInfo.MutationType == goclientnew.Delete {
+	for i := range *mutationSources {
+		if *(*mutationSources)[i].ResourceMutationInfo.MutationType == goclientnew.Delete {
 			continue
 		}
 		count++
@@ -229,10 +227,15 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		if unitDetails.Unit.DataHash != "" {
 			view.Append([]string{"Data Hash", unitDetails.Unit.DataHash})
 		}
+		if unitDetails.Unit.DataSize != 0 {
+			view.Append([]string{"Data Size", fmt.Sprintf("%d", unitDetails.Unit.DataSize)})
+		}
+		mutationSources, msErr := fetchUnitMutationSources(unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID)
+		failOnError(msErr)
 		view.Append([]string{"Head Mutation Num", fmt.Sprintf("%d", unitDetails.Unit.HeadMutationNum)})
 		view.Append([]string{"Head Unit Action Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitActionNum)})
 		view.Append([]string{"Head Unit Event Num", fmt.Sprintf("%d", unitDetails.Unit.HeadUnitEventNum)})
-		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResourcesFromExtended(unitDetails))})
+		view.Append([]string{"Number of Resources", fmt.Sprintf("%d", countResources(mutationSources))})
 
 		if len(unitDetails.Unit.NeededPaths) > 0 {
 			view.Append([]string{"Needed Paths", fmt.Sprintf("%d paths", len(unitDetails.Unit.NeededPaths))})
@@ -243,15 +246,15 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 
 		view.Render()
 
-		if len(*unitDetails.Unit.MutationSources) != 0 && (verbose || shouldDisplayMutations()) {
+		if mutationSources != nil && len(*mutationSources) != 0 && (verbose || shouldDisplayMutations()) {
 			tprintRaw("")
 			tprintRaw("Mutation Sources:")
 			tprintRaw("-----------------")
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = unitDetails.Unit.UnitID.String()
-				displayResourceMutationList(unitDetails.Unit.MutationSources, true, 0, "", "")
+				displayResourceMutationList(mutationSources, true, 0, "", "")
 			} else {
-				displayJSON(unitDetails.Unit.MutationSources)
+				displayJSON(mutationSources)
 			}
 		}
 
@@ -268,22 +271,17 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			displayJSON(unitDetails.Unit.ProvidedPaths)
 		}
 	}
-	if dataOnly && flagFilename != "" {
-		yamlBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
-		if err != nil {
-			failOnError(err)
+	if dataOnly || verbose || dryRun {
+		// The configuration is not part of the Unit, so the default `cub unit get` no
+		// longer moves it at all; it is fetched only when something asks to see it.
+		data, dataErr := fetchUnitData(unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID)
+		failOnError(dataErr)
+		if dataOnly && flagFilename != "" {
+			failOnError(os.WriteFile(flagFilename, []byte(data), 0644))
+			tprintRaw(fmt.Sprintf("Config data written to %s", flagFilename))
+		} else {
+			tprintRaw(data)
 		}
-		err = os.WriteFile(flagFilename, yamlBytes, 0644)
-		if err != nil {
-			failOnError(err)
-		}
-		tprintRaw(fmt.Sprintf("Config data written to %s", flagFilename))
-	} else if dataOnly || verbose || dryRun {
-		dataBytes, err := base64.StdEncoding.DecodeString(unitDetails.Unit.Data)
-		if err != nil {
-			failOnError(err)
-		}
-		tprintRaw(string(dataBytes))
 	}
 }
 

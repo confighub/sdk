@@ -79,8 +79,8 @@ func parseArguments(args []string) []api.FunctionArgument {
 func InvokeFunction(
 	transportConfig *client.TransportConfig,
 	toolchain workerapi.ToolchainType,
-	data []byte,
-	otherData map[api.OtherDataSource][]byte,
+	data string,
+	otherData map[api.OtherDataSource]string,
 	functionContext *api.FunctionContext,
 	whereRes string,
 	functionName string,
@@ -128,11 +128,11 @@ func fakeFunctionContext(slug string) *api.FunctionContext {
 
 // parseOtherDataFlags parses --other-data flags in the format "Source=filename" and returns
 // a map of OtherDataSource to file contents.
-func parseOtherDataFlags(otherDataFlags []string) map[api.OtherDataSource][]byte {
+func parseOtherDataFlags(otherDataFlags []string) map[api.OtherDataSource]string {
 	if len(otherDataFlags) == 0 {
 		return nil
 	}
-	result := make(map[api.OtherDataSource][]byte, len(otherDataFlags))
+	result := make(map[api.OtherDataSource]string, len(otherDataFlags))
 	for _, flag := range otherDataFlags {
 		parts := strings.SplitN(flag, "=", 2)
 		if len(parts) != 2 {
@@ -156,7 +156,7 @@ func newDoCommand() *cobra.Command {
 				failOnError(fmt.Errorf("cannot specify both --data-only and --output-only"))
 			}
 			// Read test payload
-			var content []byte
+			var content string
 			if args[0] == "-" {
 				content = readStdin()
 			} else {
@@ -196,7 +196,7 @@ func newDoSeqCommand() *cobra.Command {
 		Args:  cobra.ExactArgs(3),
 		Run: func(_ /*cmd*/ *cobra.Command, args []string) {
 			// Read test payload
-			var content []byte
+			var content string
 			if args[0] == "-" {
 				content = readStdin()
 			} else {
@@ -231,7 +231,7 @@ func newDoSeqCommand() *cobra.Command {
 	return cmd
 }
 
-func outputFunctionInvocationResponse(data []byte, respMsg *api.FunctionInvocationResponse) {
+func outputFunctionInvocationResponse(data string, respMsg *api.FunctionInvocationResponse) {
 	if !dataOnly && !outputOnly {
 		// Timestamps disrupt golden outputs
 		// log.Info(fmt.Sprintf("Received %d bytes of config data\n", len(respMsg.ConfigData)))
@@ -246,12 +246,15 @@ func outputFunctionInvocationResponse(data []byte, respMsg *api.FunctionInvocati
 		}
 		detail.Render()
 	}
-	if (!bytes.Equal(respMsg.ConfigData, data) || dataOnly) && !outputOnly {
+	// A response carries the configuration only when an invocation changed it, so resolve
+	// it against what was sent before deciding whether there is anything to show.
+	result := respMsg.ResultData(data)
+	if (result != data || dataOnly) && !outputOnly {
 		// Don't use detailView to print the data because it pads the entire width with spaces.
 		if !dataOnly {
 			fmt.Print("CONFIGDATA\n---------\n")
 		}
-		fmt.Print(string(respMsg.ConfigData))
+		fmt.Print(result)
 	}
 	if !dataOnly && len(respMsg.Outputs) != 0 {
 		// Don't use detailView to print the output because it pads the entire width with spaces.
@@ -296,18 +299,18 @@ func outputFunctionInvocationResponse(data []byte, respMsg *api.FunctionInvocati
 	}
 }
 
-func readFile(fileName string) []byte {
+func readFile(fileName string) string {
 	data, err := os.ReadFile(fileName)
 	if err != nil {
 		failOnError(err)
 	}
-	return data
+	return string(data)
 }
 
-func readStdin() []byte {
+func readStdin() string {
 	data, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		failOnError(err)
 	}
-	return data
+	return string(data)
 }

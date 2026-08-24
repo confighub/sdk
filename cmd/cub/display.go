@@ -178,6 +178,15 @@ func tprintRaw(output string) {
 	fmt.Print(output)
 }
 
+// tprintBytes writes bytes to stdout exactly as they are. Configuration is served by its own
+// endpoints now, and what those return is what the caller stored: `cub unit data u > f` has to
+// reproduce the file `cub unit create u f` was given, and its hash has to be the DataHash. Any
+// tidying of leading or trailing newlines, which is what tprintRaw is for, would break both --
+// and would make stdout disagree with what --output-file writes.
+func tprintBytes(output []byte) {
+	_, _ = os.Stdout.Write(output)
+}
+
 // renderPayload applies the requested alternative output format to payload.
 // Returns true if the format was handled (caller should skip default output).
 // The default case (OutputDefault, OutputWide, OutputName, OutputCustomColumns,

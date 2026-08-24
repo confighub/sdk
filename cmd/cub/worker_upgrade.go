@@ -92,7 +92,7 @@ func upgradeWorkerInFile(filename string, targetImageReference string) error {
 
 	// Get the current image reference using get-image-reference function
 	getCurrentArgs := []string{"worker"}
-	getCurrentResp, err := invokeLocalFunction(configData, "get-image-reference", getCurrentArgs, string(workerapi.ToolchainKubernetesYAML))
+	getCurrentResp, err := invokeLocalFunction(string(configData), "get-image-reference", getCurrentArgs, string(workerapi.ToolchainKubernetesYAML))
 	if err != nil {
 		return fmt.Errorf("failed to get current image reference: %w", err)
 	}
@@ -115,7 +115,7 @@ func upgradeWorkerInFile(filename string, targetImageReference string) error {
 
 	// Set the new image reference using set-image-reference function
 	setImageArgs := []string{"worker", targetImageReference}
-	setImageResp, err := invokeLocalFunction(configData, "set-image-reference", setImageArgs, string(workerapi.ToolchainKubernetesYAML))
+	setImageResp, err := invokeLocalFunction(string(configData), "set-image-reference", setImageArgs, string(workerapi.ToolchainKubernetesYAML))
 	if err != nil {
 		return fmt.Errorf("failed to set image reference: %w", err)
 	}
@@ -125,7 +125,7 @@ func upgradeWorkerInFile(filename string, targetImageReference string) error {
 	}
 
 	// Write the updated configuration back to the file
-	err = os.WriteFile(filename, setImageResp.ConfigData, 0644)
+	err = os.WriteFile(filename, []byte(setImageResp.ResultData(string(configData))), 0644)
 	if err != nil {
 		return fmt.Errorf("failed to write updated file: %w", err)
 	}

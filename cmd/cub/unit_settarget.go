@@ -116,7 +116,10 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 		return cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
-	unitDetails := unitRes.JSON200
+	unitDetails, err := unitFromWrite(unitRes.JSON200)
+	if err != nil {
+		return err
+	}
 	displayUpdateResults(unitDetails, EntityTypeUnit, unitSlug, unitDetails.UnitID.String(), displayUnitDetails)
 	if wait {
 		return awaitTriggersRemoval(unitDetails)

@@ -4,7 +4,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -502,24 +501,23 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 			toUnit.SpaceSlug, toUnit.Slug, err)
 	}
 
-	// Decode base64 data
-	fromData, err := base64.StdEncoding.DecodeString(revFromData.Data)
+	// A Revision's configuration is read from its data endpoint, not off the entity.
+	fromData, err := fetchRevisionData(unit.SpaceID, unit.UnitID, revFromData.RevisionID)
 	if err != nil {
-		return fmt.Errorf("failed to decode revision %d data: %v", revFromNum, err)
+		return fmt.Errorf("failed to get revision %d data: %v", revFromNum, err)
 	}
-
-	toData, err := base64.StdEncoding.DecodeString(revToData.Data)
+	toData, err := fetchRevisionData(toUnit.SpaceID, toUnit.UnitID, revToData.RevisionID)
 	if err != nil {
-		return fmt.Errorf("failed to decode revision %d data: %v", revToNum, err)
+		return fmt.Errorf("failed to get revision %d data: %v", revToNum, err)
 	}
 
 	if unitDiffArgs.displayMutations || outputFormat == "mutations" {
 		// Display mutations instead of text diff
 		lookupMutationsUnitID = toUnit.UnitID.String()
-		displayMutationsFromDryRun(revFromData.Data, revToData.Data, toUnit.SpaceID.String(), "diff")
+		displayMutationsFromDryRun(fromData, toData, toUnit.SpaceID.String(), "diff")
 	} else {
 		// Compute text diff
-		diffSegments := ComputeStructuredDiff(string(fromData), string(toData))
+		diffSegments := ComputeStructuredDiff(fromData, toData)
 
 		// Format file labels. Each side is named by its own unit's space, so a cross-space
 		// diff says where the second unit actually lives instead of prefixing it with the

@@ -6,7 +6,6 @@ package main
 import (
 	"bytes"
 	_ "embed"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -27,7 +26,7 @@ import (
 // then mutates with ConfigHub functions to inject the per-install configuration.
 //
 //go:embed worker_install_manifest.yaml
-var workerInstallManifest []byte
+var workerInstallManifest string
 
 var workerInstallCmd = &cobra.Command{
 	Use:   "install [worker-name]",
@@ -297,18 +296,21 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 
 	// Each set-name call needs a different metadata.name value, so they go in
 	// their own invocation requests scoped via WhereResource.
-	manifest, err := invokeLocalFunctions(workerInstallManifest, []localFunctionInvocation{
+	current := workerInstallManifest
+	resp, err := invokeLocalFunctions(current, []localFunctionInvocation{
 		{FunctionName: "set-name", Arguments: []string{namespace}},
 	}, "ConfigHub.ResourceType = 'v1/Namespace'", toolchain)
 	if err != nil {
-		return string(workerInstallManifest), err
+		return current, err
 	}
-	manifest, err = invokeLocalFunctions(manifest.ConfigData, []localFunctionInvocation{
+	current = resp.ResultData(current)
+	resp, err = invokeLocalFunctions(current, []localFunctionInvocation{
 		{FunctionName: "set-name", Arguments: []string{fmt.Sprintf("%s-%s-admin", namespace, defaultServiceAcccount)}},
 	}, "ConfigHub.ResourceType = 'rbac.authorization.k8s.io/v1/ClusterRoleBinding'", toolchain)
 	if err != nil {
-		return string(manifest.ConfigData), err
+		return current, err
 	}
+	current = resp.ResultData(current)
 
 	httpPort := effectiveHTTPPort(image, workerInstallArgs.httpPort)
 
@@ -357,12 +359,12 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 	if httpPort > 0 {
 		invocations = append(invocations, httpPortInvocations(httpPort, isStandardWorkerImage(image))...)
 	}
-	manifest, err = invokeLocalFunctions(manifest.ConfigData, invocations, "", toolchain)
+	resp, err = invokeLocalFunctions(current, invocations, "", toolchain)
 	if err != nil {
-		return string(manifest.ConfigData), err
+		return current, err
 	}
 
-	out := string(manifest.ConfigData)
+	out := resp.ResultData(current)
 	if includeSecret {
 		secretYAML, err := yaml.Marshal(createWorkerSecret(worker, namespace))
 		if err != nil {
@@ -382,7 +384,6 @@ func createUnitWithManifest(worker *goclientnew.BridgeWorker, unitSlug, targetSl
 		Slug:          makeSlug(unitSlug),
 		DisplayName:   unitSlug,
 		ToolchainType: string(workerapi.ToolchainKubernetesYAML),
-		Data:          base64.StdEncoding.EncodeToString([]byte(manifest)),
 		Annotations: map[string]string{
 			"BridgeWorkerID": worker.BridgeWorkerID.String(),
 		},
@@ -404,7 +405,15 @@ func createUnitWithManifest(worker *goclientnew.BridgeWorker, unitSlug, targetSl
 		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
 	}
 
-	return unitRes.JSON200, nil
+	created, err := unitFromWrite(unitRes.JSON200)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := putUnitData(spaceID, created.UnitID, manifest, nil); err != nil {
+		return created, fmt.Errorf("unit %s was created, but its config data could not be written: %w",
+			created.Slug, err)
+	}
+	return created, nil
 }
 
 func createWorkerSecret(worker *goclientnew.BridgeWorker, namespace string) map[string]interface{} {

@@ -89,6 +89,18 @@ const (
 	ListAllRevisionsParamsDistinctOnUnit ListAllRevisionsParamsDistinctOn = "Unit"
 )
 
+// Defines values for SearchRevisionDataParamsDistinctOn.
+const (
+	SearchRevisionDataParamsDistinctOnOff  SearchRevisionDataParamsDistinctOn = "Off"
+	SearchRevisionDataParamsDistinctOnUnit SearchRevisionDataParamsDistinctOn = "Unit"
+)
+
+// Defines values for SearchRevisionMutationSourcesParamsDistinctOn.
+const (
+	SearchRevisionMutationSourcesParamsDistinctOnOff  SearchRevisionMutationSourcesParamsDistinctOn = "Off"
+	SearchRevisionMutationSourcesParamsDistinctOnUnit SearchRevisionMutationSourcesParamsDistinctOn = "Unit"
+)
+
 // Defines values for ListAllUnitEventsParamsDistinctOn.
 const (
 	ListAllUnitEventsParamsDistinctOnOff  ListAllUnitEventsParamsDistinctOn = "Off"
@@ -1512,9 +1524,12 @@ type FunctionInvocationsRequest struct {
 
 // FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
 type FunctionInvocationsResponse struct {
-	// ConfigData The resulting configuration data, potentially mutated
-	ConfigData string         `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
-	Error      *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	// ConfigData The resulting configuration data; present only when the invocation changed it
+	ConfigData string `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+
+	// DataHash SHA256 of the resulting configuration data, whether or not ConfigData is present
+	DataHash string         `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+	Error    *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// HasNewMutations Functions produced new mutations (of type other than None)
 	HasNewMutations bool                  `json:"HasNewMutations,omitempty" yaml:"HasNewMutations,omitempty"`
@@ -1987,6 +2002,11 @@ type MutationInfo struct {
 // MutationMap defines model for MutationMap.
 type MutationMap map[string]MutationInfo
 
+// MutationSourcesResponse defines model for MutationSourcesResponse.
+type MutationSourcesResponse struct {
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+}
+
 // MutationType defines model for MutationType.
 type MutationType string
 
@@ -2248,9 +2268,7 @@ type Release struct {
 
 	// CursorID An auto-incrementing sequence number used for pagination.
 	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
-	// Data The stored tar.gz bundle of the released Units' configuration.
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2528,20 +2546,17 @@ type Revision struct {
 	ChangeSetID *openapi_types.UUID   `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
-	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of this revision's data.
-	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
-
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
 	// CursorID An auto-incrementing sequence number used for pagination.
 	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
-	// Data The full configuration data for this unit at this revision.
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
-
-	// DataHash The SHA256 hash of this revision's data, encoded as hexadecimal.
+	// DataHash The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// DataSize The size of this revision's data in bytes. The data itself is not part of the Revision; read it from the data endpoint.
+	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
 
 	// Description User description of the change. It is copied from the LastChangeDescription field of the Unit at the time the change was made that created the Revision.
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
@@ -2550,8 +2565,7 @@ type Revision struct {
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
 	// LiveAt Time at which the revision was applied, if it was applied. If not applied, the value is "0001-01-01T00:00:00Z".
-	LiveAt          time.Time             `json:"LiveAt,omitempty" yaml:"LiveAt,omitempty"`
-	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+	LiveAt time.Time `json:"LiveAt,omitempty" yaml:"LiveAt,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -2595,6 +2609,44 @@ type Revision struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// RevisionData defines model for RevisionData.
+type RevisionData struct {
+	// Data The configuration data at this Revision.
+	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+
+	// DataHash SHA256 of the configuration data, which is also the ETag the single-Revision data endpoint serves.
+	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// DataSize Size of the configuration data in bytes.
+	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+
+	// RevisionID Unique identifier of the Revision.
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+
+	// RevisionNum Sequence number of the Revision within its Unit.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// SpaceID Unique identifier of the Space the Unit belongs to.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// UnitID Unique identifier of the Unit the Revision belongs to.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// RevisionMutationSources defines model for RevisionMutationSources.
+type RevisionMutationSources struct {
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+
+	// RevisionID Unique identifier of the Revision.
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+
+	// RevisionNum Sequence number of the Revision within its Unit.
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// UnitID Unique identifier of the Unit the Revision belongs to.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // Schema defines model for Schema.
@@ -3162,20 +3214,17 @@ type Unit struct {
 	ChangeSetID *openapi_types.UUID   `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 	Conflicts   *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
-	// ContentHash Deprecated: Use DataHash instead. The CRC32 hash of the configuration data.
-	ContentHash int `json:"ContentHash,omitempty" yaml:"ContentHash,omitempty"`
-
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
 	// CursorID An auto-incrementing sequence number used for pagination.
 	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
-	// Data The full configuration data for this unit. The maximum size is 67108864 bytes.
-	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
-
-	// DataHash The SHA256 hash of the configuration data, encoded as hexadecimal.
+	// DataHash The SHA256 hash of the configuration data, encoded as hexadecimal. It is also the ETag the data endpoint serves, so a caller that listed Units can ask for a body conditionally without fetching it first.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// DataSize The size of the configuration data in bytes. The configuration itself is not part of the Unit; read it from the data endpoint.
+	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -3214,8 +3263,7 @@ type Unit struct {
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
 	// LiveRevisionNum Sequence number the last Revision applied once apply has completed. 0 if no live revision.
-	LiveRevisionNum int64                 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
-	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+	LiveRevisionNum int64 `json:"LiveRevisionNum,omitempty" yaml:"LiveRevisionNum,omitempty"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
@@ -3403,9 +3451,12 @@ type UnitConflictsResponse struct {
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
 type UnitCreateOrUpdateResponse struct {
-	Conflicts *MutationConflictList        `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Error     *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Links     []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
+	// ConfigData The configuration the operation produced; returned when include names ConfigData.
+	ConfigData      string                       `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+	Conflicts       *MutationConflictList        `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Error           *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Links           []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
+	MutationSources *ResourceMutationList        `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
 	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
@@ -3420,6 +3471,30 @@ type UnitCreateOrUpdateResponse struct {
 	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
 	// new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
+}
+
+// UnitData defines model for UnitData.
+type UnitData struct {
+	// Data The configuration data.
+	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+
+	// DataHash SHA256 of the configuration data, which is also the ETag the single-Unit data endpoint serves.
+	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// DataSize Size of the configuration data in bytes.
+	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+
+	// Slug Slug of the Unit.
+	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// SpaceID Unique identifier of the Space the Unit belongs to.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space the Unit belongs to.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// UnitID Unique identifier of the Unit.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // UnitEvent UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
@@ -3512,6 +3587,25 @@ type UnitGuardRequest struct {
 // UnitGuardResponse defines model for UnitGuardResponse.
 type UnitGuardResponse struct {
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
+}
+
+// UnitMutationSources defines model for UnitMutationSources.
+type UnitMutationSources struct {
+	// DataHash SHA256 of the configuration data the MutationSources describe.
+	DataHash        string                `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+
+	// Slug Slug of the Unit.
+	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// SpaceID Unique identifier of the Space the Unit belongs to.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space the Unit belongs to.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// UnitID Unique identifier of the Unit.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // UnitProtectionRequest defines model for UnitProtectionRequest.
@@ -6315,6 +6409,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
 
+	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
 
@@ -7801,6 +7898,254 @@ type ListAllRevisionsParams struct {
 // ListAllRevisionsParamsDistinctOn defines parameters for ListAllRevisions.
 type ListAllRevisionsParamsDistinctOn string
 
+// SearchRevisionDataParams defines parameters for SearchRevisionData.
+type SearchRevisionDataParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Revisions returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// To list tagged Revisions use `Tags ? '<tag-id>'`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Revision list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Revision).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+	//
+	// Supported values: Unit, Off.
+	//
+	// If not specified, results are restricted to at most one row per Unit.
+	//
+	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+	DistinctOn *SearchRevisionDataParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
+}
+
+// SearchRevisionDataParamsDistinctOn defines parameters for SearchRevisionData.
+type SearchRevisionDataParamsDistinctOn string
+
+// SearchRevisionMutationSourcesParams defines parameters for SearchRevisionMutationSources.
+type SearchRevisionMutationSourcesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Revisions returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// To list tagged Revisions use `Tags ? '<tag-id>'`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Revision list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Revision).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Revision include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Revision.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, RevisionID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// If not specified, results are returned in the database's default order.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
+	//
+	// Supported values: Unit, Off.
+	//
+	// If not specified, results are restricted to at most one row per Unit.
+	//
+	// Off disables the DISTINCT ON and returns every matching row, so it requires an explicit 'limit' and is rejected with 400 without one.
+	DistinctOn *SearchRevisionMutationSourcesParamsDistinctOn `form:"distinct_on,omitempty" json:"distinct_on,omitempty" yaml:"distinct_on,omitempty"`
+}
+
+// SearchRevisionMutationSourcesParamsDistinctOn defines parameters for SearchRevisionMutationSources.
+type SearchRevisionMutationSourcesParamsDistinctOn string
+
 // ListSpacesParams defines parameters for ListSpaces.
 type ListSpacesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -8842,6 +9187,9 @@ type InvokeFunctionsParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -9900,6 +10248,9 @@ type CreateUnitParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // GetUnitParams defines parameters for GetUnit.
@@ -9931,9 +10282,6 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
-
-	// Data The full configuration data for this unit.
-	Data *[]byte `json:"Data" yaml:"Data"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -10073,6 +10421,9 @@ type PatchUnitParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // UpdateUnitParams defines parameters for UpdateUnit.
@@ -10181,12 +10532,51 @@ type UpdateUnitParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // ApproveUnitParams defines parameters for ApproveUnit.
 type ApproveUnitParams struct {
 	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
 	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
+}
+
+// UploadUnitDataParams defines parameters for UploadUnitData.
+type UploadUnitDataParams struct {
+	// LastChangeDescription Human-readable description of this change, copied to the Revision it creates.
+	LastChangeDescription *string `form:"last_change_description,omitempty" json:"last_change_description,omitempty" yaml:"last_change_description,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// Protect Record the paths this operation writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the operation claims nothing: each written path keeps whatever the Unit already has for it, and a path with no history is left unprotected. It only ever adds protection -- re-opening a path is the /protection API (cub unit set-protection --unprotect). Has no effect with restore, which rewinds MutationSources to the restored Revision's stored values wholesale.
+	Protect *bool `form:"protect,omitempty" json:"protect,omitempty" yaml:"protect,omitempty"`
+
+	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
+	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
+	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('LiveRevisionNum', 'LastAppliedRevisionNum', 'PreviousLiveRevisionNum', 'HeadRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LiveRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
+	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
+
+	// MergeExternalSource Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations.
+	MergeExternalSource *string `form:"merge_external_source,omitempty" json:"merge_external_source,omitempty" yaml:"merge_external_source,omitempty"`
+
+	// MergeEnableSubtraction Enable the subtraction (override-preservation) step of upgrade and merge_source. By default (false), the source patch is applied without subtraction and the target's local differences are preserved by the stored Mutation Protected values; set true to additionally subtract the target's local differences from the source patch. Has no effect on a self merge (merge_source=Self), where subtraction is always disabled.
+	MergeEnableSubtraction *bool `form:"merge_enable_subtraction,omitempty" json:"merge_enable_subtraction,omitempty" yaml:"merge_enable_subtraction,omitempty"`
+
+	// Tag Tag ID to add to the head revision
+	Tag *openapi_types.UUID `form:"tag,omitempty" json:"tag,omitempty" yaml:"tag,omitempty"`
+
+	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
+	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
+
+	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
+	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 }
 
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
@@ -12370,9 +12760,6 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
 
-	// Data The full configuration data for this unit.
-	Data *[]byte `json:"Data" yaml:"Data"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
@@ -12597,9 +12984,6 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 
 	// ChangeSetID Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID" yaml:"ChangeSetID"`
-
-	// Data The full configuration data for this unit.
-	Data *[]byte `json:"Data" yaml:"Data"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -13153,6 +13537,117 @@ type ListAllUnitActionsParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 }
 
+// SearchUnitDataParams defines parameters for SearchUnitData.
+type SearchUnitDataParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
+	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
+
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+}
+
 // ListAllUnitEventsParams defines parameters for ListAllUnitEvents.
 type ListAllUnitEventsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -13255,6 +13750,117 @@ type ListAllUnitEventsParams struct {
 
 // ListAllUnitEventsParamsDistinctOn defines parameters for ListAllUnitEvents.
 type ListAllUnitEventsParamsDistinctOn string
+
+// SearchUnitMutationSourcesParams defines parameters for SearchUnitMutationSources.
+type SearchUnitMutationSourcesParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Unit.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, UnitID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
+	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
+
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` requires the preceding path to exist; otherwise the relation `!=` will always return true regardless what it is compared with. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+}
 
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {

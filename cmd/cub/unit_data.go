@@ -7,8 +7,8 @@ func init() {
 	newUnitBlobCmd(
 		"data",
 		"Data",
-		"Show the decoded config data of a unit",
-		`Display the decoded configuration Data of a unit.
+		"Show the config data of a unit",
+		`Display the configuration data of a unit, as text.
 
 Replaces 'cub unit get --data-only'. Use --output-file / -O to write the data
 to a file instead of stdout.`,

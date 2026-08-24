@@ -349,6 +349,9 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID, changeOrderID *uuid.UUID) 
 	var priorUnits map[string]priorUnitInfo
 	if shouldDisplayMutations() {
 		priorUnits = savePriorUnitInfoInSpace(downstreamSpaceID.String(), where, false)
+		// A dry run stores nothing, so what it produced comes back on the response or not
+		// at all.
+		params.Include = includeWriteResult()
 	}
 	bulkRes, err := cubClientNew.BulkPatchUnitsWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchData))
 	if cubapi.IsAPIError(err, bulkRes) {

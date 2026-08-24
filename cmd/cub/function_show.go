@@ -273,7 +273,10 @@ func renderFunctionValues(resp *[]goclientnew.FunctionInvocationsResponse) {
 	}
 }
 
-// renderFunctionData emits the modified ConfigData field of each response.
+// renderFunctionData emits the configuration each response describes. A response carries
+// ConfigData only when the invocation changed it, so an unchanged Unit's data is fetched
+// from its data endpoint rather than silently skipped -- the command was asked for data,
+// not for changes.
 // When -O/--output-file is set, each unit's data is written to a path derived
 // from the template (supports {space}, {unit}, {section}). Otherwise, stdout
 // receives the raw bytes; when multiple units are present, each block is
@@ -282,13 +285,12 @@ func renderFunctionData(resp *[]goclientnew.FunctionInvocationsResponse) {
 	multi := resp != nil && len(*resp) > 1
 	for i := range *resp {
 		r := &(*resp)[i]
-		if len(r.ConfigData) == 0 {
+		resolved, err := responseConfigData(r)
+		failOnError(err)
+		if len(resolved) == 0 {
 			continue
 		}
-		data, err := base64.StdEncoding.DecodeString(r.ConfigData)
-		if err != nil {
-			failOnError(fmt.Errorf("%s: Failed to decode config data", err.Error()))
-		}
+		data := []byte(resolved)
 		if outputFile != "" {
 			space := r.SpaceSlug
 			if space == "" {

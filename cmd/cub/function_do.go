@@ -491,6 +491,7 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 
 	// Call the API with revision parameters
 	newParams := &goclientnew.InvokeFunctionsParams{}
+	newParams.Include = invokeIncludeConfigData()
 	unitUUID := goclientnew.UUID(unit.UnitID)
 	revisionUUID := goclientnew.UUID(revision.RevisionID)
 	newParams.UnitId = &unitUUID
@@ -539,6 +540,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	var resp *[]goclientnew.FunctionInvocationsResponse
 	if selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
+		newParams.Include = invokeIncludeConfigData()
 		if executorSpace != "" {
 			newParams.ExecutorSpace = &executorSpace
 		}
@@ -584,6 +586,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
+		newParams.Include = invokeIncludeConfigData()
 		if invokeArgs.Where != "" {
 			newParams.Where = &invokeArgs.Where
 		}

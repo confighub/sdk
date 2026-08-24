@@ -15,6 +15,34 @@ import (
 	"github.com/google/uuid"
 )
 
+// invokeIncludeConfigData asks an invocation to return the configuration it produced, for the
+// output modes that are going to display it. The response carries the configuration only when
+// the invocation changed it -- right for the worker boundary, where re-sending what was just
+// sent is waste -- so displaying an unchanged one would otherwise cost a second request.
+// Requested only when needed, since most invocations do not want the document back.
+func invokeIncludeConfigData() *string {
+	if !dataOnly && !verbose && effectiveShow() != ShowData {
+		return nil
+	}
+	s := "ConfigData"
+	return &s
+}
+
+// responseConfigData returns the configuration a function response describes. It is on the
+// response when the invocation changed it, or when the caller asked for it with
+// invokeIncludeConfigData. The fetch is the fallback for neither: a caller that did not ask
+// and an invocation that changed nothing. Returns "" if there is no Unit to fetch from, which
+// is the Revision-invocation case.
+func responseConfigData(respMsg *goclientnew.FunctionInvocationsResponse) (string, error) {
+	if respMsg.ConfigData != "" {
+		return respMsg.ConfigData, nil
+	}
+	if respMsg.UnitID == uuid.Nil || respMsg.SpaceID == uuid.Nil {
+		return "", nil
+	}
+	return fetchUnitData(respMsg.SpaceID, respMsg.UnitID)
+}
+
 // unitDisplayName returns the unit slug with ID in parentheses if available, otherwise just the UUID.
 func unitDisplayName(respMsg *goclientnew.FunctionInvocationsResponse) string {
 	if respMsg.UnitSlug != "" {
@@ -127,22 +155,20 @@ func outputFunctionInvocationResponse(respMsgs *[]goclientnew.FunctionInvocation
 			if dataOnly || len(respMsg.Mutators) > 0 {
 				// Don't use detailView to print the data because it pads the entire width with spaces.
 				if !dataOnly {
-					if verbose && len(respMsg.ConfigData) != 0 {
+					if verbose {
 						tprintRaw("CONFIGDATA\n---------\n")
 					} else {
 						tprintRaw("Config data changed")
 					}
 				}
-				if len(respMsg.ConfigData) != 0 {
-					data, err := base64.StdEncoding.DecodeString(respMsg.ConfigData)
-					if err != nil {
-						failOnError(fmt.Errorf("%s: Failed to decode config data", err.Error()))
-					}
-					if dataOnly || verbose {
-						tprintRaw(string(data))
+				if dataOnly || verbose {
+					data, err := responseConfigData(respMsg)
+					failOnError(err)
+					if len(data) != 0 {
+						tprintRaw(data)
 					}
 				}
-			} else if !dataOnly && len(respMsg.ConfigData) != 0 && len(respMsg.Outputs) == 0 {
+			} else if !dataOnly && len(respMsg.Outputs) == 0 {
 				tprintRaw("Config data not changed")
 			}
 		}
