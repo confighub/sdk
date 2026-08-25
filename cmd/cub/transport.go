@@ -35,7 +35,10 @@ var (
 func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 	opts := cubapi.ClientOptions{
 		ServerURL: ctx.Coordinate.ServerURL,
-		UserAgent: "cub",
+		// Version rather than a bare "cub": the server records the User-Agent on
+		// revisions and queued operations, so which cub made a change is worth
+		// knowing after the fact, and it lets the server flag a skewed client.
+		UserAgent: "cub/" + Version,
 		Debug:     debug,
 	}
 	// A missing token is not fatal: some commands run unauthenticated, and the

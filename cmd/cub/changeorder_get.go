@@ -87,12 +87,6 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if extendedChangeOrder.EndTag != nil {
 		view.Append([]string{"End Tag", extendedChangeOrder.EndTag.Slug})
 	}
-	if extendedChangeOrder.SpaceFilter != nil {
-		view.Append([]string{"Space Filter", extendedChangeOrder.SpaceFilter.Slug})
-	}
-	if changeorderDetails.WhereSpace != "" {
-		view.Append([]string{"Where Space", changeorderDetails.WhereSpace})
-	}
 	if changeorderDetails.Description != "" {
 		view.Append([]string{"Description", changeorderDetails.Description})
 	}
@@ -159,7 +153,7 @@ func apiGetChangeOrder(changeorderID string, selectParam string) (*goclientnew.C
 
 func apiGetExtendedChangeOrder(changeorderID string, selectParam string) (*goclientnew.ExtendedChangeOrder, error) {
 	newParams := &goclientnew.GetChangeOrderParams{}
-	include := "SpaceID,StartTagID,EndTagID,SpaceFilterID"
+	include := "SpaceID,StartTagID,EndTagID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

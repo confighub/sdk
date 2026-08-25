@@ -35,17 +35,13 @@ Examples:
   # Create a change order
   cub changeorder create --space my-space bump-base-image --description "Bump the base image to 1.42"
 
-  # Create one that says where it is headed: a Filter over Spaces
+  # Create one that says where it is headed: the spaces it propagates into
   cub changeorder create --space my-space bump-base-image --description "Bump the base image" \
-    --space-filter platform/prod-spaces
+    --in-scope-space staging,prod-use2,prod-usw2
 
-  # Or say it inline, without a Filter entity to maintain
-  cub changeorder create --space my-space bump-base-image --description "Bump the base image" \
-    --where-space-field "Labels.Component = 'my-app' AND Labels.Stage != 'none'"
-
-  # Both, which are ANDed: the fleet the Filter names, narrowed to one region
-  cub changeorder create --space my-space bump-base-image --description "Bump the base image" \
-    --space-filter platform/prod-spaces --where-space-field "Labels.Region = 'use2'"
+  # The list is a list, so work it out however you like and pass the answer
+  SPACES=$(cub space list --quiet --no-headers -o name --where "Labels.Component = 'my-app'" | paste -sd, -)
+  cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 
   # End it at an existing boundary rather than at each unit's head
   cub changeorder create --space my-space bump-base-image --end-tag my-space/release-42-end
@@ -84,8 +80,7 @@ var changeorderCreateArgs struct {
 	namePrefixes     []string
 	changeorderSlugs []string
 	description      string
-	spaceFilter      string
-	whereSpaceField  string
+	inScopeSpaces    []string
 	endTag           string
 	updateType       string
 	filterSpace      string
@@ -100,8 +95,7 @@ func init() {
 
 	// Single create specific flags
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting the Spaces this change order propagates into")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting the Spaces this change order propagates into, stored on it as WhereSpace; ANDed with --space-filter when both are given")
+	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "link update type to follow when propagating: UpgradeUnit (the clone lineage, the default) or MergeUnits")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, the change order tags each unit's head revision")
 
@@ -235,19 +229,12 @@ func runSingleChangeOrderCreate(args []string) error {
 		}
 		newBody.EndTagID = endTagID
 	}
-	if changeorderCreateArgs.whereSpaceField != "" {
-		newBody.WhereSpace = changeorderCreateArgs.whereSpaceField
-	}
-	if changeorderCreateArgs.spaceFilter != "" {
-		filterIDStr, err := parseFilterFlag(changeorderCreateArgs.spaceFilter)
+	if len(changeorderCreateArgs.inScopeSpaces) > 0 {
+		inScopeSpaceIDs, err := resolveChangeOrderInScopeSpaces(changeorderCreateArgs.inScopeSpaces)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse space-filter")
+			return err
 		}
-		filterID, err := uuid.Parse(filterIDStr)
-		if err != nil {
-			return errors.Wrap(err, "invalid space-filter")
-		}
-		newBody.SpaceFilterID = &filterID
+		newBody.InScopeSpaceIDs = inScopeSpaceIDs
 	}
 
 	// Create params with AllowExists if needed
@@ -265,6 +252,20 @@ func runSingleChangeOrderCreate(args []string) error {
 	changeorderDetails := changeorderRes.JSON200
 	displayCreateResults(changeorderDetails, "changeorder", args[0], changeorderDetails.ChangeOrderID.String(), displayChangeOrderDetails)
 	return nil
+}
+
+// resolveChangeOrderInScopeSpaces turns the spaces named on the command line into the ids stored
+// on the change order. Each is a slug or a UUID, the way every other space flag takes one.
+func resolveChangeOrderInScopeSpaces(identifiers []string) ([]uuid.UUID, error) {
+	spaceIDs := make([]uuid.UUID, 0, len(identifiers))
+	for _, identifier := range identifiers {
+		space, err := apiGetSpaceFromSlug(identifier, "SpaceID,Slug")
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve in-scope space %s", identifier)
+		}
+		spaceIDs = append(spaceIDs, space.SpaceID)
+	}
+	return spaceIDs, nil
 }
 
 func runBulkChangeOrderCreate() error {
@@ -289,14 +290,26 @@ func runBulkChangeOrderCreate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
+	// Resolved before the enhancer runs, since it cannot report an error of its own.
+	var inScopeSpaceIDStrings []string
+	if len(changeorderCreateArgs.inScopeSpaces) > 0 {
+		inScopeSpaceIDs, err := resolveChangeOrderInScopeSpaces(changeorderCreateArgs.inScopeSpaces)
+		if err != nil {
+			return err
+		}
+		for _, spaceID := range inScopeSpaceIDs {
+			inScopeSpaceIDStrings = append(inScopeSpaceIDStrings, spaceID.String())
+		}
+	}
+
 	// Create enhancer function for changeorder-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
 		// Add changeorder-specific fields
 		if changeorderCreateArgs.description != "" {
 			patchMap["Description"] = changeorderCreateArgs.description
 		}
-		if changeorderCreateArgs.whereSpaceField != "" {
-			patchMap["WhereSpace"] = changeorderCreateArgs.whereSpaceField
+		if len(changeorderCreateArgs.inScopeSpaces) > 0 {
+			patchMap["InScopeSpaceIDs"] = inScopeSpaceIDStrings
 		}
 	}
 

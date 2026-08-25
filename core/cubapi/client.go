@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"sync/atomic"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/sethvargo/go-envconfig"
@@ -32,6 +33,13 @@ import (
 
 // DefaultUserAgent is sent when [ClientOptions.UserAgent] is empty.
 const DefaultUserAgent = "cub-sdk"
+
+// ServerVersionHeader is the response header the ConfigHub server stamps its own
+// version onto, on every /api response. A client that reads it learns the server
+// version from a call it was already making, rather than spending a round trip on
+// /api/info. The value is what /api/info reports in Version: a release version such
+// as "v0.2.34", or "v0.2-dev" for a build from a working tree.
+const ServerVersionHeader = "ConfigHub-Version"
 
 // ClientOptions configures client construction. ServerURL is required; the rest
 // are optional. Provide either Token (bearer) or Session (which additionally
@@ -57,6 +65,19 @@ type Client struct {
 	API    *goclientnew.ClientWithResponses
 	Server string // server URL without the "/api" suffix
 	Space  string // default space slug, if known
+
+	transport *clientTransport
+}
+
+// ServerVersion returns the version the server reported on the most recent
+// response, or "" if no request has completed yet or the server does not stamp
+// [ServerVersionHeader] (a server older than the header). Callers that need the
+// version regardless can fall back to /api/info.
+func (c *Client) ServerVersion() string {
+	if c.transport == nil {
+		return ""
+	}
+	return c.transport.serverVersion()
 }
 
 // NewClient constructs a Client from explicit options. It returns an error if
@@ -79,8 +100,9 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	if rt == nil {
 		rt = http.DefaultTransport
 	}
+	transport := &clientTransport{base: rt, agent: agent, debug: opts.Debug}
 	httpClient := &http.Client{
-		Transport:     &clientTransport{base: rt, agent: agent, debug: opts.Debug},
+		Transport:     transport,
 		CheckRedirect: base.CheckRedirect,
 		Jar:           base.Jar,
 		Timeout:       base.Timeout,
@@ -102,7 +124,7 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		return nil, fmt.Errorf("cubapi: build API client: %w", err)
 	}
 
-	return &Client{API: api, Server: server, Space: opts.Space}, nil
+	return &Client{API: api, Server: server, Space: opts.Space, transport: transport}, nil
 }
 
 // authHeaderValue derives the Authorization header value from the options,
@@ -238,11 +260,21 @@ func ResolveClient(ctx context.Context, opts ClientOptions) (*Client, error) {
 }
 
 // clientTransport adds a User-Agent header and optional request/response dumping
-// around a base RoundTripper.
+// around a base RoundTripper, and remembers the server version each response
+// carried. Requests can be in flight on several goroutines, so the recorded
+// version is guarded rather than a plain field.
 type clientTransport struct {
-	base  http.RoundTripper
-	agent string
-	debug bool
+	base    http.RoundTripper
+	agent   string
+	debug   bool
+	version atomic.Pointer[string]
+}
+
+func (t *clientTransport) serverVersion() string {
+	if v := t.version.Load(); v != nil {
+		return *v
+	}
+	return ""
 }
 
 func (t *clientTransport) RoundTrip(r *http.Request) (*http.Response, error) {
@@ -255,6 +287,9 @@ func (t *clientTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	res, err := t.base.RoundTrip(r)
 	if err != nil {
 		return nil, err
+	}
+	if v := res.Header.Get(ServerVersionHeader); v != "" {
+		t.version.Store(&v)
 	}
 	if t.debug {
 		if dump, derr := httputil.DumpResponse(res, true); derr == nil {

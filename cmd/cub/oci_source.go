@@ -43,7 +43,7 @@ func ociAuthClient() *auth.Client {
 		Client: retry.DefaultClient,
 		Cache:  auth.NewCache(),
 	}
-	client.SetUserAgent("cub")
+	client.SetUserAgent("cub/" + Version)
 	return client
 }
 

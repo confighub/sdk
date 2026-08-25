@@ -28,6 +28,10 @@ non-zero status and prints instructions to run 'cub auth login'. Re-authenticati
 requires an interactive browser sign-in, so an agent cannot complete it on the user's
 behalf and must ask the user to run 'cub auth login'.
 
+It also compares the client and server versions. Pre-1.0, a change in the second version
+number is not backward compatible, so a cub older than the server exits non-zero telling
+you to run 'cub upgrade', and a cub newer than the server prints a warning.
+
 Examples:
 `+"```"+`
   # Check authentication status against the server in the active context
@@ -78,6 +82,11 @@ func authStatusCmdRun(cmd *cobra.Command, args []string) error {
 			ctx.Coordinate.ServerURL, res.Status())
 	}
 
+	// The server stamps its version on every response, so the /me call above already
+	// carries it and this costs no extra round trip. It is empty against a server
+	// predating that header, which checkVersionSkew treats as undecidable.
+	serverVersion := cubClient.ServerVersion()
+
 	view := detailView()
 	view.Append([]string{"Status", "Authenticated"})
 	view.Append([]string{"User", ctx.Coordinate.User})
@@ -87,8 +96,15 @@ func authStatusCmdRun(cmd *cobra.Command, args []string) error {
 		view.Append([]string{"Token Expires", fmt.Sprintf("%s (in %s)",
 			expiry.Format(time.RFC3339), time.Until(expiry).Round(time.Second))})
 	}
+	view.Append([]string{"Client Version", Version})
+	if serverVersion != "" {
+		view.Append([]string{"Server Version", serverVersion})
+	}
 	view.Render()
-	return nil
+
+	// Reported last: this command is run as a prerequisite check, and a client too
+	// old for the server is as much a reason not to proceed as an expired token.
+	return checkVersionSkew(Version, serverVersion)
 }
 
 // tokenExpiry parses a JWT access token and returns its expiration time from the

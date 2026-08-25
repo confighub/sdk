@@ -92,6 +92,44 @@ func TestClientSendsAuthAndUserAgent(t *testing.T) {
 	}
 }
 
+func TestClientRecordsServerVersion(t *testing.T) {
+	var sendVersion string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if sendVersion != "" {
+			w.Header().Set(ServerVersionHeader, sendVersion)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"OrganizationID":"00000000-0000-0000-0000-000000000000"}`))
+	}))
+	defer srv.Close()
+
+	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "secret-token"})
+	if err != nil {
+		t.Fatalf("NewClient: %v", err)
+	}
+	if got := c.ServerVersion(); got != "" {
+		t.Fatalf("ServerVersion before any request = %q, want empty", got)
+	}
+
+	// A server that does not stamp the header leaves the version unknown rather
+	// than reporting something the caller would compare against.
+	if _, err := c.VerifyAuth(context.Background()); err != nil {
+		t.Fatalf("VerifyAuth: %v", err)
+	}
+	if got := c.ServerVersion(); got != "" {
+		t.Fatalf("ServerVersion without header = %q, want empty", got)
+	}
+
+	sendVersion = "v0.2.34"
+	if _, err := c.VerifyAuth(context.Background()); err != nil {
+		t.Fatalf("VerifyAuth: %v", err)
+	}
+	if got := c.ServerVersion(); got != "v0.2.34" {
+		t.Fatalf("ServerVersion = %q, want v0.2.34", got)
+	}
+}
+
 func TestVerifyAuthRejectsUnauthorized(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

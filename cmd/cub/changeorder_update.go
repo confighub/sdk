@@ -42,20 +42,11 @@ Examples:
   # Put an aborted changeorder back on its way
   cub changeorder update my-changeorder --aborted-reason ""
 
-  # Narrow where a changeorder is headed, ANDed with its space filter
-  cub changeorder update my-changeorder --where-space-field "Labels.Region = 'use2'"
+  # Change where a changeorder is headed, which re-derives what it covers
+  cub changeorder update my-changeorder --in-scope-space staging,prod-use2,prod-usw2
 
-  # Clear the expression, leaving the space filter (if any) to say where it is headed
-  cub changeorder update my-changeorder --where-space-field "-"
-
-  # Point a changeorder at a different Filter over Spaces
-  cub changeorder update my-changeorder --space-filter platform/prod-spaces
-
-  # Clear the filter, leaving the expression (if any) to say where it is headed
-  cub changeorder update my-changeorder --space-filter "-"
-
-  # Take in the spaces that have come to match since, which a changeorder does not do on its own
-  cub changeorder update my-changeorder --refresh-spaces
+  # Clear the list, leaving wherever its links reach to say where it is headed
+  cub changeorder update my-changeorder --in-scope-space "-"
 
   # Update tags for changeorders using JSON patch
   echo '{"StartTagID": "new-tag-uuid", "EndTagID": "another-tag-uuid"}' | cub changeorder update --patch --where "Description LIKE 'Release%'" --from-stdin
@@ -70,15 +61,13 @@ var (
 	changeorderPatch       bool
 	changeorderIdentifiers []string
 	changeorderUpdateArgs  struct {
-		description     string
-		spaceFilter     string
-		whereSpaceField string
-		abortedReason   string
+		description   string
+		inScopeSpaces []string
+		abortedReason string
 		// abortedReasonSet is whether --aborted-reason was given. The empty value is the one
 		// that un-aborts a change order, so "was it passed" is the question rather than "is it
 		// non-empty", which is what the other update flags ask.
 		abortedReasonSet bool
-		refreshSpaces    bool
 	}
 )
 
@@ -91,48 +80,38 @@ func init() {
 
 	// Single update specific flags
 	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.description, "description", "", "human-readable description of the change")
-	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting the Spaces this change order propagates into, ANDed with its where expression (use '-' to clear)")
-	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting the Spaces this change order propagates into, stored on it as WhereSpace and ANDed with its space filter (use '-' to clear)")
+	changeorderUpdateCmd.Flags().StringSliceVar(&changeorderUpdateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs and re-deriving what it covers (can be repeated or comma-separated; use '-' to clear)")
 	changeorderUpdateCmd.Flags().StringVar(&changeorderUpdateArgs.abortedReason, "aborted-reason", "", "why the change order was given up on; setting it aborts the change order, and passing an empty value puts it back on its way")
-	changeorderUpdateCmd.Flags().BoolVar(&changeorderUpdateArgs.refreshSpaces, "refresh-spaces", false, "re-evaluate the where expression and/or space filter into InScopeSpaceIDs, and re-derive what the change order covers against the spaces they now select, even if neither has changed")
 
 	changeorderCmd.AddCommand(changeorderUpdateCmd)
 }
 
-// addChangeOrderWhereSpaceToPatch follows the convention the other where expressions use: "-"
-// clears it, since an empty value is how a flag reads when it was not given at all.
-func addChangeOrderWhereSpaceToPatch(patchData map[string]interface{}) {
-	if changeorderUpdateArgs.whereSpaceField == "-" {
-		patchData["WhereSpace"] = ""
-	} else if changeorderUpdateArgs.whereSpaceField != "" {
-		patchData["WhereSpace"] = changeorderUpdateArgs.whereSpaceField
+// changeOrderInScopeSpacesFlag reports what --in-scope-space asks for: the spaces to store, and
+// whether the flag was given at all. A single "-" clears the list, following the convention the
+// other update flags use, since an empty value is how a flag reads when it was not given.
+func changeOrderInScopeSpacesFlag() (spaceIDs []uuid.UUID, given bool, err error) {
+	if len(changeorderUpdateArgs.inScopeSpaces) == 0 {
+		return nil, false, nil
 	}
+	if len(changeorderUpdateArgs.inScopeSpaces) == 1 && changeorderUpdateArgs.inScopeSpaces[0] == "-" {
+		return nil, true, nil
+	}
+	spaceIDs, err = resolveChangeOrderInScopeSpaces(changeorderUpdateArgs.inScopeSpaces)
+	if err != nil {
+		return nil, false, err
+	}
+	return spaceIDs, true, nil
 }
 
-// resolveChangeOrderSpaceFilter resolves --space-filter to a Filter ID. It resolves to no ID when
-// the flag was not given and when it was given as "-", which clears the field; the callers tell
-// those two apart by the flag value, the same way the where expression does.
-func resolveChangeOrderSpaceFilter() (*uuid.UUID, error) {
-	if changeorderUpdateArgs.spaceFilter == "" || changeorderUpdateArgs.spaceFilter == "-" {
-		return nil, nil
+func addChangeOrderInScopeSpacesToPatch(patchData map[string]interface{}, spaceIDs []uuid.UUID, given bool) {
+	if !given {
+		return
 	}
-	filterIDStr, err := parseFilterFlag(changeorderUpdateArgs.spaceFilter)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse space-filter")
+	spaceIDStrings := make([]string, 0, len(spaceIDs))
+	for _, spaceID := range spaceIDs {
+		spaceIDStrings = append(spaceIDStrings, spaceID.String())
 	}
-	filterID, err := uuid.Parse(filterIDStr)
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid space-filter")
-	}
-	return &filterID, nil
-}
-
-func addChangeOrderSpaceFilterToPatch(patchData map[string]interface{}, spaceFilterID *uuid.UUID) {
-	if changeorderUpdateArgs.spaceFilter == "-" {
-		patchData["SpaceFilterID"] = nil
-	} else if spaceFilterID != nil {
-		patchData["SpaceFilterID"] = spaceFilterID.String()
-	}
+	patchData["InScopeSpaceIDs"] = spaceIDStrings
 }
 
 func addChangeOrderAbortedReasonToPatch(patchData map[string]interface{}) {
@@ -212,7 +191,7 @@ func runBulkChangeOrderUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	spaceFilterID, err := resolveChangeOrderSpaceFilter()
+	inScopeSpaceIDs, inScopeSpacesGiven, err := changeOrderInScopeSpacesFlag()
 	if err != nil {
 		return err
 	}
@@ -223,8 +202,7 @@ func runBulkChangeOrderUpdate() error {
 		if changeorderUpdateArgs.description != "" {
 			patchMap["Description"] = changeorderUpdateArgs.description
 		}
-		addChangeOrderSpaceFilterToPatch(patchMap, spaceFilterID)
-		addChangeOrderWhereSpaceToPatch(patchMap)
+		addChangeOrderInScopeSpacesToPatch(patchMap, inScopeSpaceIDs, inScopeSpacesGiven)
 		addChangeOrderAbortedReasonToPatch(patchMap)
 	}
 
@@ -242,9 +220,6 @@ func runBulkChangeOrderUpdate() error {
 	}
 	if filterID != "" {
 		params.Filter = &filterID
-	}
-	if changeorderUpdateArgs.refreshSpaces {
-		params.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
 	}
 
 	// Call the bulk patch API
@@ -285,7 +260,7 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if changeorderPatch {
 		// Single changeorder patch mode
 
-		spaceFilterID, err := resolveChangeOrderSpaceFilter()
+		inScopeSpaceIDs, inScopeSpacesGiven, err := changeOrderInScopeSpacesFlag()
 		if err != nil {
 			return err
 		}
@@ -296,8 +271,7 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if changeorderUpdateArgs.description != "" {
 				patchData["Description"] = changeorderUpdateArgs.description
 			}
-			addChangeOrderSpaceFilterToPatch(patchData, spaceFilterID)
-			addChangeOrderWhereSpaceToPatch(patchData)
+			addChangeOrderInScopeSpacesToPatch(patchData, inScopeSpaceIDs, inScopeSpacesGiven)
 			addChangeOrderAbortedReasonToPatch(patchData)
 		}
 
@@ -350,29 +324,18 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if changeorderUpdateArgs.description != "" {
 		currentChangeOrder.Description = changeorderUpdateArgs.description
 	}
-	if changeorderUpdateArgs.spaceFilter == "-" {
-		currentChangeOrder.SpaceFilterID = nil
-	} else if changeorderUpdateArgs.spaceFilter != "" {
-		spaceFilterID, err := resolveChangeOrderSpaceFilter()
-		if err != nil {
-			return err
-		}
-		currentChangeOrder.SpaceFilterID = spaceFilterID
+	inScopeSpaceIDs, inScopeSpacesGiven, err := changeOrderInScopeSpacesFlag()
+	if err != nil {
+		return err
 	}
-	if changeorderUpdateArgs.whereSpaceField == "-" {
-		currentChangeOrder.WhereSpace = ""
-	} else if changeorderUpdateArgs.whereSpaceField != "" {
-		currentChangeOrder.WhereSpace = changeorderUpdateArgs.whereSpaceField
+	if inScopeSpacesGiven {
+		currentChangeOrder.InScopeSpaceIDs = inScopeSpaceIDs
 	}
 	if changeorderUpdateArgs.abortedReasonSet {
 		currentChangeOrder.AbortedReason = changeorderUpdateArgs.abortedReason
 	}
 
-	updateParams := &goclientnew.UpdateChangeOrderParams{}
-	if changeorderUpdateArgs.refreshSpaces {
-		updateParams.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
-	}
-	changeorderRes, err := cubClientNew.UpdateChangeOrderWithResponse(ctx, spaceID, currentChangeOrder.ChangeOrderID, updateParams, *currentChangeOrder)
+	changeorderRes, err := cubClientNew.UpdateChangeOrderWithResponse(ctx, spaceID, currentChangeOrder.ChangeOrderID, *currentChangeOrder)
 	if cubapi.IsAPIError(err, changeorderRes) {
 		return cubapi.InterpretErrorGeneric(err, changeorderRes)
 	}
@@ -396,15 +359,10 @@ func handleBulkChangeOrderCreateOrUpdateResponse(responses200 *[]goclientnew.Cha
 }
 
 func patchChangeOrder(spaceID uuid.UUID, changeorderID uuid.UUID, patchData []byte) (*goclientnew.ChangeOrder, error) {
-	patchParams := &goclientnew.PatchChangeOrderParams{}
-	if changeorderUpdateArgs.refreshSpaces {
-		patchParams.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
-	}
 	changeorderRes, err := cubClientNew.PatchChangeOrderWithBodyWithResponse(
 		ctx,
 		spaceID,
 		changeorderID,
-		patchParams,
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

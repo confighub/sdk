@@ -7,14 +7,14 @@ GOCLEAN=$(GOCMD) clean
 BINARY_DIR=../../../bin
 WORKER_CMD?=$(BINARY_DIR)/cub-worker-run
 WORKER_CMD_ABS=$(abspath $(WORKER_CMD))
-VERSION?=
-LDFLAGS :=
-ifneq ($(VERSION),)
-  LDFLAGS := -ldflags "\
-    -X main.Version=$(VERSION) \
-    -X main.BuildTag=$$(git rev-parse HEAD) \
-    -X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-endif
+# VERSION and the API version it has to agree with are declared in version.mk, two
+# directories up in both layouts this Makefile is built in.
+include ../../version.mk
+# Always stamped: version.mk gives every build a version, a release one or a dev one.
+LDFLAGS := -ldflags "\
+  -X main.Version=$(VERSION) \
+  -X main.BuildTag=$$(git rev-parse HEAD 2>/dev/null || echo unknown) \
+  -X main.BuildDate=$$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 .PHONY: clean all cub-worker-run
 

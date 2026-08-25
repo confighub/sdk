@@ -51,10 +51,10 @@ Examples:
 
 // Default columns to display when no custom columns are specified. This is also what drives the
 // select list, so it names every field either layout shows -- the wide-only tags included.
-var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "ChangeOrder.UpdateType", "SpaceFilter.Slug", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
+var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "ChangeOrder.UpdateType", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
 
 // changeorderListInclude is the Include parameter for change order list queries.
-const changeorderListInclude = "SpaceID,StartTagID,EndTagID,SpaceFilterID"
+const changeorderListInclude = "SpaceID,StartTagID,EndTagID"
 
 // changeorderBaseSelectFields are the fields always returned by change order list queries.
 // AbortedReason and InScopeSpaceIDs are among them because State is derived from both, and each
@@ -105,7 +105,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		header := []string{"Name", "Space", "State", "Update-Type", "Space-Filter"}
+		header := []string{"Name", "Space", "State", "Update-Type"}
 		if wide {
 			header = append(header, "Start-Tag", "End-Tag")
 		}
@@ -121,17 +121,11 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			spaceSlug = selectedSpaceSlug
 		}
 
-		spaceFilterSlug := ""
-		if cs.SpaceFilter != nil {
-			spaceFilterSlug = cs.SpaceFilter.Slug
-		}
-
 		row := []string{
 			changeorder.Slug,
 			spaceSlug,
 			changeorder.State,
 			changeorder.UpdateType,
-			spaceFilterSlug,
 		}
 		if wide {
 			startTagSlug := ""

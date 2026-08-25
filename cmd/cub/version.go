@@ -21,14 +21,14 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show client and server version, commit, and build date",
 	Long:  getCommandHelp(`Show client and server version, commit, and build date.`, "Authentication not required."),
-	Run:   versionCmdRun,
+	RunE:  versionCmdRun,
 }
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
 }
 
-func versionCmdRun(cmd *cobra.Command, args []string) {
+func versionCmdRun(cmd *cobra.Command, args []string) error {
 	fmt.Printf("Client Version:\n")
 	fmt.Printf("  Version:    %s\n", Version)
 	fmt.Printf("  Commit:     %s\n", BuildTag)
@@ -40,6 +40,9 @@ func versionCmdRun(cmd *cobra.Command, args []string) {
 	fmt.Printf("  Commit:     %s\n", apiInfo.Build)
 	fmt.Printf("  Build Date: %s\n", apiInfo.BuiltAt)
 	fmt.Printf("  Client ID:  %s\n", apiInfo.ClientID)
+	// Reported after both versions are printed, so the user sees what the
+	// complaint is about even when it exits non-zero.
+	return checkVersionSkew(Version, apiInfo.Version)
 }
 
 func GetApiInfo() goclientnew.ApiInfo {
