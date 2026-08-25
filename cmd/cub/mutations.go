@@ -1212,7 +1212,9 @@ func savePriorUnitInfoInSpace(spaceID, whereClause string, includeData bool) map
 		// of the where clause rather than part of the path.
 		scoped := fmt.Sprintf("SpaceID = '%s'", spaceID)
 		if whereClause != "" {
-			scoped = "(" + whereClause + ") AND " + scoped
+			// No parentheses: the filter grammar has no grouping and rejects a leading
+			// "(" as an attribute name. AND is its only conjunction, so none is needed.
+			scoped = whereClause + " AND " + scoped
 		}
 		dataByUnitID, err = fetchUnitDataBulk(scoped)
 		if err != nil {

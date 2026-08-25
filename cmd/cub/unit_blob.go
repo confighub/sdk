@@ -26,14 +26,30 @@ var (
 //	legacyFlags: optional back-compat flag setup (e.g., the --filename alias on data)
 func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*cobra.Command)) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   section + " <unit>",
+		Use:   section + " [<unit>]",
 		Short: short,
 		Long:  getCommandHelp(long, ""),
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if where != "" {
+				if len(args) > 0 {
+					return fmt.Errorf("name a unit or pass --where, not both")
+				}
+				return runUnitBlobBulk(section, selectField)
+			}
+			if len(args) == 0 {
+				return fmt.Errorf("name a unit, or pass --where to read many")
+			}
 			return runUnitBlob(args[0], section, selectField)
 		},
 	}
+	// One request for the whole selection rather than one per Unit, which is the reason the
+	// bulk endpoint exists. The output is the endpoint's rows rather than a bare document: a
+	// stream of concatenated documents has no way to say which Unit each came from -- which
+	// is also why the display flags are registered here and honoured only in that mode. A
+	// single-Unit read stays byte-exact: its whole answer is the document.
+	enableWhereFlag(cmd)
+	addStandardDisplayFlags(cmd)
 	cmd.Flags().StringVarP(&unitBlobOutputFile, "output-file", "O", "",
 		fmt.Sprintf("Write %s to file instead of stdout", section))
 	// Configuration data is text on the wire, so there is nothing left to decode. The flag
@@ -93,4 +109,25 @@ func runUnitBlob(unitSlugOrID, section, selectField string) error {
 func legacyFilenameAlias(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&unitBlobOutputFile, "filename", "", "Deprecated: use --output-file / -O")
 	_ = cmd.Flags().MarkDeprecated("filename", "use --output-file / -O")
+}
+
+// runUnitBlobBulk reads one blob field for every Unit a where clause selects. Only the
+// configuration has a bulk endpoint; a section without one says so rather than quietly
+// falling back to a request per Unit.
+func runUnitBlobBulk(section, selectField string) error {
+	if selectField != "Data" {
+		return fmt.Errorf("--where is not supported for %s", section)
+	}
+	rows, err := searchUnitData(where)
+	if err != nil {
+		return err
+	}
+	if unitBlobOutputFile != "" {
+		return fmt.Errorf("--output-file writes a single document; it does not apply with --where")
+	}
+	if renderPayload(rows) {
+		return nil
+	}
+	displayJSON(rows)
+	return nil
 }

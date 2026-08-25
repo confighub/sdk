@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -25,17 +26,44 @@ Use -o json / -o yaml / -o jq= to shape the output; the payload is the list of r
 so a path is addressed as '.[0].PathMutationMap'.
 
 For a single Unit's history, 'cub unit get -o mutations' shows the same information as a
-table. Across many Units, read the bulk endpoint GET /unit-mutation-sources.`, ""),
-	Args: cobra.ExactArgs(1),
+table.
+
+With --where, reads every unit the clause selects in one request rather than one per unit.
+Each row carries the unit it belongs to, so the payload is addressed as
+'.[0].MutationSources' rather than '.[0]'. Scoped to --space unless that is "*". Examples:
+
+  cub unit mutation-sources --space my-space my-unit
+  cub unit mutation-sources --space my-space --where "Slug LIKE 'app-%'"`, ""),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runUnitMutationSources,
 }
 
 func init() {
 	addStandardGetFlags(unitMutationSourcesCmd)
+	// One request for the whole selection rather than one per Unit. The rows carry the Unit
+	// each belongs to, which a bare list of ResourceMutationLists could not.
+	enableWhereFlag(unitMutationSourcesCmd)
 	unitCmd.AddCommand(unitMutationSourcesCmd)
 }
 
 func runUnitMutationSources(cmd *cobra.Command, args []string) error {
+	if where != "" {
+		if len(args) > 0 {
+			return errors.New("name a unit or pass --where, not both")
+		}
+		rows, err := searchUnitMutationSources(where)
+		if err != nil {
+			return err
+		}
+		if renderPayload(rows) {
+			return nil
+		}
+		displayJSON(rows)
+		return nil
+	}
+	if len(args) == 0 {
+		return errors.New("name a unit, or pass --where to read many")
+	}
 	unit, err := apiGetUnitFromSlugInSpace(args[0], selectedSpaceID, "UnitID,SpaceID,Slug")
 	if err != nil {
 		return err

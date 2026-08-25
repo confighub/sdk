@@ -4,9 +4,11 @@
 package main
 
 import (
-	"github.com/cockroachdb/errors"
+	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/cockroachdb/errors"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -204,4 +206,58 @@ func unitFromWrite(resp *goclientnew.UnitCreateOrUpdateResponse) (*goclientnew.U
 func includeWriteResult() *string {
 	s := "ConfigData,MutationSources"
 	return &s
+}
+
+// bulkDataWhere scopes a caller's where clause to the Space the command is pointed at. The
+// bulk endpoints are organization-level -- "the configuration of everything matching this"
+// rarely stops at a Space boundary -- so a Space is a where clause like any other rather than
+// part of the path. `--space "*"` means the whole organization and adds nothing.
+func bulkDataWhere(whereClause string) string {
+	if selectedSpaceID == "" || selectedSpaceID == "*" {
+		return whereClause
+	}
+	scoped := fmt.Sprintf("SpaceID = '%s'", selectedSpaceID)
+	if whereClause == "" {
+		return scoped
+	}
+	// Concatenated rather than parenthesised: the filter grammar has no grouping, and a
+	// leading "(" is rejected as an attribute name. It conjoins with AND and nothing else,
+	// so there is no precedence for parentheses to disambiguate.
+	return whereClause + " AND " + scoped
+}
+
+// searchUnitData returns the configuration of every Unit a where clause selects, as the rows
+// the endpoint serves: identity, DataHash, DataSize and the document. This is the shape a
+// caller wants when reading many Units -- one request rather than one per Unit -- and the
+// reason a single-Unit read cannot serve it is that a stream of documents has no way to say
+// which Unit each came from.
+func searchUnitData(whereClause string) ([]goclientnew.UnitData, error) {
+	params := &goclientnew.SearchUnitDataParams{}
+	if w := bulkDataWhere(whereClause); w != "" {
+		params.Where = &w
+	}
+	res, err := cubClientNew.SearchUnitDataWithResponse(ctx, params)
+	if cubapi.IsAPIError(err, res) {
+		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	if res.JSON200 == nil {
+		return []goclientnew.UnitData{}, nil
+	}
+	return *res.JSON200, nil
+}
+
+// searchUnitMutationSources is the mutation-sources counterpart of searchUnitData.
+func searchUnitMutationSources(whereClause string) ([]goclientnew.UnitMutationSources, error) {
+	params := &goclientnew.SearchUnitMutationSourcesParams{}
+	if w := bulkDataWhere(whereClause); w != "" {
+		params.Where = &w
+	}
+	res, err := cubClientNew.SearchUnitMutationSourcesWithResponse(ctx, params)
+	if cubapi.IsAPIError(err, res) {
+		return nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	if res.JSON200 == nil {
+		return []goclientnew.UnitMutationSources{}, nil
+	}
+	return *res.JSON200, nil
 }
