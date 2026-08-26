@@ -8,14 +8,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/changeworkflow"
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/livestatus"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"sigs.k8s.io/yaml"
 )
 
 var variantPromoteArgs struct {
@@ -124,10 +127,21 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Refuse to promote until the previous stage is already running the change. The gate runs on a
-	// dry run too: a preview that ignored it would describe a promotion that cannot happen.
-	if err := validatePreviousStageForPromotion(downstreamSpace, changeOrder); err != nil {
-		return err
+	var changeWorkflow *changeworkflow.ChangeWorkflow
+	if changeWorkflowUnitID, ok := changeOrder.Annotations[changeWorkflowUnitIDAnnotation]; ok {
+		changeWorkflow, err = getChangeWorkflowFromUnit(changeWorkflowUnitID,
+			changeOrder.Annotations[changeWorkflowRevisionAnnotation])
+		if err != nil {
+			return err
+		}
+	}
+
+	if changeWorkflow != nil {
+		// Refuse to promote until the previous stage is already running the change. The gate runs on a
+		// dry run too: a preview that ignored it would describe a promotion that cannot happen.
+		if err := validatePreviousStageForPromotion(downstreamSpace, changeOrder, changeWorkflow); err != nil {
+			return err
+		}
 	}
 
 	// Promote always waits for triggers, except on a dry run (nothing is changed,
@@ -150,26 +164,196 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	return promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID)
 }
 
-func validatePreviousStageForPromotion(space *goclientnew.Space, changeOrder *goclientnew.ChangeOrder) error {
-	previousStage, ok := space.Labels["PreviousStage"]
+// getChangeWorkflowFromUnit parses the ChangeWorkflow definition the change
+// workflow annotations record: the pinned Revision of the named Unit, rather
+// than whatever that Unit holds now, so a workflow edited part way through a
+// rollout does not change the rules a ChangeOrder already started under.
+//
+// The Unit is reached by a list rather than a get because the annotation carries
+// only its ID, while every unit get is scoped to a Space, and the definition need
+// not live in either Space taking part in the promotion.
+func getChangeWorkflowFromUnit(changeWorkflowUnitID, changeWorkflowRevision string) (*changeworkflow.ChangeWorkflow, error) {
+	unitID, err := uuid.Parse(changeWorkflowUnitID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid %s annotation %q", changeWorkflowUnitIDAnnotation, changeWorkflowUnitID)
+	}
+
+	revisionNum, err := strconv.ParseInt(changeWorkflowRevision, 10, 64)
+	if err != nil {
+		return nil, errors.Wrapf(err, "invalid %s annotation %q", changeWorkflowRevisionAnnotation, changeWorkflowRevision)
+	}
+
+	units, err := apiListAllUnits(cubapi.Where{}.In("UnitID", []goclientnew.UUID{goclientnew.UUID(unitID)}),
+		"", "", "", "", false, "UnitID,SpaceID,Slug", "", "")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch ChangeWorkflow unit %s", unitID)
+	}
+	if len(units) == 0 || units[0].Unit == nil {
+		return nil, errors.Errorf("ChangeWorkflow unit %s not found", unitID)
+	}
+	unit := units[0].Unit
+
+	revision, err := apiGetRevisionFromNumberInSpace(revisionNum, unit.UnitID.String(), unit.SpaceID.String(),
+		"RevisionID,RevisionNum")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch revision %d of ChangeWorkflow unit %s", revisionNum, unit.Slug)
+	}
+
+	// A Revision's configuration is read from its data endpoint, not off the entity.
+	data, err := fetchRevisionData(unit.SpaceID, unit.UnitID, revision.RevisionID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch data of revision %d of unit %s", revisionNum, unit.Slug)
+	}
+
+	changeWorkflow := &changeworkflow.ChangeWorkflow{}
+	if err := yaml.Unmarshal([]byte(data), changeWorkflow); err != nil {
+		return nil, errors.Wrapf(err, "unit %s revision %d does not carry a ChangeWorkflow definition",
+			unit.Slug, revisionNum)
+	}
+
+	return changeWorkflow, nil
+}
+
+// getCurrentAndPreviousWorkflowStages finds the Stage the Space being promoted
+// into belongs to, along with the Stage ahead of it whose gates have to pass
+// first. Membership is by selector, so each Stage's selector is evaluated in
+// turn and the Space looked for among what it returns.
+//
+// The previous Stage is nil for the workflow's first Stage, which has nothing
+// ahead of it to gate on.
+func getCurrentAndPreviousWorkflowStages(
+	space *goclientnew.Space,
+	changeWorkflow *changeworkflow.ChangeWorkflow,
+) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
+	var previous *changeworkflow.ChangeWorkflowStage
+
+	for i := range changeWorkflow.Spec.Stages {
+		current := &changeWorkflow.Spec.Stages[i]
+
+		spaces, err := apiListSpaces(current.WhereSpace, "*")
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// The Space in hand and the ones the selector returned come from
+		// different calls, so they are matched by ID rather than by identity.
+		if slices.ContainsFunc(spaces, func(s *goclientnew.Space) bool {
+			return s != nil && s.SpaceID == space.SpaceID
+		}) {
+			return current, previous, nil
+		}
+
+		previous = current
+	}
+
+	return nil, nil, errors.Newf("Space '%s' is not in any Stage of ChangeWorkflow '%s'",
+		space.Slug, changeWorkflow.Name)
+}
+
+// checkVariantIsHealthy errors unless the Variant's reported live state says the
+// change is running there. The three fields are checked separately so the error
+// names which one is not yet true.
+//
+// A Space with no release target releases nothing, ever, so it has no live state
+// to report and can never satisfy a health gate -- which the Stage asked for, so
+// that is an error rather than a Variant to pass over.
+func checkVariantIsHealthy(variant *goclientnew.Space, stage, variantName string) error {
+	if variant.ReleaseTargetID == nil {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has no ReleaseTargetID, so its health cannot be determined",
+			stage, variantName)
+	}
+
+	liveStatusJSON, ok := variant.Annotations[livestatus.Annotation]
 	if !ok {
+		return errors.Newf("unable to promote to stage '%s', live-status not found for Variant '%s'", stage, variantName)
+	}
+
+	var liveStatus livestatus.Status
+	if err := json.Unmarshal([]byte(liveStatusJSON), &liveStatus); err != nil {
+		return err
+	}
+
+	if liveStatus.SyncStatus != "Synced" {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' is not synced", stage, variantName)
+	}
+	if liveStatus.OperationPhase != "Succeeded" {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has not succeeded in deployment", stage, variantName)
+	}
+	if liveStatus.HealthStatus != "Healthy" {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' is not healthy", stage, variantName)
+	}
+
+	return nil
+}
+
+// checkChangeOrderIsPromotedToVariant errors when a Variant of the previous
+// Stage has not taken the change order being promoted.
+//
+// ResolvedSpaceIDs is the server's own answer, derived from the Links the change
+// order propagates over and the Revision each Unit is applied at, so this is a
+// question rather than a reconstruction. A Unit the change order covers but did
+// not change is not counted: what is asked is whether this change has finished
+// arriving there, not whether the Space is otherwise up to date.
+func checkChangeOrderIsPromotedToVariant(changeOrder *goclientnew.ChangeOrder, variant *goclientnew.Space, stage, variantName string) error {
+	if !slices.Contains(changeOrder.ResolvedSpaceIDs, variant.SpaceID) {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has not taken change order '%s'",
+			stage, variantName, changeOrder.Slug)
+	}
+
+	return nil
+}
+
+// checkChangeOrderIsReleasedToVariant errors when a Variant of the previous
+// Stage has taken the change order but not published a Release carrying it.
+//
+// ReleasedSpaceIDs answers this directly, so the Release the Variant is running
+// does not have to be found and taken apart. A Space with no release target
+// releases nothing, ever, and so can never satisfy a released gate.
+func checkChangeOrderIsReleasedToVariant(changeOrder *goclientnew.ChangeOrder, variant *goclientnew.Space, stage, variantName string) error {
+	if variant.ReleaseTargetID == nil {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' cannot have any released changes, missing ReleaseTargetID",
+			stage, variantName)
+	}
+	if !slices.Contains(changeOrder.ReleasedSpaceIDs, variant.SpaceID) {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has taken change order '%s' but has not released it",
+			stage, variantName, changeOrder.Slug)
+	}
+	return nil
+}
+
+// validatePreviousStageForPromotion refuses the promotion until every Space in
+// the Stage ahead of the one being promoted into satisfies that Stage's entry
+// gates. The gates quantify over the previous Stage's whole membership, so a
+// Space added to it is gated without the workflow being edited.
+//
+// Having taken the change is checked for every Variant whatever the declared
+// prerequisites: a Stage cannot be entered from a Stage the change has not
+// reached. The prerequisites are checks on top of that.
+func validatePreviousStageForPromotion(
+	space *goclientnew.Space,
+	changeOrder *goclientnew.ChangeOrder,
+	changeWorkflow *changeworkflow.ChangeWorkflow,
+) error {
+	currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(space, changeWorkflow)
+	if err != nil {
+		return err
+	}
+	// No previous Stage means this is the workflow's first, so the change is
+	// promoting from the base Variant that source.space names -- where it was
+	// authored and so already is. Nothing precedes it that could have taken or
+	// released anything, so the promotion just goes ahead. This Stage's own
+	// prerequisites are not its entry gates either: they gate the Stage after it.
+	if previousStage == nil {
 		return nil
 	}
 
-	component, ok := space.Labels["Component"]
-	if !ok {
-		return errors.New("Component not found in Space")
-	}
-
-	stage := space.Labels["Stage"]
-
-	previousStageVariants, err := apiListSpaces("Labels.Stage = '"+previousStage+
-		"' AND Labels.Component = '"+component+"'", "*")
+	previousStageVariants, err := apiListSpaces(previousStage.WhereSpace, "*")
 	if err != nil {
 		return err
 	}
 	if len(previousStageVariants) == 0 {
-		return errors.Newf("unable to promote to stage '%s', no Space of Component '%s' has Stage '%s'", stage, component, previousStage)
+		return errors.Newf("unable to promote to stage '%s', its previous stage '%s' selects no Space",
+			currentStage.Name, previousStage.Name)
 	}
 
 	for _, variant := range previousStageVariants {
@@ -178,69 +362,29 @@ func validatePreviousStageForPromotion(space *goclientnew.Space, changeOrder *go
 			variantName = variant.Slug
 		}
 
-		// A Space with no release target releases nothing, ever, so nothing is deployed from it
-		// and there is no live state to report: taking the change is the whole of what it can be
-		// asked for.
-		if variant.ReleaseTargetID != nil {
-			liveStatusJSON, ok := variant.Annotations[livestatus.Annotation]
-			if !ok {
-				return errors.Newf("unable to promote to stage '%s', live-status not found for Variant '%s'", stage, variantName)
-			}
-
-			var liveStatus livestatus.Status
-			if err := json.Unmarshal([]byte(liveStatusJSON), &liveStatus); err != nil {
-				return err
-			}
-
-			if liveStatus.SyncStatus != "Synced" {
-				return errors.Newf("unable to promote to stage '%s', Variant '%s' is not synced", stage, variantName)
-			}
-			if liveStatus.OperationPhase != "Succeeded" {
-				return errors.Newf("unable to promote to stage '%s', Variant '%s' has not succeeded in deployment", stage, variantName)
-			}
-			if liveStatus.HealthStatus != "Healthy" {
-				return errors.Newf("unable to promote to stage '%s', Variant '%s' is not healthy", stage, variantName)
-			}
+		err = checkChangeOrderIsPromotedToVariant(changeOrder, variant, currentStage.Name, variantName)
+		if err != nil {
+			return err
 		}
 
-		// A ChangeOrder is the change's own identity, and the server keeps track of where it has
-		// got to, so this is a question rather than a reconstruction: the Release the Variant is
-		// running does not have to be found and taken apart to answer it.
-		if changeOrder != nil {
-			if err := validateReleasedChangeOrder(variant, changeOrder, stage, variantName); err != nil {
-				return err
+		for _, prerequisite := range currentStage.Prerequisites {
+			switch prerequisite {
+			case "healthy": // validate live-status reflects the intended change is healthy
+				err = checkVariantIsHealthy(variant, currentStage.Name, variantName)
+				if err != nil {
+					return err
+				}
+			case "released": // validate the change has been released to this Variant
+				err = checkChangeOrderIsReleasedToVariant(changeOrder, variant, currentStage.Name, variantName)
+				if err != nil {
+					return err
+				}
+			default:
+				return errors.Newf("unrecognized prerequisite for Stage '%s': '%s'", currentStage.Name, prerequisite)
 			}
-			continue
 		}
 	}
 
-	return nil
-}
-
-// validateReleasedChangeOrder errors when a Variant of the previous stage has not taken the change
-// order being promoted, or has taken it without releasing it.
-//
-// ResolvedSpaceIDs and ReleasedSpaceIDs are the server's own answer to both questions, derived from
-// the Links the change order propagates over and the Revision each Unit is applied at. A Unit the
-// change order covers but did not change is not counted in either, and neither is one outside the
-// Space's release: what is being asked is whether this change has finished arriving there, not
-// whether the Space is otherwise up to date.
-func validateReleasedChangeOrder(variant *goclientnew.Space, changeOrder *goclientnew.ChangeOrder,
-	stage, variantName string) error {
-	if !slices.Contains(changeOrder.ResolvedSpaceIDs, variant.SpaceID) {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' has not taken change order '%s'",
-			stage, variantName, changeOrder.Slug)
-	}
-	// A Space with no release target releases nothing, ever -- a base, or any Space whose Units
-	// are delivered from somewhere else -- so having taken the change is the whole of what it
-	// can be asked for.
-	if variant.ReleaseTargetID == nil {
-		return nil
-	}
-	if !slices.Contains(changeOrder.ReleasedSpaceIDs, variant.SpaceID) {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' has taken change order '%s' but has not released it",
-			stage, variantName, changeOrder.Slug)
-	}
 	return nil
 }
 

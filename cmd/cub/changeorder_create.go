@@ -5,13 +5,27 @@ package main
 
 import (
 	"bytes"
+	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/changeworkflow"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+)
+
+// The Unit holding the ChangeWorkflow definition that governs how a ChangeOrder
+// is promoted, recorded on the ChangeOrder as the Unit's ID and the Revision of
+// it in force when the ChangeOrder was created.
+//
+// The Revision is pinned rather than read at head so that editing the workflow
+// part way through a rollout cannot change the rules a change already started
+// under: every promotion of one ChangeOrder is judged against one definition.
+const (
+	changeWorkflowUnitIDAnnotation   = "confighub.com/change-workflow-unit-id"
+	changeWorkflowRevisionAnnotation = "confighub.com/change-workflow-revision-num"
 )
 
 var changeorderCreateCmd = &cobra.Command{
@@ -86,6 +100,7 @@ var changeorderCreateArgs struct {
 	filterSpace      string
 	variantLabels    []string
 	namePattern      string
+	changeWorkflow   string
 }
 
 func init() {
@@ -94,6 +109,7 @@ func init() {
 	enableFilterFlag(changeorderCreateCmd)
 
 	// Single create specific flags
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.changeWorkflow, "change-workflow", "", "identifier (slug, space/slug, or UUID) to identify the Unit carrying a ChangeWorkflow definition to use when promoting the ChangeOrder")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "link update type to follow when propagating: UpgradeUnit (the clone lineage, the default) or MergeUnits")
@@ -140,6 +156,10 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 		if changeorderCreateArgs.namePattern != "" && len(changeorderCreateArgs.variantLabels) == 0 {
 			return false, errors.New("--name-pattern requires --variant-labels to be set")
 		}
+
+		if changeorderCreateArgs.changeWorkflow != "" {
+			return false, errors.New("--change-workflow can only be used with single changeorder creation")
+		}
 	} else {
 		// Single create mode validation
 		if len(args) != 1 {
@@ -153,6 +173,12 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New(
 				"bulk create flags (--filter, --where, --changeorder, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments",
 			)
+		}
+
+		// Both answer the same question -- where the change is headed -- and the
+		// workflow answers it from its Stages, so an explicit list would contradict it.
+		if changeorderCreateArgs.changeWorkflow != "" && len(changeorderCreateArgs.inScopeSpaces) > 0 {
+			return false, errors.New("--change-workflow and --in-scope-space flags are mutually exclusive")
 		}
 	}
 
@@ -174,6 +200,59 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	return isBulkCreateMode, nil
+}
+
+// resolveChangeWorkflowUnit resolves --change-workflow to the Unit carrying the
+// ChangeWorkflow definition, which must source the Space the change order is
+// created in: a definition sourcing some other Space would misdescribe where the
+// change starts.
+func resolveChangeWorkflowUnit(identifier string) (*goclientnew.Unit, *changeworkflow.ChangeWorkflow, error) {
+	unit, err := parseEntityIdentifierSingleAsEntity(identifier, EntityTypeUnit, "UnitID,Slug,HeadRevisionNum",
+		apiGetUnitFromSlugInSpace,
+		func(u *goclientnew.Unit) string { return u.UnitID.String() },
+	)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "failed to parse change-workflow")
+	}
+
+	// Read the Revision that will be pinned, not the Unit's data, so what is
+	// validated here is exactly what every later promotion will be judged against.
+	changeWorkflow, err := getChangeWorkflowFromUnit(unit.UnitID.String(),
+		strconv.FormatInt(unit.HeadRevisionNum, 10))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return unit, changeWorkflow, nil
+}
+
+// changeWorkflowInScopeSpaceIDs computes where a ChangeOrder governed by this
+// workflow is headed: the Space the change starts in, plus every Space each
+// Stage selects. Stage membership is by selector, so this is the rollout the
+// definition describes as it stands when the ChangeOrder is created.
+//
+// Supplying it means the ChangeOrder's coverage is measured against the rollout
+// rather than against wherever its Links happen to reach.
+func changeWorkflowInScopeSpaceIDs(sourceSpaceID uuid.UUID,
+	changeWorkflow *changeworkflow.ChangeWorkflow) ([]goclientnew.UUID, error) {
+	inScope := []goclientnew.UUID{sourceSpaceID}
+	seen := map[uuid.UUID]bool{sourceSpaceID: true}
+
+	for _, stage := range changeWorkflow.Spec.Stages {
+		spaces, err := apiListSpaces(stage.WhereSpace, "SpaceID")
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to resolve the Spaces of Stage '%s'", stage.Name)
+		}
+		for _, space := range spaces {
+			if space == nil || seen[space.SpaceID] {
+				continue
+			}
+			seen[space.SpaceID] = true
+			inScope = append(inScope, space.SpaceID)
+		}
+	}
+
+	return inScope, nil
 }
 
 func changeorderCreateCmdRun(cmd *cobra.Command, args []string) error {
@@ -235,6 +314,29 @@ func runSingleChangeOrderCreate(args []string) error {
 			return err
 		}
 		newBody.InScopeSpaceIDs = inScopeSpaceIDs
+	}
+	if changeorderCreateArgs.changeWorkflow != "" {
+		unit, changeWorkflow, err := resolveChangeWorkflowUnit(changeorderCreateArgs.changeWorkflow)
+		if err != nil {
+			return err
+		}
+		if changeWorkflow.Spec.Source.Space != selectedSpaceSlug {
+			return errors.Errorf("--change-workflow %s sources Space %q, but the change order is being created in Space %q",
+				changeorderCreateArgs.changeWorkflow, changeWorkflow.Spec.Source.Space, selectedSpaceSlug)
+		}
+		// The source Space is the one being created in, which the check above just
+		// established, so it needs no lookup of its own.
+		inScopeSpaceIDs, err := changeWorkflowInScopeSpaceIDs(spaceID, changeWorkflow)
+		if err != nil {
+			return err
+		}
+		newBody.InScopeSpaceIDs = inScopeSpaceIDs
+
+		if newBody.Annotations == nil {
+			newBody.Annotations = map[string]string{}
+		}
+		newBody.Annotations[changeWorkflowUnitIDAnnotation] = unit.UnitID.String()
+		newBody.Annotations[changeWorkflowRevisionAnnotation] = strconv.FormatInt(unit.HeadRevisionNum, 10)
 	}
 
 	// Create params with AllowExists if needed
