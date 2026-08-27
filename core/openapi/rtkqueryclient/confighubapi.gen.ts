@@ -15,6 +15,7 @@ export const addTagTypes = [
   'Invocation',
   'Link',
   'UserInfo',
+  'BrowserSession',
   'OAuthClient',
   'Organization',
   'OrganizationMember',
@@ -617,6 +618,13 @@ const injectedRtkApi = api
       getMe: build.query<GetMeApiResponse, GetMeApiArg>({
         query: () => ({ url: `/me` }),
         providesTags: ['UserInfo'],
+      }),
+      createBrowserSession: build.mutation<
+        CreateBrowserSessionApiResponse,
+        CreateBrowserSessionApiArg
+      >({
+        query: () => ({ url: `/me/browser-session`, method: 'POST' }),
+        invalidatesTags: ['BrowserSession'],
       }),
       listOAuthClients: build.query<ListOAuthClientsApiResponse, ListOAuthClientsApiArg>({
         query: () => ({ url: `/oauth_client` }),
@@ -5954,6 +5962,8 @@ export type BulkCreateLinksApiArg = {
 export type GetMeApiResponse =
   /** status 200 a User given membership on the Organization */ OrganizationMember;
 export type GetMeApiArg = void;
+export type CreateBrowserSessionApiResponse = /** status 200 OK */ BrowserSessionResponse;
+export type CreateBrowserSessionApiArg = void;
 export type ListOAuthClientsApiResponse = /** status 200 OK */ OAuthClientRead[];
 export type ListOAuthClientsApiArg = void;
 export type CreateOAuthClientApiResponse =
@@ -15282,6 +15292,11 @@ export type OrganizationMember = {
   /** Unique username for a User. Must be unique for all of ConfigHub. */
   Username?: string;
 };
+export type BrowserSessionResponse = {
+  ExpiresIn?: number;
+  Ticket?: string;
+  URL?: string;
+};
 export type OAuthClient = {
   /** Allow members of any organization to use the app (each gets their own org's session) instead of only the owning org. Permitted only for trusted organizations. */
   AllowAllOrgs?: boolean;
@@ -16836,6 +16851,7 @@ export const {
   useBulkCreateLinksMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
+  useCreateBrowserSessionMutation,
   useListOAuthClientsQuery,
   useLazyListOAuthClientsQuery,
   useCreateOAuthClientMutation,

@@ -62,6 +62,11 @@ func displayContextDetails(ctx *Context) {
 	view.Append([]string{"Server URL", ctx.Coordinate.ServerURL})
 	view.Append([]string{"Default Space", ctx.Settings.DefaultSpace})
 	view.Append([]string{"Token Status", localTokenStatus(ctx)})
+	// Shown because it answers "how does this context get in", which otherwise
+	// has to be remembered or rediscovered when a token expires.
+	if ctx.Metadata.PrivateKey != "" {
+		view.Append([]string{"Private Key", ctx.Metadata.PrivateKey})
+	}
 	// Attribute the context this invocation runs against — config.yaml, or the
 	// override that outranked it, named along with what it outranked — so neither
 	// the active context nor an ignored override is a surprise.

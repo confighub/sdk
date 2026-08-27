@@ -206,24 +206,12 @@ func readPublicKey(path string) (json.RawMessage, error) {
 // writePrivateKey writes a generated private key readable only by its owner,
 // and refuses to overwrite an existing file. Overwriting would destroy the only
 // copy of a key that something may currently be authenticating with.
+//
+// The Store owns this so that anything else writing a key into the same
+// directory produces an identical file.
 func writePrivateKey(path string, privateJWK json.RawMessage) error {
-	if dir := filepath.Dir(path); dir != "" {
-		if err := os.MkdirAll(dir, 0o700); err != nil {
-			return fmt.Errorf("creating %s: %w", dir, err)
-		}
-	}
-	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
-	if err != nil {
-		if os.IsExist(err) {
-			return fmt.Errorf("%s already exists; remove it or choose another path", path)
-		}
-		return fmt.Errorf("writing private key: %w", err)
-	}
-	defer file.Close()
-	if _, err := file.Write(append(privateJWK, '\n')); err != nil {
-		return fmt.Errorf("writing private key: %w", err)
-	}
-	return nil
+	_, err := contextManager.Store().WritePrivateKey(path, privateJWK)
+	return err
 }
 
 func apiCreateUserKey(userID uuid.UUID, publicJWK json.RawMessage, description string) (*goclientnew.UserKey, error) {

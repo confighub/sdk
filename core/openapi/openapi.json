@@ -6913,6 +6913,98 @@
         }
       }
     },
+    "/me/browser-session": {
+      "post": {
+        "tags": [
+          "BrowserSession"
+        ],
+        "summary": "Create a single-use link that signs a browser in as the current user",
+        "description": "Returns a short-lived, single-use URL. Opening it exchanges the ticket for a session cookie. Intended for instances with no identity provider, where the browser has no other way to authenticate.",
+        "operationId": "CreateBrowserSession",
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrowserSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BrowserSession request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BrowserSession not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "BrowserSession data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing BrowserSession.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/oauth_client": {
       "get": {
         "tags": [
@@ -31859,6 +31951,23 @@
           }
         },
         "description": "BridgeWorkerStatus represents the status information of a bridge worker within the system."
+      },
+      "BrowserSessionResponse": {
+        "type": "object",
+        "properties": {
+          "ExpiresIn": {
+            "type": "integer",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Ticket": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "URL": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "ChangeOrder": {
         "required": [

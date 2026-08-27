@@ -7357,6 +7357,64 @@ paths:
       summary: Get the current user's information
       tags:
       - UserInfo
+  /me/browser-session:
+    post:
+      description: Returns a short-lived, single-use URL. Opening it exchanges the
+        ticket for a session cookie. Intended for instances with no identity provider,
+        where the browser has no other way to authenticate.
+      operationId: CreateBrowserSession
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BrowserSessionResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BrowserSession request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BrowserSession not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BrowserSession data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing BrowserSession.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create a single-use link that signs a browser in as the current user
+      tags:
+      - BrowserSession
   /oauth_client:
     get:
       description: List the OAuth clients owned by the caller's organization.
@@ -29456,6 +29514,18 @@ components:
         Status:
           description: Status indicates the current status of the bridge worker. Possible
             values include Connected, Disconnected, ActionSent, ActionResultReceived.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    BrowserSessionResponse:
+      properties:
+        ExpiresIn:
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Ticket:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        URL:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object

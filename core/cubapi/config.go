@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,7 +76,18 @@ type Settings struct {
 
 // Metadata holds optional, non-identifying context data.
 type Metadata struct {
-	TokenFile        string    `yaml:"tokenFile" json:"tokenFile"`
+	TokenFile string `yaml:"tokenFile" json:"tokenFile"`
+
+	// PrivateKey names the key this context authenticates with, in the form it
+	// was given: an alias in the key directory, a path, or empty for a context
+	// that authenticates some other way.
+	//
+	// It is a reference, never key material. Recording it is what lets a session
+	// be renewed without being told again which key to use -- with a credential
+	// that needs no human, an expired token is a detail the caller should not
+	// have to handle.
+	PrivateKey string `yaml:"privateKey,omitempty" json:"privateKey,omitempty"`
+
 	OrganizationName string    `yaml:"organizationName,omitempty" json:"organizationName,omitempty"`
 	Created          time.Time `yaml:"created,omitempty" json:"created,omitempty"`
 	LastUsed         time.Time `yaml:"lastUsed,omitempty" json:"lastUsed,omitempty"`
@@ -92,7 +104,28 @@ type TokenData struct {
 func (c Coordinate) Equals(other Coordinate) bool {
 	return c.User == other.User &&
 		c.OrganizationID == other.OrganizationID &&
-		c.ServerURL == other.ServerURL
+		SameServer(c.ServerURL, other.ServerURL)
+}
+
+// SameServer reports whether two URLs name the same ConfigHub.
+//
+// A trailing slash and the case of the scheme or host do not make a different
+// server, but a string comparison says they do -- which splits one instance
+// across two contexts, so a login updates one and a later command reads the
+// other. Anything it cannot parse is compared as written.
+func SameServer(a, b string) bool {
+	return normalizeServerURL(a) == normalizeServerURL(b)
+}
+
+func normalizeServerURL(raw string) string {
+	trimmed := strings.TrimRight(strings.TrimSpace(raw), "/")
+	parsed, err := url.Parse(trimmed)
+	if err != nil || parsed.Host == "" {
+		return trimmed
+	}
+	parsed.Scheme = strings.ToLower(parsed.Scheme)
+	parsed.Host = strings.ToLower(parsed.Host)
+	return parsed.String()
 }
 
 // Store loads and resolves ConfigHub CLI configuration from a config file plus a

@@ -35,6 +35,31 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+export const CLI_SIGN_IN_PATH = '/cli-signin';
+
+/**
+ * Whether this instance has an identity provider, from /api/info.
+ *
+ * Clients dispatch on the auth mechanism the server advertises rather than on a
+ * mode name, and an instance with no provider reports an empty AuthServer.
+ *
+ * Asked once and memoised: it cannot change without the server restarting, and
+ * a 401 storm should not produce one request each. A failure here is treated as
+ * "there is a provider", which keeps an unreachable /api/info behaving exactly
+ * as it did before this existed.
+ */
+let identityProviderPresence: Promise<boolean> | undefined;
+
+const hasIdentityProvider = (): Promise<boolean> => {
+  identityProviderPresence ??= fetch('/api/info', { credentials: 'include' })
+    .then((response) => (response.ok ? response.json() : null))
+    .then((info: { AuthServer?: string } | null) =>
+      info ? Boolean(info.AuthServer) : true,
+    )
+    .catch(() => true);
+  return identityProviderPresence;
+};
+
 const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
@@ -43,14 +68,19 @@ const baseQueryWithReauth: BaseQueryFn<
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error && result.error.status === 401) {
-    // Unauthorized - redirect to login
-    const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-    window.location.href =
-      '/auth/login?state=' +
-      window.location.pathname +
-      (window.location.search ?? '') +
-      '&redirect_uri=' +
-      redirectUri;
+    // Unauthorized. Where to send them depends on whether this instance has an
+    // identity provider; only asked here, on the path that needs the answer.
+    if (await hasIdentityProvider()) {
+      const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
+      window.location.href =
+        '/auth/login?state=' +
+        window.location.pathname +
+        (window.location.search ?? '') +
+        '&redirect_uri=' +
+        redirectUri;
+    } else if (window.location.pathname !== CLI_SIGN_IN_PATH) {
+      window.location.href = CLI_SIGN_IN_PATH;
+    }
   }
 
   if (result.error && result.error.status === 403) {

@@ -213,6 +213,10 @@ func (cm *ContextManager) KeyPath(key string) string {
 	return cm.store.KeyPath(key)
 }
 
+// Store exposes the underlying credential store, for the few operations that
+// belong to it rather than to context selection.
+func (cm *ContextManager) Store() *cubapi.Store { return cm.store }
+
 // KeyDir is the directory bare key aliases resolve within.
 func (cm *ContextManager) KeyDir() string {
 	return cm.store.KeyDir()

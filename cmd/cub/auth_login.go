@@ -123,10 +123,30 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("cannot use both --as-worker and --private-key: they are alternative credentials, not layers")
 	}
 
+	// A context that authenticated with a key can do so again without being
+	// told which one. Tokens expire daily; asking for the same flag every
+	// morning is a worse tax than the first setup ever was.
+	//
+	// An explicit flag still wins, so naming a different key switches the
+	// context to it rather than being ignored.
+	rememberedKey := ""
+	if privateKeyRef == "" && !asWorker {
+		if active := contextManager.ActiveContext(); active != nil &&
+			cubapi.SameServer(active.Coordinate.ServerURL, coordinate.ServerURL) {
+			rememberedKey = active.Metadata.PrivateKey
+		}
+	}
+	if rememberedKey != "" {
+		privateKeyRef = rememberedKey
+	}
+
 	var err error
 	var session *cubapi.AuthSession
 	switch {
 	case privateKeyRef != "":
+		if rememberedKey != "" {
+			tprint("Reusing the key this context last authenticated with (%s).", rememberedKey)
+		}
 		session, err = performPrivateKeyAuth(coordinate, privateKeyRef)
 	case asWorker:
 		// Handle worker authentication
@@ -269,9 +289,26 @@ const privateKeyEnvVar = "CONFIGHUB_AUTH_PRIVATE_KEY"
 // private key. Nothing secret is sent: the server verifies the signature
 // against a public key it already holds.
 func performPrivateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSession, error) {
-	privateJWK, source, err := loadPrivateKey(ref)
+	session, signer, err := privateKeyAuth(coordinate, ref)
 	if err != nil {
 		return nil, err
+	}
+	tprint("Successfully logged in as identity %s using key %s (Organization: %s)",
+		signer.Subject(), signer.Kid(), session.OrganizationID)
+	return session, nil
+}
+
+// privateKeyAuth authenticates and says nothing.
+//
+// Separate from performPrivateKeyAuth because renewing a session in the middle
+// of someone's command must be silent: a user who ran `cub space list` did not
+// ask to be told about a login, and announcing one makes an invisible mechanism
+// visible for no benefit. A failure still surfaces, since that is something
+// they have to act on.
+func privateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSession, *cubapi.AssertionSigner, error) {
+	privateJWK, source, err := loadPrivateKey(ref)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// The audience must match the server's. An assertion minted for the wrong
@@ -279,16 +316,14 @@ func performPrivateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSessi
 	// a mismatch is worth being able to fix without guessing.
 	signer, err := cubapi.NewAssertionSigner(privateJWK, "", os.Getenv("CONFIGHUB_ASSERTION_AUDIENCE"))
 	if err != nil {
-		return nil, fmt.Errorf("%s: %w", source, err)
+		return nil, nil, fmt.Errorf("%s: %w", source, err)
 	}
 
 	session, err := cubapi.PerformAssertionAuth(coordinate.ServerURL, signer)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	tprint("Successfully logged in as identity %s using key %s (Organization: %s)",
-		signer.Subject(), signer.Kid(), session.OrganizationID)
-	return session, nil
+	return session, signer, nil
 }
 
 // loadPrivateKey resolves a --private-key reference to key material, and
@@ -403,6 +438,10 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 		return err
 	}
 	ctx.Coordinate = coordinate
+	// Recorded so the next login needs no flag, and cleared when this login used
+	// a different kind of credential -- a stale reference would send a later
+	// renewal at a key that is no longer how this context gets in.
+	ctx.Metadata.PrivateKey = privateKeyRef
 	// Point the active context at the login target so the rest of the flow
 	// (setSpaceContext, the org switch-back in authLoginCmdRun, the summary we
 	// print) reads and writes the context that just received the token, whether

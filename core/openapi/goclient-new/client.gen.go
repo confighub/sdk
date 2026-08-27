@@ -238,6 +238,9 @@ type ClientInterface interface {
 	// GetMe request
 	GetMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CreateBrowserSession request
+	CreateBrowserSession(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListOAuthClients request
 	ListOAuthClients(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1479,6 +1482,18 @@ func (c *Client) BulkCreateLinksWithApplicationMergePatchPlusJSONBody(ctx contex
 
 func (c *Client) GetMe(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetMeRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateBrowserSession(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateBrowserSessionRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -8604,6 +8619,33 @@ func NewGetMeRequest(server string) (*http.Request, error) {
 	}
 
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateBrowserSessionRequest generates requests for CreateBrowserSession
+func NewCreateBrowserSessionRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/me/browser-session")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -23764,6 +23806,9 @@ type ClientWithResponsesInterface interface {
 	// GetMeWithResponse request
 	GetMeWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetMeResponse, error)
 
+	// CreateBrowserSessionWithResponse request
+	CreateBrowserSessionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CreateBrowserSessionResponse, error)
+
 	// ListOAuthClientsWithResponse request
 	ListOAuthClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListOAuthClientsResponse, error)
 
@@ -25446,6 +25491,35 @@ func (r GetMeResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetMeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateBrowserSessionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *BrowserSessionResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateBrowserSessionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateBrowserSessionResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -30536,6 +30610,15 @@ func (c *ClientWithResponses) GetMeWithResponse(ctx context.Context, reqEditors 
 	return ParseGetMeResponse(rsp)
 }
 
+// CreateBrowserSessionWithResponse request returning *CreateBrowserSessionResponse
+func (c *ClientWithResponses) CreateBrowserSessionWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*CreateBrowserSessionResponse, error) {
+	rsp, err := c.CreateBrowserSession(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateBrowserSessionResponse(rsp)
+}
+
 // ListOAuthClientsWithResponse request returning *ListOAuthClientsResponse
 func (c *ClientWithResponses) ListOAuthClientsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListOAuthClientsResponse, error) {
 	rsp, err := c.ListOAuthClients(ctx, reqEditors...)
@@ -35303,6 +35386,81 @@ func ParseGetMeResponse(rsp *http.Response) (*GetMeResponse, error) {
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateBrowserSessionResponse parses an HTTP response from a CreateBrowserSessionWithResponse call
+func ParseCreateBrowserSessionResponse(rsp *http.Response) (*CreateBrowserSessionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateBrowserSessionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest BrowserSessionResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

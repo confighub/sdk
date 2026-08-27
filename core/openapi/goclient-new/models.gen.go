@@ -562,6 +562,13 @@ type BridgeWorkerStatus struct {
 	Status string `json:"Status,omitempty" yaml:"Status,omitempty"`
 }
 
+// BrowserSessionResponse defines model for BrowserSessionResponse.
+type BrowserSessionResponse struct {
+	ExpiresIn int    `json:"ExpiresIn,omitempty" yaml:"ExpiresIn,omitempty"`
+	Ticket    string `json:"Ticket,omitempty" yaml:"Ticket,omitempty"`
+	URL       string `json:"URL,omitempty" yaml:"URL,omitempty"`
+}
+
 // ChangeOrder Defines a change's identity as it moves between Spaces.
 type ChangeOrder struct {
 	// AbortedReason AbortedReason says why the ChangeOrder was given up on. Setting it is what aborts one: a ChangeOrder with a reason is Aborted whatever its Links say.
