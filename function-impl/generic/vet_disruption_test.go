@@ -68,7 +68,7 @@ func otherData(t *testing.T, source api.OtherDataSource, s string) map[api.Other
 func TestVetDisruption_NoChangePasses(t *testing.T) {
 	rp := testDisruptionRP()
 	res, err := GenericVetDisruption(rp, parse(t, ngBaseline),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
 	require.NoError(t, err)
 	assert.True(t, res.Passed)
@@ -94,7 +94,7 @@ spec:
 `
 	rp := testDisruptionRP()
 	res, err := GenericVetDisruption(rp, parse(t, current),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
 	require.NoError(t, err)
 	assert.True(t, res.Passed, "a scaling change is not disruption")
@@ -126,7 +126,7 @@ spec:
 		{api.ScoreLow, false},
 	} {
 		res, err := GenericVetDisruption(rp, parse(t, rolling),
-			otherData(t, "LastAppliedRevisionNum", ngBaseline),
+			otherData(t, "LastReleasedRevisionNum", ngBaseline),
 			DefaultDisruptionAttributePrefix, tc.threshold, nil)
 		require.NoError(t, err)
 		assert.Equal(t, tc.wantPassed, res.Passed,
@@ -152,7 +152,7 @@ spec:
 `
 	rp := testDisruptionRP()
 	res, err := GenericVetDisruption(rp, parse(t, replaced),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreHigh, nil)
 	require.NoError(t, err)
 	assert.False(t, res.Passed)
@@ -197,7 +197,7 @@ spec:
 	base := parse(t, clusterBaseline+"---\n"+ngBaseline)
 
 	res, err := GenericVetDisruption(rp, current,
-		map[api.OtherDataSource]gaby.Container{"LastAppliedRevisionNum": base},
+		map[api.OtherDataSource]gaby.Container{"LastReleasedRevisionNum": base},
 		DefaultDisruptionAttributePrefix, api.ScoreCritical, nil)
 	require.NoError(t, err)
 	assert.False(t, res.Passed)
@@ -230,54 +230,7 @@ func TestVetDisruption_UnusableBaselineErrors(t *testing.T) {
 		otherData(t, "HeadRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
 	require.Error(t, err, "an uninterpretable baseline must not silently pass")
-	assert.Contains(t, err.Error(), "LastAppliedRevisionNum")
-}
-
-// Either supported baseline source works, so a Trigger configured with LiveRevisionNum is not
-// silently inert.
-func TestVetDisruption_AcceptsLiveRevisionBaseline(t *testing.T) {
-	replaced := `apiVersion: eks.aws.upbound.io/v1beta2
-kind: NodeGroup
-metadata:
-  name: system
-spec:
-  forProvider:
-    instanceTypes:
-      - m6i.2xlarge
-    amiType: AL2023_x86_64_STANDARD
-    version: "1.34"
-`
-	rp := testDisruptionRP()
-	res, err := GenericVetDisruption(rp, parse(t, replaced),
-		otherData(t, "LiveRevisionNum", ngBaseline),
-		DefaultDisruptionAttributePrefix, api.ScoreHigh, nil)
-	require.NoError(t, err)
-	assert.False(t, res.Passed)
-}
-
-// LastAppliedRevisionNum is preferred when both are present.
-func TestVetDisruption_PrefersLastApplied(t *testing.T) {
-	rp := testDisruptionRP()
-	// The unit currently matches LastApplied, but differs from Live. Preferring LastApplied means
-	// no disruption is reported.
-	live := `apiVersion: eks.aws.upbound.io/v1beta2
-kind: NodeGroup
-metadata:
-  name: system
-spec:
-  forProvider:
-    instanceTypes:
-      - m6i.4xlarge
-    amiType: AL2023_x86_64_STANDARD
-    version: "1.34"
-`
-	res, err := GenericVetDisruption(rp, parse(t, ngBaseline),
-		map[api.OtherDataSource]gaby.Container{
-			"LastAppliedRevisionNum": parse(t, ngBaseline),
-			"LiveRevisionNum":        parse(t, live),
-		}, DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
-	require.NoError(t, err)
-	assert.True(t, res.Passed, "LastAppliedRevisionNum should have been used as the baseline")
+	assert.Contains(t, err.Error(), "LastReleasedRevisionNum")
 }
 
 // A resource absent from the baseline is being created, not changed.
@@ -295,7 +248,7 @@ spec:
     version: "1.34"
 `
 	res, err := GenericVetDisruption(rp, parse(t, added),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
 	require.NoError(t, err)
 	assert.True(t, res.Passed, "adding a node group is a create, not a replacement")
@@ -306,7 +259,7 @@ spec:
 func TestVetDisruption_NoRegisteredPathsErrors(t *testing.T) {
 	rp := k8skit.NewK8sResourceProvider() // nothing registered
 	_, err := GenericVetDisruption(rp, parse(t, ngBaseline),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreLow, nil)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no paths registered")
@@ -332,7 +285,7 @@ spec:
       - m6i.2xlarge
 `
 	res, err := GenericVetDisruption(rp, parse(t, changed),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline), "blast", api.ScoreCritical, nil)
+		otherData(t, "LastReleasedRevisionNum", ngBaseline), "blast", api.ScoreCritical, nil)
 	require.NoError(t, err)
 	assert.False(t, res.Passed)
 	assert.Equal(t, api.ScoreCritical, res.MaxScore)
@@ -364,7 +317,7 @@ spec:
     version: "1.34"
 `
 	res, err := GenericVetDisruption(rp, parse(t, changed),
-		otherData(t, "LastAppliedRevisionNum", ngBaseline),
+		otherData(t, "LastReleasedRevisionNum", ngBaseline),
 		DefaultDisruptionAttributePrefix, api.ScoreHigh, nil)
 	require.NoError(t, err)
 	assert.False(t, res.Passed, "a list-valued path registered as string must still be graded")

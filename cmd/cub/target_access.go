@@ -75,7 +75,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Look up the unit.
-	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID,TargetID,LastAppliedRevisionNum")
+	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID,TargetID,LastReleasedRevisionNum")
 	if err != nil {
 		return fmt.Errorf("unit %q not found in space", unitSlug)
 	}
@@ -86,7 +86,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Check the unit has been published in a Release.
-	if unit.LastAppliedRevisionNum == 0 {
+	if unit.LastReleasedRevisionNum == 0 {
 		return fmt.Errorf("unit %q has not been published yet; run 'cub release publish %s' first", unitSlug, selectedSpaceID)
 	}
 

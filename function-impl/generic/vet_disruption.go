@@ -32,11 +32,9 @@ var disruptionTiers = []struct {
 
 // disruptionOtherDataPreference is the order in which baselines are accepted.
 //
-// LastAppliedRevisionNum is preferred over LiveRevisionNum: it is set at apply time and is "what
-// the target was last told".
-// A validator runs *before* apply, so the former is the correct comparison point — and it is what
-// the GitOps release path maintains.
-var disruptionOtherDataPreference = []api.OtherDataSource{"LastAppliedRevisionNum", "LiveRevisionNum"}
+// LastReleasedRevisionNum is "what the target was last told", and it is what the GitOps release
+// path maintains. A validator runs *before* apply, so it is the correct comparison point.
+var disruptionOtherDataPreference = []api.OtherDataSource{"LastReleasedRevisionNum"}
 
 func registerVetDisruption(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
 	if err := fh.RegisterFunction("vet-disruption", &handler.FunctionRegistration{
@@ -75,7 +73,7 @@ func registerVetDisruption(fh handler.FunctionRegistry, converter configkit.Conf
 			Hermetic:   true,
 			Idempotent: true,
 			Description: "Validates how disruptive a pending change is, by comparing registered per-severity " +
-				"paths against the last-applied revision. Registering a path under disruption-critical / -high / " +
+				"paths against the last-released revision. Registering a path under disruption-critical / -high / " +
 				"-medium / -low grades a change to it; the score-threshold decides which severities fail. " +
 				"Unlike vet-immutable this is graded rather than binary, so one rule can block a destructive " +
 				"change while merely reporting a benign one. Validation passes when there is no baseline, " +
@@ -142,7 +140,7 @@ func GenericVetDisruption(
 	if !ok {
 		return api.ValidationResult{}, fmt.Errorf(
 			"vet-disruption: other data was supplied but none of %v is present (found %v); "+
-				"set the Trigger's OtherDataSource to LastAppliedRevisionNum",
+				"set the Trigger's OtherDataSource to LastReleasedRevisionNum",
 			disruptionOtherDataPreference, otherDataKeys(parsedOtherData))
 	}
 

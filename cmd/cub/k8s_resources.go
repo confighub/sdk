@@ -410,5 +410,5 @@ func k8sSpaceSlugs() (map[uuid.UUID]string, error) {
 
 // k8sUnitSelectFields are the Unit fields the wide and detail views show.
 const k8sUnitSelectFields = "UnitID,SpaceID,Slug,DisplayName,TargetID,Labels,ApplyGates," +
-	"HeadRevisionNum,LastAppliedRevisionNum,LiveRevisionNum,UpstreamRevisionNum," +
+	"HeadRevisionNum,LastReleasedRevisionNum,UpstreamRevisionNum," +
 	"LastChangeDescription,UpdatedAt"

@@ -51,7 +51,7 @@ Examples:
 
 // Default columns to display when no custom columns are specified. This is also what drives the
 // select list, so it names every field either layout shows -- the wide-only tags included.
-var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "ChangeOrder.UpdateType", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
+var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "Stage", "ChangeOrder.UpdateType", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
 
 // changeorderListInclude is the Include parameter for change order list queries.
 const changeorderListInclude = "SpaceID,StartTagID,EndTagID"
@@ -68,8 +68,12 @@ var changeorderAliases = map[string]string{
 	"ID":   "ChangeOrder.ChangeOrderID",
 }
 
-// ChangeOrder custom column dependencies
-var changeorderCustomColumnDependencies = map[string][]string{}
+// ChangeOrder custom column dependencies. Stage is computed rather than stored: the
+// annotation names the ChangeWorkflow governing the change order, and ResolvedSpaceIDs
+// says which of its stages the change has reached.
+var changeorderCustomColumnDependencies = map[string][]string{
+	"Stage": {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs"},
+}
 
 func init() {
 	addStandardListFlags(changeorderListCmd)
@@ -105,7 +109,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		header := []string{"Name", "Space", "State", "Update-Type"}
+		header := []string{"Name", "Space", "State", "Stage", "Update-Type"}
 		if wide {
 			header = append(header, "Start-Tag", "End-Tag")
 		}
@@ -125,6 +129,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			changeorder.Slug,
 			spaceSlug,
 			changeorder.State,
+			changeOrderCurrentStage(changeorder),
 			changeorder.UpdateType,
 		}
 		if wide {

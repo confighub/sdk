@@ -5149,9 +5149,8 @@ paths:
           type: string
       - description: 'Source of additional configuration data to pass to functions
           that need it (e.g., vet-immutable). Supports named revision specifiers:
-          LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum.
-          Can be prefixed with ''Before:'' (e.g., Before:HeadRevisionNum). May be
-          repeated for multiple sources.'
+          LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
+          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.'
         in: query
         name: other_data_source
         required: false
@@ -5192,9 +5191,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -8822,7 +8821,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -8921,7 +8920,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9040,7 +9039,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9139,7 +9138,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9257,7 +9256,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9356,7 +9355,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -13585,9 +13584,8 @@ paths:
           type: string
       - description: 'Source of additional configuration data to pass to functions
           that need it (e.g., vet-immutable). Supports named revision specifiers:
-          LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum.
-          Can be prefixed with ''Before:'' (e.g., Before:HeadRevisionNum). May be
-          repeated for multiple sources.'
+          LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
+          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.'
         in: query
         name: other_data_source
         required: false
@@ -13628,9 +13626,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -17996,9 +17994,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -18049,7 +18047,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18429,7 +18427,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -18584,16 +18582,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
-          with ''Before:'' to select the revision immediately before the specified
-          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
-          ChangeSet references, the latest revision associated with that entity is
-          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
-          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
-          which is what undoes a promotion however many revisions it made.'
+      - description: 'Restore revision source. Supports: Named revisions (''HeadRevisionNum'',
+          ''LastReleasedRevisionNum''), direct revision number (e.g., ''42''), or
+          entity references (''Tag:uuid'', ''ChangeSet:uuid'', ''ChangeOrder:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LastReleasedRevisionNum'',
+          ''Before:42''). When using Tag or ChangeSet references, the latest revision
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: restore
         required: false
@@ -18623,16 +18621,15 @@ paths:
           of the changes to merge. With merge_source, this is a revision of the merge
           source unit. With merge_external_source, this is a revision of the unit
           being updated and overrides the default selection of the latest MergeExternal
-          revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          revision. Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_base
         required: false
@@ -18643,16 +18640,15 @@ paths:
           resolve, where it names how far along the source to take the propagation;
           the default there is the source''s head. Naming a ChangeSet or Tag that
           ends a change is what leaves a change still being made at the source behind.
-          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_end
         required: false
@@ -19024,16 +19020,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
-          with ''Before:'' to select the revision immediately before the specified
-          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
-          ChangeSet references, the latest revision associated with that entity is
-          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
-          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
-          which is what undoes a promotion however many revisions it made.'
+      - description: 'Restore revision source. Supports: Named revisions (''HeadRevisionNum'',
+          ''LastReleasedRevisionNum''), direct revision number (e.g., ''42''), or
+          entity references (''Tag:uuid'', ''ChangeSet:uuid'', ''ChangeOrder:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LastReleasedRevisionNum'',
+          ''Before:42''). When using Tag or ChangeSet references, the latest revision
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: restore
         required: false
@@ -19063,16 +19059,15 @@ paths:
           of the changes to merge. With merge_source, this is a revision of the merge
           source unit. With merge_external_source, this is a revision of the unit
           being updated and overrides the default selection of the latest MergeExternal
-          revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          revision. Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_base
         required: false
@@ -19083,16 +19078,15 @@ paths:
           resolve, where it names how far along the source to take the propagation;
           the default there is the source''s head. Naming a ChangeSet or Tag that
           ends a change is what leaves a change still being made at the source behind.
-          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_end
         required: false
@@ -19314,8 +19308,7 @@ paths:
           format: uuid
           type: string
       - description: Revision to approve (defaults to HeadRevisionNum). Can be a revision
-          number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid',
-          etc.
+          number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
         in: query
         name: revision
         required: false
@@ -19593,16 +19586,15 @@ paths:
           of the changes to merge. With merge_source, this is a revision of the merge
           source unit. With merge_external_source, this is a revision of the unit
           being updated and overrides the default selection of the latest MergeExternal
-          revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          revision. Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_base
         required: false
@@ -20707,7 +20699,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -20806,7 +20798,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -20936,7 +20928,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, LiveAt, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -24747,9 +24739,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -24800,7 +24792,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -24922,9 +24914,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -24975,7 +24967,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -25151,9 +25143,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -25204,7 +25196,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -25266,16 +25258,16 @@ paths:
         required: false
         schema:
           type: boolean
-      - description: 'Restore revision source. Supports: Named revisions (''LiveRevisionNum'',
-          ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum'', ''HeadRevisionNum''),
-          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
-          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
-          with ''Before:'' to select the revision immediately before the specified
-          one (e.g., ''Before:LiveRevisionNum'', ''Before:42''). When using Tag or
-          ChangeSet references, the latest revision associated with that entity is
-          selected. ''ChangeOrder:uuid'' selects the revision the change order ended
-          at on this Unit and ''Before:ChangeOrder:uuid'' the one before it began,
-          which is what undoes a promotion however many revisions it made.'
+      - description: 'Restore revision source. Supports: Named revisions (''HeadRevisionNum'',
+          ''LastReleasedRevisionNum''), direct revision number (e.g., ''42''), or
+          entity references (''Tag:uuid'', ''ChangeSet:uuid'', ''ChangeOrder:uuid'',
+          ''Revision:uuid''). Can be prefixed with ''Before:'' to select the revision
+          immediately before the specified one (e.g., ''Before:LastReleasedRevisionNum'',
+          ''Before:42''). When using Tag or ChangeSet references, the latest revision
+          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
+          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
+          the one before it began, which is what undoes a promotion however many revisions
+          it made.'
         in: query
         name: restore
         required: false
@@ -25305,16 +25297,15 @@ paths:
           of the changes to merge. With merge_source, this is a revision of the merge
           source unit. With merge_external_source, this is a revision of the unit
           being updated and overrides the default selection of the latest MergeExternal
-          revision. Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          revision. Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_base
         required: false
@@ -25325,16 +25316,15 @@ paths:
           resolve, where it names how far along the source to take the propagation;
           the default there is the source''s head. Naming a ChangeSet or Tag that
           ends a change is what leaves a change still being made at the source behind.
-          Supports: Named revisions (''LiveRevisionNum'', ''LastAppliedRevisionNum'',
-          ''PreviousLiveRevisionNum'', ''HeadRevisionNum''), direct revision number
-          (e.g., ''42''), or entity references (''Tag:uuid'', ''ChangeSet:uuid'',
-          ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed with ''Before:''
-          to select the revision immediately before the specified one (e.g., ''Before:LiveRevisionNum'',
-          ''Before:42''). When using Tag or ChangeSet references, the latest revision
-          associated with that entity is selected. ''ChangeOrder:uuid'' selects the
-          revision the change order ended at on this Unit and ''Before:ChangeOrder:uuid''
-          the one before it began, which is what undoes a promotion however many revisions
-          it made.'
+          Supports: Named revisions (''HeadRevisionNum'', ''LastReleasedRevisionNum''),
+          direct revision number (e.g., ''42''), or entity references (''Tag:uuid'',
+          ''ChangeSet:uuid'', ''ChangeOrder:uuid'', ''Revision:uuid''). Can be prefixed
+          with ''Before:'' to select the revision immediately before the specified
+          one (e.g., ''Before:LastReleasedRevisionNum'', ''Before:42''). When using
+          Tag or ChangeSet references, the latest revision associated with that entity
+          is selected. ''ChangeOrder:uuid'' selects the revision the change order
+          ended at on this Unit and ''Before:ChangeOrder:uuid'' the one before it
+          began, which is what undoes a promotion however many revisions it made.'
         in: query
         name: merge_end
         required: false
@@ -25666,9 +25656,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -25719,7 +25709,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -26098,9 +26088,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -26151,7 +26141,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -26160,8 +26150,7 @@ paths:
         schema:
           type: string
       - description: Revision to approve (defaults to HeadRevisionNum). Can be a revision
-          number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid',
-          etc.
+          number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
         in: query
         name: revision
         required: false
@@ -26270,9 +26259,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -26323,7 +26312,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -26439,9 +26428,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -26492,7 +26481,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -26747,9 +26736,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -26800,7 +26789,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -27173,9 +27162,9 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastAppliedRevisionNum, LastChangeDescription, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
 
-          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LiveRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LiveRevisionNum`.
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
           The whole string must be query-encoded.
         in: query
@@ -27226,7 +27215,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastAppliedRevisionNum, LiveRevisionNum, OrganizationID, PreviousLiveRevisionNum, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -30118,10 +30107,6 @@ components:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
-        IncompleteApplyUnitCount:
-          format: int64
-          type: integer
-          x-go-type-skip-optional-pointer: true
         Organization:
           $ref: '#/components/schemas/Organization'
         ReleaseTarget:
@@ -30191,15 +30176,15 @@ components:
             $ref: '#/components/schemas/Trigger'
           type: array
           x-go-type-skip-optional-pointer: true
-        UnappliedUnitCount:
-          format: int64
-          type: integer
-          x-go-type-skip-optional-pointer: true
         UnapprovedUnitCount:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
         UnlinkedUnitCount:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnreleasedUnitCount:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
@@ -30287,16 +30272,12 @@ components:
           $ref: '#/components/schemas/Mutation'
         HeadRevision:
           $ref: '#/components/schemas/Revision'
-        LastAppliedRevision:
+        LastReleasedRevision:
           $ref: '#/components/schemas/Revision'
         LatestUnitEvent:
           $ref: '#/components/schemas/UnitEvent'
-        LiveRevision:
-          $ref: '#/components/schemas/Revision'
         Organization:
           $ref: '#/components/schemas/Organization'
-        PreviousLiveRevision:
-          $ref: '#/components/schemas/Revision'
         Space:
           $ref: '#/components/schemas/Space'
         Target:
@@ -32602,13 +32583,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        LiveAt:
-          description: Time at which the revision was applied, if it was applied.
-            If not applied, the value is "0001-01-01T00:00:00Z".
-          example: 2006-01-02T15:04:05Z07:00
-          format: date-time
-          type: string
-          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an Organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -33569,8 +33543,9 @@ components:
           x-go-type-skip-optional-pointer: true
         OtherDataSource:
           description: Specifies the source of additional configuration data to pass
-            to functions that need it (e.g., vet-immutable needs LiveRevisionNum data).
-            Uses revision specifier format such as LiveRevisionNum or Before:HeadRevisionNum.
+            to functions that need it (e.g., vet-immutable needs a baseline revision
+            to compare against). Uses revision specifier format such as LastReleasedRevisionNum
+            or Before:HeadRevisionNum.
           type: string
           x-go-type-skip-optional-pointer: true
         Params:
@@ -33842,21 +33817,15 @@ components:
             attributes of entities for the purpose of grouping and filtering them.
           type: object
           x-go-type-skip-optional-pointer: true
-        LastAppliedRevisionNum:
-          description: Sequence number the last Revision applied. 0 if no live revision.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         LastChangeDescription:
           description: LastChangeDescription is a human-readable description of the
             last change. This description is copied to the new Revision when the Data
             is changed.
           type: string
           x-go-type-skip-optional-pointer: true
-        LiveRevisionNum:
-          description: Sequence number the last Revision applied once apply has completed.
-            0 if no live revision.
+        LastReleasedRevisionNum:
+          description: Sequence number of the last Revision published in a Release.
+            0 if no Revision has been released.
           format: int64
           readOnly: true
           type: integer
@@ -33877,13 +33846,6 @@ components:
           x-go-type-skip-optional-pointer: true
         PathAnnotations:
           $ref: '#/components/schemas/PathAnnotationList'
-        PreviousLiveRevisionNum:
-          description: Sequence number the previous Revision applied. 0 if no live
-            revision.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         ProvidedPaths:
           description: Attribute paths that this Unit provides to downstream Units
             via NeedsProvides Links. Computed from get-provided and stored on data
@@ -34479,10 +34441,9 @@ components:
       properties:
         Revision:
           description: 'Which Unit revision to tag: a named revision (''HeadRevisionNum'',
-            ''LiveRevisionNum'', ''LastAppliedRevisionNum'', ''PreviousLiveRevisionNum''),
-            a revision number, an entity reference (''Tag:uuid'', ''ChangeSet:uuid'',
-            ''Revision:uuid''), any of those prefixed with ''Before:'', or ''Remove''
-            to remove the tag from the unit'
+            ''LastReleasedRevisionNum''), a revision number, an entity reference (''Tag:uuid'',
+            ''ChangeSet:uuid'', ''Revision:uuid''), any of those prefixed with ''Before:'',
+            or ''Remove'' to remove the tag from the unit'
           type: string
           x-go-type-skip-optional-pointer: true
         TagID:

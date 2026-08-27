@@ -6,12 +6,13 @@ package cubapi
 import (
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/confighub/sdk/core/jwk"
 )
 
 // This file lets a client authenticate by signing rather than by presenting a
@@ -39,21 +40,11 @@ const (
 	// ClientAssertionTypeJWTBearer is fixed by RFC 7523 §2.2. The server
 	// requires exactly this value.
 	ClientAssertionTypeJWTBearer = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-
-	// jwkUserIDMember carries the ConfigHub identity inside the key file.
-	//
-	// An assertion's iss and sub must name the identity that owns the key, so a
-	// signer needs both the key and the identity. Carrying the identity in the
-	// key file means one artifact moves to the client host instead of two, and
-	// a key file cannot be separated from the identity it authenticates as.
-	// Unknown JWK members are ignored by everything else, including the RFC
-	// 7638 thumbprint, which uses only the required members.
-	jwkUserIDMember = "confighub_user_id"
 )
 
 // AssertionSigner signs private_key_jwt assertions for one identity.
 type AssertionSigner struct {
-	userID   string
+	subject  string
 	kid      string
 	audience string
 	key      ed25519.PrivateKey
@@ -61,33 +52,33 @@ type AssertionSigner struct {
 
 // NewAssertionSigner builds a signer from a private JWK.
 //
-// userID may be empty when the JWK carries confighub_user_id, which is what
-// `cub user key add --generate` writes. An explicit userID wins, so a key
+// subject may be empty when the JWK records the holder's external id, which is
+// what `cub user key add --generate` writes. An explicit subject wins, so a key
 // generated elsewhere can still be used by naming the identity separately.
 //
 // audience may be empty for DefaultAssertionAudience.
-func NewAssertionSigner(privateJWK []byte, userID, audience string) (*AssertionSigner, error) {
-	var jwk struct {
-		Kty    string `json:"kty"`
-		Crv    string `json:"crv"`
-		X      string `json:"x"`
-		D      string `json:"d"`
-		UserID string `json:"confighub_user_id"`
+func NewAssertionSigner(privateJWK []byte, subject, audience string) (*AssertionSigner, error) {
+	var key struct {
+		Kty        string `json:"kty"`
+		Crv        string `json:"crv"`
+		X          string `json:"x"`
+		D          string `json:"d"`
+		ExternalID string `json:"confighub_user_external_id"`
 	}
-	if err := json.Unmarshal(privateJWK, &jwk); err != nil {
+	if err := json.Unmarshal(privateJWK, &key); err != nil {
 		return nil, fmt.Errorf("private key must be a JWK (JSON): %w", err)
 	}
-	if jwk.Kty != "OKP" || jwk.Crv != "Ed25519" {
+	if key.Kty != "OKP" || key.Crv != "Ed25519" {
 		// Only Ed25519 is supported here even though the server also accepts
 		// ES256 and RS256, because this is the key the CLI generates. Saying so
 		// is better than failing later with a signature the server rejects.
-		return nil, fmt.Errorf("private key must be an Ed25519 JWK (kty OKP, crv Ed25519), got kty %q crv %q", jwk.Kty, jwk.Crv)
+		return nil, fmt.Errorf("private key must be an Ed25519 JWK (kty OKP, crv Ed25519), got kty %q crv %q", key.Kty, key.Crv)
 	}
-	if jwk.D == "" {
+	if key.D == "" {
 		return nil, errors.New("private key JWK has no private member \"d\"; this looks like a public key")
 	}
 
-	seed, err := base64.RawURLEncoding.DecodeString(jwk.D)
+	seed, err := base64.RawURLEncoding.DecodeString(key.D)
 	if err != nil {
 		return nil, fmt.Errorf("private member \"d\" is not base64url: %w", err)
 	}
@@ -98,23 +89,23 @@ func NewAssertionSigner(privateJWK []byte, userID, audience string) (*AssertionS
 		return nil, fmt.Errorf("private member \"d\" is %d bytes, want the %d-byte Ed25519 seed", len(seed), ed25519.SeedSize)
 	}
 
-	if userID == "" {
-		userID = jwk.UserID
+	if subject == "" {
+		subject = key.ExternalID
 	}
-	if userID == "" {
-		return nil, fmt.Errorf("no ConfigHub identity for this key: the JWK has no %q member and none was configured", jwkUserIDMember)
+	if subject == "" {
+		return nil, fmt.Errorf("no ConfigHub identity for this key: the JWK has no %q member and none was configured", jwk.UserExternalIDMember)
 	}
 	if audience == "" {
 		audience = DefaultAssertionAudience
 	}
 
-	kid, err := ed25519JWKThumbprint(jwk.X)
+	kid, err := ed25519JWKThumbprint(key.X)
 	if err != nil {
 		return nil, err
 	}
 
 	return &AssertionSigner{
-		userID:   userID,
+		subject:  subject,
 		kid:      kid,
 		audience: audience,
 		key:      ed25519.NewKeyFromSeed(seed),
@@ -122,7 +113,7 @@ func NewAssertionSigner(privateJWK []byte, userID, audience string) (*AssertionS
 }
 
 // UserID is the identity this signer authenticates as.
-func (s *AssertionSigner) UserID() string { return s.userID }
+func (s *AssertionSigner) Subject() string { return s.subject }
 
 // Kid is the thumbprint the server will look the key up by.
 func (s *AssertionSigner) Kid() string { return s.kid }
@@ -149,8 +140,8 @@ func (s *AssertionSigner) Sign() (string, error) {
 		"kid": s.kid,
 	}
 	claims := map[string]any{
-		"iss": s.userID,
-		"sub": s.userID,
+		"iss": s.subject,
+		"sub": s.subject,
 		"aud": s.audience,
 		"jti": base64.RawURLEncoding.EncodeToString(jti),
 		"iat": now.Unix(),
@@ -179,13 +170,12 @@ func (s *AssertionSigner) Sign() (string, error) {
 // itself: a kid that does not match the key would fail server-side lookup with
 // the same uniform 401 as every other failure, which is a bad thing to debug.
 //
-// RFC 7638 §3 fixes the input exactly: required members only, lexicographically
-// ordered, no whitespace. For OKP that is crv, kty, x -- already in order.
+// The computation lives in sdk/core/jwk, shared with the server that stores the
+// key under this name: two implementations of RFC 7638 that disagree produce a
+// lookup miss, reported as the same uniform 401 as a forged credential.
 func ed25519JWKThumbprint(x string) (string, error) {
 	if x == "" {
 		return "", errors.New("JWK has no public member \"x\"")
 	}
-	canonical := fmt.Sprintf(`{"crv":"Ed25519","kty":"OKP","x":%q}`, x)
-	sum := sha256.Sum256([]byte(canonical))
-	return base64.RawURLEncoding.EncodeToString(sum[:]), nil
+	return jwk.Thumbprint(json.RawMessage(fmt.Sprintf(`{"kty":"OKP","crv":"Ed25519","x":%q}`, x)))
 }

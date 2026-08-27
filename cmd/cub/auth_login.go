@@ -287,7 +287,7 @@ func performPrivateKeyAuth(coordinate Coordinate, ref string) (*cubapi.AuthSessi
 		return nil, err
 	}
 	tprint("Successfully logged in as identity %s using key %s (Organization: %s)",
-		signer.UserID(), signer.Kid(), session.OrganizationID)
+		signer.Subject(), signer.Kid(), session.OrganizationID)
 	return session, nil
 }
 

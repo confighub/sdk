@@ -291,8 +291,8 @@ func unitSection(resource *k8sResource, unit *k8sUnit) *k8sdescribe.Section {
 	appendField("Target", resource.Target)
 	if unit != nil && unit.unit != nil {
 		appendField("Revision", fmt.Sprintf("%d", unit.unit.HeadRevisionNum))
-		if unit.unit.LastAppliedRevisionNum > 0 {
-			appendField("Last Released Revision", fmt.Sprintf("%d", unit.unit.LastAppliedRevisionNum))
+		if unit.unit.LastReleasedRevisionNum > 0 {
+			appendField("Last Released Revision", fmt.Sprintf("%d", unit.unit.LastReleasedRevisionNum))
 		}
 		appendField("Unit Labels", labelsToString(unit.unit.Labels))
 		appendField("Apply Gates", strings.Join(sortedMapKeys(unit.unit.ApplyGates), ", "))

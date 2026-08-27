@@ -34,7 +34,7 @@ const (
 	segAdd    = "add"
 
 	// Default revision references
-	defaultFrom = "LiveRevisionNum"
+	defaultFrom = "LastReleasedRevisionNum"
 	defaultTo   = "HeadRevisionNum"
 )
 
@@ -45,7 +45,7 @@ var unitDiffCmd = &cobra.Command{
 
 Revision References:
   - Absolute: 123, 456
-  - Named: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum
+  - Named: HeadRevisionNum, LastReleasedRevisionNum
   - Relative: -1, -2, -3 (N revisions back from HeadRevisionNum)
   - Tag: Tag:release-v1.0
   - ChangeSet: ChangeSet:feature-deploy
@@ -58,7 +58,7 @@ Output Formats:
 
 Examples:
 `+"```"+`
-  # Basic (defaults: LiveRevisionNum vs HeadRevisionNum)
+  # Basic (defaults: LastReleasedRevisionNum vs HeadRevisionNum)
   cub unit diff my-unit
 
   # Specific revisions
@@ -66,8 +66,7 @@ Examples:
   cub unit diff my-unit 123 456
 
   # Named revisions
-  cub unit diff my-unit --from=LastAppliedRevisionNum
-  cub unit diff my-unit --from=PreviousLiveRevisionNum
+  cub unit diff my-unit --from=LastReleasedRevisionNum
 
   # Relative to head
   cub unit diff my-unit --from=-1
@@ -100,7 +99,7 @@ var unitDiffArgs struct {
 func init() {
 	unitDiffCmd.Flags().BoolVarP(&unitDiffArgs.unifiedDiff, "unified", "u", false, "output unified diff format")
 	unitDiffCmd.Flags().BoolVarP(&unitDiffArgs.colorOutput, "color", "c", false, "colorize the unified diff output (default: true for numbered diff)")
-	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LiveRevisionNum)")
+	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LastReleasedRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", defaultTo, "target revision (defaults to HeadRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.withUnit, "with-unit", "", "second unit for cross-unit diff (slug, space/slug, or UUID)")
 	// Register -o locally with a constrained description: unit diff produces a
@@ -119,7 +118,7 @@ func init() {
 // resolveRevisionNumber resolves a revision reference to an actual revision number
 // Supports:
 // - Absolute revision numbers: 123, 456
-// - API field names: HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum
+// - API field names: HeadRevisionNum, LastReleasedRevisionNum
 // - Negative numbers (relative to HeadRevisionNum): -1, -2, -3
 func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
 	// Get unit data (we'll need it for most cases)
@@ -132,18 +131,14 @@ func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
 	switch revSpec {
 	case "HeadRevisionNum":
 		return unit.HeadRevisionNum, nil
-	case "LiveRevisionNum":
-		return unit.LiveRevisionNum, nil
-	case "LastAppliedRevisionNum":
-		return unit.LastAppliedRevisionNum, nil
-	case "PreviousLiveRevisionNum":
-		return unit.PreviousLiveRevisionNum, nil
+	case "LastReleasedRevisionNum":
+		return unit.LastReleasedRevisionNum, nil
 	}
 
 	// Try parsing as a number (could be positive absolute or negative relative)
 	num, err := strconv.ParseInt(revSpec, 10, 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid revision reference '%s': must be a revision number, -N (relative to head), or one of HeadRevisionNum/LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum", revSpec)
+		return 0, fmt.Errorf("invalid revision reference '%s': must be a revision number, -N (relative to head), or one of HeadRevisionNum/LastReleasedRevisionNum", revSpec)
 	}
 
 	// Handle negative numbers (relative to HeadRevisionNum)
@@ -558,12 +553,8 @@ func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.U
 	switch formatted {
 	case "HeadRevisionNum":
 		return unit.HeadRevisionNum, nil
-	case "LiveRevisionNum":
-		return unit.LiveRevisionNum, nil
-	case "LastAppliedRevisionNum":
-		return unit.LastAppliedRevisionNum, nil
-	case "PreviousLiveRevisionNum":
-		return unit.PreviousLiveRevisionNum, nil
+	case "LastReleasedRevisionNum":
+		return unit.LastReleasedRevisionNum, nil
 	}
 
 	// Check for Tag: or ChangeSet: prefix - these need API lookup

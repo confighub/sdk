@@ -44,12 +44,12 @@ func init() {
 }
 
 func userKeyListCmdRun(cmd *cobra.Command, args []string) error {
-	targetUserID, err := resolveKeyTargetUser()
+	targetUser, err := resolveKeyTargetUser()
 	if err != nil {
 		return err
 	}
 
-	keys, err := apiListUserKeys(targetUserID)
+	keys, err := apiListUserKeys(targetUser.UserID)
 	if err != nil {
 		return err
 	}

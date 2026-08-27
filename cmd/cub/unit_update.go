@@ -66,10 +66,10 @@ Examples:
   cub unit update --space my-space myunit --restore 550e8400-e29b-41d4-a716-446655440000
 
   # Restore a unit to the live revision
-  cub unit update --space my-space myunit --restore LiveRevisionNum
+  cub unit update --space my-space myunit --restore LastReleasedRevisionNum
 
-  # Restore a unit to the last applied revision
-  cub unit update --space my-space myunit --restore LastAppliedRevisionNum
+  # Restore a unit to the last released revision
+  cub unit update --space my-space myunit --restore LastReleasedRevisionNum
 
   # Restore a unit to a tagged revision (supports space/tag syntax)
   cub unit update --space my-space myunit --restore Tag:release-v1.0
@@ -98,13 +98,13 @@ Examples:
   cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
 
   # Perform a 3-way merge with another unit
-  cub unit update --space my-space myunit --merge-source other-unit --merge-base LiveRevisionNum --merge-end HeadRevisionNum
+  cub unit update --space my-space myunit --merge-source other-unit --merge-base LastReleasedRevisionNum --merge-end HeadRevisionNum
 
   # Merge with specific revisions
   cub unit update --space my-space myunit --merge-source upstream-unit --merge-base Tag:v1.0 --merge-end 42
 
   # Merge with the unit itself (self-merge)
-  cub unit update --space my-space myunit --merge-source Self --merge-base LiveRevisionNum --merge-end HeadRevisionNum
+  cub unit update --space my-space myunit --merge-source Self --merge-base LastReleasedRevisionNum --merge-end HeadRevisionNum
 
 Patch Mode Examples:
   # Individual patch with labels
@@ -120,7 +120,7 @@ Patch Mode Examples:
   cub unit update --patch --space "*" --where "UpstreamRevisionNum > 0" --change-desc "Upgrade all" --upgrade
 
   # Bulk restore with change description
-  cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LiveRevisionNum --change-desc "Restored to live revision"
+  cub unit update --patch --where "Slug IN ('unit1', 'unit2')" --restore LastReleasedRevisionNum --change-desc "Restored to last released revision"
 
   # Bulk patch with data from stdin plus metadata (just an example; use cub unit set-target for this case)
   echo '{"TargetID": null}' | cub unit update --patch --unit unit1,unit2,unit3 --from-stdin --change-desc "Cleared targets"
@@ -150,13 +150,13 @@ Restore using revision ID, tag, changeset, or special values:
   cub unit update --space SPACE my-unit --restore 550e8400-e29b-41d4-a716-446655440000
   cub unit update --space SPACE my-unit --restore Tag:release-v1.0
   cub unit update --space SPACE my-unit --restore ChangeSet:feature-deploy
-  cub unit update --space SPACE my-unit --restore LiveRevisionNum
+  cub unit update --space SPACE my-unit --restore LastReleasedRevisionNum
 
 Upgrade from upstream:
   cub unit update --space SPACE my-unit --upgrade
 
 Bulk patch operations:
-  cub unit update --patch --where "Slug LIKE 'app-%'" --restore LiveRevisionNum --change-desc "Restored apps"
+  cub unit update --patch --where "Slug LIKE 'app-%'" --restore LastReleasedRevisionNum --change-desc "Restored apps"
   cub unit update --patch --space "*" --where "Labels.tier = 'platform'" --label updated=true --change-desc "Updated platform units"
 
 Key flags for agents:
@@ -165,7 +165,7 @@ Key flags for agents:
 - --verbose: Show detailed update information
 - --from-stdin: Read additional metadata from stdin
 - --replace-from-stdin: Replace entire metadata from stdin
-- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, ChangeOrder:slug (Before:ChangeOrder:slug undoes a promotion), or special values (LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum)
+- --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, ChangeOrder:slug (Before:ChangeOrder:slug undoes a promotion), or special values (HeadRevisionNum/LastReleasedRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
 - --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that isn't where it starts is an error
 - --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
@@ -216,7 +216,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. Undo the promotion with --restore Before:ChangeOrder:<slug>")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
-	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LiveRevisionNum/LastAppliedRevisionNum/PreviousLiveRevisionNum, optionally prefixed with Before:")
+	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
@@ -243,9 +243,7 @@ func init() {
 // TODO: Add a --target flag, similar to cub unit create
 
 var restoreValues = map[string]struct{}{
-	"LiveRevisionNum":         struct{}{},
-	"LastAppliedRevisionNum":  struct{}{},
-	"PreviousLiveRevisionNum": struct{}{},
+	"LastReleasedRevisionNum": struct{}{},
 }
 
 func checkConflictingArgs(args []string) bool {
@@ -288,7 +286,7 @@ func checkConflictingArgs(args []string) bool {
 				}
 
 				if !isValidPrefix {
-					failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LiveRevisionNum, Tag:slug, ChangeSet:slug, Revision:uuid, or Before:value"))
+					failOnError(fmt.Errorf("bulk patch mode doesn't support revision UUID or number restore values, only unit revision fields like LastReleasedRevisionNum, Tag:slug, ChangeSet:slug, Revision:uuid, or Before:value"))
 				}
 			}
 		}
@@ -1316,7 +1314,7 @@ const resolveToTagForms = "name a Tag, a ChangeSet or a ChangeOrder -- optionall
 // The server resolves these per Unit, so they carry no entity type.
 func isNamedRevision(identifier string) bool {
 	switch identifier {
-	case "HeadRevisionNum", "LiveRevisionNum", "LastAppliedRevisionNum", "PreviousLiveRevisionNum":
+	case "HeadRevisionNum", "LastReleasedRevisionNum":
 		return true
 	}
 	return false
@@ -1357,7 +1355,7 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 		entityType = parts[0]
 		identifier = parts[1]
 	case 1:
-		// Simple identifier (LiveRevisionNum, Tag slug, revision number, etc.)
+		// Simple identifier (LastReleasedRevisionNum, Tag slug, revision number, etc.)
 		identifier = parts[0]
 	default:
 		return "", false, fmt.Errorf("invalid revision specification: %s", originalSpec)

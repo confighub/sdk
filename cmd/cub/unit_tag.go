@@ -26,9 +26,7 @@ Use bulk selection options to tag multiple units at once.
 Tag a specific revision type:
 `+"```"+`
   --revision HeadRevisionNum     Tag the head revision (default)
-  --revision LiveRevisionNum     Tag the live revision
-  --revision LastAppliedRevisionNum  Tag the last applied revision
-  --revision PreviousLiveRevisionNum Tag the previous live revision
+  --revision LastReleasedRevisionNum  Tag the last released revision
   --revision 42                  Tag revision 42
   --revision Tag:release-v1      Tag the revision another tag marks
   --revision ChangeSet:rollout   Tag the revision a changeset ended on
@@ -42,8 +40,8 @@ Examples:
   # Tag head revision of a single unit (uses current space)
   cub unit tag my-tag --unit my-unit
 
-  # Tag live revision of all units with specific label
-  cub unit tag release-v1 --revision LiveRevisionNum --where "Labels.version = 'v1'"
+  # Tag the last released revision of all units with specific label
+  cub unit tag release-v1 --revision LastReleasedRevisionNum --where "Labels.version = 'v1'"
 
   # Tag whatever revision a changeset ended on, across the units it touched
   cub unit tag release-v1 --revision ChangeSet:rollout --where "Space.Slug = 'prod'"
@@ -68,7 +66,7 @@ Examples:
 
 func init() {
 	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum",
-		"Which revision to tag: a named revision (HeadRevisionNum, LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum), a revision number, a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
+		"Which revision to tag: a named revision (HeadRevisionNum, LastReleasedRevisionNum), a revision number, a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
 	enableWhereFlag(unitTagCmd)
 	enableFilterFlag(unitTagCmd)
 	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{},

@@ -70,9 +70,9 @@ Available columns (prefixed with Unit.):
 
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
-  - Status: ApplyGates, LastChangeDescription, LiveRevisionNum, ApprovedBy
+  - Status: ApplyGates, LastChangeDescription, ApprovedBy
   - Relationships: TargetID, ToolchainType
-  - Revisions: LastAppliedRevisionNum, PreviousLiveRevisionNum
+  - Revisions: LastReleasedRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>
 
 Example extended available columns (not exhaustive):
@@ -89,8 +89,8 @@ Agent discovery workflow:
 Key filtering patterns for agents:
 
 Configuration state:
-- Find units with unreleased changes: --where 'HeadRevisionNum > LastAppliedRevisionNum'
-- Find never-released units: --where 'LastAppliedRevisionNum = 0'
+- Find units with unreleased changes: --where 'HeadRevisionNum > LastReleasedRevisionNum'
+- Find never-released units: --where 'LastReleasedRevisionNum = 0'
 - Find units with placeholders: Use 'function do get-placeholders' instead
 
 Approval workflow:
@@ -176,12 +176,12 @@ var unitCustomColumns = map[string]func(interface{}) string{
 }
 
 // unreleasedChangesColumn reports whether a Unit has changes that have not been
-// published in a Release. LastAppliedRevisionNum is advanced by `release publish`
+// published in a Release. LastReleasedRevisionNum is advanced by `release publish`
 // (see internal/views/release_core.go), which is the apply point now.
 func unreleasedChangesColumn(obj interface{}) string {
 	if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
 		unit := extendedUnit.Unit
-		if unit.HeadRevisionNum > unit.LastAppliedRevisionNum && (unit.TargetID != nil && *unit.TargetID != uuid.Nil) {
+		if unit.HeadRevisionNum > unit.LastReleasedRevisionNum && (unit.TargetID != nil && *unit.TargetID != uuid.Nil) {
 			return "Yes"
 		}
 	}
@@ -192,8 +192,8 @@ func unreleasedChangesColumn(obj interface{}) string {
 var unitCustomColumnDependencies = map[string][]string{
 	"DataBytes":         {"Data"},
 	"UpgradeNeeded":     {"UpstreamRevisionNum", "UpstreamUnit.HeadRevisionNum"},
-	"UnreleasedChanges": {"HeadRevisionNum", "LastAppliedRevisionNum"},
-	"UnappliedChanges":  {"HeadRevisionNum", "LastAppliedRevisionNum"},
+	"UnreleasedChanges": {"HeadRevisionNum", "LastReleasedRevisionNum"},
+	"UnappliedChanges":  {"HeadRevisionNum", "LastReleasedRevisionNum"},
 }
 
 func init() {

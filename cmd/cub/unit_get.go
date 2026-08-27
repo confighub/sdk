@@ -51,7 +51,7 @@ Agent inspection workflow:
 
 Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
-- Revision tracking: HeadRevisionNum vs LiveRevisionNum shows pending changes
+- Revision tracking: HeadRevisionNum vs LastReleasedRevisionNum shows pending changes
 - Approval state: ApprovedBy list and ApplyGates status
 - Configuration data: Actual YAML/HCL content via 'cub unit data'
 
@@ -68,7 +68,7 @@ Common agent patterns:
   cub unit data my-app --space prod > my-app.yaml
 
   # Check if unit has pending changes
-  cub unit get my-app --space prod -o jq='.Unit.HeadRevisionNum > .Unit.LiveRevisionNum'
+  cub unit get my-app --space prod -o jq='.Unit.HeadRevisionNum > .Unit.LastReleasedRevisionNum'
 
   # Get approval status
   cub unit get my-app --space prod -o jq='.Unit.ApprovedBy | length'
@@ -169,9 +169,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Annotations", annotationsToString(unitDetails.Unit.Annotations)})
 		view.Append([]string{"Last Change Description", unitDetails.Unit.LastChangeDescription})
 		view.Append([]string{"Head Revision Num", fmt.Sprintf("%d", unitDetails.Unit.HeadRevisionNum)})
-		view.Append([]string{"Last Applied Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LastAppliedRevisionNum)})
-		view.Append([]string{"Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LiveRevisionNum)})
-		view.Append([]string{"Previous Live Revision Num", fmt.Sprintf("%d", unitDetails.Unit.PreviousLiveRevisionNum)})
+		view.Append([]string{"Last Released Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LastReleasedRevisionNum)})
 
 		// Show upstream unit info if available
 		if unitDetails.Unit.UpstreamUnitID != nil && *unitDetails.Unit.UpstreamUnitID != uuid.Nil {

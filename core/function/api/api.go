@@ -129,7 +129,7 @@ type FunctionInvocationList []FunctionInvocation
 type FunctionInvocationRequest struct {
 	FunctionContext
 	ConfigData string                     `description:"Configuration data of the Unit to operate on"`
-	OtherData  map[OtherDataSource]string `description:"Additional configuration data by source, such as from another revision (e.g., LiveRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
+	OtherData  map[OtherDataSource]string `description:"Additional configuration data by source, such as from another revision (e.g., LastReleasedRevisionNum, Before:HeadRevisionNum). If provided, must be of the same ToolchainType as ConfigData. Changes are discarded."`
 	FunctionInvocationOptions
 	FunctionInvocations FunctionInvocationList `description:"List of functions to invoke and their arguments"`
 }

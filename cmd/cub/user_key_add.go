@@ -92,7 +92,7 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		publicJWK = supplied
 	}
 
-	targetUserID, err := resolveKeyTargetUser()
+	targetUser, err := resolveKeyTargetUser()
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,9 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		// Generated after resolution because the identity is written into the
 		// private key, which is what lets a worker be configured with the key
 		// alone.
-		generated, gerr := generateEd25519Key(targetUserID.String())
+		// The external id, not the uuid: it is what the assertion will carry as
+		// iss and sub, and what a minted session names as its subject.
+		generated, gerr := generateEd25519Key(targetUser.ExternalID)
 		if gerr != nil {
 			return gerr
 		}
@@ -126,7 +128,7 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	key, err := apiCreateUserKey(targetUserID, publicJWK, userKeyDescription)
+	key, err := apiCreateUserKey(targetUser.UserID, publicJWK, userKeyDescription)
 	if err != nil {
 		// Registration failed, so the key we just wrote authenticates nothing.
 		// Leaving it behind would poison the alias: writePrivateKey refuses to

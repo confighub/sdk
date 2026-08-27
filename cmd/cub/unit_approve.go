@@ -25,7 +25,7 @@ Single unit approve:
 
   # Approve a specific revision
   cub unit approve my-unit --revision 5
-  cub unit approve my-unit --revision LiveRevisionNum
+  cub unit approve my-unit --revision LastReleasedRevisionNum
   cub unit approve my-unit --revision Tag:release-v1.0
   cub unit approve my-unit --revision ChangeSet:feature-rollout
 `+"```"+`
@@ -40,7 +40,7 @@ Examples:
   cub unit approve --where "Labels.Tier = 'backend'"
 
   # Approve a specific revision for all matching units
-  cub unit approve --where "Labels.Tier = 'backend'" --revision LiveRevisionNum
+  cub unit approve --where "Labels.Tier = 'backend'" --revision LastReleasedRevisionNum
 
   # Approve units across all spaces (requires --space "*")
   cub unit approve --space "*" --where "Slug = 'backend'"
@@ -60,7 +60,7 @@ func init() {
 	enableWhereFlag(unitApproveCmd)
 	enableFilterFlag(unitApproveCmd)
 	unitApproveCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk approve (can be repeated or comma-separated)")
-	unitApproveCmd.Flags().StringVar(&approveRevision, "revision", "", "Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LiveRevisionNum', 'LastAppliedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
+	unitApproveCmd.Flags().StringVar(&approveRevision, "revision", "", "Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LastReleasedRevisionNum', 'Tag:slug', 'ChangeSet:slug', etc.")
 	enableWaitFlag(unitApproveCmd)
 	addStandardDisplayFlags(unitApproveCmd)
 	unitCmd.AddCommand(unitApproveCmd)
@@ -88,7 +88,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 		entityType = parts[0]
 		identifier = parts[1]
 	case 1:
-		// Simple identifier (LiveRevisionNum, UUID, integer, etc.)
+		// Simple identifier (LastReleasedRevisionNum, UUID, integer, etc.)
 		identifier = parts[0]
 	default:
 		return nil, fmt.Errorf("invalid revision specification: %s", revision)
@@ -127,9 +127,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 
 	// Handle simple identifiers (no entity type prefix)
 	namedRevisions := map[string]bool{
-		"LiveRevisionNum":         true,
-		"LastAppliedRevisionNum":  true,
-		"PreviousLiveRevisionNum": true,
+		"LastReleasedRevisionNum": true,
 		"HeadRevisionNum":         true,
 	}
 
@@ -152,7 +150,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 	}
 
 	// Not a valid revision specification
-	return nil, fmt.Errorf("invalid revision specification: %s. Must be a revision number, named revision (LiveRevisionNum, LastAppliedRevisionNum, PreviousLiveRevisionNum, HeadRevisionNum), UUID, or EntityType:identifier format", revision)
+	return nil, fmt.Errorf("invalid revision specification: %s. Must be a revision number, named revision (LastReleasedRevisionNum, HeadRevisionNum), UUID, or EntityType:identifier format", revision)
 }
 
 func checkUnitApproveConflictingArgs(args []string) bool {

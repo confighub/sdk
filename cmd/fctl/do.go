@@ -178,7 +178,7 @@ func newDoCommand() *cobra.Command {
 	cmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	cmd.Flags().BoolVar(&outputOnly, "output-only", false, "show function output only")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
-	cmd.Flags().StringArrayVar(&otherDataFlags, "other-data", nil, "additional data by source in format Source=filename (e.g., LiveRevisionNum=live.yaml)")
+	cmd.Flags().StringArrayVar(&otherDataFlags, "other-data", nil, "additional data by source in format Source=filename (e.g., LastReleasedRevisionNum=applied.yaml)")
 
 	return cmd
 }

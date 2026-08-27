@@ -118,7 +118,7 @@ func TestVetImmutable_IdenticalData(t *testing.T) {
 	require.NoError(t, err)
 
 	otherData := map[api.OtherDataSource]gaby.Container{
-		"LastAppliedRevisionNum": liveDocs,
+		"LastReleasedRevisionNum": liveDocs,
 	}
 
 	result, err := GenericVetImmutable(rp, currentDocs, otherData, k8skit.AttributeNameImmutable, false, nil)
@@ -136,7 +136,7 @@ func TestVetImmutable_MutableFieldChanged(t *testing.T) {
 	require.NoError(t, err)
 
 	otherData := map[api.OtherDataSource]gaby.Container{
-		"LastAppliedRevisionNum": liveDocs,
+		"LastReleasedRevisionNum": liveDocs,
 	}
 
 	result, err := GenericVetImmutable(rp, currentDocs, otherData, k8skit.AttributeNameImmutable, false, nil)
@@ -153,7 +153,7 @@ func TestVetImmutable_ImmutableFieldChanged(t *testing.T) {
 	require.NoError(t, err)
 
 	otherData := map[api.OtherDataSource]gaby.Container{
-		"LastAppliedRevisionNum": liveDocs,
+		"LastReleasedRevisionNum": liveDocs,
 	}
 
 	result, err := GenericVetImmutable(rp, currentDocs, otherData, k8skit.AttributeNameImmutable, false, nil)
@@ -205,7 +205,7 @@ spec:
 	require.NoError(t, err)
 
 	otherData := map[api.OtherDataSource]gaby.Container{
-		"LastAppliedRevisionNum": liveDocs,
+		"LastReleasedRevisionNum": liveDocs,
 	}
 
 	result, err := GenericVetImmutable(rp, currentDocs, otherData, k8skit.AttributeNameImmutable, false, nil)

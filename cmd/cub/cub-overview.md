@@ -267,13 +267,13 @@ cub unit list --space $SPACE --where 'UpstreamRevisionNum > 0'
 Find unapplied units within a space:
 
 ```
-cub unit list --space $SPACE --where 'LiveRevisionNum = 0'
+cub unit list --space $SPACE --where 'LastReleasedRevisionNum = 0'
 ```
 
 Find units with unapplied changes within a space:
 
 ```
-cub unit list --space $SPACE --where 'HeadRevisionNum > LiveRevisionNum'
+cub unit list --space $SPACE --where 'HeadRevisionNum > LastReleasedRevisionNum'
 ```
 
 Find units created after a specific time within a space:

@@ -56,6 +56,31 @@ func displayChangeOrderDetails(changeorderDetails *goclientnew.ChangeOrder) {
 	displayExtendedChangeOrderDetails(extendedChangeOrder)
 }
 
+// changeOrderCurrentStage names how far the change has got through the ChangeWorkflow
+// governing it: the last Stage it has reached. Nothing stores that -- a ChangeOrder has
+// no notion of stages -- so it is read off the workflow the same way promotion decides
+// where to go next, and is empty when no workflow governs the ChangeOrder, when the
+// change has not finished the first Stage, or when the workflow cannot be read.
+func changeOrderCurrentStage(changeOrder *goclientnew.ChangeOrder) string {
+	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
+	if err != nil || changeWorkflow == nil {
+		return ""
+	}
+	nextStage, currentStage, err := getNextWorkflowStage(changeWorkflow, changeOrder)
+	if err != nil {
+		return ""
+	}
+	// No next Stage means every Stage has the change, so the workflow's last Stage is
+	// where it got to.
+	if nextStage == nil && len(changeWorkflow.Spec.Stages) > 0 {
+		return changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1].Name
+	}
+	if currentStage == nil {
+		return ""
+	}
+	return currentStage.Name
+}
+
 func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.ExtendedChangeOrder) {
 	changeorderDetails := extendedChangeOrder.ChangeOrder
 	view := tableView()
@@ -99,6 +124,7 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	// Where the change has got to, which the server derives when it reads the change order.
 	// In-scope first: it is what the other two are measured against.
 	view.Append([]string{"State", changeorderDetails.State})
+	view.Append([]string{"Stage", changeOrderCurrentStage(changeorderDetails)})
 	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
 	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
 	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})

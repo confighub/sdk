@@ -4,10 +4,6 @@
 package main
 
 import (
-	"crypto/ed25519"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -15,6 +11,8 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+
+	"github.com/confighub/sdk/core/jwk"
 )
 
 // The noun is "key" rather than "credential" because a key is what these
@@ -66,124 +64,46 @@ func init() {
 // the whole reason --worker exists: the API is identity-shaped because a
 // credential proves who you are, while an operator thinks in workers, and
 // neither side should have to learn the other's model.
-func resolveKeyTargetUser() (uuid.UUID, error) {
+// resolveKeyTargetUser finds the identity a key is being registered for, and
+// returns the whole record: the uuid addresses it in the API, and the external
+// id is what an assertion signed with the key will name as its issuer.
+func resolveKeyTargetUser() (*goclientnew.User, error) {
 	switch {
 	case userKeyUser != "" && userKeyWorker != "":
-		return uuid.Nil, fmt.Errorf("--user and --worker name the same thing two ways; use one")
+		return nil, fmt.Errorf("--user and --worker name the same thing two ways; use one")
 	case userKeyWorker != "":
 		worker, err := apiGetBridgeWorkerFromSlug(userKeyWorker, "*")
 		if err != nil {
-			return uuid.Nil, err
+			return nil, err
 		}
 		if worker.UserID == nil || *worker.UserID == uuid.Nil {
 			// Every worker gets a bot user at creation, so this means the
 			// worker predates that or was created outside the normal path.
 			// Worth saying plainly rather than reporting a nil UUID lookup.
-			return uuid.Nil, fmt.Errorf("worker %s has no bot user, so it has no identity to hold a key", userKeyWorker)
+			return nil, fmt.Errorf("worker %s has no bot user, so it has no identity to hold a key", userKeyWorker)
 		}
-		return *worker.UserID, nil
+		return apiGetUser(worker.UserID.String())
 	case userKeyUser != "":
-		user, err := apiGetUserFromUsername(userKeyUser)
-		if err != nil {
-			return uuid.Nil, err
-		}
-		return user.UserID, nil
+		return apiGetUserFromUsername(userKeyUser)
 	default:
-		return uuid.Nil, fmt.Errorf("name an identity with --user or a worker with --worker")
+		return nil, fmt.Errorf("name an identity with --user or a worker with --worker")
 	}
 }
 
 // generatedKey is a new keypair: the private half to be written somewhere the
-// client can read it, the public half to be registered.
-type generatedKey struct {
-	PrivateJWK json.RawMessage
-	PublicJWK  json.RawMessage
-	Kid        string
-}
-
-// jwkUserIDMember carries the ConfigHub identity inside the private key file.
+// operator controls, the public half to be registered, and the name the server
+// will know it by.
 //
-// An assertion's iss and sub must name the identity that owns the key, so
-// whatever signs needs both the key and the identity. Writing the identity into
-// the key file means one artifact moves to the worker host rather than two, and
-// a key cannot be separated from the identity it authenticates as. Members
-// beyond the required ones are ignored by the RFC 7638 thumbprint, so this
-// changes no key's name; the worker reads it back in
-// public/core/worker/lib/assertion.go.
-const jwkUserIDMember = "confighub_user_id"
+// Construction and naming both come from sdk/core/jwk, so the name computed here
+// is the one the server stores the key under.
+type generatedKey = jwk.Pair
 
-// generateEd25519Key makes a keypair and renders both halves as JWKs, with the
-// identity recorded in the private half.
-//
-// Ed25519 because it is on the server's algorithm allowlist (EdDSA, ES256,
-// RS256), has no parameters to get wrong, and produces keys short enough to
-// paste. Encoding the JWK by hand keeps the CLI free of a JOSE dependency for
-// what is, at this size, a well-specified handful of base64: RFC 8037 §2 fixes
-// the member names for OKP keys and RFC 8032 fixes the key sizes.
 func generateEd25519Key(userID string) (*generatedKey, error) {
-	pub, priv, err := ed25519.GenerateKey(rand.Reader)
-	if err != nil {
-		return nil, fmt.Errorf("generating key: %w", err)
-	}
-
-	x := base64.RawURLEncoding.EncodeToString(pub)
-	// The private member "d" is the 32-byte seed, not the 64-byte expanded
-	// key: RFC 8037 §2 defines d as the seed, and ed25519.PrivateKey stores
-	// seed || public. Writing all 64 bytes produces a JWK that other
-	// implementations reject.
-	d := base64.RawURLEncoding.EncodeToString(priv.Seed())
-
-	publicJWK := json.RawMessage(fmt.Sprintf(
-		`{"kty":"OKP","crv":"Ed25519","x":%q}`, x))
-	privateJWK := json.RawMessage(fmt.Sprintf(
-		`{"kty":"OKP","crv":"Ed25519","x":%q,"d":%q,%q:%q}`, x, d, jwkUserIDMember, userID))
-
-	kid, err := jwkThumbprint(publicJWK)
-	if err != nil {
-		return nil, err
-	}
-	return &generatedKey{PrivateJWK: privateJWK, PublicJWK: publicJWK, Kid: kid}, nil
+	return jwk.GenerateEd25519(userID)
 }
 
-// jwkThumbprint computes the RFC 7638 thumbprint of a public JWK, which is the
-// kid the server will store. Computing it locally is what lets the CLI report
-// the key's name before the server has answered, and lets a client name its own
-// key without asking.
-//
-// RFC 7638 §3 is exact about the input: only the required members for the key
-// type, lexicographically ordered, no whitespace. Marshalling a Go map produces
-// exactly that ordering, so the construction is the specification rather than a
-// re-implementation of it.
 func jwkThumbprint(publicJWK json.RawMessage) (string, error) {
-	var jwk map[string]any
-	if err := json.Unmarshal(publicJWK, &jwk); err != nil {
-		return "", fmt.Errorf("parsing JWK: %w", err)
-	}
-
-	kty, _ := jwk["kty"].(string)
-	var required map[string]any
-	switch kty {
-	case "OKP":
-		required = map[string]any{"crv": jwk["crv"], "kty": jwk["kty"], "x": jwk["x"]}
-	case "EC":
-		required = map[string]any{"crv": jwk["crv"], "kty": jwk["kty"], "x": jwk["x"], "y": jwk["y"]}
-	case "RSA":
-		required = map[string]any{"e": jwk["e"], "kty": jwk["kty"], "n": jwk["n"]}
-	default:
-		return "", fmt.Errorf("unsupported key type %q: expected OKP, EC, or RSA", kty)
-	}
-	for name, value := range required {
-		if s, ok := value.(string); !ok || s == "" {
-			return "", fmt.Errorf("JWK is missing the required member %q for a %s key", name, kty)
-		}
-	}
-
-	canonical, err := json.Marshal(required)
-	if err != nil {
-		return "", fmt.Errorf("canonicalizing JWK: %w", err)
-	}
-	sum := sha256.Sum256(canonical)
-	return base64.RawURLEncoding.EncodeToString(sum[:]), nil
+	return jwk.Thumbprint(publicJWK)
 }
 
 // displayKeyList renders keys as a table. PublicJWK is not a column: it is

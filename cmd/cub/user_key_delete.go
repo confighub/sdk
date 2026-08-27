@@ -37,13 +37,13 @@ func init() {
 }
 
 func userKeyDeleteCmdRun(cmd *cobra.Command, args []string) error {
-	targetUserID, err := resolveKeyTargetUser()
+	targetUser, err := resolveKeyTargetUser()
 	if err != nil {
 		return err
 	}
 
 	kid := args[0]
-	response, err := apiDeleteUserKey(targetUserID, kid)
+	response, err := apiDeleteUserKey(targetUser.UserID, kid)
 	if err != nil {
 		return err
 	}

@@ -95,7 +95,6 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		view.Append([]string{"Source", rev.Source})
 		view.Append([]string{"Description", rev.Description})
 		view.Append([]string{"Created At", rev.CreatedAt.String()})
-		view.Append([]string{"Live At", rev.LiveAt.String()})
 		view.Append([]string{"User ID", rev.UserID.String()})
 
 		// Show Space slug instead of Space ID when available

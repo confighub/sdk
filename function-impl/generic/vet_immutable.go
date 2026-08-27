@@ -27,7 +27,7 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 					DataType:      api.DataTypeString,
 				},
 			},
-			OtherDataExpected: []api.OtherDataSource{"LastAppliedRevisionNum"},
+			OtherDataExpected: []api.OtherDataSource{"LastReleasedRevisionNum"},
 			OutputInfo: &api.FunctionOutput{
 				ResultName:  "passed",
 				Description: "True if no immutable fields were changed, false otherwise",
@@ -62,11 +62,9 @@ func registerVetImmutable(fh handler.FunctionRegistry, converter configkit.Confi
 }
 
 // baselineFromOtherData picks the revision to compare against out of the OtherData
-// the caller supplied. The baseline used to be the live revision and the key was
-// hardcoded to "LiveRevisionNum"; nothing advances LiveRevisionNum since the bridge
-// sunset, so a caller now names the reference point itself — LastAppliedRevisionNum
-// (which publishing a Release advances), Before:HeadRevisionNum, or LiveRevisionNum
-// on a Unit with history. Anything the caller names is honoured; the known keys are
+// the caller supplied. The caller names the reference point itself —
+// LastReleasedRevisionNum (which publishing a Release advances) or
+// Before:HeadRevisionNum. Anything the caller names is honoured; the known keys are
 // only a preference order for the ambiguous multi-source case.
 func baselineFromOtherData(parsedOtherData map[api.OtherDataSource]gaby.Container) (gaby.Container, bool) {
 	if len(parsedOtherData) == 1 {
@@ -74,7 +72,7 @@ func baselineFromOtherData(parsedOtherData map[api.OtherDataSource]gaby.Containe
 			return data, true
 		}
 	}
-	for _, source := range []api.OtherDataSource{"LastAppliedRevisionNum", "LiveRevisionNum", "PreviousLiveRevisionNum", "HeadRevisionNum"} {
+	for _, source := range []api.OtherDataSource{"LastReleasedRevisionNum", "HeadRevisionNum"} {
 		if data, ok := parsedOtherData[source]; ok {
 			return data, true
 		}

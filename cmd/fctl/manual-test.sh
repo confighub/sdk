@@ -205,8 +205,8 @@ ${FCTL} do test-data/ingress-route.yaml "MyDeployment" set-starlark 'for route i
 
 # Test vet-immutable
 ${FCTL} do test-data/deployment.yaml MyApp vet-immutable > ${DIR}/vet-immutable-no-live.txt
-${FCTL} do test-data/deployment.yaml MyApp vet-immutable --other-data LiveRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-same.txt
-${FCTL} do test-data/deployment-selector-changed.yaml MyApp vet-immutable --other-data LiveRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-changed.txt
+${FCTL} do test-data/deployment.yaml MyApp vet-immutable --other-data LastReleasedRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-same.txt
+${FCTL} do test-data/deployment-selector-changed.yaml MyApp vet-immutable --other-data LastReleasedRevisionNum=test-data/deployment.yaml > ${DIR}/vet-immutable-changed.txt
 
 # These maps are unordered, so this is problematic
 # ${FCTL} listpaths  > ${DIR}/listpaths.txt
