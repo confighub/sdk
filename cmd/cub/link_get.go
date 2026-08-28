@@ -56,6 +56,9 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	view := tableView()
 	view.Append([]string{"ID", linkDetails.LinkID.String()})
 	view.Append([]string{"Name", linkDetails.Slug})
+	if linkDetails.DisplayName != "" {
+		view.Append([]string{"Display Name", linkDetails.DisplayName})
+	}
 
 	// Show Space slug instead of Space ID when available
 	if extendedLink.Space != nil {
@@ -94,11 +97,21 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if linkDetails.UpdateType != "" {
 		view.Append([]string{"Update Type", linkDetails.UpdateType})
 	}
-	if linkDetails.AutoUpdate {
-		view.Append([]string{"Auto Update", fmt.Sprintf("%t", linkDetails.AutoUpdate)})
+	// AutoUpdate, Stale and Protect are shown for both values. A false is an answer here --
+	// whether the Link updates itself, whether it is behind, and whether what it writes is
+	// claimed as a local override -- and an omitted row is indistinguishable from one the
+	// display does not carry.
+	view.Append([]string{"Auto Update", fmt.Sprintf("%t", linkDetails.AutoUpdate)})
+	view.Append([]string{"Stale", fmt.Sprintf("%t", linkDetails.Stale)})
+	view.Append([]string{"Protect", fmt.Sprintf("%t", linkDetails.Protect)})
+	if linkDetails.Squash {
+		view.Append([]string{"Squash", "true"})
 	}
-	if linkDetails.Stale {
-		view.Append([]string{"Stale", "true"})
+	if linkDetails.MergeEnableSubtraction {
+		view.Append([]string{"Merge Enable Subtraction", "true"})
+	}
+	if clearance := formatClearance(linkDetails.Clearance); clearance != "" {
+		view.Append([]string{"Clearance", clearance})
 	}
 	if linkDetails.WhereMutation != "" {
 		view.Append([]string{"Where Mutation", linkDetails.WhereMutation})
@@ -129,13 +142,30 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 		}
 	}
 
+	// The four path lists are what a TransformPaths Link is configured with. Each is too long
+	// for a row apiece, so the count says whether there is anything to look at and --verbose
+	// prints it.
+	if len(linkDetails.UpstreamPaths) > 0 {
+		view.Append([]string{"Upstream Paths", fmt.Sprintf("%d %s", len(linkDetails.UpstreamPaths), plural("path", len(linkDetails.UpstreamPaths)))})
+	}
+	if len(linkDetails.DownstreamPaths) > 0 {
+		view.Append([]string{"Downstream Paths", fmt.Sprintf("%d %s", len(linkDetails.DownstreamPaths), plural("path", len(linkDetails.DownstreamPaths)))})
+	}
+	if len(linkDetails.UpstreamGetters) > 0 {
+		view.Append([]string{"Upstream Getters", fmt.Sprintf("%d %s", len(linkDetails.UpstreamGetters), plural("getter", len(linkDetails.UpstreamGetters)))})
+	}
+	if len(linkDetails.DownstreamSetters) > 0 {
+		view.Append([]string{"Downstream Setters", fmt.Sprintf("%d %s", len(linkDetails.DownstreamSetters), plural("setter", len(linkDetails.DownstreamSetters)))})
+	}
+
 	view.Render()
 
-	if linkDetails.Bindings != nil && len(*linkDetails.Bindings) > 0 && verbose {
-		tprintRaw("")
-		tprintRaw("Bindings:")
-		tprintRaw("---------")
-		displayJSON(linkDetails.Bindings)
+	if verbose {
+		displayJSONSection("Bindings", linkDetails.Bindings)
+		displayJSONSection("Upstream Paths", linkDetails.UpstreamPaths)
+		displayJSONSection("Downstream Paths", linkDetails.DownstreamPaths)
+		displayJSONSection("Upstream Getters", linkDetails.UpstreamGetters)
+		displayJSONSection("Downstream Setters", linkDetails.DownstreamSetters)
 	}
 }
 

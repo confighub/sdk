@@ -21,6 +21,11 @@ var mutationListCmd = &cobra.Command{
 	Short: "List mutations",
 	Long: getCommandHelp(`List mutations for a unit in a space. Mutations track the history of detailed mutations made to a unit's configuration.
 
+The default output identifies each mutation and shows what produced it: the Link, Trigger or
+Invocation behind it and the function it ran. -o wide adds the timestamp, the Subgroup, and the
+replay outcome -- what a merge did with the mutation, which is what says whether a function
+re-ran downstream or the merge patched its result across instead.
+
 Examples:
 `+"```"+`
   # List all mutations for a unit
@@ -46,8 +51,9 @@ Examples:
 	RunE: mutationListCmdRun,
 }
 
-// Default columns to display when no custom columns are specified
-var defaultMutationColumns = []string{"Mutation.MutationNum", "Mutation.RevisionNum", "Link.Slug", "Mutation.ProvidedResource.ResourceName", "Mutation.ProvidedPath", "Trigger.Slug", "Invocation.Slug", "Mutation.FunctionInvocation.FunctionName"}
+// Default columns to display when no custom columns are specified. This is also what drives the
+// select list, so it names every field either layout shows -- the wide-only ones included.
+var defaultMutationColumns = []string{"Mutation.MutationNum", "Mutation.RevisionNum", "Link.Slug", "Mutation.ProvidedResource.ResourceName", "Mutation.ProvidedPath", "Trigger.Slug", "Invocation.Slug", "Mutation.FunctionInvocation.FunctionName", "Mutation.CreatedAt", "Mutation.Subgroup", "Mutation.ReplayOutcome"}
 
 // Mutation-specific aliases
 var mutationAliases = map[string]string{
@@ -90,46 +96,85 @@ func getMutationSlugFromExtended(mutationDetails *goclientnew.ExtendedMutation) 
 }
 
 func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
+	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Num", "RevisionNum", "MergeSource", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "Invocation", "FunctionName"})
+		header := []string{"Num", "RevisionNum"}
+		if wide {
+			header = append(header, "Time")
+		}
+		header = append(header, "MergeSource", "Link", "ProvidedResource", "ProvidedPath", "Trigger", "Invocation", "FunctionName")
+		if wide {
+			header = append(header, "Subgroup", "Replay")
+		}
+		table.SetHeader(header)
 	}
 	for _, extendedMutation := range extendedMutations {
 		mutationDetails := extendedMutation.Mutation
 		var mergeSourceSlug, linkSlug, triggerSlug, invocationSlug string
 		if extendedMutation.MergeSource != nil {
 			mergeSourceSlug = extendedMutation.MergeSource.Slug
-		} else if mutationDetails.MergeSourceID != nil && *mutationDetails.MergeSourceID != uuid.Nil {
+		} else if isSetUUID(mutationDetails.MergeSourceID) {
 			mergeSourceSlug = mutationDetails.MergeSourceID.String()
 		}
 		if extendedMutation.Link != nil {
 			linkSlug = extendedMutation.Link.Slug
-		} else if mutationDetails.LinkID != nil && *mutationDetails.LinkID != uuid.Nil {
+		} else if isSetUUID(mutationDetails.LinkID) {
 			linkSlug = mutationDetails.LinkID.String()
 		}
 		if extendedMutation.Trigger != nil {
 			triggerSlug = extendedMutation.Trigger.Slug
-		} else if mutationDetails.TriggerID != nil && *mutationDetails.TriggerID != uuid.Nil {
+		} else if isSetUUID(mutationDetails.TriggerID) {
 			triggerSlug = mutationDetails.TriggerID.String()
 		}
 		if extendedMutation.Invocation != nil {
 			invocationSlug = extendedMutation.Invocation.Slug
-		} else if mutationDetails.InvocationID != nil && *mutationDetails.InvocationID != uuid.Nil {
+		} else if isSetUUID(mutationDetails.InvocationID) {
 			invocationSlug = mutationDetails.InvocationID.String()
 		}
-		table.Append([]string{
+		providedResource := ""
+		if mutationDetails.ProvidedResource != nil {
+			providedResource = mutationDetails.ProvidedResource.ResourceName
+		}
+
+		row := []string{
 			fmt.Sprintf("%d", mutationDetails.MutationNum),
 			fmt.Sprintf("%d", mutationDetails.RevisionNum),
+		}
+		if wide {
+			// The same short form the other list commands use; time.Time.String() carries
+			// microseconds and a zone name, which is most of a column for no gain.
+			row = append(row, mutationDetails.CreatedAt.Format("2006-01-02 15:04:05"))
+		}
+		row = append(row,
 			mergeSourceSlug,
 			linkSlug,
-			mutationDetails.ProvidedResource.ResourceName,
-			mutationDetails.ProvidedPath,
+			providedResource,
+			// A resolved path names a resource and a location within it, so it is the column
+			// that runs long enough to push the rest of the row off the screen.
+			truncateWithEllipsis(mutationDetails.ProvidedPath, maxMutationProvidedPath),
 			triggerSlug,
 			invocationSlug,
-			mutationDetails.FunctionInvocation.FunctionName,
-		})
+			functionInvocationName(mutationDetails.FunctionInvocation),
+		)
+		if wide {
+			row = append(row, mutationDetails.Subgroup, mutationDetails.ReplayOutcome)
+		}
+		table.Append(row)
 	}
 	table.Render()
+}
+
+// maxMutationProvidedPath is where the ProvidedPath column is cut. `cub mutation get` and -o json
+// show the whole path.
+const maxMutationProvidedPath = 40
+
+// functionInvocationName is the function a Mutation ran, if it ran one.
+func functionInvocationName(invocation *goclientnew.FunctionInvocation) string {
+	if invocation == nil {
+		return ""
+	}
+	return invocation.FunctionName
 }
 
 func apiListMutations(spaceID string, unitID string, whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedMutation, error) {

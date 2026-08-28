@@ -22,8 +22,10 @@ var revisionListCmd = &cobra.Command{
 
 The default output identifies each revision and shows what change management put on it: its
 ChangeSet, the ChangeOrders it belongs to, and its Tags, with the change description last and
-truncated. -o wide adds the timestamp, the user, and the apply gates, and shows the whole
-description.
+truncated. -o wide adds the timestamp, the user, the apply gates, and the Releases the revision
+has been bundled into, and shows the whole description. The ChangeOrders, Tags, and Releases
+columns are truncated in either layout, since each is a set; "cub revision get" and -o json show
+them in full.
 
 Examples:
 `+"```"+`
@@ -62,7 +64,11 @@ Examples:
 
 // Default columns to display when no custom columns are specified. This is also what drives the
 // select list, so it names every field either layout shows -- the wide-only ones included.
-var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.Source", "ChangeSet.Slug", "Revision.ChangeOrders", "Revision.Tags", "Revision.Description", "Revision.CreatedAt", "User.Username", "Revision.ApplyGates"}
+// Tags, ChangeOrders and Releases are not here. They are sets of ids stored in association tables,
+// and what the columns below them render is the expanded entity -- which `include` asks for and
+// buildSelectList folds into the selection anyway. Naming the id maps here as well would ask the
+// server for ids the response already carries expanded.
+var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.Source", "ChangeSet.Slug", "Revision.Description", "Revision.CreatedAt", "User.Username", "Revision.ApplyGates"}
 
 // Revision-specific aliases
 var revisionAliases = map[string]string{
@@ -250,10 +256,79 @@ func qualifySlug(slug, spaceSlug, revisionSpaceSlug string) string {
 	return spaceSlug + "/" + slug
 }
 
+// revisionChangeSet is the ChangeSet a Revision belongs to, by slug when the response expanded it
+// and by id when it did not. Empty when the Revision belongs to no ChangeSet.
+func revisionChangeSet(extendedRev *goclientnew.ExtendedRevision) string {
+	if extendedRev.ChangeSet != nil {
+		return qualifySlug(extendedRev.ChangeSet.Slug, extendedRev.ChangeSet.SpaceSlug, revisionSpaceSlug(extendedRev))
+	}
+	if extendedRev.Revision.ChangeSetID != nil && *extendedRev.Revision.ChangeSetID != uuid.Nil {
+		return extendedRev.Revision.ChangeSetID.String()
+	}
+	return ""
+}
+
+// revisionChangeOrders is the set of ChangeOrders a Revision belongs to, by slug. It is a set
+// rather than one value because promotion runs at different rates into different Spaces, so a
+// Revision is genuinely part of more than one.
+func revisionChangeOrders(extendedRev *goclientnew.ExtendedRevision) string {
+	revSpace := revisionSpaceSlug(extendedRev)
+	var slugs []string
+	for _, changeOrder := range extendedRev.ChangeOrders {
+		if changeOrder.Slug != "" {
+			slugs = append(slugs, qualifySlug(changeOrder.Slug, changeOrder.SpaceSlug, revSpace))
+		}
+	}
+	sort.Strings(slugs)
+	return strings.Join(slugs, ", ")
+}
+
+// revisionTags is the set of Tags applied to a Revision, by slug. The ids live in an association
+// table and the response expands them, so there is nothing to fall back to and nothing to look up.
+func revisionTags(extendedRev *goclientnew.ExtendedRevision) string {
+	revSpace := revisionSpaceSlug(extendedRev)
+	var tagSlugs []string
+	for _, tag := range extendedRev.Tags {
+		if tag.Slug != "" {
+			tagSlugs = append(tagSlugs, qualifySlug(tag.Slug, tag.SpaceSlug, revSpace))
+		}
+	}
+	if len(tagSlugs) == 0 {
+		return ""
+	}
+	sort.Strings(tagSlugs)
+	return strings.Join(tagSlugs, ", ")
+}
+
+// revisionReleases is the set of Releases that have bundled a Revision. A Release has no slug: it
+// is numbered within its Space, and publishing names the Tag it creates for it release-<num>, so
+// that is the name used here too.
+func revisionReleases(extendedRev *goclientnew.ExtendedRevision) string {
+	revSpace := revisionSpaceSlug(extendedRev)
+	releases := extendedRev.Releases
+	sort.Slice(releases, func(i, j int) bool {
+		if releases[i].SpaceSlug != releases[j].SpaceSlug {
+			return releases[i].SpaceSlug < releases[j].SpaceSlug
+		}
+		return releases[i].ReleaseNum < releases[j].ReleaseNum
+	})
+	names := make([]string, 0, len(releases))
+	for _, release := range releases {
+		names = append(names, qualifySlug(fmt.Sprintf("release-%d", release.ReleaseNum), release.SpaceSlug, revSpace))
+	}
+	return strings.Join(names, ", ")
+}
+
 // maxRevisionDescription is where the default layout cuts a change description. Descriptions are
 // free text and routinely longer than the rest of the row put together, so the narrow layout shows
 // the beginning and -o wide shows all of it.
 const maxRevisionDescription = 50
+
+// maxRevisionAssociation is where a list of associated entities -- ChangeOrders, Tags, Releases --
+// is cut. Each is a set, so one Revision can carry enough of them to push everything else off the
+// row; the columns are read to see whether there is anything there and what the first of it is.
+// `cub revision get` and -o json show the whole set.
+const maxRevisionAssociation = 32
 
 // displayRevisionList renders the table. The narrow layout carries what identifies a Revision and
 // what change management put on it -- ChangeSet, ChangeOrders and Tags kept together, since they
@@ -273,12 +348,16 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		if wide {
 			header = append(header, "Apply-Gates")
 		}
-		header = append(header, "ChangeSet", "ChangeOrders", "Tags", "Description")
+		header = append(header, "ChangeSet", "ChangeOrders", "Tags")
+		if wide {
+			header = append(header, "Releases")
+		}
+		header = append(header, "Description")
 		table.SetHeader(header)
 	}
 	for _, extendedRev := range extendedRevisions {
 		rev := extendedRev.Revision
-		applyGates := "None"
+		applyGates := ""
 		if rev.ApplyGates != nil {
 			if len(rev.ApplyGates) > 1 {
 				applyGates = "Multiple"
@@ -304,56 +383,9 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 			unit = revSpace + "/" + unit
 		}
 
-		// Show ChangeSet slug if available, otherwise ChangeSetID if not nil and not uuid.Nil
-		changeSet := ""
-		if extendedRev.ChangeSet != nil {
-			changeSet = qualifySlug(extendedRev.ChangeSet.Slug, extendedRev.ChangeSet.SpaceSlug, revSpace)
-		} else if rev.ChangeSetID != nil && *rev.ChangeSetID != uuid.Nil {
-			changeSet = rev.ChangeSetID.String()
-		}
-
-		// A Revision can belong to more than one ChangeOrder, since promotion runs at different
-		// rates into different Spaces.
-		changeOrders := "None"
-		if len(extendedRev.ChangeOrders) > 0 {
-			var slugs []string
-			for _, changeOrder := range extendedRev.ChangeOrders {
-				if changeOrder.Slug != "" {
-					slugs = append(slugs, qualifySlug(changeOrder.Slug, changeOrder.SpaceSlug, revSpace))
-				}
-			}
-			if len(slugs) > 0 {
-				sort.Strings(slugs)
-				changeOrders = strings.Join(slugs, ", ")
-			}
-		} else if len(rev.ChangeOrders) > 0 {
-			// Unexpanded, so the IDs are all there is to show.
-			var ids []string
-			for changeOrderID := range rev.ChangeOrders {
-				ids = append(ids, changeOrderID)
-			}
-			sort.Strings(ids)
-			changeOrders = strings.Join(ids, ", ")
-		}
-
-		// Resolve tags to slugs
-		tags := "None"
-		if extendedRev.Tags != nil && len(extendedRev.Tags) > 0 {
-			var tagSlugs []string
-			for _, tag := range extendedRev.Tags {
-				if tag.Slug != "" {
-					tagSlugs = append(tagSlugs, qualifySlug(tag.Slug, tag.SpaceSlug, revSpace))
-				}
-			}
-			if len(tagSlugs) > 0 {
-				tags = strings.Join(tagSlugs, ", ")
-			}
-		} else if rev.Tags != nil && len(rev.Tags) > 0 {
-			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
-			if len(tagSlugs) > 0 {
-				tags = strings.Join(tagSlugs, ", ")
-			}
-		}
+		changeSet := revisionChangeSet(extendedRev)
+		changeOrders := truncateWithEllipsis(revisionChangeOrders(extendedRev), maxRevisionAssociation)
+		tags := truncateWithEllipsis(revisionTags(extendedRev), maxRevisionAssociation)
 
 		description := rev.Description
 		if !wide {
@@ -370,7 +402,11 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		if wide {
 			row = append(row, applyGates)
 		}
-		row = append(row, changeSet, changeOrders, tags, description)
+		row = append(row, changeSet, changeOrders, tags)
+		if wide {
+			row = append(row, truncateWithEllipsis(revisionReleases(extendedRev), maxRevisionAssociation))
+		}
+		row = append(row, description)
 		table.Append(row)
 	}
 	table.Render()
@@ -387,7 +423,7 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders"
+	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders,Releases"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "SpaceSlug", "OrganizationID"}
@@ -429,7 +465,7 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	if contains != "" {
 		newParams.Contains = &contains
 	}
-	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders"
+	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders,Releases"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "SpaceSlug", "OrganizationID"}

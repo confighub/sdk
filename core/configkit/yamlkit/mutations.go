@@ -3264,15 +3264,23 @@ func ownedMember(group *gaby.YamlDoc, fields ExclusiveFields, touch exclusiveTou
 // Updates merges into it. Diffing recovers the removals the coarse form would have performed,
 // so splitting changes which paths are filtered and nothing else.
 //
-// It only runs where it can matter: the target has a protected path strictly below the entry,
-// both sides hold a mapping there, and the entry is not itself a Delete -- deleting a subtree
-// is not a set of leaf deletions, and what it displaces is already reported as DeleteShadowed.
+// A Delete splits the same way, against nothing: the leaves are what the target currently holds
+// under the path, each a Delete of its own. Left whole, a coarse Delete writes straight past
+// every protected path beneath it -- protection is matched by walking up to the closest entry,
+// and the entry it finds is the mapping, which nothing claimed. DeleteShadowed does not cover
+// this: it is emitted by SubtractMutations, and subtraction is off on the path where stored
+// protection is doing the preserving.
+//
+// It only runs where it can matter: the target has a protected path strictly below the entry
+// and holds a mapping there.
 func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
 	canonicalProtection, storedProtection api.MutationMap,
+	resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
 	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
 	expanded := make([]api.MutationMapEntry, 0, len(entries))
 	for _, entry := range entries {
-		leaves := coarseEntryLeaves(doc, entry, canonicalProtection, storedProtection, mergeKeyLookup)
+		leaves := coarseEntryLeaves(doc, entry, canonicalProtection, storedProtection,
+			resourceGuards, clearance, mergeKeyLookup)
 		if leaves == nil {
 			expanded = append(expanded, entry)
 			continue
@@ -3286,25 +3294,34 @@ func expandCoarsePatchEntries(doc *gaby.YamlDoc, entries []api.MutationMapEntry,
 // whole.
 func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 	canonicalProtection, storedProtection api.MutationMap,
+	resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
 	mergeKeyLookup MergeKeyLookup) []api.MutationMapEntry {
-	if entry.MutationInfo.MutationType == api.MutationTypeDelete {
-		return nil
-	}
 	resolvedPath, resolved := ResolveAssociativeSegments(doc, string(entry.Path))
 	if !resolved {
 		return nil
 	}
 	if !protectsBelow(canonicalProtection, CanonicalMutationPath(entry.Path)) &&
-		!protectsBelow(storedProtection, api.ResolvedPath(resolvedPath)) {
+		!protectsBelow(storedProtection, api.ResolvedPath(resolvedPath)) &&
+		!guardsBelow(resourceGuards, clearance, CanonicalMutationPath(entry.Path)) {
 		return nil
 	}
 	target := doc.Path(resolvedPath)
 	if !isMappingDoc(target) {
 		return nil
 	}
-	value, err := gaby.ParseYAML([]byte(entry.MutationInfo.Value))
-	if err != nil || !isMappingDoc(value) {
-		return nil
+
+	// What the entry wants left at the path. An Update or Add carries the subtree it means to
+	// put there; a Delete means an empty one, so its leaves come from diffing the target
+	// against nothing.
+	var value *gaby.YamlDoc
+	if entry.MutationInfo.MutationType == api.MutationTypeDelete {
+		value = emptyMapping()
+	} else {
+		var err error
+		value, err = gaby.ParseYAML([]byte(entry.MutationInfo.Value))
+		if err != nil || !isMappingDoc(value) {
+			return nil
+		}
 	}
 
 	subMap := api.MutationMap{}
@@ -3322,6 +3339,40 @@ func coarseEntryLeaves(doc *gaby.YamlDoc, entry api.MutationMapEntry,
 		leaves = append(leaves, leaf)
 	}
 	return leaves
+}
+
+// guardsBelow reports whether a path strictly below the given one holds a guard this
+// operation's clearance does not cover. Only a withheld guard counts: one the operation is
+// cleared for stops nothing, and splitting for it would replace a mapping's removal with the
+// removal of each of its keys, which is not the same edit.
+//
+// It exists because GuardsForPath walks upward -- a guard is inherited by what sits under it --
+// so the guards on a coarse entry's own path say nothing about the descendants it would erase.
+func guardsBelow(resourceGuards *api.ResourcePathAnnotations, clearance api.Clearance,
+	path api.ResolvedPath) bool {
+	if resourceGuards == nil {
+		return false
+	}
+	prefix := string(path) + "."
+	for candidate := range resourceGuards.PathAnnotationMap {
+		if !strings.HasPrefix(string(candidate), prefix) {
+			continue
+		}
+		if admitted, _ := clearance.Admits(resourceGuards.GuardsForPath(candidate)); !admitted {
+			return true
+		}
+	}
+	return false
+}
+
+// emptyMapping is the document a Delete is diffed against: the subtree the entry wants to
+// leave behind, which for a Delete is an empty mapping.
+func emptyMapping() *gaby.YamlDoc {
+	doc, err := gaby.ParseYAML([]byte("{}"))
+	if err != nil {
+		return nil
+	}
+	return doc
 }
 
 // protectsBelow reports whether the target protects a path strictly below the given one. An
@@ -3438,9 +3489,13 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 	// Sort paths so parents are processed before children, then partition so all Deletes
 	// run before all non-Deletes. Path order is preserved within each partition.
 	sorted := api.SortedMutationMapEntries(pathMutationMap)
+	var storedProtection api.MutationMap
 	if hasProtection {
+		storedProtection = mutationsProtection[protectionIndex].PathMutationMap
+	}
+	if hasProtection || resourceGuards != nil {
 		sorted = expandCoarsePatchEntries(doc, sorted, canonicalProtection,
-			mutationsProtection[protectionIndex].PathMutationMap, mergeKeyLookup)
+			storedProtection, resourceGuards, clearance, mergeKeyLookup)
 	}
 	patches := make([]api.MutationMapEntry, 0, len(sorted))
 	for _, entry := range sorted {

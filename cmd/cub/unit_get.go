@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -123,6 +124,17 @@ func countResources(mutationSources *goclientnew.ResourceMutationList) int {
 	return count
 }
 
+// validationResultsSummary names the gates that have validation output and how many results each
+// carries. The results themselves are what --verbose prints.
+func validationResultsSummary(results map[string][]goclientnew.ValidationResult) string {
+	gates := make([]string, 0, len(results))
+	for gate, gateResults := range results {
+		gates = append(gates, fmt.Sprintf("%s (%d)", gate, len(gateResults)))
+	}
+	sort.Strings(gates)
+	return strings.Join(gates, ", ")
+}
+
 func applyGatesToString(applyGates map[string]bool) string {
 	gates := make([]string, 0, len(applyGates))
 	for gate, failed := range applyGates {
@@ -136,7 +148,21 @@ func applyGatesToString(applyGates map[string]bool) string {
 func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 	if !dataOnly {
 		view := tableView()
+		view.Append([]string{"ID", unitDetails.Unit.UnitID.String()})
 		view.Append([]string{"Name", unitDetails.Unit.Slug})
+		if unitDetails.Unit.DisplayName != "" {
+			view.Append([]string{"Display Name", unitDetails.Unit.DisplayName})
+		}
+
+		// Show Space slug instead of Space ID when available
+		if unitDetails.Space != nil {
+			view.Append([]string{"Space", unitDetails.Space.Slug})
+		} else if unitDetails.Unit.SpaceSlug != "" {
+			view.Append([]string{"Space", unitDetails.Unit.SpaceSlug})
+		} else {
+			view.Append([]string{"Space ID", unitDetails.Unit.SpaceID.String()})
+		}
+
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
 		view.Append([]string{"Provider Type", unitDetails.Unit.ProviderType})
 
@@ -171,10 +197,18 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		view.Append([]string{"Head Revision Num", fmt.Sprintf("%d", unitDetails.Unit.HeadRevisionNum)})
 		view.Append([]string{"Last Released Revision Num", fmt.Sprintf("%d", unitDetails.Unit.LastReleasedRevisionNum)})
 
-		// Show upstream unit info if available
-		if unitDetails.Unit.UpstreamUnitID != nil && *unitDetails.Unit.UpstreamUnitID != uuid.Nil {
-			view.Append([]string{"Upstream Space ID", unitDetails.Unit.UpstreamSpaceID.String()})
-			view.Append([]string{"Upstream Unit ID", unitDetails.Unit.UpstreamUnitID.String()})
+		// Show upstream unit info if available, by slug when the response expanded it
+		if isSetUUID(unitDetails.Unit.UpstreamUnitID) {
+			if unitDetails.UpstreamSpace != nil {
+				view.Append([]string{"Upstream Space", unitDetails.UpstreamSpace.Slug})
+			} else if isSetUUID(unitDetails.Unit.UpstreamSpaceID) {
+				view.Append([]string{"Upstream Space ID", unitDetails.Unit.UpstreamSpaceID.String()})
+			}
+			if unitDetails.UpstreamUnit != nil {
+				view.Append([]string{"Upstream Unit", unitDetails.UpstreamUnit.Slug})
+			} else {
+				view.Append([]string{"Upstream Unit ID", unitDetails.Unit.UpstreamUnitID.String()})
+			}
 			view.Append([]string{"Upstream Revision Num", fmt.Sprintf("%d", unitDetails.Unit.UpstreamRevisionNum)})
 		}
 
@@ -186,12 +220,15 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Apply Warnings", applyGatesToString(unitDetails.Unit.ApplyWarnings)})
 		}
 
-		if len(unitDetails.Unit.ApprovedBy) != 0 {
-			approverIDs := ""
-			for _, approverID := range unitDetails.Unit.ApprovedBy {
-				approverIDs += " " + approverID.String()
+		if len(unitDetails.ApprovedBy) != 0 {
+			usernames := make([]string, 0, len(unitDetails.ApprovedBy))
+			for _, approver := range unitDetails.ApprovedBy {
+				usernames = append(usernames, approver.Username)
 			}
-			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
+			sort.Strings(usernames)
+			view.Append([]string{"Approved By", strings.Join(usernames, ", ")})
+		} else if len(unitDetails.Unit.ApprovedBy) != 0 {
+			view.Append([]string{"Approved By", strings.Join(resolveUsernames(unitDetails.Unit.ApprovedBy), ", ")})
 		}
 
 		if len(unitDetails.Unit.Values) != 0 {
@@ -242,7 +279,41 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Provided Paths", fmt.Sprintf("%d paths", len(unitDetails.Unit.ProvidedPaths))})
 		}
 
+		// The outstanding conflicts, the annotations, and the validation output behind the gates
+		// are lists, too long for a row apiece: the count says whether there is anything to look
+		// at. Conflicts print in full, since a withheld change is what the reader came for; the
+		// other two print under --verbose.
+		conflicts := 0
+		if unitDetails.Unit.Conflicts != nil {
+			conflicts = len(*unitDetails.Unit.Conflicts)
+		}
+		if conflicts > 0 {
+			view.Append([]string{"Conflicts", fmt.Sprintf("%d %s", conflicts, plural("conflict", conflicts))})
+		}
+		pathAnnotations := 0
+		if unitDetails.Unit.PathAnnotations != nil {
+			pathAnnotations = len(*unitDetails.Unit.PathAnnotations)
+		}
+		if pathAnnotations > 0 {
+			view.Append([]string{"Path Annotations", fmt.Sprintf("%d %s", pathAnnotations, plural("resource", pathAnnotations))})
+		}
+		if len(unitDetails.Unit.ValidationResults) > 0 {
+			view.Append([]string{"Validation Results", validationResultsSummary(unitDetails.Unit.ValidationResults)})
+		}
+
+		view.Append([]string{"Organization ID", unitDetails.Unit.OrganizationID.String()})
 		view.Render()
+
+		if conflicts > 0 {
+			tprintRaw("")
+			tprintRaw("Conflicts:")
+			tprintRaw("----------")
+			displayConflicts(*unitDetails.Unit.Conflicts)
+		}
+		if verbose {
+			displayJSONSection("Path Annotations", unitDetails.Unit.PathAnnotations)
+			displayJSONSection("Validation Results", unitDetails.Unit.ValidationResults)
+		}
 
 		if mutationSources != nil && len(*mutationSources) != 0 && (verbose || shouldDisplayMutations()) {
 			tprintRaw("")
@@ -302,7 +373,7 @@ func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*gocl
 
 func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	newParams := &goclientnew.GetUnitParams{}
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+	include := unitGetInclude
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -348,6 +419,11 @@ func apiGetUnitFromSlugInSpace(slug string, spaceID string, selectParam string) 
 	return nil, fmt.Errorf("unit %s not found in space %s", slug, spaceID)
 }
 
+// unitGetInclude is what `cub unit get` expands, which is the list's set plus the two a single
+// Unit is worth the extra joins for: the Space the upstream is in, and the users who approved.
+// The list pays those per row and shows neither.
+const unitGetInclude = unitListInclude + ",UpstreamSpaceID,ApprovedBy"
+
 func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	_, err := uuid.Parse(slug)
 	var where string
@@ -360,7 +436,11 @@ func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam 
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	units, err := apiListAllUnits(cubapi.NewWhere(where), "", "", "", "", false, selectParam, "", "")
+	selectValue := handleSelectParameter(selectParam, selectFields, nil)
+	units, err := cubapi.ListUnits(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
+		Select:  cubapi.SelectFields(selectValue),
+		Include: unitGetInclude,
+	})
 	if err != nil {
 		return nil, err
 	}

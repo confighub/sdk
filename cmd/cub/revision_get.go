@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -83,71 +84,103 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 	if !dataOnly {
 		view := tableView()
 		view.Append([]string{"ID", rev.RevisionID.String()})
+		view.Append([]string{"Revision Num", fmt.Sprintf("%d", rev.RevisionNum)})
 
 		// Show Unit slug instead of Unit ID when available
 		if extendedRev.Unit != nil {
 			view.Append([]string{"Unit", extendedRev.Unit.Slug})
+		} else if rev.UnitSlug != "" {
+			view.Append([]string{"Unit", rev.UnitSlug})
 		} else {
 			view.Append([]string{"Unit ID", rev.UnitID.String()})
 		}
 
-		view.Append([]string{"Revision Num", fmt.Sprintf("%d", rev.RevisionNum)})
-		view.Append([]string{"Source", rev.Source})
-		view.Append([]string{"Description", rev.Description})
-		view.Append([]string{"Created At", rev.CreatedAt.String()})
-		view.Append([]string{"User ID", rev.UserID.String()})
-
 		// Show Space slug instead of Space ID when available
-		if extendedRev.Space != nil {
-			view.Append([]string{"Space", extendedRev.Space.Slug})
+		if revSpace := revisionSpaceSlug(extendedRev); revSpace != "" {
+			view.Append([]string{"Space", revSpace})
 		} else {
 			view.Append([]string{"Space ID", rev.SpaceID.String()})
 		}
 
-		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
-		if extendedRev.ChangeSet != nil {
-			view.Append([]string{"ChangeSet", extendedRev.ChangeSet.Slug})
-		} else if rev.ChangeSetID != nil && *rev.ChangeSetID != uuid.Nil {
-			view.Append([]string{"ChangeSet ID", rev.ChangeSetID.String()})
+		view.Append([]string{"Source", rev.Source})
+		view.Append([]string{"Description", rev.Description})
+		view.Append([]string{"Created At", rev.CreatedAt.String()})
+		view.Append([]string{"Updated At", rev.UpdatedAt.String()})
+
+		// Show the username instead of the User ID when available. Automated changes -- triggers,
+		// resolve -- are recorded with the nil UserID, which names nobody, so neither row is shown.
+		if extendedRev.User != nil {
+			view.Append([]string{"User", extendedRev.User.Username})
+		} else if rev.UserID != uuid.Nil {
+			view.Append([]string{"User ID", rev.UserID.String()})
+		}
+		if rev.UserAgent != "" {
+			view.Append([]string{"User Agent", rev.UserAgent})
+		}
+
+		if changeSet := revisionChangeSet(extendedRev); changeSet != "" {
+			view.Append([]string{"ChangeSet", changeSet})
+		}
+		if changeOrders := revisionChangeOrders(extendedRev); changeOrders != "" {
+			view.Append([]string{"ChangeOrders", changeOrders})
+		}
+		if tags := revisionTags(extendedRev); tags != "" {
+			view.Append([]string{"Tags", tags})
+		}
+		if releases := revisionReleases(extendedRev); releases != "" {
+			view.Append([]string{"Releases", releases})
 		}
 
 		if rev.DataHash != "" {
 			view.Append([]string{"Data Hash", rev.DataHash})
 		}
-		view.Append([]string{"Organization ID", rev.OrganizationID.String()})
+		if rev.DataSize != 0 {
+			view.Append([]string{"Data Size", fmt.Sprintf("%d", rev.DataSize)})
+		}
 
-		if rev.ApplyGates != nil && len(rev.ApplyGates) != 0 {
-			gates := ""
-			for gate, failed := range rev.ApplyGates {
-				if failed {
-					gates += gate + " "
-				}
-			}
-			view.Append([]string{"Apply Gates", strings.TrimSpace(gates)})
+		if len(rev.ApplyGates) != 0 {
+			view.Append([]string{"Apply Gates", applyGatesToString(rev.ApplyGates)})
+		}
+		if len(rev.ApplyWarnings) != 0 {
+			view.Append([]string{"Apply Warnings", applyGatesToString(rev.ApplyWarnings)})
 		}
 		if len(rev.ApprovedBy) != 0 {
-			approverIDs := ""
-			for _, approverID := range rev.ApprovedBy {
-				approverIDs += " " + approverID.String()
-			}
-			view.Append([]string{"Approved By", strings.TrimSpace(approverIDs)})
+			view.Append([]string{"Approved By", strings.Join(resolveUsernames(rev.ApprovedBy), ", ")})
 		}
-		// Display tags if present
-		if extendedRev.Tags != nil && len(extendedRev.Tags) > 0 {
-			var tagSlugs []string
-			for _, tag := range extendedRev.Tags {
-				if tag.Slug != "" {
-					tagSlugs = append(tagSlugs, tag.Slug)
-				}
-			}
-			if len(tagSlugs) > 0 {
-				view.Append([]string{"Tags", strings.Join(tagSlugs, ", ")})
-			}
-		} else if rev.Tags != nil && len(rev.Tags) > 0 {
-			tagSlugs := resolveTagSlugs(rev.Tags, rev.SpaceID.String())
-			view.Append([]string{"Tags", strings.Join(tagSlugs, ", ")})
+
+		// The annotations and the withheld mutations are lists, too long for a row apiece: the
+		// count says whether there is anything to look at, and --verbose prints it.
+		pathAnnotations := 0
+		if rev.PathAnnotations != nil {
+			pathAnnotations = len(*rev.PathAnnotations)
 		}
+		if pathAnnotations > 0 {
+			view.Append([]string{"Path Annotations", fmt.Sprintf("%d %s", pathAnnotations, plural("resource", pathAnnotations))})
+		}
+		conflicts := 0
+		if rev.Conflicts != nil {
+			conflicts = len(*rev.Conflicts)
+		}
+		if conflicts > 0 {
+			view.Append([]string{"Conflicts", fmt.Sprintf("%d %s", conflicts, plural("conflict", conflicts))})
+		}
+
+		view.Append([]string{"Organization ID", rev.OrganizationID.String()})
 		view.Render()
+
+		if conflicts > 0 {
+			tprintRaw("")
+			tprintRaw("Conflicts:")
+			tprintRaw("----------")
+			displayConflicts(*rev.Conflicts)
+		}
+		if pathAnnotations > 0 && verbose {
+			tprintRaw("")
+			tprintRaw("Path Annotations:")
+			tprintRaw("-----------------")
+			displayJSON(rev.PathAnnotations)
+		}
+
 		tprintRaw("---")
 		mutationSources, msErr := fetchRevisionMutationSources(rev.SpaceID, rev.UnitID, rev.RevisionID)
 		failOnError(msErr)
@@ -167,6 +200,22 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 	tprintRaw(revData)
 }
 
+// resolveUsernames names the users that approved a Revision, falling back to the id for a user
+// that cannot be read -- an approver removed from the organization since approving, for instance.
+func resolveUsernames(userIDs []goclientnew.UUID) []string {
+	names := make([]string, 0, len(userIDs))
+	for _, userID := range userIDs {
+		user, err := apiGetUser(userID.String())
+		if err != nil || user == nil || user.Username == "" {
+			names = append(names, userID.String())
+			continue
+		}
+		names = append(names, user.Username)
+	}
+	sort.Strings(names)
+	return names
+}
+
 func apiGetRevision(revisionID string, unitID string, selectParam string) (*goclientnew.Revision, error) {
 	extendedRev, err := apiGetExtendedRevision(revisionID, unitID, selectParam)
 	if err != nil {
@@ -177,7 +226,7 @@ func apiGetRevision(revisionID string, unitID string, selectParam string) (*gocl
 
 func apiGetExtendedRevision(revisionID string, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
 	newParams := &goclientnew.GetExtendedRevisionParams{}
-	include := "UnitID,SpaceID,ChangeSetID,Tags"
+	include := "UserID,UnitID,SpaceID,ChangeSetID,Tags,ChangeOrders,Releases"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {
@@ -248,46 +297,4 @@ func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, selectParam st
 		}
 	}
 	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
-}
-
-// resolveTagSlugs converts a map of tag IDs to their slugs
-func resolveTagSlugs(tags map[string]string, spaceID string) []string {
-	if len(tags) == 0 {
-		return []string{}
-	}
-
-	var tagSlugs []string
-	for tagID := range tags {
-		// Try to get tag by ID and resolve to slug
-		parsedTagID, err := uuid.Parse(tagID)
-		if err != nil {
-			// If parsing fails, use the tagID as-is
-			tagSlugs = append(tagSlugs, tagID)
-			continue
-		}
-
-		// Search for the tag at organization level using ListAllTags
-		whereClause := fmt.Sprintf("TagID = '%s'", parsedTagID.String())
-		params := &goclientnew.ListAllTagsParams{
-			Where: &whereClause,
-		}
-
-		tagRes, err := cubClientNew.ListAllTagsWithResponse(ctx, params)
-		if err != nil || tagRes.JSON200 == nil || len(*tagRes.JSON200) == 0 {
-			// If we can't resolve the tag, use the UUID
-			tagSlugs = append(tagSlugs, tagID)
-			continue
-		}
-
-		// Get the first (should be only) tag found
-		foundTags := *tagRes.JSON200
-		if len(foundTags) > 0 && foundTags[0].Tag != nil && foundTags[0].Tag.Slug != "" {
-			tagSlugs = append(tagSlugs, foundTags[0].Tag.Slug)
-		} else {
-			// Fallback to tag ID if no slug
-			tagSlugs = append(tagSlugs, tagID)
-		}
-	}
-
-	return tagSlugs
 }

@@ -26,6 +26,30 @@ import (
 // The last is a precondition rather than a clearance: it is how an operation says "I am cleared
 // for owner guards, but never touch anything carrying a policy-exception".
 
+// formatClearance renders a Clearance back in the same four forms the --clearance flag takes,
+// so what is displayed is what would be typed to set it again.
+func formatClearance(clearance *goclientnew.Clearance) string {
+	if clearance == nil || len(*clearance) == 0 {
+		return ""
+	}
+	specs := make([]string, 0, len(*clearance))
+	for _, requirement := range *clearance {
+		switch api.ClearanceOperator(requirement.Operator) {
+		case api.ClearanceOperatorExists:
+			specs = append(specs, requirement.Key)
+		case api.ClearanceOperatorDoesNotExist:
+			specs = append(specs, "!"+requirement.Key)
+		case api.ClearanceOperatorIn:
+			specs = append(specs, requirement.Key+"="+strings.Join(requirement.Values, ","))
+		case api.ClearanceOperatorNotIn:
+			specs = append(specs, requirement.Key+"!="+strings.Join(requirement.Values, ","))
+		default:
+			specs = append(specs, fmt.Sprintf("%s %s %v", requirement.Key, requirement.Operator, requirement.Values))
+		}
+	}
+	return strings.Join(specs, " ")
+}
+
 // parseClearanceSpecs turns the --clearance flag values into a Clearance. An empty list, or one
 // whose only entry is empty, yields an empty clearance -- which clears nothing, and is how a
 // clearance is removed.

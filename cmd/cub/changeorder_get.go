@@ -134,8 +134,7 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 
 // changeorderSkippedUnits renders what the change order covers nothing of, by unit slug and
 // reason. The server stores the reason against the unit's id, since a slug can be renamed.
-// The generated client keys a uuid-keyed map by string, since JSON object keys are strings --
-// the same shape resolveTagSlugs handles for Revision.Tags.
+// The generated client keys a uuid-keyed map by string, since JSON object keys are strings.
 func changeorderSkippedUnits(skipped map[string]string, spaceID string) string {
 	lines := make([]string, 0, len(skipped))
 	for unitID, reason := range skipped {

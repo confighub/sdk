@@ -251,7 +251,7 @@ func (p *DynamicColumnProvider) formatValue(v reflect.Value) string {
 		return fmt.Sprintf("%d items", actualValue.Len())
 	case reflect.Map:
 		if actualValue.Len() == 0 {
-			return "None"
+			return ""
 		} else if actualValue.Len() == 1 {
 			for _, key := range actualValue.MapKeys() {
 				return key.String()

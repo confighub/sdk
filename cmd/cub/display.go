@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/confighub/sdk/configkit/yqkit"
@@ -620,7 +621,41 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 	return nil
 }
 
-// handleBulkUnitActionResponse handles responses from bulk unit action operations (apply, destroy, refresh)
+// displayJSONSection prints a titled JSON block for a list-valued field, and nothing at all when
+// the field is empty. It takes any of the shapes the generated client uses for such a field --
+// a slice, or a pointer to one -- so a caller can hand it the field directly.
+func displayJSONSection(title string, value any) {
+	v := reflect.ValueOf(value)
+	for v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return
+		}
+		v = v.Elem()
+	}
+	if !v.IsValid() || ((v.Kind() == reflect.Slice || v.Kind() == reflect.Map) && v.Len() == 0) {
+		return
+	}
+	tprintRaw("")
+	tprintRaw(title + ":")
+	tprintRaw(strings.Repeat("-", len(title)+1))
+	displayJSON(value)
+}
+
+// isSetUUID says whether an optional UUID names anything. A pointer field can arrive non-nil
+// and zero -- Go's omitempty does not omit a zero uuid.UUID -- so nil alone is not the test.
+func isSetUUID(id *uuid.UUID) bool {
+	return id != nil && *id != uuid.Nil
+}
+
+// jsonOneLine renders a small structured value for a single table row.
+func jsonOneLine(v any) string {
+	encoded, err := json.Marshal(v)
+	if err != nil {
+		return fmt.Sprintf("%v", v)
+	}
+	return string(encoded)
+}
+
 // actionStatus dereferences an optional ActionStatusType for display.
 func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatusType {
 	if status == nil {
@@ -629,6 +664,7 @@ func actionStatus(status *goclientnew.ActionStatusType) goclientnew.ActionStatus
 	return *status
 }
 
+// handleBulkUnitActionResponse handles responses from bulk unit action operations.
 func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, action string, isDryRun bool) error {
 	if results == nil || len(*results) == 0 {
 		if !quiet && !isAlternativeOutput() {

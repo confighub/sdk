@@ -221,6 +221,7 @@ func init() {
 	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
+	addClearanceFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().BoolVar(&squashMerge, "squash", false, "merge the range as one rebased diff in one revision instead of walking it: by default a merge re-runs the upstream's recorded function invocations against this unit where it can, so each change lands where this unit's own structure puts it, and records one revision per upstream revision that has an effect here; only valid with --upgrade, --merge-source, or --resolve")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
@@ -258,6 +259,14 @@ func checkConflictingArgs(args []string) bool {
 		// Check for mutual exclusivity between --unit and --where flags
 		if len(unitIdentifiers) > 0 && where != "" {
 			failOnError(fmt.Errorf("--unit and --where flags are mutually exclusive"))
+		}
+
+		// A merge-on-update names where a configuration the caller is supplying came from,
+		// and a bulk patch supplies none: configuration is written through the data endpoint,
+		// one unit at a time. Refused rather than passed along, because the merge it would
+		// ask for would take each unit's current data as the incoming change.
+		if mergeExternalSource != "" {
+			failOnError(fmt.Errorf("--merge-external-source is not supported in bulk patch mode; it describes configuration being written, and a bulk patch writes none"))
 		}
 
 		if restore != "" {
@@ -1050,8 +1059,10 @@ func runBulkUnitUpdate() error {
 	if shouldDisplayMutations() {
 		priorUnits = savePriorUnitInfoFromWhereWithData(effectiveWhere, restore != "")
 		// A dry run stores nothing, so what it produced comes back on the response or not
-		// at all.
-		params.Include = includeWriteResult()
+		// at all. Appended to the expansions this command already asked for, because include
+		// is one list: replacing it would trade them for the configuration.
+		withWriteResult := include + "," + *includeWriteResult()
+		params.Include = &withWriteResult
 	}
 
 	// Call the bulk patch API (organization-level API that can be constrained by SpaceID in WHERE clause)
@@ -1100,31 +1111,17 @@ func updateUnit(spaceID uuid.UUID, currentUnit *goclientnew.Unit, params *goclie
 }
 
 func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.UpdateUnitParams, patchData []byte) (*goclientnew.UnitCreateOrUpdateResponse, error) {
-	// Convert UpdateUnitParams to PatchUnitParams
-	patchParams := &goclientnew.PatchUnitParams{}
-	patchParams.RevisionId = updateParams.RevisionId
-	patchParams.Restore = updateParams.Restore
-	patchParams.Resolve = updateParams.Resolve
-	patchParams.DryRun = updateParams.DryRun
-	patchParams.Upgrade = updateParams.Upgrade
-	patchParams.MergeSource = updateParams.MergeSource
-	patchParams.MergeBase = updateParams.MergeBase
-	patchParams.MergeEnd = updateParams.MergeEnd
-	patchParams.MergeExternalSource = updateParams.MergeExternalSource
-	patchParams.MergeEnableSubtraction = updateParams.MergeEnableSubtraction
-	patchParams.Protect = updateParams.Protect
-	patchParams.Squash = updateParams.Squash
-	patchParams.WhereMutation = updateParams.WhereMutation
-	patchParams.FilterMutation = updateParams.FilterMutation
-	patchParams.Tag = updateParams.Tag
-	patchParams.ChangeSetId = updateParams.ChangeSetId
-	patchParams.ChangeOrder = updateParams.ChangeOrder
+	// A patch takes the same query parameters an update does, so the conversion is the whole
+	// struct rather than a list of fields to remember. Copying them one by one is what silently
+	// dropped include -- leaving a --patch --restore -o mutations with nothing to display -- and
+	// clearance. A parameter added to one and not the other stops compiling here instead.
+	patchParams := goclientnew.PatchUnitParams(*updateParams)
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,
 		spaceID,
 		unitID,
-		patchParams,
+		&patchParams,
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)
