@@ -1582,3 +1582,242 @@ func TestPluginInstallTarballNoManifestDefaultsToMain(t *testing.T) {
 		t.Errorf("expected entrypoint .../myplugin/main, got %s", path)
 	}
 }
+
+// --- installing from a local path ------------------------------------------
+
+// localHookScript is a stand-in for a freshly built plugin binary: invoked as an
+// install hook it writes its own manifest, exactly as a real plugin does, and
+// otherwise it runs as the plugin.
+const localHookScript = `#!/bin/sh
+if [ -n "$CUB_PLUGIN_HOOK" ]; then
+  cat > "$CUB_PLUGIN_DIR/cub-plugin.yaml" <<YAML
+name: thing
+version: 1.0.0
+commands:
+  - name: thing
+    entrypoint: thing
+YAML
+  exit 0
+fi
+echo "ran: $@"
+`
+
+func TestParseInstallSourceLocal(t *testing.T) {
+	dir := t.TempDir()
+
+	binPath := filepath.Join(dir, "cub-thing")
+	createExecutableFile(t, binPath, "#!/bin/sh\n")
+
+	tarPath := filepath.Join(dir, "thing.tar.gz")
+	if err := os.WriteFile(tarPath, createTestTarGz(t, map[string]string{"main": "#!/bin/sh\n"}), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	pkgDir := filepath.Join(dir, "cub-packaged")
+	if err := os.MkdirAll(pkgDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name     string
+		source   string
+		wantKind localKind
+		wantName string
+	}{
+		{"absolute binary", binPath, localBinary, "thing"},
+		{"absolute archive", tarPath, localTarGz, "thing"},
+		{"absolute directory", pkgDir, localDir, "packaged"},
+		{"file:// URL", "file://" + binPath, localBinary, "thing"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			src, err := parseInstallSource(tt.source)
+			if err != nil {
+				t.Fatalf("parseInstallSource(%q): %v", tt.source, err)
+			}
+			local, ok := src.(*localSource)
+			if !ok {
+				t.Fatalf("got %T, want *localSource", src)
+			}
+			if local.kind != tt.wantKind {
+				t.Errorf("kind = %v, want %v", local.kind, tt.wantKind)
+			}
+			if local.pluginName != tt.wantName {
+				t.Errorf("name = %q, want %q", local.pluginName, tt.wantName)
+			}
+			if !filepath.IsAbs(local.path) {
+				t.Errorf("path = %q, want an absolute path", local.path)
+			}
+		})
+	}
+}
+
+// A relative path resolves against the working directory and is recorded
+// absolute, so that a later upgrade from elsewhere still finds it.
+func TestParseInstallSourceLocalRelativeBecomesAbsolute(t *testing.T) {
+	dir := t.TempDir()
+	createExecutableFile(t, filepath.Join(dir, "cub-thing"), "#!/bin/sh\n")
+	t.Chdir(dir)
+
+	src, err := parseInstallSource("./cub-thing")
+	if err != nil {
+		t.Fatalf("parseInstallSource: %v", err)
+	}
+	local, ok := src.(*localSource)
+	if !ok {
+		t.Fatalf("got %T, want *localSource", src)
+	}
+	// Compare resolved paths: t.TempDir is under /var on macOS, a symlink to
+	// /private/var, and only one side of the comparison goes through Abs.
+	want, _ := filepath.EvalSymlinks(filepath.Join(dir, "cub-thing"))
+	got, _ := filepath.EvalSymlinks(local.path)
+	if got != want {
+		t.Errorf("path = %q, want %q", got, want)
+	}
+}
+
+// "owner/repo" is GitHub even when a directory of that name is sitting right
+// there, so the same command does not mean different things in different shells.
+func TestParseInstallSourceLocalDoesNotShadowGitHubShorthand(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, "confighub", "cub-thing"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(dir)
+
+	src, err := parseInstallSource("confighub/cub-thing")
+	if err != nil {
+		t.Fatalf("parseInstallSource: %v", err)
+	}
+	gh, ok := src.(*githubSource)
+	if !ok {
+		t.Fatalf("got %T, want *githubSource", src)
+	}
+	if gh.owner != "confighub" || gh.repo != "cub-thing" {
+		t.Errorf("got %s/%s, want confighub/cub-thing", gh.owner, gh.repo)
+	}
+}
+
+func TestParseInstallSourceLocalMissingPath(t *testing.T) {
+	if _, err := parseInstallSource("./definitely-not-here"); err == nil {
+		t.Fatal("expected an error for a path that does not exist")
+	}
+}
+
+// The case this exists for: install a binary built on this machine and have it
+// treated exactly as a downloaded release asset, install hook included.
+func TestPluginInstallLocalBinaryRunsHook(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	buildDir := t.TempDir()
+	binPath := filepath.Join(buildDir, "cub-thing")
+	createExecutableFile(t, binPath, localHookScript)
+
+	if err := pluginInstallCmdRun(nil, []string{binPath}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+
+	installed := filepath.Join(pluginsDir, "thing")
+	if _, err := os.Stat(filepath.Join(installed, "cub-plugin.yaml")); err != nil {
+		t.Fatalf("hook did not write a manifest: %v", err)
+	}
+
+	info, err := os.Stat(filepath.Join(installed, "thing"))
+	if err != nil {
+		t.Fatalf("binary not installed under the plugin name: %v", err)
+	}
+	if info.Mode()&0111 == 0 {
+		t.Error("installed binary is not executable")
+	}
+
+	// The recorded source has to survive a change of working directory, since
+	// that is what upgrade re-reads.
+	meta, err := readInstallMetadata(installed)
+	if err != nil {
+		t.Fatalf("no install metadata: %v", err)
+	}
+	if !filepath.IsAbs(meta.Source) {
+		t.Errorf("recorded source = %q, want an absolute path", meta.Source)
+	}
+}
+
+// A directory is the unpacked form of an archive and lands as-is, hook-free.
+func TestPluginInstallLocalDirectory(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	buildDir := filepath.Join(t.TempDir(), "cub-thing")
+	if err := os.MkdirAll(buildDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createExecutableFile(t, filepath.Join(buildDir, "main"), "#!/bin/sh\necho hi")
+	if err := os.WriteFile(filepath.Join(buildDir, "README.md"), []byte("# thing"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := pluginInstallCmdRun(nil, []string{buildDir}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+
+	installed := filepath.Join(pluginsDir, "thing")
+	for _, f := range []string{"main", "README.md"} {
+		if _, err := os.Stat(filepath.Join(installed, f)); err != nil {
+			t.Errorf("%s not installed: %v", f, err)
+		}
+	}
+}
+
+// Without a manifest or a "main", the default manifest would name an entrypoint
+// that is not there, installing a plugin that only fails when someone runs it.
+// Refuse at install time and say what to do instead.
+func TestPluginInstallLocalDirectoryNeedsManifestOrMain(t *testing.T) {
+	setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	buildDir := filepath.Join(t.TempDir(), "cub-thing")
+	if err := os.MkdirAll(buildDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	// Named for the plugin, not "main" -- the shape a plain `go build -o` leaves.
+	createExecutableFile(t, filepath.Join(buildDir, "thing"), "#!/bin/sh\n")
+
+	err := pluginInstallCmdRun(nil, []string{buildDir})
+	if err == nil {
+		t.Fatal("expected an error for a directory with no manifest and no main")
+	}
+	if !strings.Contains(err.Error(), "cub-plugin.yaml") || !strings.Contains(err.Error(), "main") {
+		t.Errorf("error should name both accepted shapes, got: %v", err)
+	}
+}
+
+// The dev loop: rebuild in place, then upgrade. Nothing re-specifies the source.
+func TestPluginUpgradeFromLocalPath(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	buildDir := t.TempDir()
+	binPath := filepath.Join(buildDir, "cub-thing")
+	createExecutableFile(t, binPath, localHookScript)
+
+	if err := pluginInstallCmdRun(nil, []string{binPath}); err != nil {
+		t.Fatalf("install failed: %v", err)
+	}
+
+	// Rebuild: same path, different content.
+	rebuilt := strings.Replace(localHookScript, `echo "ran: $@"`, `echo "rebuilt: $@"`, 1)
+	createExecutableFile(t, binPath, rebuilt)
+
+	if err := upgradeOnePlugin(pluginsDir, "thing", ""); err != nil {
+		t.Fatalf("upgrade failed: %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(pluginsDir, "thing", "thing"))
+	if err != nil {
+		t.Fatalf("reading upgraded binary: %v", err)
+	}
+	if !strings.Contains(string(content), "rebuilt:") {
+		t.Error("upgrade did not pick up the rebuilt binary")
+	}
+}

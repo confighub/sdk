@@ -43,6 +43,8 @@ with that upstream in three steps:
   1. Upgrade every unit whose upstream unit has advanced (the unit's UpstreamRevisionNum is
      behind the upstream unit's HeadRevisionNum), merging the upstream changes. Equivalent to
      "cub unit update --patch --upgrade --where 'UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum'".
+     With --change-order the selection is every unit that has an upstream, since the change
+     order also marks the units it carries no changes for.
   2. Clone any units added to the upstream space since the variant was created or last
      promoted, linking each clone to its upstream unit.
   3. Copy the new units' non-UpgradeUnit links, retargeting a link to its downstream copy
@@ -61,7 +63,12 @@ up both: the range arrives as one rebased diff in one revision.
 --change-order promotes a named change rather than everything the upstream has reached. The
 change order fixed its range when it was created, so the upgrade stops where it ends, a unit
 it does not cover is passed over, and a unit that is not where it starts is an error rather
-than a merge of a different range. Two things follow from what a change order is:
+than a merge of a different range. A unit it covers but has no changes for is marked and not
+changed: its start and end tags land on the same revision, saying where the change order
+applied and that none of that unit's revisions belong to it. That is what lets
+"cub release publish --revision ChangeOrder:<slug>" pin every unit of the space rather than
+falling back to the head of each one the change did not touch. Three things follow from what a
+change order is:
 
   - The steps run in the other order, clone first. A unit the variant does not have yet is
     cloned at the revision the change order starts from, and then upgraded through the change
@@ -72,6 +79,9 @@ than a merge of a different range. Two things follow from what a change order is
   - The promotion is undone in one step, however many revisions it made:
     "cub unit update --patch --space <variant> --where \"Slug LIKE '%'\"
      --restore Before:ChangeOrder:<space>/<change-order>".
+  - Promoting is idempotent. A unit already carrying the change order's end tag has taken the
+    change, whatever has happened to it since, so it is passed over -- which is what makes
+    repeating a promotion that landed partway finish it rather than refuse.
 
 --target-stage promotes a whole stage rather than one space, and takes no positional space. A
 promotion is defined over a stage -- the spaces a change reaches together -- and naming one space
@@ -183,6 +193,14 @@ func variantPromoteStage() error {
 	if changeWorkflow == nil {
 		return errors.Newf("change order '%s' was created without a ChangeWorkflow, so it has no stages to promote through",
 			changeOrder.Slug)
+	}
+	// A completed rollout has nothing left to advance. This is a refusal where having
+	// reached every Stage is a report: a change can be in the last Stage with
+	// final.prerequisites still holding the rollout open, and promoting then is a
+	// legitimate repair of a Stage that landed partway.
+	if changeOrderIsCompleted(changeWorkflow, changeOrder) {
+		return errors.Newf("change order '%s' has completed ChangeWorkflow '%s', so there is nothing left to promote",
+			changeOrder.Slug, changeWorkflow.Name)
 	}
 	var currentStage, previousStage *changeworkflow.ChangeWorkflowStage
 	if variantPromoteArgs.targetStage != "" {
@@ -297,6 +315,10 @@ func variantPromoteSpace(spaceSlug string) error {
 		return err
 	}
 	if changeWorkflow != nil {
+		if changeOrderIsCompleted(changeWorkflow, changeOrder) {
+			return errors.Newf("change order '%s' has completed ChangeWorkflow '%s', so there is nothing left to promote",
+				changeOrder.Slug, changeWorkflow.Name)
+		}
 		// Refuse to promote until the previous stage is already running the change. The gate runs on a
 		// dry run too: a preview that ignored it would describe a promotion that cannot happen.
 		currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(downstreamSpace, changeWorkflow)
@@ -520,17 +542,16 @@ func getWorkflowStageForName(
 // names which one is not yet true.
 //
 // A Space with no release target releases nothing, ever, so it has no live state
-// to report and can never satisfy a health gate -- which the Stage asked for, so
+// to report and can never satisfy a health prerequisite -- which was asked for, so
 // that is an error rather than a Variant to pass over.
-func checkVariantIsHealthy(variant *goclientnew.Space, stage, variantName string) error {
+func checkVariantIsHealthy(variant *goclientnew.Space, variantName string) error {
 	if variant.ReleaseTargetID == nil {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' has no ReleaseTargetID, so its health cannot be determined",
-			stage, variantName)
+		return errors.Newf("Variant '%s' has no ReleaseTargetID, so its health cannot be determined", variantName)
 	}
 
 	liveStatusJSON, ok := variant.Annotations[livestatus.Annotation]
 	if !ok {
-		return errors.Newf("unable to promote to stage '%s', live-status not found for Variant '%s'", stage, variantName)
+		return errors.Newf("live-status not found for Variant '%s'", variantName)
 	}
 
 	var liveStatus livestatus.Status
@@ -539,13 +560,13 @@ func checkVariantIsHealthy(variant *goclientnew.Space, stage, variantName string
 	}
 
 	if liveStatus.SyncStatus != "Synced" {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' is not synced", stage, variantName)
+		return errors.Newf("Variant '%s' is not synced", variantName)
 	}
 	if liveStatus.OperationPhase != "Succeeded" {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' has not succeeded in deployment", stage, variantName)
+		return errors.Newf("Variant '%s' has not succeeded in deployment", variantName)
 	}
 	if liveStatus.HealthStatus != "Healthy" {
-		return errors.Newf("unable to promote to stage '%s', Variant '%s' is not healthy", stage, variantName)
+		return errors.Newf("Variant '%s' is not healthy", variantName)
 	}
 
 	return nil
@@ -582,6 +603,43 @@ func checkChangeOrderIsReleasedToVariant(changeOrder *goclientnew.ChangeOrder, v
 	if !slices.Contains(changeOrder.ReleasedSpaceIDs, variant.SpaceID) {
 		return errors.Newf("unable to promote to stage '%s', Variant '%s' has taken change order '%s' but has not released it",
 			stage, variantName, changeOrder.Slug)
+	}
+	return nil
+}
+
+// checkVariantPrerequisites errors unless the Variant satisfies every declared
+// prerequisite. A Stage's entry gates and final's are the same list of names, so
+// what each name checks is decided here rather than by each caller.
+//
+// Having taken the change is checked whatever is declared: a Variant the change
+// has not reached satisfies nothing, and the prerequisites are checks on top of
+// that.
+//
+// A prerequisite nothing knows how to check cannot be satisfied, so it is an error
+// rather than a name passed over.
+func checkVariantPrerequisites(
+	prerequisites []string,
+	changeOrder *goclientnew.ChangeOrder,
+	variant *goclientnew.Space,
+	stage, variantName string,
+) error {
+	if err := checkChangeOrderIsPromotedToVariant(changeOrder, variant, stage, variantName); err != nil {
+		return err
+	}
+
+	for _, prerequisite := range prerequisites {
+		switch prerequisite {
+		case "healthy": // validate live-status reflects the intended change is healthy
+			if err := checkVariantIsHealthy(variant, variantName); err != nil {
+				return err
+			}
+		case "released": // validate the change has been released to this Variant
+			if err := checkChangeOrderIsReleasedToVariant(changeOrder, variant, stage, variantName); err != nil {
+				return err
+			}
+		default:
+			return errors.Newf("unrecognized prerequisite for Stage '%s': '%s'", stage, prerequisite)
+		}
 	}
 	return nil
 }
@@ -625,26 +683,9 @@ func validateStageEntryGates(
 			variantName = variant.Slug
 		}
 
-		err = checkChangeOrderIsPromotedToVariant(changeOrder, variant, currentStage.Name, variantName)
+		err = checkVariantPrerequisites(currentStage.Prerequisites, changeOrder, variant, currentStage.Name, variantName)
 		if err != nil {
 			return err
-		}
-
-		for _, prerequisite := range currentStage.Prerequisites {
-			switch prerequisite {
-			case "healthy": // validate live-status reflects the intended change is healthy
-				err = checkVariantIsHealthy(variant, currentStage.Name, variantName)
-				if err != nil {
-					return err
-				}
-			case "released": // validate the change has been released to this Variant
-				err = checkChangeOrderIsReleasedToVariant(changeOrder, variant, currentStage.Name, variantName)
-				if err != nil {
-					return err
-				}
-			default:
-				return errors.Newf("unrecognized prerequisite for Stage '%s': '%s'", currentStage.Name, prerequisite)
-			}
 		}
 	}
 
@@ -734,10 +775,19 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID, changeOrderID *uuid.UUID) 
 			tprint("Upgrading units behind their upstream...")
 		}
 	}
-	// The selection stays "behind its upstream" even with a change order: which of those units
-	// the change is in is the change order's answer, given per unit by the server, and a unit
-	// already level with its upstream cannot be behind the end of anything.
+	// Without a change order the selection is "behind its upstream": there is nothing to upgrade
+	// into a unit already level with it.
+	//
+	// With one it is every unit that has an upstream, level or not. A change order covers the
+	// units the change is about whether or not it changed each of them, and promoting it into a
+	// unit it carries nothing for is what marks that unit -- both of its tags on the head, no
+	// revision made -- so that a release cut from the change order's end tag pins the whole
+	// space. Which units those are is the server's answer, given per unit; a unit the change
+	// order does not cover at all is still passed over there.
 	where := fmt.Sprintf("SpaceID = '%s' AND UpstreamRevisionNum < UpstreamUnit.HeadRevisionNum", downstreamSpaceID.String())
+	if changeOrderID != nil {
+		where = fmt.Sprintf("SpaceID = '%s' AND UpstreamUnitID IS NOT NULL", downstreamSpaceID.String())
+	}
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	upgrade := true
 	params := &goclientnew.BulkPatchUnitsParams{Where: &where, Include: &include, Upgrade: &upgrade}
@@ -778,12 +828,15 @@ func promoteUpgradeUnits(downstreamSpaceID uuid.UUID, changeOrderID *uuid.UUID) 
 	}
 	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "upgrade", "")
 	if shouldDisplayMutations() {
-		// A unit already level with its upstream is not selected at all, so there are no
-		// responses to render. Say so rather than printing nothing: -o mutations
-		// suppresses the ordinary summary, and silence is indistinguishable from the
-		// renderer not being wired up.
+		// Nothing was selected, so there are no responses to render. Say so rather than
+		// printing nothing: -o mutations suppresses the ordinary summary, and silence is
+		// indistinguishable from the renderer not being wired up.
 		if len(*responses) == 0 {
-			tprintRaw("No units behind their upstream")
+			if changeOrderID != nil {
+				tprintRaw("No units with an upstream")
+			} else {
+				tprintRaw("No units behind their upstream")
+			}
 		}
 		displayMutationsForBulkUnitUpdate(responses, priorUnits, false, variantPromoteArgs.dryRun, "upgrade")
 	}

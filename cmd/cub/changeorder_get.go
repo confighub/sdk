@@ -6,8 +6,10 @@ package main
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
+	"github.com/confighub/sdk/core/changeworkflow"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -56,29 +58,73 @@ func displayChangeOrderDetails(changeorderDetails *goclientnew.ChangeOrder) {
 	displayExtendedChangeOrderDetails(extendedChangeOrder)
 }
 
-// changeOrderCurrentStage names how far the change has got through the ChangeWorkflow
-// governing it: the last Stage it has reached. Nothing stores that -- a ChangeOrder has
-// no notion of stages -- so it is read off the workflow the same way promotion decides
-// where to go next, and is empty when no workflow governs the ChangeOrder, when the
-// change has not finished the first Stage, or when the workflow cannot be read.
-func changeOrderCurrentStage(changeOrder *goclientnew.ChangeOrder) string {
+// changeOrderRollout names how far the change has got through the ChangeWorkflow
+// governing it -- the last Stage it has reached -- and whether that workflow considers
+// the rollout completed. Nothing stores either -- a ChangeOrder has no notion of stages
+// -- so both are read off the workflow, the Stage the same way promotion decides where
+// to go next.
+//
+// Both are empty when no workflow governs the ChangeOrder or the workflow cannot be
+// read: how far a change has got and whether it has completed are the workflow's
+// readings, and there is no workflow to read them from. The Stage is also empty while
+// the change has not finished the first one.
+func changeOrderRollout(changeOrder *goclientnew.ChangeOrder) (string, string) {
 	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
 	if err != nil || changeWorkflow == nil {
-		return ""
+		return "", ""
 	}
 	nextStage, currentStage, err := getNextWorkflowStage(changeWorkflow, changeOrder)
 	if err != nil {
-		return ""
+		return "", ""
 	}
+	stage := ""
+	switch {
 	// No next Stage means every Stage has the change, so the workflow's last Stage is
 	// where it got to.
-	if nextStage == nil && len(changeWorkflow.Spec.Stages) > 0 {
-		return changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1].Name
+	case nextStage == nil && len(changeWorkflow.Spec.Stages) > 0:
+		stage = changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1].Name
+	case currentStage != nil:
+		stage = currentStage.Name
 	}
-	if currentStage == nil {
-		return ""
+	return stage, strconv.FormatBool(changeOrderIsCompleted(changeWorkflow, changeOrder))
+}
+
+// changeOrderIsCompleted reports whether the ChangeWorkflow considers the rollout
+// completed: the change has reached the workflow's last Stage -- always checked, since a
+// change that has not landed there has not landed everywhere the workflow sends it --
+// and that Stage satisfies final.prerequisites. Neither is a check promotion can make,
+// there being no hop left to gate once the change is in the last Stage.
+//
+// Completion is a different reading from State: State never consults live status, and it
+// reduces over every Space in scope rather than over the last Stage, so the two
+// legitimately disagree in both directions.
+func changeOrderIsCompleted(changeWorkflow *changeworkflow.ChangeWorkflow, changeOrder *goclientnew.ChangeOrder) bool {
+	if len(changeWorkflow.Spec.Stages) == 0 {
+		return false
 	}
-	return currentStage.Name
+	lastStage := &changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1]
+
+	// A last Stage selecting nothing is not one the change has reached: the workflow
+	// says Spaces belong there, the same reading getNextWorkflowStage takes.
+	variants, err := apiListSpaces(lastStage.WhereSpace, "*")
+	if err != nil || len(variants) == 0 {
+		return false
+	}
+
+	for _, variant := range variants {
+		variantName := variant.Labels["Variant"]
+		if variantName == "" {
+			variantName = variant.Slug
+		}
+		// A prerequisite nothing knows how to check is an error to promotion and
+		// unsatisfied here: there is nothing to refuse at this point, so it holds the
+		// rollout open rather than passing it as completed.
+		if checkVariantPrerequisites(changeWorkflow.Spec.Final.Prerequisites, changeOrder, variant, lastStage.Name, variantName) != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.ExtendedChangeOrder) {
@@ -124,7 +170,9 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	// Where the change has got to, which the server derives when it reads the change order.
 	// In-scope first: it is what the other two are measured against.
 	view.Append([]string{"State", changeorderDetails.State})
-	view.Append([]string{"Stage", changeOrderCurrentStage(changeorderDetails)})
+	stage, completed := changeOrderRollout(changeorderDetails)
+	view.Append([]string{"Stage", stage})
+	view.Append([]string{"Completed", completed})
 	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
 	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
 	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})

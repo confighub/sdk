@@ -26,8 +26,9 @@ type ChangeWorkflow struct {
 }
 
 type ChangeWorkflowSpec struct {
-	Source ChangeWorkflowSource  `json:"source" yaml:"source"`
-	Stages []ChangeWorkflowStage `json:"stages" yaml:"stages"`
+	Source ChangeWorkflowSource     `json:"source" yaml:"source"`
+	Stages []ChangeWorkflowStage    `json:"stages" yaml:"stages"`
+	Final  ChangeWorkflowFinalStage `json:"final" yaml:"final"`
 }
 
 type ChangeWorkflowSource struct {
@@ -37,5 +38,9 @@ type ChangeWorkflowSource struct {
 type ChangeWorkflowStage struct {
 	Name          string   `json:"name" yaml:"name"`
 	WhereSpace    string   `json:"whereSpace" yaml:"whereSpace"`
+	Prerequisites []string `json:"prerequisites" yaml:"prerequisites"`
+}
+
+type ChangeWorkflowFinalStage struct {
 	Prerequisites []string `json:"prerequisites" yaml:"prerequisites"`
 }

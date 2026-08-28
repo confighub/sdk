@@ -51,7 +51,7 @@ Examples:
 
 // Default columns to display when no custom columns are specified. This is also what drives the
 // select list, so it names every field either layout shows -- the wide-only tags included.
-var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "Stage", "ChangeOrder.UpdateType", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
+var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "ChangeOrder.State", "Stage", "Completed", "ChangeOrder.UpdateType", "StartTag.Slug", "EndTag.Slug", "ChangeOrder.Description", "ChangeOrder.AbortedReason"}
 
 // changeorderListInclude is the Include parameter for change order list queries.
 const changeorderListInclude = "SpaceID,StartTagID,EndTagID"
@@ -68,11 +68,13 @@ var changeorderAliases = map[string]string{
 	"ID":   "ChangeOrder.ChangeOrderID",
 }
 
-// ChangeOrder custom column dependencies. Stage is computed rather than stored: the
+// ChangeOrder custom column dependencies. Both are computed rather than stored: the
 // annotation names the ChangeWorkflow governing the change order, and ResolvedSpaceIDs
-// says which of its stages the change has reached.
+// says which of its stages the change has reached. Completed reads ReleasedSpaceIDs on
+// top, for a workflow whose final.prerequisites name "released".
 var changeorderCustomColumnDependencies = map[string][]string{
-	"Stage": {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs"},
+	"Stage":     {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs"},
+	"Completed": {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs", "ChangeOrder.ReleasedSpaceIDs"},
 }
 
 func init() {
@@ -109,7 +111,7 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		header := []string{"Name", "Space", "State", "Stage", "Update-Type"}
+		header := []string{"Name", "Space", "State", "Stage", "Completed", "Update-Type"}
 		if wide {
 			header = append(header, "Start-Tag", "End-Tag")
 		}
@@ -125,11 +127,13 @@ func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
 			spaceSlug = selectedSpaceSlug
 		}
 
+		stage, completed := changeOrderRollout(changeorder)
 		row := []string{
 			changeorder.Slug,
 			spaceSlug,
 			changeorder.State,
-			changeOrderCurrentStage(changeorder),
+			stage,
+			completed,
 			changeorder.UpdateType,
 		}
 		if wide {

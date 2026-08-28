@@ -57,7 +57,8 @@ Examples:
   SPACES=$(cub space list --quiet --no-headers -o name --where "Labels.Component = 'my-app'" | paste -sd, -)
   cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 
-  # End it at an existing boundary rather than at each unit's head
+  # End it at an existing boundary rather than at each unit's head. The tag is read to find
+  # each unit's end revision; the change order marks with tags of its own.
   cub changeorder create --space my-space bump-base-image --end-tag my-space/release-42-end
 
   # Create a changeorder from JSON
@@ -113,7 +114,7 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "link update type to follow when propagating: UpgradeUnit (the clone lineage, the default) or MergeUnits")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, the change order tags each unit's head revision")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, each unit's head revision is the end. The change order always creates its own start and end tags -- this one is read to find the boundary, recorded as AdoptedEndTagID, and never written to, since the change order also marks the units it carries no changes for")
 
 	// Bulk create specific flags
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")

@@ -68,13 +68,29 @@ var pluginInstallArgs struct {
 
 var pluginInstallCmd = &cobra.Command{
 	Use:   "install <source>",
-	Short: "Install a plugin from a URL or GitHub repository",
-	Long: getCommandHelp("Install a plugin from a URL or GitHub repository", `Supported source formats:
+	Short: "Install a plugin from a local path, URL, or GitHub repository",
+	Long: getCommandHelp("Install a plugin from a local path, URL, or GitHub repository", `Supported source formats:
   https://example.com/plugin.tar.gz   Download and extract tar.gz archive
   https://example.com/plugin           Download as single binary
   https://github.com/org/repo          Install from latest GitHub release
   org/repo                             Shorthand for GitHub
   org/repo@v1.2.0                      Pinned GitHub release tag
+  ./bin/cub-thing                      Local binary, built on this machine
+  ./dist/thing/                        Local directory (needs cub-plugin.yaml or "main")
+  ./dist/thing.tar.gz                  Local archive
+  file:///abs/path                     Same, named as a URL
+
+A local source is staged exactly like its published equivalent, so installing a
+build tests what a release will do: a local binary runs the same install hook
+that writes its cub-plugin.yaml, and a directory or archive lands as-is.
+
+Only a path named as one is treated as local -- ./x, ../x, /x, ~/x, or file://.
+A bare "owner/repo" is always GitHub, even if a directory of that name exists.
+
+The resolved absolute path is recorded as the install source, so rebuilding and
+re-running 'cub plugin upgrade <name>' reinstalls from the same place:
+
+  go build -o bin/cub-thing ./cmd/thing && cub plugin upgrade thing
 
 For repositories without releases, the repo source is downloaded automatically.
 Use --source-repo to force this behavior even when releases exist:
@@ -108,8 +124,39 @@ type githubSource struct {
 	pluginName string
 }
 
+// localKind is the shape of a plugin on this machine, which decides how it is
+// staged. Each one is staged to look exactly like its published equivalent, so
+// that what is tested locally is what a release will do.
+type localKind int
+
+const (
+	// localDir is an unpacked plugin: what a tarball contains, already extracted.
+	localDir localKind = iota
+	// localTarGz is a built archive, staged exactly as a downloaded one.
+	localTarGz
+	// localBinary is a freshly built executable, staged exactly as a downloaded
+	// release asset -- including running the install hook that writes its
+	// manifest. This is the shape a plugin author iterates on.
+	localBinary
+)
+
+// localSource is a plugin taken from a path on this machine rather than fetched.
+//
+// path is absolute, so that the value recorded as the install source stays
+// meaningful for a later 'cub plugin upgrade' run from a different directory.
+type localSource struct {
+	path       string
+	pluginName string
+	kind       localKind
+}
+
 // parseInstallSource classifies the source argument.
 func parseInstallSource(source string) (any, error) {
+	// A path on this machine, named as one.
+	if isLocalPath(source) {
+		return parseLocalSource(source)
+	}
+
 	// HTTPS URLs
 	if strings.HasPrefix(source, "https://") {
 		// Check if it's a GitHub URL
@@ -121,11 +168,103 @@ func parseInstallSource(source string) (any, error) {
 
 	// Reject other URL schemes
 	if strings.Contains(source, "://") {
-		return nil, fmt.Errorf("unsupported URL scheme in %q (only https:// is supported)", source)
+		return nil, fmt.Errorf("unsupported URL scheme in %q (only https:// and file:// are supported)", source)
 	}
 
 	// owner/repo or owner/repo@tag shorthand
-	return parseGitHubShorthand(source)
+	src, err := parseGitHubShorthand(source)
+	if err != nil {
+		// "dist" or "dist/plugins/thing" are plausible things to type for a
+		// local build, and neither is a valid owner/repo. If one of them names
+		// something that is actually here, say so rather than reporting a
+		// malformed repository name.
+		//
+		// Note the limit: exactly two segments IS valid shorthand, so
+		// "build/thing" stays GitHub even when it exists locally. That is the
+		// rule isLocalPath documents, and the reason a local path must say it
+		// is one.
+		if _, statErr := os.Stat(source); statErr == nil {
+			return nil, fmt.Errorf("%w\n\n%q exists on this machine; to install it from there, name it as a path: ./%s", err, source, strings.TrimPrefix(source, "./"))
+		}
+		return nil, err
+	}
+	return src, nil
+}
+
+// isLocalPath reports whether source names a path on this machine.
+//
+// Deliberately syntactic: a "file://" URL, an absolute path, or one explicitly
+// relative ("./x", "../x", ".", ".."). A bare "owner/repo" is never local, even
+// when a directory of that name happens to sit in the working directory --
+// otherwise which one wins would depend on where cub was run from, and the same
+// command would install different things in different shells.
+func isLocalPath(source string) bool {
+	if strings.HasPrefix(source, "file://") {
+		return true
+	}
+	if source == "." || source == ".." || strings.HasPrefix(source, "~/") {
+		return true
+	}
+	if filepath.IsAbs(source) {
+		return true
+	}
+	for _, prefix := range []string{"./", "../", `.\`, `..\`} {
+		if strings.HasPrefix(source, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// parseLocalSource resolves a local path and classifies what is there.
+//
+// The path is resolved to an absolute one here, at the moment the working
+// directory is still the user's, because it is recorded as the install source
+// and 'cub plugin upgrade' re-reads it from wherever it happens to run.
+func parseLocalSource(source string) (*localSource, error) {
+	path := strings.TrimPrefix(source, "file://")
+
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return nil, fmt.Errorf("cannot expand %q: %w", source, err)
+		}
+		path = filepath.Join(home, path[2:])
+	}
+
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return nil, fmt.Errorf("cannot resolve %q: %w", source, err)
+	}
+
+	info, err := os.Stat(abs)
+	if err != nil {
+		return nil, fmt.Errorf("cannot install from %q: %w", source, err)
+	}
+
+	base := filepath.Base(abs)
+	lower := strings.ToLower(base)
+	isTarGz := strings.HasSuffix(lower, ".tar.gz") || strings.HasSuffix(lower, ".tgz")
+
+	name := base
+	name = strings.TrimSuffix(name, ".tar.gz")
+	name = strings.TrimSuffix(name, ".tgz")
+	name = strings.TrimSuffix(name, ".exe")
+	name = stripCubPrefix(name)
+	if name == "" || name == "." || name == ".." {
+		return nil, fmt.Errorf("cannot derive a plugin name from %q; pass --name", source)
+	}
+
+	src := &localSource{path: abs, pluginName: name}
+	switch {
+	case info.IsDir():
+		src.kind = localDir
+	case isTarGz:
+		src.kind = localTarGz
+	default:
+		src.kind = localBinary
+	}
+	return src, nil
 }
 
 func isGitHubURL(url string) bool {
@@ -381,8 +520,92 @@ func derivePluginName(src any) string {
 		return s.derivedName
 	case *githubSource:
 		return s.pluginName
+	case *localSource:
+		return s.pluginName
 	}
 	return ""
+}
+
+// sourceToRecord is what gets written into the install metadata, which is what
+// 'cub plugin upgrade' re-parses later. For a local path that is the resolved
+// absolute one rather than what was typed, because upgrade will not be run from
+// the same working directory.
+func sourceToRecord(src any, typed string) string {
+	if s, ok := src.(*localSource); ok {
+		return s.path
+	}
+	return typed
+}
+
+// stageLocal copies a plugin from this machine into a staging directory.
+//
+// Each shape is staged to look exactly like its published equivalent, so that
+// installing a local build exercises the same code as installing a release: a
+// directory or an archive lands as-is and carries its own manifest, while a bare
+// binary gets the install hook that writes one.
+func stageLocal(s *localSource, name, parentDir string) (staged, binPath string, err error) {
+	if s.kind == localTarGz {
+		f, oerr := os.Open(s.path)
+		if oerr != nil {
+			return "", "", oerr
+		}
+		defer f.Close()
+		staged, err = stageTarGzReader(f, parentDir)
+		return staged, "", err
+	}
+
+	staged, err = os.MkdirTemp(parentDir, ".plugin-install-*")
+	if err != nil {
+		return "", "", err
+	}
+	fail := func(err error) (string, string, error) {
+		os.RemoveAll(staged)
+		return "", "", err
+	}
+
+	switch s.kind {
+	case localDir:
+		// A directory is the unpacked form of a tarball and is held to the same
+		// contract: it brings its own manifest, or it contains the conventional
+		// "main". Checked here rather than left to the default manifest, which
+		// would name an entrypoint that does not exist and install a plugin that
+		// only fails when someone runs it.
+		m, merr := coreplugin.Read(s.path)
+		if merr != nil {
+			return fail(fmt.Errorf("reading %s: %w", filepath.Join(s.path, "cub-plugin.yaml"), merr))
+		}
+		if m == nil {
+			if _, statErr := os.Stat(filepath.Join(s.path, "main")); statErr != nil {
+				return fail(fmt.Errorf("%s has no cub-plugin.yaml and no executable named \"main\", so cub cannot tell what to run.\n\nTo install a binary you just built, name the binary itself -- its install hook writes the manifest:\n  cub plugin install %s",
+					s.path, filepath.Join(s.path, "<binary>")))
+			}
+		}
+		entries, rerr := os.ReadDir(s.path)
+		if rerr != nil {
+			return fail(rerr)
+		}
+		for _, e := range entries {
+			// Skip the previous install's metadata: it records where that copy
+			// came from, and this copy came from somewhere else.
+			if e.Name() == installMetadataFile {
+				continue
+			}
+			if err := copyPath(filepath.Join(s.path, e.Name()), filepath.Join(staged, e.Name())); err != nil {
+				return fail(err)
+			}
+		}
+
+	case localBinary:
+		binPath = filepath.Join(staged, name)
+		if err := copyPath(s.path, binPath); err != nil {
+			return fail(err)
+		}
+		if err := os.Chmod(binPath, 0755); err != nil {
+			return fail(err)
+		}
+	}
+
+	return staged, binPath, nil
 }
 
 // --- download / extraction primitives -------------------------------------
@@ -675,7 +898,7 @@ func pluginInstallCmdRun(cmd *cobra.Command, args []string) error {
 		runHook(binPath, staged, coreplugin.HookInstall, "")
 	}
 
-	if err := finalizeStaging(staged, destPath, name, name, source, tag, defaultEntrypoint(binPath)); err != nil {
+	if err := finalizeStaging(staged, destPath, name, name, sourceToRecord(src, source), tag, defaultEntrypoint(binPath)); err != nil {
 		return err
 	}
 
@@ -702,6 +925,14 @@ func fetchPlugin(src any, name, parentDir string) (staged, tag, binPath string, 
 		tprint("Downloading %s/%s (%s)...", ghSrc.owner, ghSrc.repo, ref)
 		staged, err = stageRepoTarball(ghSrc, parentDir)
 		return staged, ghSrc.tag, "", err
+	}
+
+	// A local path is already on this machine; there is nothing to resolve, no
+	// platform to match, and no release tag.
+	if s, ok := src.(*localSource); ok {
+		tprint("Installing from %s...", s.path)
+		staged, binPath, err = stageLocal(s, name, parentDir)
+		return staged, "", binPath, err
 	}
 
 	targetOS, targetArch, err := resolvePlatform(pluginInstallArgs.platform)
