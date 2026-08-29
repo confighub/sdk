@@ -33,8 +33,8 @@ type ColumnProvider struct {
 func NewColumnProvider(entity any) *ColumnProvider {
 	entityTypeName := strings.TrimPrefix(reflect.TypeOf(entity).Elem().Name(), "Extended")
 	return &ColumnProvider{
-		entityType: entityTypeName,
-		aliases:    map[string]string{"Name": "Slug"},
+		entityType:    entityTypeName,
+		aliases:       map[string]string{"Name": "Slug"},
 		customColumns: map[string]func(any) string{},
 		formatters: map[reflect.Type]func(reflect.Value) string{
 			reflect.TypeOf(time.Time{}): func(v reflect.Value) string {
@@ -228,6 +228,23 @@ func ColumnHeader(col string) string {
 		b.WriteRune(r)
 	}
 	return strings.ToUpper(b.String())
+}
+
+// Dash renders an empty value as "-", so a table column reads as absent rather
+// than blank -- a cluster-scoped resource's namespace, an unset owner.
+func Dash(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
+// YesNo renders a bool for a table column.
+func YesNo(b bool) string {
+	if b {
+		return "yes"
+	}
+	return "no"
 }
 
 // TableOptions configures [RenderTable].

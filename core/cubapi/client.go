@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -257,6 +258,51 @@ func ResolveClient(ctx context.Context, opts ClientOptions) (*Client, error) {
 		}
 	}
 	return NewClientFromConfig(ctx, store, opts)
+}
+
+// MemoizedClient is one tool's connection to ConfigHub, built on first use by
+// [ResolveClient] -- from the cub plugin environment (CUB_SERVER / CUB_TOKEN) or
+// the local ~/.confighub session -- and reused thereafter.
+//
+// The zero value is usable; set UserAgent so the server can tell tools apart. A
+// MemoizedClient must not be copied after first use.
+type MemoizedClient struct {
+	// UserAgent identifies the tool to the server, e.g. "cub-netpol". Empty uses
+	// [DefaultUserAgent].
+	UserAgent string
+
+	once   sync.Once
+	client *Client
+	err    error
+}
+
+// Client returns the memoized client. Building it performs no network I/O; use
+// [MemoizedClient.Preflight] to verify the session against the server.
+func (m *MemoizedClient) Client(ctx context.Context) (*Client, error) {
+	m.once.Do(func() {
+		m.client, m.err = ResolveClient(ctx, ClientOptions{UserAgent: m.UserAgent})
+	})
+	return m.client, m.err
+}
+
+// Preflight is the standard gate for any ConfigHub-touching command: it builds
+// the client and verifies the session against the server, rather than only
+// reading local state, so an expired token is reported here instead of surfacing
+// as an unrelated failure further in. It returns the ready client, or an error
+// carrying the remediation.
+func (m *MemoizedClient) Preflight(ctx context.Context) (*Client, error) {
+	c, err := m.Client(ctx)
+	if err != nil {
+		return nil, notAuthenticated(err)
+	}
+	if _, err := c.VerifyAuth(ctx); err != nil {
+		return nil, notAuthenticated(err)
+	}
+	return c, nil
+}
+
+func notAuthenticated(err error) error {
+	return fmt.Errorf("not authenticated to ConfigHub — run `cub auth login` (interactive) and retry: %w", err)
 }
 
 // clientTransport adds a User-Agent header and optional request/response dumping

@@ -2,19 +2,22 @@
 // SPDX-License-Identifier: MIT
 
 // Package mfclass classifies Kubernetes server-side-apply field managers into
-// meaningful categories — appliers (kubectl, ConfigHub, ArgoCD, Flux, Sveltos,
-// Helm, …), asynchronous controllers, admission controllers, and default
-// fields — and provides field-set utilities built on structured-merge-diff for
-// reasoning about which fields each manager owns.
+// meaningful categories — appliers (kubectl, ArgoCD, Flux, Sveltos, Helm, …),
+// asynchronous controllers, and default fields — and provides field-set
+// utilities built on structured-merge-diff for reasoning about which fields
+// each manager owns.
 //
-// It is the single source of truth for manager categorization shared by the
-// ConfigHub Kubernetes bridge (which uses it to decide which managers to take
-// over and which controller-set defaults to strip) and the k8s-mf diagnostic
-// tool. Keeping the knowledge here means the tool faithfully mirrors the
-// bridge's real apply behavior.
+// It is the single source of truth for manager categorization, shared by
+// "cub k8s refresh" (which uses it to decide which controller-set fields to
+// strip before storing cluster state as configuration) and the k8s-mf
+// diagnostic tool, so the tool mirrors what a refresh actually does.
 //
-// This package must not import the parent kubernetes bridge package — the
-// dependency runs the other way.
+// There is deliberately no admission-controller category. A mutating dynamic
+// admission controller rewrites the object inside the API server's write path,
+// and the API server attributes the resulting fields to the field manager of
+// whichever client made the call — the injector's own name never reaches
+// managedFields. Any manager that does appear is a client in its own right, so
+// it is an applier or an async controller.
 package mfclass
 
 import (
@@ -28,20 +31,16 @@ type Category string
 
 const (
 	// CategoryApplier is a whole-resource owner that a user manages config
-	// with: kubectl, the ConfigHub bridge, ArgoCD, Flux, Sveltos, Helm, etc.
-	// These are the managers a "take over" operation contends with.
+	// with: kubectl, ArgoCD, Flux, Sveltos, Helm, etc. These are the managers
+	// a "take over" operation contends with.
 	CategoryApplier Category = "Applier"
 
-	// CategoryAsyncController is a reconcile-loop controller that writes fields
-	// out of band after creation (HPA/VPA, the built-in workload controllers,
-	// cert-manager, ingress controllers, …). Its fields are normally stripped
-	// when importing config because they are cluster-owned, not user intent.
+	// CategoryAsyncController is a controller that writes fields out of band
+	// rather than as the config's owner: the built-in workload controllers,
+	// HPA/VPA, cert-manager, ingress controllers, and the API server's own
+	// built-in admission plugins. Its fields are stripped on refresh and import
+	// because they are cluster-owned, not user intent.
 	CategoryAsyncController Category = "AsyncController"
-
-	// CategoryAdmissionController is a mutating webhook / injector that rewrites
-	// the object at write time (Istio/Linkerd sidecar injection, the VPA
-	// admission controller, …).
-	CategoryAdmissionController Category = "AdmissionController"
 
 	// CategoryDefaultFields is not a real manager. It is the synthetic category
 	// for fields present on the live object but owned by no manager — values the
@@ -58,17 +57,10 @@ const (
 func Categories() []Category {
 	return []Category{
 		CategoryApplier,
-		CategoryAdmissionController,
 		CategoryAsyncController,
 		CategoryUnknown,
 	}
 }
-
-// ConfigHubFieldManager is the field manager name used by the ConfigHub
-// Kubernetes bridge worker for server-side apply. Mirrors the FieldManager
-// constant in the parent kubernetes package (duplicated here to avoid an
-// import cycle).
-const ConfigHubFieldManager = "confighub-bridge-worker"
 
 // managerInfo is a registry entry for a known field manager.
 type managerInfo struct {
@@ -79,11 +71,13 @@ type managerInfo struct {
 
 // exactManagers maps exact field-manager strings to their classification.
 //
-// The async + admission entries here are exactly the set the bridge historically
-// treated as "ignored field managers" (controllers whose fields are stripped on
-// import/refresh); the bridge now derives that set from IsIgnored, so this map
-// must stay in sync with that intent. The applier entries are the whole-resource
+// The async entries are the controllers whose fields are stripped on refresh and
+// import, reached through IsIgnored. The applier entries are the whole-resource
 // tools a user may transition between.
+//
+// Every name here has to be one the API server actually records. A tool that
+// writes through a mutating webhook does not get one (see the package comment),
+// and neither does a tool that shells out to kubectl.
 var exactManagers = map[string]managerInfo{
 	// --- Appliers (whole-resource owners) ---
 	"argocd-controller":             {CategoryApplier, "ArgoCD"}, // ArgoCD default SSA manager (ArgoCDSSAManager)
@@ -101,15 +95,17 @@ var exactManagers = map[string]managerInfo{
 	"tanka":                   {CategoryApplier, "Tanka"},
 	"before-first-apply":      {CategoryApplier, "legacy default"}, // Legacy default field manager
 
-	// --- Admission controllers (write-time injectors / mutating webhooks) ---
-	"vpa-admission-controller": {CategoryAdmissionController, "VPA"},
-	"istio-pilot":              {CategoryAdmissionController, "Istio"},
-	"istiod":                   {CategoryAdmissionController, "Istio"},
-	"istio-galley":             {CategoryAdmissionController, "Istio"},
-	"linkerd-proxy-injector":   {CategoryAdmissionController, "Linkerd"},
-	"linkerd-destination":      {CategoryAdmissionController, "Linkerd"},
-
 	// --- Async controllers (reconcile loops) ---
+	// Istio and Linkerd appear here for what their control planes reconcile
+	// directly (istiod's per-namespace istio-ca-root-cert ConfigMaps and gateway
+	// status, linkerd's destination controller), not for sidecar injection:
+	// injection runs as a mutating webhook, so the injected fields are recorded
+	// under whichever manager created the workload.
+	"istio-pilot":         {CategoryAsyncController, "Istio"},
+	"istiod":              {CategoryAsyncController, "Istio"},
+	"istio-galley":        {CategoryAsyncController, "Istio"},
+	"linkerd-destination": {CategoryAsyncController, "Linkerd"},
+
 	"horizontal-pod-autoscaler-controller": {CategoryAsyncController, "HPA"},
 	"vpa-recommender":                      {CategoryAsyncController, "VPA"},
 	"vpa-updater":                          {CategoryAsyncController, "VPA"},
@@ -156,6 +152,12 @@ var exactManagers = map[string]managerInfo{
 	"operator-sdk":            {CategoryAsyncController, "Operator SDK"},
 	"kopf":                    {CategoryAsyncController, "Kopf"},
 	"kube-controller-manager": {CategoryAsyncController, "Kubernetes"},
+
+	// The API server writes under its own name for the fields its built-in
+	// admission plugins set, which is how a Namespace ends up with
+	// metadata.labels."kubernetes.io/metadata.name" owned by a real manager
+	// rather than showing up as an unowned default.
+	"kube-apiserver": {CategoryAsyncController, "Kubernetes"},
 }
 
 // prefixManagers classifies managers by name prefix when there is no exact
@@ -166,16 +168,24 @@ var prefixManagers = []struct {
 }{
 	// kubectl-client-side-apply, kubectl-edit, kubectl-create, kubectl,
 	// kubectl-last-applied, …
+	//
+	// Tools that deploy by shelling out to kubectl land here too and cannot be
+	// told apart from a person at a terminal. Spinnaker is the notable one: its
+	// clouddriver runs "kubectl apply" without --field-manager, so its writes
+	// are recorded as kubectl-client-side-apply, or as kubectl when the
+	// server-side-apply strategy is enabled.
 	{"kubectl", managerInfo{CategoryApplier, "kubectl"}},
-	// confighub-bridge-worker and any older confighub* managers.
-	{"confighub", managerInfo{CategoryApplier, "ConfigHub"}},
+	// confighub-bridge-worker and the other confighub* managers, all legacy:
+	// they were written by the removed bridge worker. Kept so resources it
+	// applied still classify, but nothing writes under these names now.
+	{"confighub", managerInfo{CategoryApplier, "ConfigHub (legacy)"}},
 }
 
 // ClassifyManager categorizes a field manager by name alone (exact match, then
 // prefix). It returns CategoryUnknown with the raw name as display when the
 // manager is not recognized. It never applies operation-based heuristics — use
-// Classify for that. The bridge's take-over and ignored-manager decisions are
-// built on this name-based classification.
+// Classify for that. The take-over and ignored-manager decisions are built on
+// this name-based classification.
 func ClassifyManager(manager string) (Category, string) {
 	if info, ok := exactManagers[manager]; ok {
 		return info.category, info.display
@@ -239,17 +249,17 @@ func IsApplier(manager string) bool {
 	return cat == CategoryApplier
 }
 
-// IsIgnored reports whether a manager is a controller whose fields the bridge
-// strips on import/refresh (async or admission controllers). This is the
-// successor to the bridge's former ignoredFieldManagers map.
+// IsIgnored reports whether a manager is a controller whose fields are stripped
+// on refresh and import, because what it wrote is cluster state rather than the
+// configuration a user authored.
 func IsIgnored(manager string) bool {
 	cat, _ := ClassifyManager(manager)
-	return cat == CategoryAsyncController || cat == CategoryAdmissionController
+	return cat == CategoryAsyncController
 }
 
 // ShouldTakeOver reports whether keeper should take ownership away from manager.
-// We take over every other applier (kubectl, old ConfigHub managers, ArgoCD,
-// Flux, Helm, Sveltos, Tanka, …) so SSA can fully manage the resource, while
+// We take over every other applier (kubectl, ArgoCD, Flux, Helm, Sveltos,
+// Tanka, the legacy ConfigHub managers, …) so SSA can fully manage the resource, while
 // preserving controller-owned fields (HPA/VPA and friends). keeper never takes
 // over itself.
 //

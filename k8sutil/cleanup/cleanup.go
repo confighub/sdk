@@ -1,16 +1,15 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-// Package cleanup performs the heuristic object cleanup the Kubernetes bridge
-// applies to live cluster state before storing it as a Unit's configuration
-// data (during Refresh and import): stripping fields not owned by any applier,
-// removing status / managedFields / internal metadata, dropping cluster-internal
-// annotations and labels, and normalizing resource quantities.
+// Package cleanup reduces live Kubernetes cluster state to the configuration a
+// user actually authored, so it can be stored as a Unit's configuration data:
+// stripping fields not owned by any applier, removing status / managedFields /
+// internal metadata, dropping cluster-internal annotations and labels, and
+// normalizing resource quantities.
 //
-// It is split out of the parent kubernetes bridge package so it can be reused
-// (e.g. by the k8s-mf diagnostic tool) without pulling in the heavy apply-engine
-// dependencies (cli-utils, Helm, Flux). It must not import the parent kubernetes
-// package.
+// "cub k8s refresh" runs this over a live object before diffing it against the
+// Unit, and the k8s-mf tool exposes it directly as its cleanup command. The two
+// share this package so that what the tool shows is what a refresh would store.
 package cleanup
 
 import (
@@ -18,9 +17,9 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
 	"github.com/confighub/sdk/configkit/k8skit"
 	funcapi "github.com/confighub/sdk/core/function/api"
+	"github.com/confighub/sdk/k8sutil/mfclass"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -82,8 +81,7 @@ func IsStandardWorkload(gvk *schema.GroupVersionKind) bool {
 // Field managers whose managed fields should be removed during import/refresh
 // (controllers that set defaults or dynamically modify fields we don't want to
 // capture as config) are recognized by mfclass.IsIgnored. The category registry
-// lives in the mfclass package so the bridge and the k8s-mf tool share one
-// definition.
+// lives in the mfclass package so every caller shares one definition.
 
 // RemoveIgnoredManagedFields removes fields from an object that are managed by
 // ignored field managers (e.g., defaults, HPA, VPA). This helps clean up

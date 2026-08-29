@@ -103,3 +103,15 @@ func TestRenderTable(t *testing.T) {
 		t.Fatalf("NoHeader still wrote header: %q", nb.String())
 	}
 }
+
+func TestDashAndYesNo(t *testing.T) {
+	if got := Dash(""); got != "-" {
+		t.Errorf(`Dash("") = %q, want "-"`, got)
+	}
+	if got := Dash("kube-system"); got != "kube-system" {
+		t.Errorf("Dash passthrough = %q", got)
+	}
+	if YesNo(true) != "yes" || YesNo(false) != "no" {
+		t.Errorf("YesNo = %q / %q", YesNo(true), YesNo(false))
+	}
+}

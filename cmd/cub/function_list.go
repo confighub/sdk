@@ -150,12 +150,26 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 	return entity, funcs, nil
 }
 
-var functionSpecFile = filepath.Join(os.Getenv("HOME"), ".confighub", "functions.json")
+// functionSpecFilePath returns the path of the local function-list cache:
+// functions.json in the same directory as the config file, so CUB_CONFIG
+// relocates it along with config.yaml, tokens, and keys. It is resolved on
+// each call rather than at process start so a CUB_CONFIG set after init
+// (e.g. by tests) is honored.
+func functionSpecFilePath() string {
+	if contextManager != nil {
+		return filepath.Join(filepath.Dir(contextManager.ConfigPath()), "functions.json")
+	}
+	// Before the context manager exists. CUB_CONFIG is the config directory.
+	if v := os.Getenv("CUB_CONFIG"); v != "" {
+		return filepath.Join(v, "functions.json")
+	}
+	return filepath.Join(os.Getenv("HOME"), ".confighub", "functions.json")
+}
 
 func loadFunctions() (functionsByEntity, error) {
 	functions := make(functionsByEntity)
 
-	functionSpec, err := os.ReadFile(functionSpecFile)
+	functionSpec, err := os.ReadFile(functionSpecFilePath())
 	if err != nil {
 		return functions, err
 	}
@@ -168,16 +182,15 @@ func saveFunctions(functions functionsByEntity) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(functionSpecFile, functionSpec, 0644)
-	if err != nil {
+	path := functionSpecFilePath()
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
 	}
-	// tprint("Function list saved to %s", functionSpecFile)
-	return nil
+	return os.WriteFile(path, functionSpec, 0644)
 }
 
 func removeFunctions() error {
-	return os.Remove(functionSpecFile)
+	return os.Remove(functionSpecFilePath())
 }
 
 func saveFunctionsForEntity(entity string, functionMap functionsByToolchain) error {
@@ -197,7 +210,7 @@ func saveFunctionsForEntity(entity string, functionMap functionsByToolchain) err
 
 // listAndMaybeSaveFunctions fetches functions and caches them locally only when the
 // result is a full listing (no --where / --toolchain filtering). Filtered results are
-// returned without being written to ~/.confighub/functions.json, so subsequent calls
+// returned without being written to the functions.json cache, so subsequent calls
 // that rely on the cache continue to see the last unfiltered snapshot.
 func listAndMaybeSaveFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
 	entity, functions, err := listFunctions(targetSlug, workerSlug, unitSlug, whereClause)

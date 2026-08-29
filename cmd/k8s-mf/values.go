@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
+	"github.com/confighub/sdk/k8sutil/mfclass"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"sigs.k8s.io/structured-merge-diff/v6/fieldpath"
@@ -26,8 +26,8 @@ func newValuesCommand() *cobra.Command {
 		Short: "Show the values of fields owned by appliers",
 		Long: `Project a resource down to just the values owned by appliers (or a chosen
 manager or category), rendering a reduced object. This is what an applier such
-as the ConfigHub bridge or ArgoCD effectively "sees" as its config, which makes
-tool transitions easier to reason about.
+as ArgoCD or Flux effectively "sees" as its config, which makes tool
+transitions easier to reason about.
 
 By default it shows fields owned by every applier. Narrow with --manager or
 --category, or add --include-defaults to also include API-server default fields.
@@ -36,7 +36,7 @@ The object is read from the live cluster (TYPE NAME) or from a file (-f).
 
 Examples:
   k8s-mf values deployment my-app -n prod
-  k8s-mf values deployment my-app --manager confighub-bridge-worker
+  k8s-mf values deployment my-app --manager argocd-controller
   k8s-mf values deployment my-app --category Applier --include-defaults`,
 		Args: cobra.RangeArgs(0, 2),
 		RunE: func(cmd *cobra.Command, args []string) error {

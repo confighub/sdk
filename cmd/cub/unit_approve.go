@@ -209,7 +209,14 @@ func runBulkUnitApprove() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Build bulk approve parameters
+	return bulkApproveUnits(effectiveWhere, filterID, revisionParam)
+}
+
+// bulkApproveUnits approves every Unit the clause selects. The clause is already
+// complete -- space constraint included -- because what to select is the caller's
+// business: "unit approve" builds it from --unit or --where, and "variant approve"
+// from the variant's deployable Units.
+func bulkApproveUnits(effectiveWhere, filterID string, revisionParam *string) error {
 	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
 	params := &goclientnew.BulkApproveUnitsParams{
 		Where:   &effectiveWhere,
@@ -222,13 +229,11 @@ func runBulkUnitApprove() error {
 		params.Revision = revisionParam
 	}
 
-	// Call the bulk approve API
 	bulkRes, err := cubClientNew.BulkApproveUnitsWithResponse(ctx, params)
 	if err != nil {
 		return err
 	}
 
-	// Handle the response
 	return handleBulkUnitApproveResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "approve", effectiveWhere)
 }
 

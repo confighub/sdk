@@ -433,8 +433,8 @@ are independent and combine:
 cub k8s get deploy --space "*" --where-resource "spec.replicas > 1" --where "Labels.Tier = 'Backend'"
 ```
 
-`cub k8s source` and `cub k8s collect` are the other half of the group: they talk to a
-Kubernetes cluster directly. The kubeconfig is loaded with the usual precedence
+`cub k8s source`, `cub k8s refresh`, and `cub k8s collect` are the other half of the group:
+they talk to a Kubernetes cluster directly. The kubeconfig is loaded with the usual precedence
 (`--kubeconfig` flag, then `KUBECONFIG`, then `~/.kube/config`), and `--kube-context`
 selects the context.
 
@@ -442,12 +442,21 @@ selects the context.
 # Trace a live resource back to its ConfigHub Unit
 cub k8s source deployment my-app --namespace my-namespace
 
+# Bring a resource's cluster-side changes back into its Unit
+cub k8s refresh deployment my-app --namespace my-namespace --dry-run
+
 # Collect cluster facts (version, CRDs, storage/ingress classes) onto a Target
 cub k8s collect --space $SPACE --kube-context kind-kind my-target
 
 # Preview the facts without updating anything
 cub k8s collect --kube-context kind-kind --dry-run
 ```
+
+`cub k8s refresh` finds the Unit from the ConfigHub annotations on the live resource, strips
+everything that is cluster state rather than configuration, diffs what is left against the
+Unit's `LastReleasedRevisionNum` — the revision the cluster was actually given — and patches
+just that difference onto the Unit's head. Only the named resource is touched, and paths the
+Unit protects as local overrides are reported as conflicts rather than overwritten.
 
 `cub k8s collect` stores the facts in the Target's `Facts` map under `Cluster.*` keys, which
 can then be used in `where` queries and parameter expansion.

@@ -371,6 +371,10 @@ since a target's Units usually live elsewhere.
 # Trace a live resource back to its ConfigHub Unit
 cub k8s source deployment APP --namespace NAMESPACE
 
+# Bring one resource's cluster-side changes back into its Unit (diffed against
+# LastReleasedRevisionNum, so it isolates drift from ConfigHub-side changes)
+cub k8s refresh deployment APP --namespace NAMESPACE --dry-run
+
 # Collect cluster facts onto a Target (stored under Cluster.* keys in the Target's Facts map)
 cub k8s collect --space SPACE_SLUG --kube-context KUBE_CONTEXT TARGET_SLUG
 

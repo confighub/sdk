@@ -4,13 +4,15 @@
 // Command k8s-mf inspects and repairs Kubernetes server-side-apply managed
 // fields. It makes apply operations less surprising and helps debug and fix
 // managed-field problems that arise when you "break glass" with kubectl or
-// transition a resource between tools (kubectl apply, the ConfigHub bridge,
-// ArgoCD, Flux, …).
+// transition a resource between tools (kubectl apply, ArgoCD, Flux, Sveltos,
+// …).
 //
 // Subcommands:
 //
 //	categories     show which fields each category of field manager owns
 //	values         show the values of fields owned by appliers
+//	cleanup        show what a refresh would keep of a live resource
+//	conflicts      predict which fields another manager would block on apply
 //	takeover       remove other appliers' managers so one applier owns the resource
 //	dry-run-apply  server-side dry-run an apply as a given field manager
 package main
@@ -37,8 +39,8 @@ var rootCmd = &cobra.Command{
 Managed fields record which field manager owns each field of a resource. Leftover
 or competing managers are the usual cause of apply surprises — fields silently
 retained, deletions blocked, or apply conflicts — especially after a kubectl
-"break glass" edit or a transition between tools (kubectl apply, the ConfigHub
-bridge, ArgoCD, Flux, Sveltos).
+"break glass" edit or a transition between tools (kubectl apply, ArgoCD, Flux,
+Sveltos).
 
 The kubeconfig is loaded with kubectl precedence: --kubeconfig flag, then the
 KUBECONFIG environment variable, then $HOME/.kube/config.`,

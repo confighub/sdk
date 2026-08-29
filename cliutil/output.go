@@ -116,6 +116,11 @@ func PrintJSON(w io.Writer, v any) error {
 	return enc.Encode(v)
 }
 
+// Fprintln writes a line to w, discarding the error the way a CLI's final output
+// can: there is nowhere left to report a failed write to, and a command that
+// returned one would report a failure for output it had already produced.
+func Fprintln(w io.Writer, a ...any) { _, _ = fmt.Fprintln(w, a...) }
+
 // PrintYAML writes v as YAML.
 func PrintYAML(w io.Writer, v any) error {
 	b, err := yaml.Marshal(v)

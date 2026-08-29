@@ -28,8 +28,13 @@ import (
 // syntax the ConfigHub API accepts for its "where" parameters. The zero value is
 // an empty (match-all) filter. Where is immutable; each method returns a new
 // value.
+//
+// It carries a deferred error, reported by [Where.Err] and returned by every
+// list helper before a request is made, so that the builder stays chainable. The
+// error comes from a value that cannot be expressed: see [Where.Eq].
 type Where struct {
 	clauses []string
+	err     error
 }
 
 // NewWhere starts a filter from a raw clause. An empty clause yields an empty
@@ -47,12 +52,57 @@ func (w Where) And(clause string) Where {
 	}
 	next := make([]string, len(w.clauses), len(w.clauses)+1)
 	copy(next, w.clauses)
-	return Where{clauses: append(next, clause)}
+	return Where{clauses: append(next, clause), err: w.err}
 }
+
+// Eq appends a `<field> = '<value>'` predicate.
+//
+// A value carrying a single quote or a backslash is rejected rather than
+// escaped. The server screens every filter literal with an anchored regexp that
+// admits neither, because it builds its SQL by concatenation with no parameter
+// binding and that screen is what keeps the expression from being an injection
+// point. So such a value is not merely awkward to send, it cannot be sent: the
+// server answers a 400 at parse time. Nor is there an escape to reach for --
+// doubling the quote does not mean the character, it means a different value,
+// and the query would silently answer a question the caller did not ask.
+//
+// The error is deferred to [Where.Err] so that Eq stays chainable, and every
+// list helper returns it before issuing a request, which turns a 400 naming a
+// position in an expression the caller never wrote into an error naming the
+// value.
+func (w Where) Eq(field, value string) Where {
+	lit, err := literal(field, value)
+	if err != nil {
+		return w.fail(err)
+	}
+	return w.And(field + " = " + lit)
+}
+
+// literal renders value as a filter string literal, or reports that the server
+// would reject it. field names the column, for the error.
+func literal(field, value string) (string, error) {
+	if strings.ContainsAny(value, "'\\") {
+		return "", fmt.Errorf("cubapi: value for %s cannot appear in a filter literal: %q contains a quote or backslash, which the filter grammar has no way to express", field, value)
+	}
+	return "'" + value + "'", nil
+}
+
+// fail records the first deferred error, keeping the clauses built so far so
+// that String stays inspectable.
+func (w Where) fail(err error) Where {
+	if w.err == nil {
+		w.err = err
+	}
+	return w
+}
+
+// Err reports the first value that could not be expressed as a filter literal,
+// nil when every clause is sendable.
+func (w Where) Err() error { return w.err }
 
 // Slug appends a `Slug = '<slug>'` predicate.
 func (w Where) Slug(slug string) Where {
-	return w.And(fmt.Sprintf("Slug = '%s'", slug))
+	return w.Eq("Slug", slug)
 }
 
 // SpaceID appends a `SpaceID = '<id>'` predicate, scoping a query to one space
@@ -75,11 +125,37 @@ func (w Where) In(field string, ids []goclientnew.UUID) Where {
 	return w.And(fmt.Sprintf("%s IN (%s)", field, strings.Join(quoted, ",")))
 }
 
+// InStrings appends a `<field> IN ('a','b',…)` predicate over string values,
+// which is how a union is written in a filter language that has no OR. Calling
+// it with no values is a no-op. A value that cannot appear in a filter literal
+// is rejected the same way [Where.Eq] rejects one.
+func (w Where) InStrings(field string, values []string) Where {
+	if len(values) == 0 {
+		return w
+	}
+	quoted := make([]string, len(values))
+	for i, v := range values {
+		lit, err := literal(field, v)
+		if err != nil {
+			return w.fail(err)
+		}
+		quoted[i] = lit
+	}
+	return w.And(fmt.Sprintf("%s IN (%s)", field, strings.Join(quoted, ", ")))
+}
+
 // Empty reports whether the filter has no clauses.
 func (w Where) Empty() bool { return len(w.clauses) == 0 }
 
 // String renders the filter as the API "where" expression.
 func (w Where) String() string { return strings.Join(w.clauses, " AND ") }
+
+// MaxFilterLength mirrors the server's cap on a filter expression. Going over it
+// is rejected with a 400, not answered with a truncated result, so a clause that
+// grows with the size of the fleet -- an IN over every unit in scope, say -- has
+// to be optional: build it, measure the rendered filter, and drop it when it
+// does not fit.
+const MaxFilterLength = 8192
 
 // ListOpts carries the query parameters common to every list helper. Zero
 // values are omitted from the request. Entity-specific parameters are set via
@@ -120,6 +196,9 @@ func SelectFields(value string) string {
 // WhereData, WhereTrigger, TriggerFilter, TriggersPassed, View) are set via the
 // with mutators, which run after the common where/opts are applied.
 func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllUnitsParams)) ([]*goclientnew.ExtendedUnit, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllUnitsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -142,6 +221,9 @@ func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with 
 // (Summary) are set via the with mutators, which run after the common where/opts
 // are applied.
 func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListSpacesParams)) ([]*goclientnew.ExtendedSpace, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListSpacesParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -161,6 +243,9 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 
 // ListTargets returns targets across the organization matching where.
 func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTarget, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllTargetsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -177,6 +262,9 @@ func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]
 
 // ListTriggers returns triggers across the organization matching where.
 func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTrigger, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllTriggersParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -195,6 +283,9 @@ func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([
 // specific options (Entity/Id) are set via the with mutators, which run after
 // the common where/opts are applied.
 func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllFiltersParams)) ([]*goclientnew.ExtendedFilter, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllFiltersParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -215,6 +306,9 @@ func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, wit
 // ListInvocations returns stored invocations across the organization matching
 // where.
 func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedInvocation, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllInvocationsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -231,6 +325,9 @@ func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts)
 
 // ListChangeSets returns change sets across the organization matching where.
 func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedChangeSet, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllChangeSetsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -247,6 +344,9 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 
 // ListChangeOrders returns change orders across the organization matching where.
 func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedChangeOrder, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllChangeOrdersParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -263,6 +363,9 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 
 // ListTags returns tags across the organization matching where.
 func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTag, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllTagsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -279,6 +382,9 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 
 // ListViews returns views across the organization matching where.
 func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedView, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllViewsParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -300,6 +406,9 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 // Resource-specific options (RawData) are set via the with mutators, which run after the
 // common where/opts are applied.
 func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllResourcesParams)) ([]*goclientnew.ExtendedResource, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllResourcesParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -319,6 +428,9 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 
 // ListAttributes returns attributes across the organization matching where.
 func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedAttribute, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllAttributesParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -336,6 +448,9 @@ func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) 
 // ListLinks returns links across the organization matching where. Links have no
 // per-space "ListAll" endpoint; the org-level search endpoint is used.
 func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedLink, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.SearchListLinksParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -354,6 +469,9 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 // where. Bridge-worker-specific options (Summary) are set via the with mutators,
 // which run after the common where/opts are applied.
 func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllBridgeWorkersParams)) ([]*goclientnew.ExtendedBridgeWorker, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
 	params := &goclientnew.ListAllBridgeWorkersParams{
 		Where:    ptrIf(where.String()),
 		Select:   ptrIf(opts.Select),
@@ -369,6 +487,64 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 		return nil, InterpretErrorGeneric(err, res)
 	}
 	return derefPtrs(res.JSON200), nil
+}
+
+// ListMarkedUnits returns the units a trigger has marked -- ApplyWarnings from an
+// advisory rule, ApplyGates from a blocking one -- for the given toolchain type,
+// deduplicated. Pass an empty toolchain for every toolchain.
+//
+// It takes two queries because a `where` expression is a flat conjunction: there
+// is no way to spell "has warnings OR has gates" in one.
+func ListMarkedUnits(ctx context.Context, c *Client, toolchain string) ([]*goclientnew.ExtendedUnit, error) {
+	base := Where{}
+	if toolchain != "" {
+		base = base.Eq("ToolchainType", toolchain)
+	}
+	seen := map[goclientnew.UUID]bool{}
+	var marked []*goclientnew.ExtendedUnit
+	for _, cond := range []string{"LEN(ApplyWarnings) > 0", "LEN(ApplyGates) > 0"} {
+		units, err := ListUnits(ctx, c, base.And(cond),
+			ListOpts{Include: "SpaceID", Select: "UnitID,Slug,SpaceID,ApplyWarnings,ApplyGates"})
+		if err != nil {
+			return nil, err
+		}
+		for _, eu := range units {
+			if eu.Unit == nil || seen[eu.Unit.UnitID] {
+				continue
+			}
+			seen[eu.Unit.UnitID] = true
+			marked = append(marked, eu)
+		}
+	}
+	return marked, nil
+}
+
+// SpacesWithToolchain returns the slugs of the spaces holding at least one unit
+// of the given toolchain type. It answers "where is there configuration of this
+// kind at all", which is what keeps a fleet-wide install from wiring a space
+// whose contents the tool has nothing to say about.
+func SpacesWithToolchain(ctx context.Context, c *Client, toolchain string) (map[string]bool, error) {
+	units, err := ListUnits(ctx, c, Where{}.Eq("ToolchainType", toolchain),
+		ListOpts{Include: "SpaceID", Select: "Slug,SpaceID"})
+	if err != nil {
+		return nil, err
+	}
+	slugs := map[string]bool{}
+	for _, eu := range units {
+		if eu.Space != nil && eu.Space.Slug != "" {
+			slugs[eu.Space.Slug] = true
+		}
+	}
+	return slugs, nil
+}
+
+// CountTriggers returns how many triggers a space defines of its own.
+func CountTriggers(ctx context.Context, c *Client, spaceID goclientnew.UUID) (int, error) {
+	triggers, err := ListTriggers(ctx, c, Where{}.SpaceID(spaceID), ListOpts{Select: "Slug,SpaceID"})
+	if err != nil {
+		return 0, err
+	}
+	return len(triggers), nil
 }
 
 // ResolveSpace looks up a single space by slug and returns its core record. It

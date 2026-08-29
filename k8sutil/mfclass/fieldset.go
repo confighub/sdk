@@ -111,7 +111,7 @@ func Project(obj *unstructured.Unstructured, set *fieldpath.Set) (*unstructured.
 // Project returns a new object containing only the values at the paths in set,
 // preserving the object's structure. List-element key fields are retained so
 // projected list items remain identifiable. This is the field-set-driven
-// equivalent of the bridge's keepOnlyManagedFields, used to show the values an
+// equivalent of the cleanup package's keepOnlyManagedFields, used to show the values an
 // applier (or category) owns.
 func (p *Projector) Project(obj *unstructured.Unstructured, set *fieldpath.Set) (*unstructured.Unstructured, error) {
 	if set == nil || set.Empty() {
@@ -254,7 +254,7 @@ func normalizeEmptyOwned(src, dst map[string]interface{}) {
 // IdentityFieldSet is the set of object-identity fields (apiVersion, kind, and
 // the metadata name/namespace). These are not tracked in managedFields but are
 // kept when projecting so the result is a recognizable, valid manifest —
-// mirroring the essential fields the bridge preserves during cleanup.
+// mirroring the essential fields the cleanup package preserves.
 func IdentityFieldSet() *fieldpath.Set {
 	return fieldpath.NewSet(
 		fieldpath.MakePathOrDie("apiVersion"),

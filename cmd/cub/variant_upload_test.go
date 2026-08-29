@@ -248,3 +248,48 @@ func TestUploadSourceDescriptionTruncates(t *testing.T) {
 		t.Errorf("truncated description %q should end in an ellipsis", got)
 	}
 }
+
+func TestUploadSourceIdentity(t *testing.T) {
+	tests := []struct {
+		name     string
+		override string
+		inputs   []string
+		want     string
+	}{
+		{
+			name:   "no override falls back to the inputs",
+			inputs: []string{"./rendered/"},
+			want:   "./rendered/",
+		},
+		{
+			name:     "override replaces an uninformative stdin",
+			override: "helm template apptique ./apptique/helm-chart (onlineboutique 0.10.3)",
+			inputs:   []string{"-"},
+			want:     "helm template apptique ./apptique/helm-chart (onlineboutique 0.10.3)",
+		},
+		{
+			name:     "override wins over named inputs too",
+			override: "the rendered chart",
+			inputs:   []string{"oci://ghcr.io/org/bundle"},
+			want:     "the rendered chart",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := uploadSourceIdentity(tt.override, tt.inputs); got != tt.want {
+				t.Errorf("uploadSourceIdentity(%q, %q) = %q, want %q",
+					tt.override, tt.inputs, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUploadSourceIdentityTruncatesOverride(t *testing.T) {
+	got := uploadSourceIdentity(strings.Repeat("chart ", 200), []string{"-"})
+	if len(got) > maxUploadSourceDescription {
+		t.Errorf("length = %d, want at most %d", len(got), maxUploadSourceDescription)
+	}
+	if !strings.HasSuffix(got, "...") {
+		t.Errorf("truncated description %q should end in an ellipsis", got)
+	}
+}

@@ -10,7 +10,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
+	"github.com/confighub/sdk/k8sutil/mfclass"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -29,12 +29,11 @@ func newTakeoverCommand() *cobra.Command {
 		Short: "Remove other appliers' field managers so one applier owns the resource",
 		Long: `Remove the managedFields entries of competing appliers so that a single
 applier (the keeper) can own the resource on its next server-side apply. This
-is the standalone equivalent of what the ConfigHub bridge does before it
-applies, and it is the fix for "I switched from kubectl/ArgoCD/Flux to X but X
-can't change/delete a field someone else still owns".
+is the fix for "I switched from kubectl/ArgoCD/Flux to X but X can't
+change/delete a field someone else still owns".
 
-By default it removes every applier manager except the keeper (kubectl, old
-ConfigHub managers, ArgoCD, Flux, Helm, Sveltos, Tanka, …) and preserves
+By default it removes every applier manager except the keeper (kubectl, ArgoCD,
+Flux, Helm, Sveltos, Tanka, the legacy ConfigHub managers, …) and preserves
 controller-owned fields (HPA, VPA, …). Scope it with --remove-manager or
 --remove-category.
 
@@ -45,7 +44,7 @@ This mutates the cluster. It prints the JSON patch and asks for confirmation
 unless --yes is given; --dry-run prints the patch without applying it.
 
 Examples:
-  k8s-mf takeover deployment my-app --manager confighub-bridge-worker -n prod --dry-run
+  k8s-mf takeover deployment my-app --manager flux -n prod --dry-run
   k8s-mf takeover deployment my-app --manager argocd-controller --yes`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {

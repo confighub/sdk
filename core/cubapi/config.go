@@ -146,10 +146,28 @@ type Store struct {
 }
 
 // DefaultConfigPath returns the config file path to use when none is given:
-// $CUB_CONFIG if set, otherwise $HOME/.confighub/config.yaml.
+// config.yaml inside $CUB_CONFIG if set, otherwise $HOME/.confighub/config.yaml.
+//
+// CUB_CONFIG names the config *directory*, not the file. That is what the
+// published documentation says, what cub exports to plugins
+// (`CUB_CONFIG=<dir>` in cmd/cub/plugin_exec.go), and what plugins already
+// assume -- cub-che's installer builds "$CUB_CONFIG/plugins" from it. Returning
+// the value verbatim treated it as the file, which put the sibling "tokens" and
+// "keys" directories one level too high and split the store in two.
 func DefaultConfigPath() (string, error) {
 	if p := os.Getenv("CUB_CONFIG"); p != "" {
-		return p, nil
+		// A path that exists and is not a directory is the one mistake worth
+		// naming: it means CUB_CONFIG was set to config.yaml itself, which used
+		// to work. Left alone it surfaces further down as "open
+		// .../config.yaml/config.yaml: not a directory", which describes the
+		// symptom rather than the cause. A path that does not exist yet is
+		// fine -- the store creates it.
+		if info, err := os.Stat(p); err == nil && !info.IsDir() {
+			return "", fmt.Errorf(
+				"CUB_CONFIG must name the config directory, but %s is a file; did you mean %s?",
+				p, filepath.Dir(p))
+		}
+		return filepath.Join(p, ConfigFileName), nil
 	}
 	home := os.Getenv("HOME")
 	if home == "" {

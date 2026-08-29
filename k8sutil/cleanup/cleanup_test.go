@@ -176,7 +176,7 @@ metadata:
           f:app.kubernetes.io/name: {}
           f:helm.sh/chart: {}
       f:rules: {}
-    manager: confighub-bridge-worker
+    manager: argocd-controller
     operation: Apply
     time: "2025-12-19T20:40:58Z"
   name: traefik-traefik
@@ -369,7 +369,7 @@ metadata:
             f:targetPort: {}
         f:selector: {}
         f:type: {}
-    manager: confighub-bridge-worker
+    manager: argocd-controller
     operation: Apply
     time: "2025-12-19T20:40:58Z"
   name: traefik
@@ -481,7 +481,7 @@ metadata:
       f:metadata:
         f:annotations:
           f:custom.annotation/test: {}
-    manager: confighub-bridge-worker
+    manager: argocd-controller
     operation: Apply
     time: "2025-12-19T20:40:58Z"
   name: traefik

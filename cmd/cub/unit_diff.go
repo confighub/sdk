@@ -27,6 +27,7 @@ const (
 	colorRed       = "\033[31m"
 	colorGreen     = "\033[32m"
 	colorLightBlue = "\033[94m" // Light blue for line numbers
+	colorDim       = "\033[2m"  // Dim, for text that annotates rather than reports
 
 	// Diff segment types
 	segEqual  = "equal"

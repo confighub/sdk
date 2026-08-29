@@ -4,7 +4,7 @@
 package main
 
 import (
-	"github.com/confighub/sdk/cmd/k8s-mf/cleanup"
+	"github.com/confighub/sdk/k8sutil/cleanup"
 	"github.com/spf13/cobra"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -16,17 +16,17 @@ func newCleanupCommand() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:   "cleanup [TYPE NAME]",
-		Short: "Show the result of the bridge's refresh/import cleanup (ExtraCleanupObjects)",
-		Long: `Run the Kubernetes bridge's ExtraCleanupObjects on a resource and print the
-result — exactly the transformation Refresh (and import) apply before storing
-live cluster state as a Unit's configuration data.
+		Short: "Show the result of the refresh/import cleanup (ExtraCleanupObjects)",
+		Long: `Run ExtraCleanupObjects on a resource and print the result — exactly the
+transformation "cub k8s refresh" (and import) apply before comparing live
+cluster state against a Unit's configuration data.
 
 Unlike "values" (which projects via managed-field set algebra), this calls the
-real bridge cleanup: RemoveUnmanagedFields, status/managedFields removal,
-internal annotation/label stripping, and resource-quantity normalization. Use it
-to debug cases where unexpected fields are carried into config data — e.g. a
-system-added spec.finalizers surviving because the bridge treats an empty
-"f:spec: {}" ownership as atomic and keeps the whole subtree.
+real cleanup: RemoveUnmanagedFields, status/managedFields removal, internal
+annotation/label stripping, and resource-quantity normalization. Use it to debug
+cases where unexpected fields are carried into config data — e.g. a system-added
+spec.finalizers surviving because an empty "f:spec: {}" ownership is treated as
+atomic, which keeps the whole subtree.
 
 The object is read from the live cluster (TYPE NAME) or from a file (-f); a file
 must include metadata.managedFields.

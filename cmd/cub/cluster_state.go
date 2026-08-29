@@ -17,15 +17,13 @@ import (
 // by `cub cluster down`). All other per-cluster metadata comes from the
 // corresponding ConfigHub Space's annotations.
 
-// clusterConfigDir resolves the ConfigHub config directory the same way the
-// cub CLI does: honor CUB_CONFIG (which may point at either a directory or a
-// config.yaml file), else fall back to ~/.confighub.
+// clusterConfigDir resolves the ConfigHub config directory: CUB_CONFIG if set,
+// else ~/.confighub. CUB_CONFIG names the directory, so there is nothing to
+// work out from the filesystem -- this used to stat it to tell a directory from
+// a config.yaml file, which gave a different answer from the CLI whenever the
+// path did not exist yet.
 func clusterConfigDir() string {
 	if v := os.Getenv("CUB_CONFIG"); v != "" {
-		if info, err := os.Stat(v); err == nil && !info.IsDir() {
-			// CUB_CONFIG points at a file (e.g. .../config.yaml); use its dir.
-			return filepath.Dir(v)
-		}
 		return v
 	}
 	home, err := os.UserHomeDir()

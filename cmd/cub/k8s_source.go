@@ -69,21 +69,26 @@ var (
 )
 
 func init() {
-	k8sSourceCmd.Flags().StringVarP(&k8sNamespace, "namespace", "n", "default", "Namespace of the resource (ignored for cluster-scoped resources)")
-	k8sSourceCmd.Flags().StringVar(&k8sApiVersion, "api-version", "", "API version of the resource (e.g., 'apps/v1', 'v1'). If not specified, common versions will be tried.")
-	k8sSourceCmd.Flags().StringVar(&k8sKubeContext, "kube-context", "", "Kubernetes context to use")
-	k8sSourceCmd.Flags().StringVar(&k8sKubeconfig, "kubeconfig", "", "Path to the kubeconfig file to use for CLI requests")
+	addK8sClusterFlags(k8sSourceCmd)
 	k8sCmd.AddCommand(k8sSourceCmd)
 }
 
-func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
-	kind := args[0]
-	name := args[1]
+// addK8sClusterFlags registers the flags every command that reads a live cluster needs:
+// which resource, and which cluster to read it from.
+func addK8sClusterFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&k8sNamespace, "namespace", "n", "default", "Namespace of the resource (ignored for cluster-scoped resources)")
+	cmd.Flags().StringVar(&k8sApiVersion, "api-version", "", "API version of the resource (e.g., 'apps/v1', 'v1'). If not specified, common versions will be tried.")
+	cmd.Flags().StringVar(&k8sKubeContext, "kube-context", "", "Kubernetes context to use")
+	cmd.Flags().StringVar(&k8sKubeconfig, "kubeconfig", "", "Path to the kubeconfig file to use for CLI requests")
+}
 
-	// Get Kubernetes client with proper kubeconfig loading precedence:
-	// 1. --kubeconfig flag (highest priority, no merging)
-	// 2. KUBECONFIG environment variable (merges multiple files)
-	// 3. $HOME/.kube/config (default)
+// newK8sClusterClients builds a dynamic client and a REST mapper from the kubeconfig,
+// with kubectl's loading precedence:
+//
+//  1. --kubeconfig flag (highest priority, no merging)
+//  2. KUBECONFIG environment variable (merges multiple files)
+//  3. $HOME/.kube/config (default)
+func newK8sClusterClients() (dynamic.Interface, meta.RESTMapper, error) {
 	loadingRules := clientcmd.NewDefaultClientConfigLoadingRules()
 
 	// If --kubeconfig flag is set, use only that file (highest priority)
@@ -102,26 +107,36 @@ func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
 	config := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(loadingRules, configOverrides)
 	restConfig, err := config.ClientConfig()
 	if err != nil {
-		return fmt.Errorf("failed to get Kubernetes config: %w", err)
+		return nil, nil, fmt.Errorf("failed to get Kubernetes config: %w", err)
 	}
 
 	dynamicClient, err := dynamic.NewForConfig(restConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create Kubernetes client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create Kubernetes client: %w", err)
 	}
 
 	// Create discovery client for REST mapper
 	discoveryClient, err := discovery.NewDiscoveryClientForConfig(restConfig)
 	if err != nil {
-		return fmt.Errorf("failed to create discovery client: %w", err)
+		return nil, nil, fmt.Errorf("failed to create discovery client: %w", err)
 	}
 
 	// Create REST mapper to determine resource scope
 	groupResources, err := restmapper.GetAPIGroupResources(discoveryClient)
 	if err != nil {
-		return fmt.Errorf("failed to get API group resources: %w", err)
+		return nil, nil, fmt.Errorf("failed to get API group resources: %w", err)
 	}
-	mapper := restmapper.NewDiscoveryRESTMapper(groupResources)
+	return dynamicClient, restmapper.NewDiscoveryRESTMapper(groupResources), nil
+}
+
+func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
+	kind := args[0]
+	name := args[1]
+
+	dynamicClient, mapper, err := newK8sClusterClients()
+	if err != nil {
+		return err
+	}
 
 	// Get the resource
 	resource, err := getK8sResource(dynamicClient, mapper, kind, name, k8sNamespace, k8sApiVersion)

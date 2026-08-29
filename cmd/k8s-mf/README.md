@@ -5,7 +5,7 @@
 of a resource. Leftover or competing managers are the usual cause of apply
 surprises — fields silently retained, deletions blocked, or apply conflicts —
 especially after a `kubectl` "break glass" edit or when transitioning a resource
-between tools (`kubectl apply`, the ConfigHub bridge, ArgoCD, Flux, Sveltos).
+between tools (`kubectl apply`, ArgoCD, Flux, Sveltos).
 
 The goal is to make apply operations less surprising and to debug and fix
 managed-field problems.
@@ -19,18 +19,26 @@ make build-k8s-mf      # from the repo root; produces bin/k8s-mf
 ## Field-manager categories
 
 Rather than reasoning about raw manager strings, `k8s-mf` classifies each manager
-into a category via the shared [`mfclass`](../../bridge-impl/kubernetes/mfclass)
-package (the same package the ConfigHub bridge uses to decide takeover, so the
-tool mirrors real bridge behavior):
+into a category via the shared [`mfclass`](../../k8sutil/mfclass) package — the
+same package `cub k8s refresh` uses to decide which fields are cluster state
+rather than authored configuration, so the tool mirrors what a refresh stores:
 
-- **Applier** — whole-resource owners you manage config with: kubectl, the
-  ConfigHub bridge (`confighub-bridge-worker`), ArgoCD, Flux, Sveltos, Helm, …
-- **AdmissionController** — write-time injectors / mutating webhooks (Istio,
-  Linkerd, the VPA admission controller).
-- **AsyncController** — reconcile loops (HPA/VPA, the built-in workload
-  controllers, cert-manager, ingress controllers, …).
+- **Applier** — whole-resource owners you manage config with: kubectl, ArgoCD,
+  Flux, Sveltos, Helm, … Tools that deploy by shelling out to kubectl (Spinnaker,
+  for one) are indistinguishable from kubectl itself here, because they do not
+  set their own `--field-manager`.
+- **AsyncController** — controllers that write out of band rather than as the
+  config's owner: HPA/VPA, the built-in workload controllers, cert-manager,
+  ingress controllers, the mesh control planes, and the API server's own
+  built-in admission plugins (`kube-apiserver`).
 - **Default fields** — present on the object but owned by no manager (API-server
   defaults). Computed, not a real manager.
+
+There is no admission-controller category. A mutating dynamic admission
+controller rewrites the object inside the API server's write path, and the API
+server credits the resulting fields to whichever client made the call — a
+sidecar injector's own name never reaches `managedFields`, so there is nothing
+to classify.
 
 ## Commands
 
@@ -67,17 +75,30 @@ more than one manager — likely apply conflicts) and **default** fields.
 
 ```
 k8s-mf values deployment my-app                       # all appliers (default)
-k8s-mf values deployment my-app --manager confighub-bridge-worker
+k8s-mf values deployment my-app --manager argocd-controller
 k8s-mf values deployment my-app --category Applier --include-defaults
 ```
 
 Projects the resource down to just the values owned by the selected
 manager/category.
 
+### `cleanup` — what a refresh would keep
+
+```
+k8s-mf cleanup namespace test-ns
+kubectl get deploy my-app -o yaml --show-managed-fields | k8s-mf cleanup -f -
+```
+
+Runs the same `ExtraCleanupObjects` pass `cub k8s refresh` runs, and prints the
+result: fields owned only by async controllers dropped, status / managedFields /
+internal metadata removed, cluster-internal annotations and labels stripped, and
+resource quantities normalized. Use it to see why an unexpected field is being
+carried into configuration data.
+
 ### `takeover` — consolidate ownership (mutating)
 
 ```
-k8s-mf takeover deployment my-app --manager confighub-bridge-worker --dry-run
+k8s-mf takeover deployment my-app --manager flux --dry-run
 k8s-mf takeover deployment my-app --manager argocd-controller --yes
 ```
 
@@ -91,7 +112,7 @@ not transferred.
 ### `conflicts` — predict apply conflicts (read-only)
 
 ```
-k8s-mf conflicts -f deploy.yaml --manager confighub-bridge-worker -n prod
+k8s-mf conflicts -f deploy.yaml --manager kustomize-controller -n prod
 k8s-mf conflicts -f deploy.yaml --manager argocd-controller -o json
 ```
 
@@ -104,9 +125,9 @@ written. This is the focused "what will I fight over, and who owns it?" check;
 ### `dry-run-apply` — preview an apply as a manager
 
 ```
-k8s-mf dry-run-apply -f deploy.yaml --manager confighub-bridge-worker
+k8s-mf dry-run-apply -f deploy.yaml --manager kustomize-controller
 k8s-mf dry-run-apply -f deploy.yaml --manager argocd-controller --show-diff
-k8s-mf dry-run-apply -f deploy.yaml --manager confighub-bridge-worker --force --commit
+k8s-mf dry-run-apply -f deploy.yaml --manager kustomize-controller --force --commit
 ```
 
 Server-side applies the manifest as the given manager and shows the merged

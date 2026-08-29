@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -126,8 +127,8 @@ func TestLoadConfigMissingFileIsEmptyStore(t *testing.T) {
 
 func TestLoadConfigRejectsBadInput(t *testing.T) {
 	cases := map[string]string{
-		"bad apiVersion": "apiVersion: v2\nkind: Config\ncontexts: []\n",
-		"bad kind":       "apiVersion: v1\nkind: Nope\ncontexts: []\n",
+		"bad apiVersion":         "apiVersion: v2\nkind: Config\ncontexts: []\n",
+		"bad kind":               "apiVersion: v1\nkind: Nope\ncontexts: []\n",
 		"missing currentContext": "apiVersion: v1\nkind: Config\ncurrentContext: ghost\ncontexts: []\n",
 	}
 	for name, yaml := range cases {
@@ -140,13 +141,34 @@ func TestLoadConfigRejectsBadInput(t *testing.T) {
 }
 
 func TestDefaultConfigPath(t *testing.T) {
-	t.Setenv("CUB_CONFIG", "/custom/cfg.yaml")
-	if got, err := DefaultConfigPath(); err != nil || got != "/custom/cfg.yaml" {
-		t.Fatalf("DefaultConfigPath() = %q, %v", got, err)
+	// CUB_CONFIG names the config directory; the file within it is ours to name.
+	t.Setenv("CUB_CONFIG", "/custom/store")
+	want := filepath.Join("/custom/store", ConfigFileName)
+	if got, err := DefaultConfigPath(); err != nil || got != want {
+		t.Fatalf("DefaultConfigPath() = %q, %v; want %q", got, err, want)
 	}
+	// A path that does not exist yet is fine -- the store creates it.
+	t.Setenv("CUB_CONFIG", filepath.Join(t.TempDir(), "not-created-yet"))
+	if _, err := DefaultConfigPath(); err != nil {
+		t.Fatalf("DefaultConfigPath() on a not-yet-created directory = %v", err)
+	}
+
+	// Pointing it at config.yaml itself used to work, so say what is wrong
+	// rather than failing later with "not a directory" about a doubled path.
+	file := filepath.Join(t.TempDir(), ConfigFileName)
+	if err := os.WriteFile(file, []byte("contexts: []\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CUB_CONFIG", file)
+	if _, err := DefaultConfigPath(); err == nil {
+		t.Fatal("DefaultConfigPath() accepted a file, want an error naming the directory")
+	} else if !strings.Contains(err.Error(), "must name the config directory") {
+		t.Fatalf("DefaultConfigPath() error = %v, want it to name the directory", err)
+	}
+
 	t.Setenv("CUB_CONFIG", "")
 	t.Setenv("HOME", "/home/tester")
-	want := filepath.Join("/home/tester", ConfigHubDir, ConfigFileName)
+	want = filepath.Join("/home/tester", ConfigHubDir, ConfigFileName)
 	if got, err := DefaultConfigPath(); err != nil || got != want {
 		t.Fatalf("DefaultConfigPath() = %q, %v; want %q", got, err, want)
 	}

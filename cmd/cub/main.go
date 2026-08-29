@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -175,15 +174,11 @@ func globalPreRun(cmd *cobra.Command, args []string) error {
 
 func main() {
 	var err error
-	// CUB_CONFIG is optional. If not set, the default path will be used.
-
-	configPath := os.Getenv("CUB_CONFIG")
-	if configPath != "" {
-		if info, err := os.Stat(configPath); err == nil && info.IsDir() {
-			configPath = filepath.Join(configPath, "config.yaml")
-		}
-	}
-	contextManager, err = NewContextManagerWithPath(configPath)
+	// An empty path means "work it out", which cubapi.DefaultConfigPath does by
+	// joining config.yaml onto CUB_CONFIG. Deciding it here as well only made
+	// the two disagree: this stat'd the value and treated a path that did not
+	// exist yet as the file, while cubapi took it verbatim as the file always.
+	contextManager, err = NewContextManagerWithPath("")
 	if err != nil {
 		failOnError(err)
 	}

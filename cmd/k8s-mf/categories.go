@@ -68,7 +68,7 @@ Examples:
 	cmd.Flags().StringVarP(&output, "output", "o", outputText, "Output format: text|json|yaml")
 	cmd.Flags().StringVarP(&file, "file", "f", "", "Read the object from a YAML/JSON file (\"-\" for stdin) instead of the cluster")
 	cmd.Flags().BoolVar(&byManager, "by-manager", false, "Break each category down by individual field manager")
-	cmd.Flags().StringVar(&category, "category", "", "Show only this category (Applier|AdmissionController|AsyncController|Unknown)")
+	cmd.Flags().StringVar(&category, "category", "", "Show only this category (Applier|AsyncController|Unknown)")
 	return cmd
 }
 

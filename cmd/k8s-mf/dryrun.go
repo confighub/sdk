@@ -39,9 +39,9 @@ This reaches the cluster (server dry-run mutates nothing). Pass --commit to
 actually apply.
 
 Examples:
-  k8s-mf dry-run-apply -f deploy.yaml --manager confighub-bridge-worker -n prod
+  k8s-mf dry-run-apply -f deploy.yaml --manager kustomize-controller -n prod
   k8s-mf dry-run-apply -f deploy.yaml --manager argocd-controller --show-diff
-  k8s-mf dry-run-apply -f deploy.yaml --manager confighub-bridge-worker --force --commit`,
+  k8s-mf dry-run-apply -f deploy.yaml --manager kustomize-controller --force --commit`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if file == "" {

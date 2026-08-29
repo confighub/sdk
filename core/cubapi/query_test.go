@@ -32,6 +32,10 @@ func TestWhereBuilder(t *testing.T) {
 		{"in", NewWhere("").In("SpaceID", []goclientnew.UUID{id, id2}),
 			"SpaceID IN ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222')"},
 		{"in empty is noop", NewWhere("A = 1").In("SpaceID", nil), "A = 1"},
+		{"eq", NewWhere("").Eq("Space.Labels.Component", "checkout"), "Space.Labels.Component = 'checkout'"},
+		{"inStrings", NewWhere("").InStrings("ResourceType", []string{"v1/Pod", "apps/v1/Deployment"}),
+			"ResourceType IN ('v1/Pod', 'apps/v1/Deployment')"},
+		{"inStrings empty is noop", NewWhere("A = 1").InStrings("ResourceType", nil), "A = 1"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -44,6 +48,41 @@ func TestWhereBuilder(t *testing.T) {
 	_ = base.And("B = 2")
 	if base.String() != "A = 1" {
 		t.Fatalf("And mutated receiver: %q", base.String())
+	}
+}
+
+// A filter string literal has no escape sequence, so a value carrying a quote or
+// a backslash is rejected rather than rewritten into something that would parse
+// as a different value.
+func TestWhereRejectsUnsendableLiteral(t *testing.T) {
+	for _, bad := range []string{`check'out`, `check\out`} {
+		if err := NewWhere("").Eq("Slug", bad).Err(); err == nil {
+			t.Errorf("Eq accepted %q", bad)
+		}
+		if err := NewWhere("").Slug(bad).Err(); err == nil {
+			t.Errorf("Slug accepted %q", bad)
+		}
+		if err := NewWhere("").InStrings("ResourceType", []string{"v1/Pod", bad}).Err(); err == nil {
+			t.Errorf("InStrings accepted %q", bad)
+		}
+	}
+	// The first bad value is the one reported, and later clauses do not clear it.
+	w := NewWhere("A = 1").Eq("Slug", "a'b").Eq("Other", "c'd").And("B = 2")
+	if err := w.Err(); err == nil || !strings.Contains(err.Error(), "Slug") {
+		t.Fatalf("want the first failure reported, got %v", err)
+	}
+}
+
+// A list helper reports an unsendable value instead of asking the server a
+// question the filter does not express.
+func TestListUnitsRejectsUnsendableWhere(t *testing.T) {
+	var gotWhere string
+	c := stubServer(t, `[]`, &gotWhere)
+	if _, err := ListUnits(context.Background(), c, NewWhere("").Slug("a'b"), ListOpts{}); err == nil {
+		t.Fatal("ListUnits accepted an unsendable filter")
+	}
+	if gotWhere != "" {
+		t.Fatalf("a request was made anyway, with where=%q", gotWhere)
 	}
 }
 

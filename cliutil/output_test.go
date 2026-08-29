@@ -25,9 +25,9 @@ func TestParseOutput(t *testing.T) {
 		{"jq=.[].Slug", OutputJQ, ".[].Slug", false},
 		{"yq=.metadata.name", OutputYQ, ".metadata.name", false},
 		{"custom-columns=A:.a", OutputCustomColumns, "A:.a", false},
-		{"json=x", 0, "", true},   // json takes no arg
-		{"jq", 0, "", true},       // jq requires arg
-		{"bogus", 0, "", true},    // unknown
+		{"json=x", 0, "", true}, // json takes no arg
+		{"jq", 0, "", true},     // jq requires arg
+		{"bogus", 0, "", true},  // unknown
 	}
 	for _, tc := range tests {
 		t.Run(tc.in, func(t *testing.T) {
@@ -105,5 +105,13 @@ func TestRenderYQ(t *testing.T) {
 	}
 	if strings.TrimSpace(b.String()) != "checkout" {
 		t.Fatalf("yq output = %q", b.String())
+	}
+}
+
+func TestFprintln(t *testing.T) {
+	var buf bytes.Buffer
+	Fprintln(&buf, "checkout", 3)
+	if got := buf.String(); got != "checkout 3\n" {
+		t.Fatalf("Fprintln wrote %q", got)
 	}
 }

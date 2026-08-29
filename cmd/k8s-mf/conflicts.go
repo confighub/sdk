@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/cmd/k8s-mf/mfclass"
+	"github.com/confighub/sdk/k8sutil/mfclass"
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -34,7 +34,7 @@ Use it before switching a resource to a new tool, or before a "break glass"
 kubectl apply, to see exactly what you would fight over and who owns it.
 
 Examples:
-  k8s-mf conflicts -f deploy.yaml --manager confighub-bridge-worker -n prod
+  k8s-mf conflicts -f deploy.yaml --manager kustomize-controller -n prod
   k8s-mf conflicts -f deploy.yaml --manager argocd-controller -o json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -5,6 +5,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 )
 
 // ValidationResult specifies whether a single validation function or sequence of validation
@@ -56,6 +57,30 @@ func ScoreMax(a, b Score) Score {
 	anum := ScoreToNumber[a]
 	bnum := ScoreToNumber[b]
 	return NumberToScore[max(anum, bnum)]
+}
+
+// lowerToScore resolves a score name written in any capitalization. The Score
+// values are the canonical spellings; this is what a CLI flag or a stored
+// argument is matched against, where the capitalization is the user's, not ours.
+var lowerToScore = map[string]Score{
+	"critical": ScoreCritical,
+	"high":     ScoreHigh,
+	"medium":   ScoreMedium,
+	"low":      ScoreLow,
+}
+
+// ParseScore resolves a score name to a Score, ignoring capitalization. An empty
+// string means no score, which is how "no severity filter" is spelled -- the
+// difference from ValidateScore, which requires the canonical spelling and
+// rejects the empty string.
+func ParseScore(s string) (Score, error) {
+	if s == "" {
+		return ScoreNone, nil
+	}
+	if score, ok := lowerToScore[strings.ToLower(s)]; ok {
+		return score, nil
+	}
+	return ScoreNone, fmt.Errorf("invalid score %q: must be Critical, High, Medium, or Low", s)
 }
 
 // ValidateScore converts a score string to a Score.

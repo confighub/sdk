@@ -18,7 +18,7 @@ func TestClassifyManager(t *testing.T) {
 		want    Category
 	}{
 		// Appliers
-		{"confighub-bridge-worker", CategoryApplier},
+		{"confighub-bridge-worker", CategoryApplier}, // legacy; the bridge worker is gone
 		{"confighub-something-old", CategoryApplier},
 		{"kubectl", CategoryApplier},
 		{"kubectl-client-side-apply", CategoryApplier},
@@ -32,19 +32,27 @@ func TestClassifyManager(t *testing.T) {
 		{"sveltos", CategoryApplier},
 		{"tanka", CategoryApplier},
 		{"before-first-apply", CategoryApplier},
-		// Admission controllers
-		{"istiod", CategoryAdmissionController},
-		{"linkerd-proxy-injector", CategoryAdmissionController},
-		{"vpa-admission-controller", CategoryAdmissionController},
 		// Async controllers
 		{"horizontal-pod-autoscaler-controller", CategoryAsyncController},
 		{"deployment-controller", CategoryAsyncController},
 		{"cert-manager-controller", CategoryAsyncController},
 		{"kube-controller-manager", CategoryAsyncController},
+		// The control planes of injecting meshes, classified for what they
+		// reconcile themselves. Sidecar injection never reaches managedFields
+		// under these names.
+		{"istiod", CategoryAsyncController},
+		{"linkerd-destination", CategoryAsyncController},
+		// The API server's own built-in admission plugins.
+		{"kube-apiserver", CategoryAsyncController},
 		// Names that must NOT be caught by the kubectl prefix
 		{"kube-scheduler", CategoryAsyncController},
 		// Unknown
 		{"some-random-operator", CategoryUnknown},
+		// Pure mutating webhooks are deliberately absent: the API server credits
+		// their writes to the client that made the call, so these names never
+		// appear and must not be asserted as known.
+		{"linkerd-proxy-injector", CategoryUnknown},
+		{"vpa-admission-controller", CategoryUnknown},
 	}
 	for _, tc := range cases {
 		got, _ := ClassifyManager(tc.manager)
@@ -75,11 +83,11 @@ func TestClassifyHeuristics(t *testing.T) {
 }
 
 func TestShouldTakeOver(t *testing.T) {
-	keeper := ConfigHubFieldManager
+	keeper := "argocd-controller"
 	// Other appliers are taken over.
 	assert.True(t, ShouldTakeOver("kubectl", keeper))
 	assert.True(t, ShouldTakeOver("kubectl-client-side-apply", keeper))
-	assert.True(t, ShouldTakeOver("argocd-controller", keeper))
+	assert.True(t, ShouldTakeOver("confighub-bridge-worker", keeper))
 	assert.True(t, ShouldTakeOver("helm-controller", keeper))
 	assert.True(t, ShouldTakeOver("application/apply-patch", keeper))
 	assert.True(t, ShouldTakeOver("sveltos", keeper))
@@ -94,7 +102,8 @@ func TestShouldTakeOver(t *testing.T) {
 
 func TestIsIgnored(t *testing.T) {
 	assert.True(t, IsIgnored("horizontal-pod-autoscaler-controller"))
-	assert.True(t, IsIgnored("istiod")) // admission also ignored
+	assert.True(t, IsIgnored("istiod"))
+	assert.True(t, IsIgnored("kube-apiserver"))
 	assert.False(t, IsIgnored("kubectl"))
 	assert.False(t, IsIgnored("confighub-bridge-worker"))
 	assert.False(t, IsIgnored("some-random-operator"))

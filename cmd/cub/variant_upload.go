@@ -36,8 +36,12 @@ type variantUploadOptions struct {
 	allowExists  bool
 	prune        bool
 	dryRun       bool
-	// sourceDesc is not a flag: it is the inputs as given on the command line,
-	// stamped on each created Unit as its external source.
+	// sourceDescription overrides sourceDesc with a name for where the
+	// configuration came from that the inputs cannot supply -- the chart a
+	// "helm template" was rendered from, when the input is only "-".
+	sourceDescription string
+	// sourceDesc is not a flag: it is sourceDescription, or the inputs as given
+	// on the command line, stamped on each created Unit as its external source.
 	sourceDesc string
 }
 
@@ -101,6 +105,13 @@ Each created Unit records the input it came from — the oci:// ref, file, or di
 as named on the command line — as its external source, so its change description reads
 "from oci://ghcr.io/org/bundle". Use --change-desc to prefix your own description.
 
+Where the inputs do not name the source, --source-description does. A chart rendered
+into this command arrives on stdin, which records as "stdin"; passing the chart and its
+version instead makes the Unit's history say what produced the configuration. It is the
+external-source identity, so a re-upload has to repeat it to merge against the first one
+rather than start a new source. The Space's external-source annotation is unaffected: it
+records the inputs themselves, which is what makes the upload reproducible.
+
 Re-uploading:
 Running this command again against a Space it already populated is a re-upload, not a
 second create. Each Unit is merged rather than replaced: the new content is 3-way merged
@@ -130,9 +141,11 @@ Examples:
   cub variant upload --component web --variant prod --space web-prod \
     --granularity per-resource --target web-prod/cluster ./rendered/
 
-  # Helm output, ensuring a namespace and a regional label.
+  # Helm output, ensuring a namespace and a regional label. Without
+  # --source-description the Units would record their source as "stdin".
   helm template myapp ./chart | cub variant upload --component myapp --variant prod \
-    --environment Prod --region us-east1 --namespace myapp -
+    --environment Prod --region us-east1 --namespace myapp \
+    --source-description "helm template myapp ./chart (myapp-1.4.2)" -
 
   # Seed a base from a published OCI manifest bundle, one Unit per bundled file.
   cub variant upload --component cubbychat --variant base --granularity per-file \
@@ -171,6 +184,7 @@ func init() {
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "label", nil, "label key=value to set on every created Unit (repeatable)")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each created Unit")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceDescription, "source-description", "", "name for where the configuration came from, recorded as each Unit's external source (defaults to the inputs as named on the command line); does not affect the Space's external-source annotation, which records the inputs themselves")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.allowExists, "allow-exists", false, "tolerate Spaces, Units, Invocations, and Links that already exist (retry a partial upload)")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.prune, "prune", false, "on a re-upload, empty Units in the Space that this input no longer produces")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, or empty, and exit without changing anything")
@@ -227,7 +241,9 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	// to temp directories and Unit bodies are staged in temp files. Each Unit is
 	// created with this as its external source, so its change description reads
 	// "from oci://ghcr.io/org/bundle" rather than the temp path cub handed itself.
-	a.sourceDesc = uploadSourceDescription(args)
+	// --source-description replaces it where the inputs do not name the source:
+	// a rendered chart arrives on stdin, which records as "stdin".
+	a.sourceDesc = uploadSourceIdentity(a.sourceDescription, args)
 
 	// Resolve any oci:// inputs to local directories of extracted manifests, so
 	// the rest of the pipeline treats them like any other input path, and record
@@ -382,6 +398,16 @@ func uploadSourceDescription(inputs []string) string {
 		parts = append(parts, uploadSourceRef(in))
 	}
 	return truncateWithEllipsis(strings.Join(parts, ", "), maxUploadSourceDescription)
+}
+
+// uploadSourceIdentity picks the external source stamped on every Unit: what
+// --source-description said, or the inputs as named on the command line. Both are
+// bounded the same way, because both end up in the same LastChangeDescription.
+func uploadSourceIdentity(override string, inputs []string) string {
+	if override != "" {
+		return truncateWithEllipsis(override, maxUploadSourceDescription)
+	}
+	return uploadSourceDescription(inputs)
 }
 
 // createPlainUnit writes the Unit body to a temp file and runs cub unit create.
