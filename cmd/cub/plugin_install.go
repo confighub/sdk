@@ -347,6 +347,20 @@ func parseGitHubShorthand(source string) (*githubSource, error) {
 	}, nil
 }
 
+// quotedList renders names for an error message: "a", "b" and "c".
+func quotedList(names []string) string {
+	quoted := make([]string, len(names))
+	for i, n := range names {
+		quoted[i] = fmt.Sprintf("%q", n)
+	}
+	switch len(quoted) {
+	case 1:
+		return quoted[0]
+	default:
+		return strings.Join(quoted[:len(quoted)-1], ", ") + " and " + quoted[len(quoted)-1]
+	}
+}
+
 func stripCubPrefix(name string) string {
 	return strings.TrimPrefix(name, "cub-")
 }
@@ -817,6 +831,7 @@ func finalizeStaging(staged, destPath, slot, excludeSlot, source, tag string, de
 	if err != nil {
 		return err
 	}
+	shipped := m != nil
 	if m == nil {
 		// No manifest produced — write the default single-command manifest.
 		def := coreplugin.Manifest{Commands: []coreplugin.Command{{Name: slot, Entrypoint: defaultEntrypoint}}}
@@ -831,18 +846,41 @@ func finalizeStaging(staged, destPath, slot, excludeSlot, source, tag string, de
 		return err
 	}
 
-	// Make declared entrypoints executable.
+	// Make declared entrypoints executable, and refuse one that is not there.
+	//
+	// A manifest names the file to exec. Installing when that file is absent
+	// reports success and produces a plugin that fails the first time anyone
+	// runs it, with "unknown command" — which describes cub, not the install
+	// that went wrong several steps earlier.
+	//
+	// The common way in is a repository with no releases: the source is
+	// installed instead, no manifest comes with it, and the default one names
+	// "main", which a Go project does not have.
+	var missing []string
 	for _, c := range cmds {
 		ep := c.Entrypoint
 		if ep == "" {
 			ep = "main"
 		}
 		epPath := filepath.Join(staged, ep)
-		if info, statErr := os.Stat(epPath); statErr == nil && !info.IsDir() {
-			if err := os.Chmod(epPath, 0755); err != nil {
-				return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
-			}
+		info, statErr := os.Stat(epPath)
+		if statErr != nil || info.IsDir() {
+			missing = append(missing, ep)
+			continue
 		}
+		if err := os.Chmod(epPath, 0755); err != nil {
+			return fmt.Errorf("failed to set permissions on %s: %w", ep, err)
+		}
+	}
+	if len(missing) > 0 {
+		if shipped {
+			return fmt.Errorf("this plugin's cub-plugin.yaml names %s, which it does not contain, so there is nothing to run",
+				quotedList(missing))
+		}
+		return fmt.Errorf("nothing here is runnable: no cub-plugin.yaml, and no %s to fall back on.\n"+
+			"    This is what installing a repository's source rather than a release looks like.\n"+
+			"    A plugin needs either a release carrying a built binary, or a committed cub-plugin.yaml",
+			quotedList(missing))
 	}
 
 	if source != "" {

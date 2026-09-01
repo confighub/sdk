@@ -5,11 +5,11 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/configkit/yqkit v0.4.5
+	github.com/confighub/sdk/configkit/yqkit v0.0.0
 	github.com/google/uuid v1.6.0
 	github.com/itchyny/gojq v0.12.17
 	github.com/spf13/cobra v1.10.2
-	gopkg.in/yaml.v3 v3.0.1
+	sigs.k8s.io/yaml v1.6.0
 )
 
 require (
@@ -37,6 +37,7 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/yuin/gopher-lua v1.1.2 // indirect
 	github.com/zclconf/go-cty v1.18.1 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.4 // indirect
 	golang.org/x/mod v0.36.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
@@ -48,6 +49,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/configkit/yqkit => ../configkit/yqkit
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

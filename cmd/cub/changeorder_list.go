@@ -56,11 +56,14 @@ var defaultChangeOrderColumns = []string{"ChangeOrder.Slug", "Space.Slug", "Chan
 // changeorderListInclude is the Include parameter for change order list queries.
 const changeorderListInclude = "SpaceID,StartTagID,EndTagID"
 
+// The restore tag is deliberately not included: it expands to a Tag no default column shows, and
+// a change order that has never been undone has none to expand.
+
 // changeorderBaseSelectFields are the fields always returned by change order list queries.
-// AbortedReason and InScopeSpaceIDs are among them because State is derived from both, and each
-// is legitimately empty -- so the server has to re-read a change order whose select left either
-// out, rather than reading a missing value as a real one.
-var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason", "InScopeSpaceIDs"}
+// AbortedReason, InScopeSpaceIDs and RestoreTagID are among them because State is derived from all
+// three, and each is legitimately empty -- so the server has to re-read a change order whose select
+// left any of them out, rather than reading a missing value as a real one.
+var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason", "InScopeSpaceIDs", "RestoreTagID"}
 
 // ChangeOrder-specific aliases
 var changeorderAliases = map[string]string{

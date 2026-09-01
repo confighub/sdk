@@ -90,9 +90,11 @@ Examples:
   cub unit update --patch --space my-space --where "UpstreamRevisionNum > 0" \
       --upgrade --change-order base-space/release-42 --change-desc "Take release-42"
 
-  # Undo that promotion, however many revisions it made
+  # Undo that promotion, however many revisions it made, recording it against the change order
+  # ("cub variant demote" is this over a whole space, and selects the units for you)
   cub unit update --patch --space my-space --where "UpstreamRevisionNum > 0" \
-      --restore Before:ChangeOrder:base-space/release-42 --change-desc "Roll release-42 back"
+      --restore Before:ChangeOrder:base-space/release-42 --change-order base-space/release-42 \
+      --change-desc "Roll release-42 back"
 
   # Update with a change description
   cub unit update --space my-space myunit config.yaml --change-desc "Updated database configuration"
@@ -167,7 +169,7 @@ Key flags for agents:
 - --replace-from-stdin: Replace entire metadata from stdin
 - --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, ChangeOrder:slug (Before:ChangeOrder:slug undoes a promotion), or special values (HeadRevisionNum/LastReleasedRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
-- --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that isn't where it starts is an error
+- --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. An aborted change order is promoted nowhere. With --restore Before:ChangeOrder:<slug>, undo it: the change order must have an AbortedReason, the restored revisions carry its restore tag, a unit already carrying that tag is passed over, the links that follow each restored unit are advanced onto the restored revision, and a unit it never marked is an error
 - --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
 - --merge-base: Base revision for merge (uses same format as --restore)
 - --merge-end: End revision for merge (uses same format as --restore). Also usable with --upgrade or --resolve to stop short of the source's head -- name the ChangeSet or Tag that ends the change you want, so a change still being made upstream is left behind
@@ -214,7 +216,7 @@ func init() {
 	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
-	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. Undo the promotion with --restore Before:ChangeOrder:<slug>")
+	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. With --restore Before:ChangeOrder:<slug> it is the change order being undone instead: it must have an AbortedReason, the restore must name the same change order, the revisions restored are marked with the change order's restore tag, a unit already carrying that tag is passed over, and the merge pointers of the links that follow each restored unit are advanced onto the restored revision. \"cub variant demote\" is that over a whole space")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
@@ -370,15 +372,16 @@ func checkConflictingArgs(args []string) bool {
 
 	if changeorderSlug != "" {
 		// A change order names a change to propagate, so it goes with the operations that
-		// propagate one, and it decided the range when it was created.
-		if !isUpgrade && resolve == "" {
-			failOnError(fmt.Errorf("--change-order can only be used with --upgrade or --resolve"))
+		// propagate one -- and with the one that takes it back out. It decided the range when it
+		// was created, at both ends and in both directions.
+		if !isUpgrade && resolve == "" && restore == "" {
+			failOnError(fmt.Errorf("--change-order can only be used with --upgrade, --resolve, or --restore"))
 		}
 		if mergeEnd != "" {
 			failOnError(fmt.Errorf("--merge-end cannot be used with --change-order; the end of the range is the change order's"))
 		}
 		if tag != "" {
-			failOnError(fmt.Errorf("--tag cannot be used with --change-order; the change order tags the revisions it promotes"))
+			failOnError(fmt.Errorf("--tag cannot be used with --change-order; the change order tags the revisions it promotes and the ones that undo it"))
 		}
 	}
 

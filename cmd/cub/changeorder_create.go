@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -57,6 +58,15 @@ Examples:
   SPACES=$(cub space list --quiet --no-headers -o name --where "Labels.Component = 'my-app'" | paste -sd, -)
   cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 
+  # Or say it by component, which selects the same spaces without listing them
+  cub changeorder create --space my-space bump-base-image --component my-app
+
+  # Create one governed by a change workflow. The workflow says what each stage selects and
+  # in what order; where the change is headed is the component's spaces, defaulting to the
+  # component of the space it is created in.
+  cub changeorder create --space my-space bump-base-image \
+    --change-workflow workflows/my-app-main-line
+
   # End it at an existing boundary rather than at each unit's head. The tag is read to find
   # each unit's end revision; the change order marks with tags of its own.
   cub changeorder create --space my-space bump-base-image --end-tag my-space/release-42-end
@@ -102,6 +112,7 @@ var changeorderCreateArgs struct {
 	variantLabels    []string
 	namePattern      string
 	changeWorkflow   string
+	component        string
 }
 
 func init() {
@@ -115,6 +126,7 @@ func init() {
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "link update type to follow when propagating: UpgradeUnit (the clone lineage, the default) or MergeUnits")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, each unit's head revision is the end. The change order always creates its own start and end tags -- this one is read to find the boundary, recorded as AdoptedEndTagID, and never written to, since the change order also marks the units it carries no changes for")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.component, "component", "", "filter for Component of the Variants to be promoted, defaults to containing Space's Component.")
 
 	// Bulk create specific flags
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -161,6 +173,10 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 		if changeorderCreateArgs.changeWorkflow != "" {
 			return false, errors.New("--change-workflow can only be used with single changeorder creation")
 		}
+
+		if changeorderCreateArgs.component != "" {
+			return false, errors.New("--component can only be used with single changeorder creation")
+		}
 	} else {
 		// Single create mode validation
 		if len(args) != 1 {
@@ -176,10 +192,10 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 			)
 		}
 
-		// Both answer the same question -- where the change is headed -- and the
-		// workflow answers it from its Stages, so an explicit list would contradict it.
-		if changeorderCreateArgs.changeWorkflow != "" && len(changeorderCreateArgs.inScopeSpaces) > 0 {
-			return false, errors.New("--change-workflow and --in-scope-space flags are mutually exclusive")
+		// Both answer the same question -- where the change is headed -- one as a
+		// literal list and one as the filter that selects it.
+		if changeorderCreateArgs.component != "" && len(changeorderCreateArgs.inScopeSpaces) > 0 {
+			return false, errors.New("--component and --in-scope-space flags are mutually exclusive")
 		}
 	}
 
@@ -204,9 +220,8 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 }
 
 // resolveChangeWorkflowUnit resolves --change-workflow to the Unit carrying the
-// ChangeWorkflow definition, which must source the Space the change order is
-// created in: a definition sourcing some other Space would misdescribe where the
-// change starts.
+// ChangeWorkflow definition. The definition does not say where the change
+// starts: the base is the Space the ChangeOrder is created in.
 func resolveChangeWorkflowUnit(identifier string) (*goclientnew.Unit, *changeworkflow.ChangeWorkflow, error) {
 	unit, err := parseEntityIdentifierSingleAsEntity(identifier, EntityTypeUnit, "UnitID,Slug,HeadRevisionNum",
 		apiGetUnitFromSlugInSpace,
@@ -216,8 +231,8 @@ func resolveChangeWorkflowUnit(identifier string) (*goclientnew.Unit, *changewor
 		return nil, nil, errors.Wrap(err, "failed to parse change-workflow")
 	}
 
-	// Read the Revision that will be pinned, not the Unit's data, so what is
-	// validated here is exactly what every later promotion will be judged against.
+	// Read the Revision that will be pinned, not the Unit's data, so what is read
+	// here is exactly what every later promotion will be judged against.
 	changeWorkflow, err := getChangeWorkflowFromUnit(unit.UnitID.String(),
 		strconv.FormatInt(unit.HeadRevisionNum, 10))
 	if err != nil {
@@ -227,33 +242,67 @@ func resolveChangeWorkflowUnit(identifier string) (*goclientnew.Unit, *changewor
 	return unit, changeWorkflow, nil
 }
 
-// changeWorkflowInScopeSpaceIDs computes where a ChangeOrder governed by this
-// workflow is headed: the Space the change starts in, plus every Space each
-// Stage selects. Stage membership is by selector, so this is the rollout the
-// definition describes as it stands when the ChangeOrder is created.
+// changeOrderCreateComponent is the component the change belongs to: the one
+// --component names, and otherwise the Component label of the Space being
+// created in.
 //
-// Supplying it means the ChangeOrder's coverage is measured against the rollout
-// rather than against wherever its Links happen to reach.
-func changeWorkflowInScopeSpaceIDs(sourceSpaceID uuid.UUID,
-	changeWorkflow *changeworkflow.ChangeWorkflow) ([]goclientnew.UUID, error) {
-	inScope := []goclientnew.UUID{sourceSpaceID}
-	seen := map[uuid.UUID]bool{sourceSpaceID: true}
+// The ChangeOrder does not exist yet to be asked, which is why this reads the
+// Space rather than going through changeOrderComponent as a promotion does. The
+// two agree: without the flag both read the same label off the same Space.
+func changeOrderCreateComponent(changeOrderSpaceID uuid.UUID) (string, error) {
+	if changeorderCreateArgs.component != "" {
+		return changeorderCreateArgs.component, nil
+	}
+	return spaceComponent(changeOrderSpaceID)
+}
 
-	for _, stage := range changeWorkflow.Spec.Stages {
-		spaces, err := apiListSpaces(stage.WhereSpace, "SpaceID")
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to resolve the Spaces of Stage '%s'", stage.Name)
-		}
-		for _, space := range spaces {
-			if space == nil || seen[space.SpaceID] {
-				continue
-			}
-			seen[space.SpaceID] = true
-			inScope = append(inScope, space.SpaceID)
+// componentSpaceIDs is where a change to one component is headed: every Space of
+// that component, which is the Variants it is promoted through. The filter is the
+// Component label -- a component being the set of Spaces sharing that label value
+// rather than an entity of its own -- and it is the same term every Stage's
+// selector is conjoined with (stageWhereSpace), so a Stage's membership is always a
+// subset of this.
+//
+// This is the filter a creation can use. InScopeSpaceIDs is not determined until
+// after the ChangeOrder exists, so it cannot select the Spaces of the ChangeOrder
+// being created; the component can, and it says the same thing a Stage's clause
+// says about which component's Spaces are meant.
+func componentSpaceIDs(component string) ([]uuid.UUID, error) {
+	where := fmt.Sprintf("Labels.%s = '%s'", labelComponent, component)
+	spaces, err := apiListSpaces(where, "SpaceID")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve the Spaces of component '%s'", component)
+	}
+	spaceIDs := make([]uuid.UUID, 0, len(spaces))
+	for _, space := range spaces {
+		if space != nil {
+			spaceIDs = append(spaceIDs, space.SpaceID)
 		}
 	}
+	// The Space the ChangeOrder is created in carries the label, so the component
+	// always has at least that one Space. None means the component named does not
+	// exist, which would otherwise leave the change headed nowhere in particular.
+	if len(spaceIDs) == 0 {
+		return nil, errors.Newf("component '%s' has no Spaces, so there is nowhere for the change order to go", component)
+	}
+	return spaceIDs, nil
+}
 
-	return inScope, nil
+// validateChangeWorkflowStages refuses a definition whose Stages cannot be
+// rendered for the change being created, before a ChangeOrder is pinned to one:
+// no Stage may name the component itself, since the component is the
+// ChangeOrder's own and is appended to every Stage's clause (stageWhereSpace).
+//
+// Only the clause is checked, not what it selects. Where the change is headed is
+// the component's Spaces, or the list the client names -- never the union of the
+// Stages -- so there is nothing here to resolve Spaces for.
+func validateChangeWorkflowStages(changeWorkflow *changeworkflow.ChangeWorkflow, component string) error {
+	for i := range changeWorkflow.Spec.Stages {
+		if _, err := stageWhereSpace(&changeWorkflow.Spec.Stages[i], component); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func changeorderCreateCmdRun(cmd *cobra.Command, args []string) error {
@@ -309,6 +358,10 @@ func runSingleChangeOrderCreate(args []string) error {
 		}
 		newBody.EndTagID = endTagID
 	}
+	// Where the change is headed, settled here rather than derived from the
+	// ChangeWorkflow: the Spaces named literally, or the ones the component filter
+	// selects. A ChangeOrder with neither says nothing about where it is going, and
+	// wherever its Links reach is what it covers.
 	if len(changeorderCreateArgs.inScopeSpaces) > 0 {
 		inScopeSpaceIDs, err := resolveChangeOrderInScopeSpaces(changeorderCreateArgs.inScopeSpaces)
 		if err != nil {
@@ -316,28 +369,35 @@ func runSingleChangeOrderCreate(args []string) error {
 		}
 		newBody.InScopeSpaceIDs = inScopeSpaceIDs
 	}
-	if changeorderCreateArgs.changeWorkflow != "" {
-		unit, changeWorkflow, err := resolveChangeWorkflowUnit(changeorderCreateArgs.changeWorkflow)
+	if changeorderCreateArgs.component != "" || changeorderCreateArgs.changeWorkflow != "" {
+		// The base is the Space the ChangeOrder is being created in, so the component
+		// needs no lookup of its own and nothing in the definition to agree with.
+		component, err := changeOrderCreateComponent(spaceID)
 		if err != nil {
 			return err
 		}
-		if changeWorkflow.Spec.Source.Space != selectedSpaceSlug {
-			return errors.Errorf("--change-workflow %s sources Space %q, but the change order is being created in Space %q",
-				changeorderCreateArgs.changeWorkflow, changeWorkflow.Spec.Source.Space, selectedSpaceSlug)
+		if len(newBody.InScopeSpaceIDs) == 0 {
+			inScopeSpaceIDs, err := componentSpaceIDs(component)
+			if err != nil {
+				return err
+			}
+			newBody.InScopeSpaceIDs = inScopeSpaceIDs
 		}
-		// The source Space is the one being created in, which the check above just
-		// established, so it needs no lookup of its own.
-		inScopeSpaceIDs, err := changeWorkflowInScopeSpaceIDs(spaceID, changeWorkflow)
-		if err != nil {
-			return err
-		}
-		newBody.InScopeSpaceIDs = inScopeSpaceIDs
+		if changeorderCreateArgs.changeWorkflow != "" {
+			unit, changeWorkflow, err := resolveChangeWorkflowUnit(changeorderCreateArgs.changeWorkflow)
+			if err != nil {
+				return err
+			}
+			if err := validateChangeWorkflowStages(changeWorkflow, component); err != nil {
+				return err
+			}
 
-		if newBody.Annotations == nil {
-			newBody.Annotations = map[string]string{}
+			if newBody.Annotations == nil {
+				newBody.Annotations = map[string]string{}
+			}
+			newBody.Annotations[changeWorkflowUnitIDAnnotation] = unit.UnitID.String()
+			newBody.Annotations[changeWorkflowRevisionAnnotation] = strconv.FormatInt(unit.HeadRevisionNum, 10)
 		}
-		newBody.Annotations[changeWorkflowUnitIDAnnotation] = unit.UnitID.String()
-		newBody.Annotations[changeWorkflowRevisionAnnotation] = strconv.FormatInt(unit.HeadRevisionNum, 10)
 	}
 
 	// Create params with AllowExists if needed

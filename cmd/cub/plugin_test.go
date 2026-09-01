@@ -1821,3 +1821,108 @@ func TestPluginUpgradeFromLocalPath(t *testing.T) {
 		t.Error("upgrade did not pick up the rebuilt binary")
 	}
 }
+
+// --- an install must produce something runnable -----------------------------
+
+// A repository with no releases installs its source instead. Nothing in a Go
+// project's source is executable, and the default manifest falls back to
+// "main", so the install used to report success and produce a plugin that
+// failed the first time it was run:
+//
+//	cub plugin install confighub/cub-server
+//	No releases found for confighub/cub-server, installing from repository source...
+//	Installed plugin "server" to ~/.confighub/plugins/server
+//	cub server
+//	Failed: unknown command "server" for "cub"
+//
+// "unknown command" describes cub, not the install that went wrong several
+// steps earlier, so the failure is reported as far as possible from its cause.
+func TestInstallRefusesRepoSourceWithNothingToRun(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	// What a Go repository's source looks like: no manifest, no built binary.
+	src := filepath.Join(t.TempDir(), "cub-thing")
+	if err := os.MkdirAll(filepath.Join(src, "cmd", "thing"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range []string{"go.mod", "README.md", "cmd/thing/main.go"} {
+		if err := os.WriteFile(filepath.Join(src, f), []byte("// source\n"), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	err := finalizeStaging(src, filepath.Join(pluginsDir, "thing"), "thing", "thing", "confighub/cub-thing", "", "main")
+	if err == nil {
+		t.Fatal("expected the install to be refused; nothing in it is runnable")
+	}
+	if !strings.Contains(err.Error(), "main") {
+		t.Errorf("the error should name the entrypoint it looked for, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "release") {
+		t.Errorf("the error should point at the actual cause -- source rather than a release -- got: %v", err)
+	}
+	if _, statErr := os.Stat(filepath.Join(pluginsDir, "thing")); statErr == nil {
+		t.Error("a refused install must not leave the plugin behind")
+	}
+}
+
+// A plugin that ships a manifest naming a file it does not contain is broken in
+// a different way, and worth saying so rather than blaming the source.
+func TestInstallRefusesAManifestNamingAMissingEntrypoint(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	src := t.TempDir()
+	manifest := "name: thing\ncommands:\n  - name: thing\n    entrypoint: not-shipped\n"
+	if err := os.WriteFile(filepath.Join(src, "cub-plugin.yaml"), []byte(manifest), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := finalizeStaging(src, filepath.Join(pluginsDir, "thing"), "thing", "thing", "confighub/cub-thing", "", "main")
+	if err == nil {
+		t.Fatal("expected the install to be refused")
+	}
+	if !strings.Contains(err.Error(), "not-shipped") {
+		t.Errorf("the error should name the missing entrypoint, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), "cub-plugin.yaml") {
+		t.Errorf("a shipped manifest is the plugin's mistake and the error should say so, got: %v", err)
+	}
+}
+
+// A directory is not something to exec, and reads as present to a bare stat.
+func TestInstallRefusesAnEntrypointThatIsADirectory(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	src := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(src, "main"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := finalizeStaging(src, filepath.Join(pluginsDir, "thing"), "thing", "thing", "s", "", "main"); err == nil {
+		t.Fatal("a directory named as the entrypoint should be refused")
+	}
+}
+
+// The check must not reject what it is meant to let through.
+func TestInstallAcceptsAPluginThatShipsItsEntrypoint(t *testing.T) {
+	pluginsDir := setupPluginTest(t)
+	resetPluginInstallArgs(t)
+
+	src := t.TempDir()
+	createExecutableFile(t, filepath.Join(src, "main"), "#!/bin/sh\necho hi")
+
+	dest := filepath.Join(pluginsDir, "thing")
+	if err := finalizeStaging(src, dest, "thing", "thing", "s", "", "main"); err != nil {
+		t.Fatalf("a plugin that ships its entrypoint should install: %v", err)
+	}
+	info, err := os.Stat(filepath.Join(dest, "main"))
+	if err != nil {
+		t.Fatalf("entrypoint missing after install: %v", err)
+	}
+	if info.Mode()&0111 == 0 {
+		t.Error("the entrypoint was not made executable")
+	}
+}

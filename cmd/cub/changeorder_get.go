@@ -105,8 +105,15 @@ func changeOrderIsCompleted(changeWorkflow *changeworkflow.ChangeWorkflow, chang
 	lastStage := &changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1]
 
 	// A last Stage selecting nothing is not one the change has reached: the workflow
-	// says Spaces belong there, the same reading getNextWorkflowStage takes.
-	variants, err := apiListSpaces(lastStage.WhereSpace, "*")
+	// says Spaces belong there, the same reading getNextWorkflowStage takes. Which
+	// Spaces those are is the Stage's selector within the ChangeOrder's component,
+	// so a Stage naming the component itself holds the rollout open rather than
+	// completing it -- there is nothing to refuse at this point.
+	component, err := changeOrderComponent(changeOrder)
+	if err != nil {
+		return false
+	}
+	variants, err := stageSpaces(lastStage, component, changeOrder, "*")
 	if err != nil || len(variants) == 0 {
 		return false
 	}
@@ -158,6 +165,9 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if extendedChangeOrder.EndTag != nil {
 		view.Append([]string{"End Tag", extendedChangeOrder.EndTag.Slug})
 	}
+	if extendedChangeOrder.RestoreTag != nil {
+		view.Append([]string{"Restore Tag", extendedChangeOrder.RestoreTag.Slug})
+	}
 	if changeorderDetails.Description != "" {
 		view.Append([]string{"Description", changeorderDetails.Description})
 	}
@@ -176,6 +186,12 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
 	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
 	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})
+	// Where it has been taken back out again, which only a change order somebody has undone has
+	// anything to say about.
+	if len(changeorderDetails.RestoredSpaceIDs) > 0 {
+		view.Append([]string{"Restored Spaces", changeorderSpaceSlugs(changeorderDetails.RestoredSpaceIDs)})
+		view.Append([]string{"Released Restored Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedRestoredSpaceIDs)})
+	}
 
 	view.Render()
 }
@@ -226,7 +242,7 @@ func apiGetChangeOrder(changeorderID string, selectParam string) (*goclientnew.C
 
 func apiGetExtendedChangeOrder(changeorderID string, selectParam string) (*goclientnew.ExtendedChangeOrder, error) {
 	newParams := &goclientnew.GetChangeOrderParams{}
-	include := "SpaceID,StartTagID,EndTagID"
+	include := "SpaceID,StartTagID,EndTagID,RestoreTagID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, nil)
 	if selectValue != "" && selectValue != "*" {

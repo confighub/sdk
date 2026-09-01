@@ -19,7 +19,7 @@ import (
 
 	"github.com/confighub/sdk/configkit/yqkit"
 	"github.com/itchyny/gojq"
-	"gopkg.in/yaml.v3"
+	"sigs.k8s.io/yaml"
 )
 
 // OutputKind enumerates the supported -o/--output formats.
@@ -122,6 +122,13 @@ func PrintJSON(w io.Writer, v any) error {
 func Fprintln(w io.Writer, a ...any) { _, _ = fmt.Fprintln(w, a...) }
 
 // PrintYAML writes v as YAML.
+//
+// It marshals through JSON, so the YAML is the JSON projection of v in YAML
+// syntax: the same field names, the same omissions, the same rendering of a type
+// with a custom JSON marshaler. Marshaling to YAML directly would read `yaml:`
+// struct tags instead, and a model tagged for an API that speaks JSON carries
+// none -- so its fields would come out lowercased with every empty one present,
+// describing the same value differently depending on which flag was passed.
 func PrintYAML(w io.Writer, v any) error {
 	b, err := yaml.Marshal(v)
 	if err != nil {
@@ -173,7 +180,8 @@ func RenderJQ(w io.Writer, v any, expr string) error {
 }
 
 // RenderYQ evaluates a yq expression against v (marshaled to YAML) and writes
-// the result to w.
+// the result to w. The YAML is the same projection [PrintYAML] renders, so a yq
+// expression and a jq expression address a value by the same names.
 func RenderYQ(w io.Writer, v any, expr string) error {
 	b, err := yaml.Marshal(v)
 	if err != nil {

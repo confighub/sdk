@@ -584,6 +584,62 @@ func ResolveFilter(ctx context.Context, c *Client, spaceID goclientnew.UUID, slu
 	return nil, fmt.Errorf("filter %q not found in space %s", slug, spaceID.String())
 }
 
+// ResolveTrigger finds a single Trigger by slug within a space.
+func ResolveTrigger(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Trigger, error) {
+	triggers, err := ListTriggers(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
+	if err != nil {
+		return nil, err
+	}
+	for _, et := range triggers {
+		if et.Trigger != nil && et.Trigger.Slug == slug {
+			return et.Trigger, nil
+		}
+	}
+	return nil, fmt.Errorf("trigger %q not found in space %s", slug, spaceID.String())
+}
+
+// ResolveTarget finds a single Target by slug within a space.
+func ResolveTarget(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Target, error) {
+	targets, err := ListTargets(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
+	if err != nil {
+		return nil, err
+	}
+	for _, et := range targets {
+		if et.Target != nil && et.Target.Slug == slug {
+			return et.Target, nil
+		}
+	}
+	return nil, fmt.Errorf("target %q not found in space %s", slug, spaceID.String())
+}
+
+// ResolveBridgeWorker finds a single worker by slug within a space.
+func ResolveBridgeWorker(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.BridgeWorker, error) {
+	workers, err := ListBridgeWorkers(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
+	if err != nil {
+		return nil, err
+	}
+	for _, ew := range workers {
+		if ew.BridgeWorker != nil && ew.BridgeWorker.Slug == slug {
+			return ew.BridgeWorker, nil
+		}
+	}
+	return nil, fmt.Errorf("worker %q not found in space %s", slug, spaceID.String())
+}
+
+// ResolveAttribute finds a single Attribute by slug within a space.
+func ResolveAttribute(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Attribute, error) {
+	attributes, err := ListAttributes(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
+	if err != nil {
+		return nil, err
+	}
+	for _, ea := range attributes {
+		if ea.Attribute != nil && ea.Attribute.Slug == slug {
+			return ea.Attribute, nil
+		}
+	}
+	return nil, fmt.Errorf("attribute %q not found in space %s", slug, spaceID.String())
+}
+
 // ResolveInvocation finds a single stored Invocation by slug within a space.
 func ResolveInvocation(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Invocation, error) {
 	invs, err := ListInvocations(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})

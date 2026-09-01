@@ -115,3 +115,52 @@ func TestFprintln(t *testing.T) {
 		t.Fatalf("Fprintln wrote %q", got)
 	}
 }
+
+// A model tagged for an API that speaks JSON carries no yaml: tags. Marshaling
+// to YAML directly would lowercase its field names and ignore omitempty, so the
+// same value would describe itself differently depending on which flag was
+// passed. YAML is the JSON projection in YAML syntax.
+type jsonTagged struct {
+	DryRun   bool   `json:"dryRun"`
+	Space    string `json:"space,omitempty"`
+	Replicas int    `json:"replicas"`
+}
+
+func TestYAMLHonorsJSONTags(t *testing.T) {
+	var yb bytes.Buffer
+	if err := PrintYAML(&yb, jsonTagged{DryRun: true, Replicas: 3}); err != nil {
+		t.Fatalf("PrintYAML: %v", err)
+	}
+	got := yb.String()
+	if !strings.Contains(got, "dryRun: true") {
+		t.Errorf("field name not taken from the json tag:\n%s", got)
+	}
+	if strings.Contains(got, "dryrun") {
+		t.Errorf("field name lowercased from the Go name:\n%s", got)
+	}
+	if strings.Contains(got, "space") {
+		t.Errorf("omitempty ignored, so an unset field is present:\n%s", got)
+	}
+	if !strings.Contains(got, "replicas: 3") {
+		t.Errorf("replicas missing:\n%s", got)
+	}
+}
+
+// A yq expression and a jq expression address a value by the same names,
+// because both walk the JSON projection.
+func TestYQAndJQAgreeOnFieldNames(t *testing.T) {
+	v := jsonTagged{DryRun: true, Replicas: 3}
+	var jb, yb bytes.Buffer
+	if err := RenderJQ(&jb, v, ".dryRun"); err != nil {
+		t.Fatalf("RenderJQ: %v", err)
+	}
+	if err := RenderYQ(&yb, v, ".dryRun"); err != nil {
+		t.Fatalf("RenderYQ: %v", err)
+	}
+	if strings.TrimSpace(jb.String()) != "true" {
+		t.Errorf("jq .dryRun = %q", jb.String())
+	}
+	if strings.TrimSpace(yb.String()) != "true" {
+		t.Errorf("yq .dryRun = %q, want the same path jq answers", yb.String())
+	}
+}

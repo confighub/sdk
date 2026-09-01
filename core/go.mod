@@ -9,7 +9,6 @@ require (
 	github.com/alitto/pond v1.9.2
 	github.com/cenkalti/backoff/v5 v5.0.3
 	github.com/cockroachdb/errors v1.11.3
-	github.com/evanphx/json-patch v5.9.11+incompatible
 	github.com/google/cel-go v0.24.1
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.13.3
@@ -27,7 +26,6 @@ require (
 	go.uber.org/zap v1.27.0
 	gopkg.in/yaml.v3 v3.0.1
 	sigs.k8s.io/kustomize/kyaml v0.18.1
-	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -87,6 +85,7 @@ require (
 	google.golang.org/protobuf v1.36.8 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
 // Pin kustomize to v5.5.0

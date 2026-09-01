@@ -2420,7 +2420,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedSpaceIDs, ResolvedSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -2471,7 +2471,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -2586,7 +2586,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedSpaceIDs, ResolvedSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -2637,7 +2637,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -2747,7 +2747,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedSpaceIDs, ResolvedSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -2798,7 +2798,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -2979,7 +2979,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedSpaceIDs, ResolvedSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -3030,7 +3030,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -11629,7 +11629,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedSpaceIDs, ResolvedSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -11680,7 +11680,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -11918,7 +11918,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
 
           The whole string must be query-encoded.
         in: query
@@ -18808,19 +18808,38 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: ChangeOrder to promote, with upgrade or resolve. The change order
-          fixed the range when it was created -- the interval on each source Unit,
-          marked with its Tags -- so it supplies both ends of the merge and merge_end
-          is refused alongside it. A Unit whose source the change order does not cover
-          is passed over rather than failed, which is what lets a bulk upgrade name
-          a whole Space and take only the Units the change is in. A Unit whose last
-          merged revision is not where the change order starts is an error, since
-          merging anyway would replay what it already has or skip what it does not,
-          and with resolve a selected Link whose UpdateType the change order does
-          not follow is an error too. The revisions the promotion creates carry the
-          ChangeOrder, and its start Tag is placed on the revision before them and
-          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+      - description: 'ChangeOrder to promote, with upgrade or resolve, or to undo,
+          with restore. The change order fixed the range when it was created -- the
+          interval on each source Unit, marked with its Tags -- so it supplies both
+          ends of the merge and merge_end is refused alongside it. A Unit whose source
+          the change order does not cover is passed over rather than failed, which
+          is what lets a bulk upgrade name a whole Space and take only the Units the
+          change is in. A Unit whose last merged revision is not where the change
+          order starts is an error, since merging anyway would replay what it already
+          has or skip what it does not, and with resolve a selected Link whose UpdateType
+          the change order does not follow is an error too. The revisions the promotion
+          creates carry the ChangeOrder, and its start Tag is placed on the revision
+          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
           undoes it whether it landed as one revision or as one per source revision.
+          With restore the change order is being undone rather than promoted: the
+          restore must be ''Before:ChangeOrder:'' the same change order, the change
+          order must have an AbortedReason -- undoing a change nobody has said is
+          not coming is a race with whoever is still promoting it -- and a Unit the
+          change order never marked is an error rather than passed over, since naming
+          it says the Unit is part of the undoing. The first restore mints the change
+          order''s restore Tag and records it as RestoreTagID; every restore after
+          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
+          A Unit the change order carried nothing for takes the restore Tag on the
+          revision its start and end Tags are already on, and no revision is made.
+          A Unit already carrying the restore Tag has had the change order taken back
+          out of it and is passed over, since undoing one in a Unit happens once as
+          promoting it into one does -- so the revisions a Unit has taken since it
+          was undone are its own work rather than this undoing''s to drop. Restoring
+          also advances the merge pointers of the Links of the change order''s UpdateType
+          that follow the restored Unit onto the revision the restore made, so a later
+          upgrade does not replay the change that was just taken out; the downstream
+          Units are not restored with it, since each has to be restored and released
+          on its own account.'
         in: query
         name: change_order
         required: false
@@ -19246,19 +19265,38 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: ChangeOrder to promote, with upgrade or resolve. The change order
-          fixed the range when it was created -- the interval on each source Unit,
-          marked with its Tags -- so it supplies both ends of the merge and merge_end
-          is refused alongside it. A Unit whose source the change order does not cover
-          is passed over rather than failed, which is what lets a bulk upgrade name
-          a whole Space and take only the Units the change is in. A Unit whose last
-          merged revision is not where the change order starts is an error, since
-          merging anyway would replay what it already has or skip what it does not,
-          and with resolve a selected Link whose UpdateType the change order does
-          not follow is an error too. The revisions the promotion creates carry the
-          ChangeOrder, and its start Tag is placed on the revision before them and
-          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+      - description: 'ChangeOrder to promote, with upgrade or resolve, or to undo,
+          with restore. The change order fixed the range when it was created -- the
+          interval on each source Unit, marked with its Tags -- so it supplies both
+          ends of the merge and merge_end is refused alongside it. A Unit whose source
+          the change order does not cover is passed over rather than failed, which
+          is what lets a bulk upgrade name a whole Space and take only the Units the
+          change is in. A Unit whose last merged revision is not where the change
+          order starts is an error, since merging anyway would replay what it already
+          has or skip what it does not, and with resolve a selected Link whose UpdateType
+          the change order does not follow is an error too. The revisions the promotion
+          creates carry the ChangeOrder, and its start Tag is placed on the revision
+          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
           undoes it whether it landed as one revision or as one per source revision.
+          With restore the change order is being undone rather than promoted: the
+          restore must be ''Before:ChangeOrder:'' the same change order, the change
+          order must have an AbortedReason -- undoing a change nobody has said is
+          not coming is a race with whoever is still promoting it -- and a Unit the
+          change order never marked is an error rather than passed over, since naming
+          it says the Unit is part of the undoing. The first restore mints the change
+          order''s restore Tag and records it as RestoreTagID; every restore after
+          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
+          A Unit the change order carried nothing for takes the restore Tag on the
+          revision its start and end Tags are already on, and no revision is made.
+          A Unit already carrying the restore Tag has had the change order taken back
+          out of it and is passed over, since undoing one in a Unit happens once as
+          promoting it into one does -- so the revisions a Unit has taken since it
+          was undone are its own work rather than this undoing''s to drop. Restoring
+          also advances the merge pointers of the Links of the change order''s UpdateType
+          that follow the restored Unit onto the revision the restore made, so a later
+          upgrade does not replay the change that was just taken out; the downstream
+          Units are not restored with it, since each has to be restored and released
+          on its own account.'
         in: query
         name: change_order
         required: false
@@ -25484,19 +25522,38 @@ paths:
         schema:
           format: uuid
           type: string
-      - description: ChangeOrder to promote, with upgrade or resolve. The change order
-          fixed the range when it was created -- the interval on each source Unit,
-          marked with its Tags -- so it supplies both ends of the merge and merge_end
-          is refused alongside it. A Unit whose source the change order does not cover
-          is passed over rather than failed, which is what lets a bulk upgrade name
-          a whole Space and take only the Units the change is in. A Unit whose last
-          merged revision is not where the change order starts is an error, since
-          merging anyway would replay what it already has or skip what it does not,
-          and with resolve a selected Link whose UpdateType the change order does
-          not follow is an error too. The revisions the promotion creates carry the
-          ChangeOrder, and its start Tag is placed on the revision before them and
-          its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid'
+      - description: 'ChangeOrder to promote, with upgrade or resolve, or to undo,
+          with restore. The change order fixed the range when it was created -- the
+          interval on each source Unit, marked with its Tags -- so it supplies both
+          ends of the merge and merge_end is refused alongside it. A Unit whose source
+          the change order does not cover is passed over rather than failed, which
+          is what lets a bulk upgrade name a whole Space and take only the Units the
+          change is in. A Unit whose last merged revision is not where the change
+          order starts is an error, since merging anyway would replay what it already
+          has or skip what it does not, and with resolve a selected Link whose UpdateType
+          the change order does not follow is an error too. The revisions the promotion
+          creates carry the ChangeOrder, and its start Tag is placed on the revision
+          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
           undoes it whether it landed as one revision or as one per source revision.
+          With restore the change order is being undone rather than promoted: the
+          restore must be ''Before:ChangeOrder:'' the same change order, the change
+          order must have an AbortedReason -- undoing a change nobody has said is
+          not coming is a race with whoever is still promoting it -- and a Unit the
+          change order never marked is an error rather than passed over, since naming
+          it says the Unit is part of the undoing. The first restore mints the change
+          order''s restore Tag and records it as RestoreTagID; every restore after
+          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
+          A Unit the change order carried nothing for takes the restore Tag on the
+          revision its start and end Tags are already on, and no revision is made.
+          A Unit already carrying the restore Tag has had the change order taken back
+          out of it and is passed over, since undoing one in a Unit happens once as
+          promoting it into one does -- so the revisions a Unit has taken since it
+          was undone are its own work rather than this undoing''s to drop. Restoring
+          also advances the merge pointers of the Links of the change order''s UpdateType
+          that follow the restored Unit onto the revision the restore made, so a later
+          upgrade does not replay the change that was just taken out; the downstream
+          Units are not restored with it, since each has to be restored and released
+          on its own account.'
         in: query
         name: change_order
         required: false
@@ -29634,6 +29691,16 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        ReleasedRestoredSpaceIDs:
+          description: 'ReleasedRestoredSpaceIDs is where the undoing has been released:
+            the Spaces in RestoredSpaceIDs whose Units are released at or past the
+            Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State
+            reports as RestoreReleased. Derived when the ChangeOrder is read.'
+          items:
+            $ref: '#/components/schemas/UUID'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         ReleasedSpaceIDs:
           description: 'ReleasedSpaceIDs is where the ChangeOrder has been released:
             the Spaces in scope whose Units in the Space''s release are applied at
@@ -29648,6 +29715,24 @@ components:
           description: 'ResolvedSpaceIDs is where the ChangeOrder has been fully propagated
             to: the Spaces in scope whose Links of its UpdateType have all merged
             it, plus the Space it resides in. Derived when the ChangeOrder is read.'
+          items:
+            $ref: '#/components/schemas/UUID'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+        RestoreTagID:
+          description: RestoreTagID is the Tag marking the Revisions that undid the
+            ChangeOrder. The first restore mints it; every restore after that marks
+            with the same Tag. Empty until something has been restored.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RestoredSpaceIDs:
+          description: 'RestoredSpaceIDs is where the ChangeOrder has been undone:
+            the Spaces whose Units all carry the restore Tag. Derived when the ChangeOrder
+            is read.'
           items:
             $ref: '#/components/schemas/UUID'
           readOnly: true
@@ -29692,8 +29777,11 @@ components:
           description: 'State is how far the ChangeOrder has got: New until a Space
             other than its own has taken it, InProgress while some have and some have
             not, Resolved once every Space in scope has, Released once every Space
-            in scope has released what it took, and Aborted whenever AbortedReason
-            is set. Derived when the ChangeOrder is read.'
+            in scope has released what it took, Aborted whenever AbortedReason is
+            set, Restored once every Space that had taken it has been restored to
+            the Revisions before it, and RestoreReleased once every Space that had
+            released it has released the restored Revisions. Derived when the ChangeOrder
+            is read.'
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
@@ -30012,6 +30100,8 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Organization:
           $ref: '#/components/schemas/Organization'
+        RestoreTag:
+          $ref: '#/components/schemas/Tag'
         Space:
           $ref: '#/components/schemas/Space'
         StartTag:

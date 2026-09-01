@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -28,6 +29,7 @@ var variantPromoteArgs struct {
 	targetStage       string
 	dryRun            bool
 	squash            bool
+	force             bool
 }
 
 var variantPromoteCmd = &cobra.Command{
@@ -77,11 +79,14 @@ change order is:
     the change order was fixed is outside it: those are listed rather than cloned, and
     promoting without --change-order adds them.
   - The promotion is undone in one step, however many revisions it made:
-    "cub unit update --patch --space <variant> --where \"Slug LIKE '%'\"
-     --restore Before:ChangeOrder:<space>/<change-order>".
-  - Promoting is idempotent. A unit already carrying the change order's end tag has taken the
-    change, whatever has happened to it since, so it is passed over -- which is what makes
-    repeating a promotion that landed partway finish it rather than refuse.
+    "cub variant demote <space> --change-order <space>/<change-order>", once the change order
+    has an AbortedReason saying the change is not coming.
+  - Promoting is idempotent. A change order reaches a unit once and only once: a unit already
+    carrying its end tag has taken the change, whatever has happened to it since, so it is passed
+    over -- which is what makes running a promotion that landed partway again finish it rather
+    than refuse. An aborted change order is not promoted anywhere at all, since aborting is the
+    record that the change is not coming; "cub variant demote" is what takes it back out of the
+    spaces that did take it.
 
 --target-stage promotes a whole stage rather than one space, and takes no positional space. A
 promotion is defined over a stage -- the spaces a change reaches together -- and naming one space
@@ -97,8 +102,8 @@ workflow is an error rather than a guess.
     of it, so naming a later stage while an earlier one is unsatisfied is refused.
   - A stage is promoted one variant at a time and can land partway. A variant that fails is
     reported and the ones after it are still promoted, and what comes back says how many of them
-    landed. Promoting again is what repairs a partial stage: a variant that already took the
-    change is no longer behind its upstream, so it is not selected again.
+    landed. Running the stage again is what repairs a partial one: a variant that already took
+    the change is no longer behind its upstream, so it is not selected again.
 
 Without --target-stage, --change-order alone advances the change one stage: into the first stage
 it has not reached, which is where it is going next. Reaching a stage is having reached every
@@ -145,6 +150,7 @@ func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow to promote into, promoting every variant the stage selects instead of one named space: it requires --change-order and takes no positional space, the gates of the stage ahead are checked once for the whole stage, and a variant that fails is reported without stopping the ones after it. Without it, --change-order alone advances the change into the first stage it has not reached")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.dryRun, "dry-run", false, "preview the units that would be upgraded and added without changing anything")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.squash, "squash", false, "merge each unit's range as one rebased diff in one revision instead of walking it: by default a promotion re-runs the upstream's recorded function invocations against each unit where it can, and records one revision per upstream revision that has an effect there")
+	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "ignore ChangeWorkflow prerequisite checks and force promotion to downstream Variant")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
 }
@@ -184,6 +190,9 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 func variantPromoteStage() error {
 	changeOrder, err := resolveChangeOrder(variantPromoteArgs.changeorderSlug)
 	if err != nil {
+		return err
+	}
+	if err := checkChangeOrderIsPromotable(changeOrder); err != nil {
 		return err
 	}
 	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
@@ -234,7 +243,11 @@ func variantPromoteStage() error {
 		return err
 	}
 
-	variants, err := apiListSpaces(currentStage.WhereSpace, "*")
+	component, err := changeOrderComponent(changeOrder)
+	if err != nil {
+		return err
+	}
+	variants, err := stageSpaces(currentStage, component, changeOrder, "*")
 	if err != nil {
 		return err
 	}
@@ -309,6 +322,9 @@ func variantPromoteSpace(spaceSlug string) error {
 	if err != nil {
 		return err
 	}
+	if err := checkChangeOrderIsPromotable(changeOrder); err != nil {
+		return err
+	}
 
 	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
 	if err != nil {
@@ -319,14 +335,17 @@ func variantPromoteSpace(spaceSlug string) error {
 			return errors.Newf("change order '%s' has completed ChangeWorkflow '%s', so there is nothing left to promote",
 				changeOrder.Slug, changeWorkflow.Name)
 		}
-		// Refuse to promote until the previous stage is already running the change. The gate runs on a
-		// dry run too: a preview that ignored it would describe a promotion that cannot happen.
-		currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(downstreamSpace, changeWorkflow)
-		if err != nil {
-			return err
-		}
-		if err := validateStageEntryGates(currentStage, previousStage, changeOrder); err != nil {
-			return err
+
+		if !variantPromoteArgs.force {
+			// Refuse to promote until the previous stage is already running the change. The gate runs on a
+			// dry run too: a preview that ignored it would describe a promotion that cannot happen.
+			currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(downstreamSpace, changeWorkflow, changeOrder)
+			if err != nil {
+				return err
+			}
+			if err := validateStageEntryGates(currentStage, previousStage, changeOrder); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -422,6 +441,105 @@ func getChangeWorkflowFromUnit(changeWorkflowUnitID, changeWorkflowRevision stri
 	return changeWorkflow, nil
 }
 
+// componentPredicate matches any mention of the component label in a Stage's
+// selector, whatever the operator it is used with: what a Stage may not do is name
+// the component at all, not name it with a particular comparison.
+var componentPredicate = regexp.MustCompile(`(?i)\bLabels\.` + labelComponent + `\b`)
+
+// spaceComponent is the component a Space belongs to: its "Component" label. A
+// component is not an entity of its own -- it is the set of Spaces sharing that
+// label value -- so the label is the whole of it.
+//
+// A Space with no Component label leaves a ChangeWorkflow's Stages with nothing to
+// confine them to, which is an error rather than Stages selecting every component's
+// Spaces at once.
+func spaceComponent(spaceID uuid.UUID) (string, error) {
+	space, err := apiGetSpace(spaceID.String(), "*")
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to fetch Space %s", spaceID)
+	}
+	component := space.Labels[labelComponent]
+	if component == "" {
+		return "", errors.Newf("Space '%s' has no %s label, so there is no component for a ChangeWorkflow's stages to select within",
+			space.Slug, labelComponent)
+	}
+	return component, nil
+}
+
+// changeOrderComponent is the component the change belongs to: the component of the
+// Space the ChangeOrder lives in, which is the base the change was authored in.
+//
+// This is the one place a promotion learns its component. A ChangeWorkflow does not
+// name one and a Stage's selector may not either (stageWhereSpace), so the change
+// itself is what says which component's Spaces the Stages mean.
+func changeOrderComponent(changeOrder *goclientnew.ChangeOrder) (string, error) {
+	component, err := spaceComponent(changeOrder.SpaceID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to determine the component of change order '%s'", changeOrder.Slug)
+	}
+	return component, nil
+}
+
+// stageWhereSpace renders the clause selecting a Stage's Spaces: the Stage's own
+// selector conjoined with the component the ChangeOrder is for. The component is
+// therefore declared once, by the change being promoted, rather than restated by
+// every Stage of every definition -- which is what lets one definition be cloned to
+// give another component the same shape of rollout.
+//
+// A selector naming the component itself is refused rather than conjoined. Stating
+// it again either agrees, and changes nothing, or disagrees -- and a Stage that then
+// selects no Space at all is not obviously wrong: it promotes into nothing and
+// reports nothing. Refusing keeps that failure loud, and it is not hypothetical, a
+// definition written against the older format carrying the predicate and a clone of
+// one into another component being exactly how a Stage goes silently empty.
+func stageWhereSpace(stage *changeworkflow.ChangeWorkflowStage, component string) (string, error) {
+	if componentPredicate.MatchString(stage.WhereSpace) {
+		return "", errors.Newf("stage '%s' names Labels.%s in its whereSpace %q: the component is the change order's own and is appended to every stage's selector, so remove the predicate",
+			stage.Name, labelComponent, stage.WhereSpace)
+	}
+	componentWhere := fmt.Sprintf("Labels.%s = '%s'", labelComponent, component)
+	if stage.WhereSpace == "" {
+		return componentWhere, nil
+	}
+	return stage.WhereSpace + " AND " + componentWhere, nil
+}
+
+// stageSpaces is the Spaces a Stage covers for one ChangeOrder: the Stage's own
+// selector, the ChangeOrder's component, and the ChangeOrder's InScopeSpaceIDs.
+// Two of the three come from the change rather than the definition, so the same
+// definition resolves differently under different ChangeOrders, and a Space a
+// Stage selects but the change is not headed for is not part of that Stage.
+//
+// The in-scope list is applied to what came back rather than conjoined onto the
+// clause. A change headed for a large fleet renders an IN list past the maximum
+// filter size, and listing by the Stage's own expression is the clearer request
+// besides.
+//
+// An empty list is no restriction: a ChangeOrder given none names a change
+// without saying where it is headed, which is not the same as saying every Stage
+// is empty.
+func stageSpaces(stage *changeworkflow.ChangeWorkflowStage, component string,
+	changeOrder *goclientnew.ChangeOrder, selectFields string) ([]*goclientnew.Space, error) {
+	whereSpace, err := stageWhereSpace(stage, component)
+	if err != nil {
+		return nil, err
+	}
+	spaces, err := apiListSpaces(whereSpace, selectFields)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve the Spaces of Stage '%s'", stage.Name)
+	}
+	if len(changeOrder.InScopeSpaceIDs) == 0 {
+		return spaces, nil
+	}
+	inScope := make([]*goclientnew.Space, 0, len(spaces))
+	for _, space := range spaces {
+		if space != nil && slices.Contains(changeOrder.InScopeSpaceIDs, space.SpaceID) {
+			inScope = append(inScope, space)
+		}
+	}
+	return inScope, nil
+}
+
 // getCurrentAndPreviousWorkflowStages finds the Stage the Space being promoted
 // into belongs to, along with the Stage ahead of it whose gates have to pass
 // first. Membership is by selector, so each Stage's selector is evaluated in
@@ -432,13 +550,19 @@ func getChangeWorkflowFromUnit(changeWorkflowUnitID, changeWorkflowRevision stri
 func getCurrentAndPreviousWorkflowStages(
 	space *goclientnew.Space,
 	changeWorkflow *changeworkflow.ChangeWorkflow,
+	changeOrder *goclientnew.ChangeOrder,
 ) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
 	var previous *changeworkflow.ChangeWorkflowStage
+
+	component, err := changeOrderComponent(changeOrder)
+	if err != nil {
+		return nil, nil, err
+	}
 
 	for i := range changeWorkflow.Spec.Stages {
 		current := &changeWorkflow.Spec.Stages[i]
 
-		spaces, err := apiListSpaces(current.WhereSpace, "*")
+		spaces, err := stageSpaces(current, component, changeOrder, "*")
 		if err != nil {
 			return nil, nil, err
 		}
@@ -479,12 +603,17 @@ func getNextWorkflowStage(
 ) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
 	var previous *changeworkflow.ChangeWorkflowStage
 
+	component, err := changeOrderComponent(changeOrder)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	for i := range changeWorkflow.Spec.Stages {
 		current := &changeWorkflow.Spec.Stages[i]
 
-		spaces, err := apiListSpaces(current.WhereSpace, "SpaceID")
+		spaces, err := stageSpaces(current, component, changeOrder, "SpaceID")
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to resolve the Spaces of Stage '%s'", current.Name)
+			return nil, nil, err
 		}
 
 		// A Stage selecting nothing is not one the change has reached: the workflow
@@ -660,7 +789,7 @@ func validateStageEntryGates(
 	changeOrder *goclientnew.ChangeOrder,
 ) error {
 	// No previous Stage means this is the workflow's first, so the change is
-	// promoting from the base Variant that source.space names -- where it was
+	// promoting from the base Variant the ChangeOrder lives in -- where it was
 	// authored and so already is. Nothing precedes it that could have taken or
 	// released anything, so the promotion just goes ahead. This Stage's own
 	// prerequisites are not its entry gates either: they gate the Stage after it.
@@ -668,7 +797,11 @@ func validateStageEntryGates(
 		return nil
 	}
 
-	previousStageVariants, err := apiListSpaces(previousStage.WhereSpace, "*")
+	component, err := changeOrderComponent(changeOrder)
+	if err != nil {
+		return err
+	}
+	previousStageVariants, err := stageSpaces(previousStage, component, changeOrder, "*")
 	if err != nil {
 		return err
 	}
@@ -721,6 +854,19 @@ func resolveChangeOrder(identifier string) (*goclientnew.ChangeOrder, error) {
 		return nil, fmt.Errorf("failed to get change order: %w", err)
 	}
 	return changeOrder, nil
+}
+
+// checkChangeOrderIsPromotable refuses a change order that was aborted.
+//
+// The server refuses it too, per unit. Saying it here means the caller hears it before anything is
+// cloned or upgraded, and hears it once rather than once per unit -- and it is the whole of what a
+// promotion of an aborted change order would do, since every unit of it would be refused.
+func checkChangeOrderIsPromotable(changeOrder *goclientnew.ChangeOrder) error {
+	if changeOrder == nil || changeOrder.AbortedReason == "" {
+		return nil
+	}
+	return errors.Newf("change order '%s' was aborted (%s), so it is not being promoted anywhere else; clear its AbortedReason to put it back on its way, or create a change order for the change you mean to promote",
+		changeOrder.Slug, changeOrder.AbortedReason)
 }
 
 // promoteUpstreamSpaceID reads the UpstreamSpaceID annotation stamped by
