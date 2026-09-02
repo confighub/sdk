@@ -95,6 +95,7 @@ func init() {
 	addStandardDisplayFlags(k8sRefreshCmd)
 	enableDisplayMutationsFlag(k8sRefreshCmd)
 	addClearanceFlag(k8sRefreshCmd)
+	addGuardFlag(k8sRefreshCmd)
 	k8sRefreshCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	k8sRefreshCmd.Flags().BoolVar(&k8sRefreshArgs.dryRun, "dry-run", false, "report what would change without writing it")
 	k8sCmd.AddCommand(k8sRefreshCmd)
@@ -295,10 +296,19 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 		priorUnits = savePriorUnitInfoInSpace(spaceID, where, false)
 	}
 
+	clearance, err := clearanceJSON()
+	if err != nil {
+		return err
+	}
+	guards, err := guardsJSON()
+	if err != nil {
+		return err
+	}
 	resp, err := invokeFunctionsOnUnits(&invokeArgs{
 		Where:     where,
 		DryRun:    k8sRefreshArgs.dryRun,
-		Clearance: clearanceJSON(),
+		Clearance: clearance,
+		Guards:    guards,
 		Body:      body,
 	})
 	if err != nil {
@@ -342,10 +352,17 @@ func matchesResourceName(info api.ResourceInfo, name string) bool {
 	return found && withoutScope == name
 }
 
-// reportRefreshConflicts prints the paths patch-mutations declined to write -- paths the
-// unit protects as local overrides, or that no longer resolve against its data. They are the
-// answer to "the cluster has this value but the unit still doesn't", so they are reported
-// rather than left in an output blob nobody reads.
+// reportRefreshConflicts prints the changes from the cluster the refresh did not write --
+// paths the unit protects as local overrides, paths a guard withheld, and paths that no longer
+// resolve against its data. They are the answer to "the cluster has this value but the unit
+// still doesn't", so they are reported rather than left in an output blob nobody reads.
+//
+// Two sources, because the two filters run at different moments and neither set contains the
+// other. Protection and path resolution are applied by patch-mutations itself, and come back in
+// the invocation's outputs. Guards are applied by the server as it writes the invocation's
+// result, and come back on the response. Reading only the outputs -- which is what this did --
+// reported a guarded path as refreshed, because the mutations describe the change that was
+// proposed rather than the one that landed.
 func reportRefreshConflicts(resp *[]goclientnew.FunctionInvocationsResponse) {
 	if quiet {
 		return
@@ -354,16 +371,8 @@ func reportRefreshConflicts(resp *[]goclientnew.FunctionInvocationsResponse) {
 		if !r.Success {
 			continue
 		}
-		encoded, ok := r.Outputs[string(api.OutputTypeMutationConflictList)]
-		if !ok || encoded == "" {
-			continue
-		}
-		decoded, err := base64.StdEncoding.DecodeString(encoded)
-		if err != nil {
-			continue
-		}
-		var conflicts api.MutationConflictList
-		if err := json.Unmarshal(decoded, &conflicts); err != nil || len(conflicts) == 0 {
+		conflicts := refreshConflictsFor(r)
+		if len(conflicts) == 0 {
 			continue
 		}
 		tprint("%d change(s) from the cluster were not written:", len(conflicts))
@@ -380,4 +389,48 @@ func reportRefreshConflicts(resp *[]goclientnew.FunctionInvocationsResponse) {
 			tprintRaw(line)
 		}
 	}
+}
+
+// refreshConflictsFor gathers one unit's withheld changes from both places they are reported,
+// dropping an entry that appears in both so a path is named once.
+func refreshConflictsFor(r goclientnew.FunctionInvocationsResponse) api.MutationConflictList {
+	var conflicts api.MutationConflictList
+	if encoded, ok := r.Outputs[string(api.OutputTypeMutationConflictList)]; ok && encoded != "" {
+		if decoded, err := base64.StdEncoding.DecodeString(encoded); err == nil {
+			var fromOutputs api.MutationConflictList
+			if err := json.Unmarshal(decoded, &fromOutputs); err == nil {
+				conflicts = append(conflicts, fromOutputs...)
+			}
+		}
+	}
+	if r.Conflicts != nil {
+		seen := map[string]bool{}
+		for _, c := range conflicts {
+			seen[refreshConflictKey(c)] = true
+		}
+		for _, c := range *r.Conflicts {
+			converted := api.MutationConflict{
+				Reason:   api.ConflictReason(c.Reason),
+				Path:     api.ResolvedPath(c.Path),
+				Details:  c.Details,
+				Resource: api.ResourceInfo{},
+			}
+			if c.Resource != nil {
+				converted.Resource = api.ResourceInfo{
+					ResourceType: api.ResourceType(c.Resource.ResourceType),
+					ResourceName: api.ResourceName(c.Resource.ResourceName),
+				}
+			}
+			if seen[refreshConflictKey(converted)] {
+				continue
+			}
+			conflicts = append(conflicts, converted)
+		}
+	}
+	return conflicts
+}
+
+func refreshConflictKey(c api.MutationConflict) string {
+	return string(c.Resource.ResourceType) + "\x00" + string(c.Resource.ResourceName) +
+		"\x00" + string(c.Path) + "\x00" + string(c.Reason)
 }

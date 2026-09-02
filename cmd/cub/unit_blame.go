@@ -85,7 +85,9 @@ Columns:
   WHEN      how long ago
 
 A field marked "*" is a protected local override: this unit claims it, and a merge from
-upstream leaves it alone.
+upstream leaves it alone. A field marked "!" is guarded: reasons are recorded for the value
+it holds, and an operation has to be cleared for them before it may overwrite it. Use
+--verbose to see the reasons. A field can be both.
 
 Every toolchain is read: a Kubernetes manifest, and equally an AppConfig JSON, YAML,
 TOML, INI, Properties, or Env unit, or a ConfigHub one. The unit's data is read in its
@@ -165,7 +167,10 @@ type blameField struct {
 	// upstream walk matches a resource a variant has renamed.
 	resourceNameCore string
 	Protected        bool
-	Chain            []*blameOrigin `json:",omitempty"`
+	// Guards are the reasons recorded for this field: its own, and every annotated ancestor's,
+	// which is what an operation writing here has to be cleared for.
+	Guards map[string]string `json:",omitempty"`
+	Chain  []*blameOrigin    `json:",omitempty"`
 }
 
 // Origin is the hop that actually set the value: the end of the chain.
@@ -220,9 +225,19 @@ func blameUnit(unit *goclientnew.Unit, upstreamMax int) ([]*blameField, error) {
 
 	resolver := newBlameResolver(upstreamMax)
 	fields := make([]*blameField, 0, len(flattened))
+	// The annotation table travels on the Unit, so no second fetch. A Unit that has never been
+	// guarded has none, which is the common case and costs a nil check per field.
+	var annotations goclientnew.PathAnnotationList
+	if unit.PathAnnotations != nil {
+		annotations = *unit.PathAnnotations
+	}
+
 	for _, f := range flattened {
 		info, protected := creditPath(*mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath)
 		f.Protected = protected
+		// Keyed by the authored path, which is the form the annotation table stores: its
+		// paths are canonical, so they carry no anchor to strip.
+		f.Guards = blameGuardsForPath(annotations, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
 		if info != nil {
 			chain, err := resolver.walk(unit, *info, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath, 0)
 			if err != nil {

@@ -224,6 +224,7 @@ func init() {
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	addClearanceFlag(unitUpdateCmd)
+	addGuardFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().BoolVar(&squashMerge, "squash", false, "merge the range as one rebased diff in one revision instead of walking it: by default a merge re-runs the upstream's recorded function invocations against this unit where it can, so each change lands where this unit's own structure puts it, and records one revision per upstream revision that has an effect here; only valid with --upgrade, --merge-source, or --resolve")
 	unitUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API instead of update API")
 	unitUpdateCmd.Flags().StringVar(&mergeSource, "merge-source", "", "source unit for 3-way merge (slug or UUID)")
@@ -582,8 +583,19 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if protectChange {
 		newParams.Protect = &protectChange
 	}
-	if clearance := clearanceJSON(); clearance != "" {
+	clearance, err := clearanceJSON()
+	if err != nil {
+		return err
+	}
+	if clearance != "" {
 		newParams.Clearance = &clearance
+	}
+	guards, err := guardsJSON()
+	if err != nil {
+		return err
+	}
+	if guards != "" {
+		newParams.Guards = &guards
 	}
 	if squashMerge {
 		newParams.Squash = &squashMerge
@@ -1040,8 +1052,19 @@ func runBulkUnitUpdate() error {
 	if protectChange {
 		params.Protect = &protectChange
 	}
-	if clearance := clearanceJSON(); clearance != "" {
+	clearance, err := clearanceJSON()
+	if err != nil {
+		return err
+	}
+	if clearance != "" {
 		params.Clearance = &clearance
+	}
+	guards, err := guardsJSON()
+	if err != nil {
+		return err
+	}
+	if guards != "" {
+		params.Guards = &guards
 	}
 	if squashMerge {
 		params.Squash = &squashMerge

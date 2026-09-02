@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	changeWorkflowAPIVersion = "confighub.com/v1"
-	changeWorkflowKind       = "ChangeWorkflow"
+	APIVersion = "confighub.com/v1"
+	Kind       = "ChangeWorkflow"
 )
 
 // ChangeWorkflow is a KRM object, so it takes its apiVersion, kind and metadata
@@ -33,9 +33,9 @@ type ChangeWorkflowSpec struct {
 type ChangeWorkflowStage struct {
 	Name          string   `json:"name" yaml:"name"`
 	WhereSpace    string   `json:"whereSpace" yaml:"whereSpace"`
-	Prerequisites []string `json:"prerequisites" yaml:"prerequisites"`
+	Prerequisites []string `json:"prerequisites,omitempty" yaml:"prerequisites,omitempty"`
 }
 
 type ChangeWorkflowFinalStage struct {
-	Prerequisites []string `json:"prerequisites" yaml:"prerequisites"`
+	Prerequisites []string `json:"prerequisites,omitempty" yaml:"prerequisites,omitempty"`
 }

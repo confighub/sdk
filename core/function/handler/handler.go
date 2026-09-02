@@ -8,10 +8,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
 	"regexp"
 	"strings"
+	"text/template"
 
 	"log/slog"
 
@@ -417,6 +417,11 @@ type templateScope struct {
 	Params map[string]any
 }
 
+// Rendered with text/template, not html/template: the output is an argument value that
+// becomes configuration data, never markup. html/template would contextually escape it,
+// turning a quote in a parameter value into &#34; and silently corrupting the resulting
+// configuration. TransformPaths link templates render the same kind of value with
+// text/template for the same reason.
 func evaluateTemplate(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, params map[string]any, valueTemplate string) (string, error) {
 	f := template.FuncMap{}
 	if resourceProvider != nil {

@@ -83,6 +83,7 @@ func init() {
 	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
 	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ApplyGates (default, use with --patch for bulk)")
 	addTriggerClearanceFlag(triggerUpdateCmd)
+	addTriggerGuardFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
 	triggerUpdateCmd.Flags().BoolVar(&unprotectTrigger, "unprotect", false, "return this trigger to the default: it claims nothing it writes")
 	triggerUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the trigger function")
@@ -214,6 +215,11 @@ func runBulkTriggerUpdate() error {
 		invocationIDStr = invocationID.String()
 	}
 
+	parsedClearance, parsedGuards, err := parseTriggerPolicyFlags()
+	if err != nil {
+		return err
+	}
+
 	// Create enhancer function for trigger-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
 		// Add enable/disable flags
@@ -231,11 +237,11 @@ func runBulkTriggerUpdate() error {
 		}
 
 		// Add protect/unprotect flags
-		if len(triggerClearance) > 0 {
-			clearance, cerr := parseClearanceSpecs(triggerClearance)
-			if cerr == nil {
-				patchMap["Clearance"] = clearance
-			}
+		if parsedClearance != nil {
+			patchMap["Clearance"] = parsedClearance
+		}
+		if parsedGuards != nil {
+			patchMap["Guards"] = parsedGuards
 		}
 		if protectTrigger {
 			patchMap["Protect"] = true
@@ -369,6 +375,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			newArgs = parseFunctionArguments(invokeArgs)
 		}
 
+		parsedClearance, parsedGuards, perr := parseTriggerPolicyFlags()
+		if perr != nil {
+			return perr
+		}
+
 		// Build patch data using BuildPatchData with trigger enhancer
 		triggerEnhancer := func(patchData map[string]interface{}) {
 			// Add trigger-specific fields
@@ -378,11 +389,11 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchData["Warn"] = false
 			}
 
-			if len(triggerClearance) > 0 {
-				clearance, cerr := parseClearanceSpecs(triggerClearance)
-				if cerr == nil {
-					patchData["Clearance"] = clearance
-				}
+			if parsedClearance != nil {
+				patchData["Clearance"] = parsedClearance
+			}
+			if parsedGuards != nil {
+				patchData["Guards"] = parsedGuards
 			}
 			if protectTrigger {
 				patchData["Protect"] = true
@@ -499,6 +510,19 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	} else if unprotectTrigger {
 		currentTrigger.Trigger.Protect = false
 	}
+	// The full-update path assigns these as well as the two patch paths, since all three
+	// accept the flags and a field the command takes has to reach the entity on every route
+	// that takes it.
+	fullClearance, fullGuards, policyErr := parseTriggerPolicyFlags()
+	if policyErr != nil {
+		return policyErr
+	}
+	if fullClearance != nil {
+		currentTrigger.Trigger.Clearance = &fullClearance
+	}
+	if fullGuards != nil {
+		currentTrigger.Trigger.Guards = &fullGuards
+	}
 	if workerSlug != "" {
 		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
 			workerSlug,
@@ -603,4 +627,34 @@ func patchTrigger(spaceID uuid.UUID, triggerID uuid.UUID, patchData []byte) (*go
 	}
 
 	return triggerRes.JSON200, nil
+}
+
+// parseTriggerPolicyFlags parses --clearance and --guard once, up front, so that a malformed
+// flag is refused before anything is written. The patch enhancers cannot report an error -- they
+// take only the map they fill -- and dropping a field a malformed flag produced would report
+// success on an update that did not make the change asked for.
+//
+// A nil result means the flag was not given, which is distinct from an empty one: an empty
+// clearance clears nothing and is how a clearance is removed.
+func parseTriggerPolicyFlags() (goclientnew.Clearance, goclientnew.GuardStamp, error) {
+	var clearance goclientnew.Clearance
+	var guards goclientnew.GuardStamp
+	if len(triggerClearance) > 0 {
+		parsed, err := parseClearanceSpecs(triggerClearance)
+		if err != nil {
+			return nil, nil, err
+		}
+		clearance = parsed
+	}
+	if len(triggerGuards) > 0 {
+		parsed, err := parseGuardStampSpecs(triggerGuards)
+		if err != nil {
+			return nil, nil, err
+		}
+		if parsed == nil {
+			parsed = goclientnew.GuardStamp{}
+		}
+		guards = parsed
+	}
+	return clearance, guards, nil
 }

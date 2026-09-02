@@ -113,6 +113,9 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	if clearance := formatClearance(linkDetails.Clearance); clearance != "" {
 		view.Append([]string{"Clearance", clearance})
 	}
+	if guards := formatGuardStamp(linkDetails.Guards); guards != "" {
+		view.Append([]string{"Guards", guards})
+	}
 	if linkDetails.WhereMutation != "" {
 		view.Append([]string{"Where Mutation", linkDetails.WhereMutation})
 	}

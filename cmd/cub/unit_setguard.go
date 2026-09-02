@@ -43,6 +43,12 @@ guard the resource as a whole. Repeat either flag to edit several paths or
 resources at once, and combine them to add some guards and retire others in one
 revision. Setting guards creates a new revision only if they change.
 
+A change can state its own reasons instead, without naming where: cub unit
+update --guard, cub function do --guard, and the Guards field on a link or a
+trigger take a bare KEY=VALUE and record it on the paths that change wrote --
+the guard analogue of --protect. Use this command to guard a path no change of
+yours is writing, and to remove a guard, which no change can do.
+
 Examples:
 `+"```"+`
   # Say why this image is what it is: a link maintains it

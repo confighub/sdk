@@ -48,9 +48,18 @@ func displayBlame(fields []*blameField) {
 		}
 
 		origin := f.Origin()
-		protectedMark := ""
+		// One column for both statements about a field, because they answer the same
+		// question at different resolutions and a field can carry both: "*" says a merge
+		// leaves this alone, "!" says there are recorded reasons an operation must be
+		// cleared for. The reasons themselves are in --verbose, since a key=value pair does
+		// not fit a marker and a table wide enough for it would push out the columns that
+		// answer the question asked.
+		mark := ""
 		if f.Protected {
-			protectedMark = "*"
+			mark += "*"
+		}
+		if len(f.Guards) > 0 {
+			mark += "!"
 		}
 		setBy, whereSlug, rev, when := "", "", "", ""
 		if origin != nil {
@@ -62,7 +71,7 @@ func displayBlame(fields []*blameField) {
 			when = blameAgo(origin.When)
 		}
 		table.Append([]string{
-			protectedMark,
+			mark,
 			f.Path,
 			truncateWithEllipsis(blameOneLine(f.Value), blameMaxValueWidth),
 			setBy,
@@ -82,6 +91,10 @@ func displayBlame(fields []*blameField) {
 		tprintRaw("")
 		tprintRaw(fmt.Sprintf("%s* a protected local override: a merge from upstream leaves it alone%s",
 			colorDim, colorReset))
+		if anyGuarded(fields) {
+			tprintRaw(fmt.Sprintf("%s! guarded: reasons are recorded for this value, and an operation must be cleared for them before overwriting it (--verbose to see them)%s",
+				colorDim, colorReset))
+		}
 	}
 }
 
@@ -89,6 +102,11 @@ func displayBlame(fields []*blameField) {
 // every hop from this unit out to where the value was set, each with who made the
 // change and what they called it.
 func displayBlameDetail(f *blameField) {
+	// The reasons first: they are what an operation about to write here has to know, and
+	// unlike the chain they are about the value now rather than about how it got here.
+	if len(f.Guards) > 0 {
+		tprintRaw(fmt.Sprintf("    %sguarded: %s%s", colorDim, formatBlameGuards(f.Guards), colorReset))
+	}
 	for i, origin := range f.Chain {
 		indent := strings.Repeat("  ", i+1)
 		who := origin.User
@@ -143,4 +161,15 @@ func blameAgo(t time.Time) string {
 	default:
 		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
 	}
+}
+
+// anyGuarded reports whether any field carries a guard, so the legend explains a marker the
+// reader can actually see rather than one this unit never uses.
+func anyGuarded(fields []*blameField) bool {
+	for _, f := range fields {
+		if len(f.Guards) > 0 {
+			return true
+		}
+	}
+	return false
 }

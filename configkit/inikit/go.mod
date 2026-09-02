@@ -5,7 +5,7 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/core v0.4.6
+	github.com/confighub/sdk/core v0.0.0
 	github.com/go-ini/ini v1.67.0
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )
@@ -46,6 +46,7 @@ require (
 )
 
 replace (
+	github.com/confighub/sdk/core => ../../core/
 
 	// Fix CVE-2022-28948
 	gopkg.in/yaml.v3 => gopkg.in/yaml.v3 v3.0.1

@@ -2255,6 +2255,200 @@ func TestUnguardedPathsAreUntouchedByTheFilter(t *testing.T) {
 		"a Unit that has never been guarded merges exactly as it did before")
 }
 
+// resourceGuardTable builds a one-resource annotation table whose guards sit on the resource
+// as a whole rather than on any path -- the empty-path entry, which covers every path in the
+// resource that has no more specific one.
+func resourceGuardTable(entries map[string]string) api.PathAnnotationList {
+	table := guardTable(nil)
+	table[0].ResourceAnnotations = api.PathAnnotations{api.AnnotationKindGuard: entries}
+	return table
+}
+
+// TestGuardSurvivesAnInsertionAheadOfIt is the guard half of what
+// TestMergeProtectionSurvivesAnInsertionAheadOfIt states for protection, and it is the test
+// under the design's load-bearing claim that annotation paths need no positional anchor.
+//
+// A guard is stored canonically -- ?name=app.image, never ?name=app;@0.image -- precisely so
+// that inserting a sidecar ahead of the container it names does not move the guard off it.
+// Protection needed a canonicalization pass and a duplicate-entry rule to get here, because
+// its record is rewritten by every write; a guard's is not, so the property should hold by
+// construction. "Should hold by construction" is the kind of claim that stops holding
+// silently, which is why it is stated here.
+func TestGuardSurvivesAnInsertionAheadOfIt(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	withImage := func(containers, tag string) string {
+		d := baseDep()
+		d.Containers = strings.Replace(containers, "nginx:1.19", tag, 1)
+		return d.String()
+	}
+	base := baseDep().String()
+	downstream := withImage(oneContainer, "nginx:custom")
+	// The upstream adds a sidecar ahead of app and bumps app's image in the same change, so
+	// app moves from index 0 to index 1 while the patch also targets it.
+	upstream := withImage(sidecarContainer+oneContainer, "nginx:1.21")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec.containers.?name=app.image": {"owner": "transform-link"},
+		}),
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "fluentd:1.0", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+		"the upstream's sidecar lands: it is not what the guard is about")
+	assert.Equal(t, "nginx:custom", merged[0].Path("spec.template.spec.containers.1.image").Data(),
+		"the guarded image is still the downstream's, at the position the insertion moved it to")
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonGuarded})
+
+	// And the clearance still reaches the element after it moved, or the guard would be a
+	// wall rather than a question: a merge that knows the reason writes the path.
+	guards.Clearance = api.Clearance{{
+		Key: "owner", Operator: api.ClearanceOperatorIn, Values: []string{"transform-link"},
+	}}
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "nginx:1.21", merged[0].Path("spec.template.spec.containers.1.image").Data(),
+		"a cleared merge writes the moved element")
+	assert.Empty(t, conflicts)
+}
+
+// TestGuardHoldsALeafUnderACoarsePatch is the guard half of TestMergeCoarsePatchProtectsALeaf.
+//
+// The source's diff is one entry for a whole block, because that is what a block rewrite
+// produces. Splitting it so that a guard on one field inside the block withholds that field
+// and nothing else is the part yamlkit owns, and it is a separate code path from the leaf
+// case: the entry the filter is looking at names an ancestor of the guarded path, not the
+// path itself.
+func TestGuardHoldsALeafUnderACoarsePatch(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	route := func(tls string) string {
+		return "apiVersion: traefik.io/v1alpha1\nkind: IngressRoute\nmetadata:\n  name: web\n  namespace: ns\nspec:\n  routes:\n  - match: Host(`a.example.com`)\n  tlsConfig: " + tls
+	}
+	base := route("none\n")
+	downstream := route("\n    secretName: local-tls\n")
+	upstream := route("\n    secretName: upstream-tls\n    caBundle: up-ca\n")
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+	require.Contains(t, patch[0].PathMutationMap, api.ResolvedPath("spec.tlsConfig"),
+		"the case only means anything while the source's entry is the whole block")
+
+	// The guard names the one field, and the table is not derived from any diff -- which is
+	// the difference from protection, where the operator has to narrow a coarse entry first.
+	table := guardTable(map[api.ResolvedPath]map[string]string{
+		"spec.tlsConfig.secretName": {"policy-exception": "local-tls"},
+	})
+	table[0].Resource = api.ResourceInfo{
+		ResourceType:             "traefik.io/v1alpha1/IngressRoute",
+		ResourceName:             "ns/web",
+		ResourceNameWithoutScope: "web",
+	}
+
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, downstream), nil, patch, nil,
+		&yamlkit.GuardFilter{Annotations: table}, provider, nil)
+	require.NoError(t, err)
+	tls := merged[0].Path("spec.tlsConfig")
+	require.NotNil(t, tls)
+	assert.Equal(t, "local-tls", fmt.Sprintf("%v", tls.Path("secretName").Data()),
+		"the guarded field keeps the value whose reason the merge does not know")
+	assert.Equal(t, "up-ca", fmt.Sprintf("%v", tls.Path("caBundle").Data()),
+		"and the rest of the block still comes from the source")
+	assertConflictReasons(t, conflicts, []api.ConflictReason{api.ConflictReasonGuarded})
+	for _, conflict := range conflicts {
+		assert.Equal(t, api.ResolvedPath("spec.tlsConfig.secretName"), conflict.Path,
+			"the conflict names the field that was withheld, not the block it sat in")
+	}
+}
+
+// TestGuardAtTheResourceLevelWithholdsEveryPathInIt is the guard half of
+// TestProtection_ResourceLevelProtectedSkipsResource: the empty-path entry is the coarsest
+// statement there is, and every path in the resource inherits it.
+//
+// It is also the entry a change stamps when it writes a resource as a whole, so what it
+// covers afterwards is worth stating rather than inferring from GuardsForPath alone.
+func TestGuardAtTheResourceLevelWithholdsEveryPathInIt(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	base := baseDep().String()
+	upstream := func() string {
+		d := baseDep()
+		d.Replicas = 7
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", "nginx:1.21", 1)
+		return d.String()
+	}()
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	guards := &yamlkit.GuardFilter{
+		Annotations: resourceGuardTable(map[string]string{"policy-exception": "pinned"}),
+	}
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 2, merged[0].Path("spec.replicas").Data(),
+		"a path with no entry of its own inherits the resource's guard")
+	assert.Equal(t, "nginx:1.19", merged[0].Path("spec.template.spec.containers.0.image").Data())
+	require.NotEmpty(t, conflicts)
+	for _, conflict := range conflicts {
+		assert.Equal(t, api.ConflictReasonGuarded, conflict.Reason)
+	}
+
+	// Clearing the resource's reason clears every path under it, there being one reason.
+	guards.Clearance = api.Clearance{{
+		Key: "policy-exception", Operator: api.ClearanceOperatorIn, Values: []string{"pinned"},
+	}}
+	merged, conflicts, err = yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 7, merged[0].Path("spec.replicas").Data())
+	assert.Equal(t, "nginx:1.21", merged[0].Path("spec.template.spec.containers.0.image").Data())
+	assert.Empty(t, conflicts)
+}
+
+// TestNearestGuardDecidesTheValueUnderTheFilter states through a merge what
+// TestGuardsForPathNearestWinsOnTheSameKey states about the lookup: an ancestor and a path
+// naming the same key are one statement about one class of reason, and the nearer one is
+// the more specific. A clearance written for the ancestor's value must not, therefore,
+// clear the path -- which is the whole point of a value distinguishing cases within a class.
+func TestNearestGuardDecidesTheValueUnderTheFilter(t *testing.T) {
+	provider := k8skit.NewK8sResourceProvider()
+	base := baseDep().String()
+	upstream := func() string {
+		d := baseDep()
+		d.Containers = strings.Replace(oneContainer, "nginx:1.19", "nginx:1.21", 1)
+		return d.String()
+	}()
+
+	patch, err := yamlkit.ComputeMutations(parseCorpus(t, base), parseCorpus(t, upstream), 1, provider)
+	require.NoError(t, err)
+
+	guards := &yamlkit.GuardFilter{
+		Annotations: guardTable(map[api.ResolvedPath]map[string]string{
+			"spec.template.spec":                            {"owner": "platform"},
+			"spec.template.spec.containers.?name=app.image": {"owner": "transform-link"},
+		}),
+		// Cleared for the subtree's owner, not the image's.
+		Clearance: api.Clearance{{
+			Key: "owner", Operator: api.ClearanceOperatorIn, Values: []string{"platform"},
+		}},
+	}
+	merged, conflicts, err := yamlkit.PatchMutationsGuarded(parseCorpus(t, base), nil, patch, nil,
+		guards, provider, nil)
+	require.NoError(t, err)
+	assert.Equal(t, "nginx:1.19", merged[0].Path("spec.template.spec.containers.0.image").Data(),
+		"the nearer guard decides, so a clearance for the ancestor's value does not cover it")
+	require.Len(t, conflicts, 1)
+	require.NotNil(t, conflicts[0].Guard)
+	assert.Equal(t, "transform-link", conflicts[0].Guard.Value,
+		"and the report names the reason that actually stopped the write")
+}
+
 // ---------------------------------------------------------------------------
 // Properties
 // ---------------------------------------------------------------------------

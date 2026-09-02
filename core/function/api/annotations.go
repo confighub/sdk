@@ -326,6 +326,52 @@ func ValidateResourceGuards(guards []ResourceGuards) error {
 	return nil
 }
 
+// GuardStamp is the set of guards a change states about what it writes, as a key/value map of
+// the same shape a path's Guard annotations already have. It is the guard analogue of the
+// Protect bit: Protect claims what an operation wrote, a stamp says why it wrote it, and both
+// land on the paths the operation produced without either having to name them.
+//
+// Add and overwrite only. A stamp has no way to say "remove this key", because a removal is a
+// decision about the Unit's policy rather than a by-product of writing a value -- and an
+// operation that runs repeatedly, a Trigger above all, would otherwise retire policy every time
+// it ran. Removal stays with set-guard.
+type GuardStamp map[string]string
+
+// ValidateGuardStamp checks the guards a change proposes to stamp: legal keys and values, and
+// nothing in ConfigHub's reserved namespace. The per-path and per-Unit count bounds are not
+// checked here for the reason ValidateResourceGuards does not check them either -- what they
+// bound is the stored table, which the caller validates after stamping.
+func ValidateGuardStamp(stamp GuardStamp) error {
+	if len(stamp) == 0 {
+		return nil
+	}
+	return ValidateUserPathAnnotations(PathAnnotations{AnnotationKindGuard: map[string]string(stamp)})
+}
+
+// MergeGuardStamps combines two stamps, later winning per key. Nil-safe and allocation-free
+// when either side is empty, which is the ordinary case: most operations carry one stamp or
+// none.
+//
+// Last writer wins rather than union-with-conflict because a stamp is a map, which is what §3
+// chose it to be: a Trigger that says owner=trigger and an Invocation that says owner=library
+// are two statements about one class of reason, and the nearer one is the one that ran.
+func MergeGuardStamps(earlier, later GuardStamp) GuardStamp {
+	if len(later) == 0 {
+		return earlier
+	}
+	if len(earlier) == 0 {
+		return later
+	}
+	merged := make(GuardStamp, len(earlier)+len(later))
+	for key, value := range earlier {
+		merged[key] = value
+	}
+	for key, value := range later {
+		merged[key] = value
+	}
+	return merged
+}
+
 // SetGuards applies guard edits to a table and returns the result. The table is modified in
 // place where it already has entries and extended where it does not; the caller supplies a copy
 // if it needs the original.

@@ -472,3 +472,93 @@ func TestApplyGuardDeltaIsIdempotent(t *testing.T) {
 	_, changed = api.ApplyGuardDelta(downstream, resource, &delta)
 	assert.False(t, changed, "applying the same delta again is not a change")
 }
+
+// A change can state the reasons it has for what it writes -- the guard analogue of --protect.
+// The stamp itself is validated like any other user-supplied annotation; what is its own is the
+// merge rule, which decides what a Trigger running a stored Invocation ends up stating.
+
+func TestValidateGuardStampTakesTheAnnotationRules(t *testing.T) {
+	assert.NoError(t, api.ValidateGuardStamp(nil), "no guards is not an error; it is the default")
+	assert.NoError(t, api.ValidateGuardStamp(api.GuardStamp{"owner": "transform-link"}))
+
+	err := api.ValidateGuardStamp(api.GuardStamp{"confighub-owner": "x"})
+	require.Error(t, err, "a change must not be able to author in the reserved namespace")
+	assert.Contains(t, err.Error(), "reserved")
+
+	err = api.ValidateGuardStamp(api.GuardStamp{"owner": "a,b"})
+	require.Error(t, err, "a comma would not survive the In (a, b) form a clearance is written in")
+}
+
+func TestMergeGuardStampsLetsTheNearerStatementWin(t *testing.T) {
+	invocation := api.GuardStamp{"owner": "library", "policy-exception": "host-network"}
+	trigger := api.GuardStamp{"owner": "postclone"}
+
+	merged := api.MergeGuardStamps(invocation, trigger)
+	assert.Equal(t, api.GuardStamp{
+		"owner":            "postclone",
+		"policy-exception": "host-network",
+	}, merged, "the later statement wins its own key and leaves the others alone")
+
+	// Neither input is disturbed: the Invocation is stored and runs under other Triggers.
+	assert.Equal(t, "library", invocation["owner"])
+	assert.Len(t, trigger, 1)
+}
+
+func TestMergeGuardStampsIsNilSafe(t *testing.T) {
+	stamp := api.GuardStamp{"owner": "transform-link"}
+	assert.Equal(t, stamp, api.MergeGuardStamps(stamp, nil))
+	assert.Equal(t, stamp, api.MergeGuardStamps(nil, stamp))
+	assert.Nil(t, api.MergeGuardStamps(nil, nil))
+}
+
+func TestSetGuardsStampsPathsAndTheResourceAsAWhole(t *testing.T) {
+	// What a stamp looks like by the time it reaches the table: one ResourceGuards per
+	// resource the operation wrote, keyed by the paths its Mutations produced, with the empty
+	// path standing for the resource as a whole.
+	resource := api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "default/app"}
+	imagePath := api.ResolvedPath("spec.template.spec.containers.?name=app.image")
+
+	table := api.SetGuards(nil, []api.ResourceGuards{{
+		Resource: resource,
+		Set: map[api.ResolvedPath]map[string]string{
+			"":        {"owner": "transform-link"},
+			imagePath: {"owner": "transform-link"},
+		},
+	}}, func(p api.ResolvedPath) api.ResolvedPath { return p })
+
+	require.Len(t, table, 1)
+	assert.Equal(t, map[string]string{"owner": "transform-link"},
+		table[0].ResourceAnnotations[api.AnnotationKindGuard])
+	assert.Equal(t, map[string]string{"owner": "transform-link"},
+		table[0].PathAnnotationMap[imagePath][api.AnnotationKindGuard])
+
+	// A path with no entry of its own inherits the resource-level statement, which is why
+	// stamping the resource entry is worth doing at all.
+	assert.Equal(t, map[string]string{"owner": "transform-link"},
+		table[0].GuardsForPath("spec.replicas"))
+}
+
+func TestSetGuardsOverwritesAKeyAndLeavesTheRestAlone(t *testing.T) {
+	resource := api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "default/app"}
+	path := api.ResolvedPath("spec.template.spec")
+	identity := func(p api.ResolvedPath) api.ResolvedPath { return p }
+
+	table := api.SetGuards(nil, []api.ResourceGuards{{
+		Resource: resource,
+		Set: map[api.ResolvedPath]map[string]string{
+			path: {"owner": "trigger", "policy-exception": "host-network"},
+		},
+	}}, identity)
+
+	// A second change states a different owner. Add and overwrite only: the exception it says
+	// nothing about survives, which is what makes a stamp safe to run repeatedly.
+	table = api.SetGuards(table, []api.ResourceGuards{{
+		Resource: resource,
+		Set:      map[api.ResolvedPath]map[string]string{path: {"owner": "link"}},
+	}}, identity)
+
+	assert.Equal(t, map[string]string{
+		"owner":            "link",
+		"policy-exception": "host-network",
+	}, table[0].PathAnnotationMap[path][api.AnnotationKindGuard])
+}

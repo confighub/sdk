@@ -117,6 +117,14 @@ type FunctionInvocation struct {
 	// them. An execution combines it with the clearance of whatever drove it -- the Trigger,
 	// the Link, or the API call -- by union.
 	Clearance Clearance `json:",omitempty" description:"Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"`
+	// Guards are the reasons this invocation states about the paths it writes, recorded on
+	// the Unit's path annotations so a later operation has to be cleared for them.
+	//
+	// Per invocation, so a stored Invocation names the reason its own function is run for:
+	// an invocation that maintains a field says so once, rather than every Trigger running it
+	// restating it. An execution combines it with the guards of whatever drove it, later
+	// winning per key.
+	Guards GuardStamp `json:",omitempty" description:"Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key"`
 }
 
 type OtherDataSource string

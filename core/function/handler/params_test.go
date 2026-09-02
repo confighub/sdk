@@ -20,10 +20,10 @@ func TestEvaluateTemplate_Params(t *testing.T) {
 	params := map[string]any{"verb": "create", "role": "app-reader"}
 
 	cases := []struct {
-		name     string
-		tmpl     string
-		want     string
-		wantErr  bool
+		name    string
+		tmpl    string
+		want    string
+		wantErr bool
 	}{
 		{name: "param", tmpl: "{{ .Params.verb }}", want: "create"},
 		{name: "param in kv", tmpl: "verb={{ .Params.verb }}", want: "verb=create"},
@@ -95,4 +95,39 @@ func TestArgumentEvaluatorsSeeConflicts(t *testing.T) {
 	got, err = evaluateTemplate(nil, clean, nil, "{{ len .Conflicts }}")
 	require.NoError(t, err)
 	assert.Equal(t, "0", got)
+}
+
+// TestEvaluateTemplate_NoHTMLEscaping pins the rendering to text/template. Argument
+// values become configuration data, not markup, so the characters HTML would escape have
+// to survive verbatim: html/template renders a quote as &#34;, which does not fail — it
+// silently writes corrupt configuration that only shows up in a diff. A parameterized
+// Invocation supplying a JSON array, a URL with a query string, or a shell redirect all
+// depend on this.
+func TestEvaluateTemplate_NoHTMLEscaping(t *testing.T) {
+	fc := &api.FunctionContext{UnitSlug: "my-unit"}
+	params := map[string]any{
+		"json":    `["argoproj.io","apps"]`,
+		"url":     "https://example.com/a?x=1&y=2",
+		"compare": "a < b && c > d",
+		"apostro": "it's",
+	}
+
+	cases := []struct {
+		name string
+		tmpl string
+		want string
+	}{
+		{name: "double quotes", tmpl: "{{ .Params.json }}", want: `["argoproj.io","apps"]`},
+		{name: "ampersand", tmpl: "{{ .Params.url }}", want: "https://example.com/a?x=1&y=2"},
+		{name: "angle brackets", tmpl: "{{ .Params.compare }}", want: "a < b && c > d"},
+		{name: "single quote", tmpl: "{{ .Params.apostro }}", want: "it's"},
+		{name: "in kv form", tmpl: "verbs={{ .Params.json }}", want: `verbs=["argoproj.io","apps"]`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := evaluateTemplate(nil, fc, params, tc.tmpl)
+			require.NoError(t, err)
+			assert.Equal(t, tc.want, got)
+		})
+	}
 }

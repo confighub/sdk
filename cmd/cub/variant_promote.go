@@ -746,6 +746,18 @@ func checkChangeOrderIsReleasedToVariant(changeOrder *goclientnew.ChangeOrder, v
 //
 // A prerequisite nothing knows how to check cannot be satisfied, so it is an error
 // rather than a name passed over.
+// The prerequisites a Stage may declare. What each one checks is decided by the
+// promotion that evaluates it, below; authoring refuses anything else before a
+// definition is stored, so the two cannot come to name different sets.
+const (
+	prerequisiteReleased = "released"
+	prerequisiteHealthy  = "healthy"
+)
+
+// knownPrerequisites is what a definition may name, in the order they are offered
+// to someone writing one.
+var knownPrerequisites = []string{prerequisiteReleased, prerequisiteHealthy}
+
 func checkVariantPrerequisites(
 	prerequisites []string,
 	changeOrder *goclientnew.ChangeOrder,
@@ -758,11 +770,11 @@ func checkVariantPrerequisites(
 
 	for _, prerequisite := range prerequisites {
 		switch prerequisite {
-		case "healthy": // validate live-status reflects the intended change is healthy
+		case prerequisiteHealthy: // validate live-status reflects the intended change is healthy
 			if err := checkVariantIsHealthy(variant, variantName); err != nil {
 				return err
 			}
-		case "released": // validate the change has been released to this Variant
+		case prerequisiteReleased: // validate the change has been released to this Variant
 			if err := checkChangeOrderIsReleasedToVariant(changeOrder, variant, stage, variantName); err != nil {
 				return err
 			}

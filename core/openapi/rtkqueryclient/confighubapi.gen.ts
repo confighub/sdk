@@ -467,6 +467,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1264,6 +1265,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             change_set_id: queryArg.changeSetId,
             subgroup: queryArg.subgroup,
             other_data_source: queryArg.otherDataSource,
@@ -1712,6 +1714,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -1742,6 +1745,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -1800,6 +1804,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             merge_base: queryArg.mergeBase,
             merge_external_source: queryArg.mergeExternalSource,
             merge_enable_subtraction: queryArg.mergeEnableSubtraction,
@@ -2277,6 +2282,7 @@ const injectedRtkApi = api
             dry_run: queryArg.dryRun,
             protect: queryArg.protect,
             clearance: queryArg.clearance,
+            guards: queryArg.guards,
             squash: queryArg.squash,
             upgrade: queryArg.upgrade,
             restore: queryArg.restore,
@@ -4974,6 +4980,8 @@ export type InvokeFunctionsOnOrgApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -5757,6 +5765,10 @@ export type BulkPatchLinksApiArg = {
     DownstreamPaths?: (object | null)[] | null;
     DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
+    /** Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
@@ -5937,6 +5949,10 @@ export type BulkCreateLinksApiArg = {
     DownstreamPaths?: (object | null)[] | null;
     DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
+    /** Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
@@ -7889,6 +7905,8 @@ export type InvokeFunctionsApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions */
   changeSetId?: string;
   /** User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved. */
@@ -8297,6 +8315,10 @@ export type PatchLinkApiArg = {
     DownstreamPaths?: (object | null)[] | null;
     DownstreamSetters?: (object | null)[] | null;
     FromUnitID?: string | null;
+    /** Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
       [key: string]: string | null;
@@ -9034,6 +9056,10 @@ export type PatchTriggerApiArg = {
     FailOpenAfter?: number | null;
     /** Function name */
     FunctionName?: string | null;
+    /** Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     InvocationID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -9241,6 +9267,8 @@ export type PatchUnitApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -9373,6 +9401,8 @@ export type UpdateUnitApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -9495,6 +9525,8 @@ export type UploadUnitDataApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made. */
   mergeBase?: string;
   /** Identifier of the external source for merge-on-update. When set, computes mutations between the last MergeExternal revision and the provided data, then patches the current unit data with those mutations. */
@@ -11326,6 +11358,10 @@ export type BulkPatchTriggersApiArg = {
     FailOpenAfter?: number | null;
     /** Function name */
     FunctionName?: string | null;
+    /** Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     InvocationID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -11502,6 +11538,10 @@ export type BulkCreateTriggersApiArg = {
     FailOpenAfter?: number | null;
     /** Function name */
     FunctionName?: string | null;
+    /** Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect. */
+    Guards?: {
+      [key: string]: string | null;
+    } | null;
     InvocationID?: string | null;
     /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
     Labels?: {
@@ -11790,6 +11830,8 @@ export type BulkPatchUnitsApiArg = {
   protect?: boolean;
   /** The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards. */
   clearance?: string;
+  /** The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). */
+  guards?: string;
   /** Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field. */
   squash?: boolean;
   /** Upgrade the unit to the latest version of its upstream unit */
@@ -13588,12 +13630,16 @@ export type ClearanceRequirement = {
   Values?: string[];
 };
 export type Clearance = ClearanceRequirement[];
+export type GuardStamp = {
+  [key: string]: string;
+};
 export type FunctionInvocation = {
   /** Function arguments */
   Arguments?: FunctionArgument[] | null;
   Clearance?: Clearance;
   /** Function name */
   FunctionName?: string;
+  Guards?: GuardStamp;
   /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
   Params?: {
     [key: string]: any;
@@ -14555,13 +14601,35 @@ export type FilterCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Filter?: FilterRead;
 };
-export type ArrayElementAliasMap = {
-  [key: string]: {
+export type WithheldGuard = {
+  /** The guard key the operation was not cleared for */
+  Key?: string;
+  /** True when the clearance forbade this key with DoesNotExist rather than simply not covering it */
+  Precondition?: boolean;
+  /** The guard value */
+  Value?: string;
+};
+export type GuardDelta = {
+  /** The path whose guards changed; empty for the resource as a whole */
+  Path?: string;
+  /** Guard keys removed */
+  Remove?: string[];
+  /** Guard keys added or changed, with their new values */
+  Set?: {
     [key: string]: string;
   };
 };
-export type ArrayOrderMap = {
-  [key: string]: string[];
+export type ResourceInfo = {
+  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
+  ResourceCategory?: string;
+  /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
+  ResourceName?: string;
+  /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
+  ResourceNameStableCore?: string;
+  /** Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name> */
+  ResourceNameWithoutScope?: string;
+  /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
+  ResourceType?: string;
 };
 export type MutationType = 'Add' | 'Delete' | 'Update' | 'Replace' | 'None';
 export type MutationInfo = {
@@ -14575,20 +14643,32 @@ export type MutationInfo = {
   /** Removed configuration data if MutationType is Delete and otherwise the new data */
   Value?: string;
 };
+export type MutationConflict = {
+  /** Explanation the Reason alone cannot carry, such as the error text of a failed replay */
+  Details?: string;
+  Guard?: WithheldGuard;
+  GuardChange?: GuardDelta;
+  /** Path of the mutation; empty for resource-level conflicts */
+  Path?: string;
+  /** Why the mutation was dropped */
+  Reason?: string;
+  Resource?: ResourceInfo;
+  Source?: MutationInfo;
+  Target?: MutationInfo;
+  /** ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve) */
+  UnitID?: string;
+};
+export type MutationConflictList = MutationConflict[];
+export type ArrayElementAliasMap = {
+  [key: string]: {
+    [key: string]: string;
+  };
+};
+export type ArrayOrderMap = {
+  [key: string]: string[];
+};
 export type MutationMap = {
   [key: string]: MutationInfo;
-};
-export type ResourceInfo = {
-  /** Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig */
-  ResourceCategory?: string;
-  /** Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <metadata.namespace>/<metadata.name>; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID */
-  ResourceName?: string;
-  /** Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip */
-  ResourceNameStableCore?: string;
-  /** Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form <metadata.name> */
-  ResourceNameWithoutScope?: string;
-  /** Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form <apiVersion>/<kind> (aka group-version-kind) */
-  ResourceType?: string;
 };
 export type ResourceMutation = {
   /** Names (with scopes, if any) used in current and prior revisions of this resource */
@@ -14609,6 +14689,7 @@ export type ResourceMutationList = ResourceMutation[];
 export type FunctionInvocationsResponse = {
   /** The resulting configuration data; present only when the invocation changed it */
   ConfigData?: string;
+  Conflicts?: MutationConflictList;
   /** SHA256 of the resulting configuration data, whether or not ConfigData is present */
   DataHash?: string;
   Error?: ResponseError;
@@ -14792,40 +14873,6 @@ export type InvocationCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Invocation?: InvocationRead;
 };
-export type WithheldGuard = {
-  /** The guard key the operation was not cleared for */
-  Key?: string;
-  /** True when the clearance forbade this key with DoesNotExist rather than simply not covering it */
-  Precondition?: boolean;
-  /** The guard value */
-  Value?: string;
-};
-export type GuardDelta = {
-  /** The path whose guards changed; empty for the resource as a whole */
-  Path?: string;
-  /** Guard keys removed */
-  Remove?: string[];
-  /** Guard keys added or changed, with their new values */
-  Set?: {
-    [key: string]: string;
-  };
-};
-export type MutationConflict = {
-  /** Explanation the Reason alone cannot carry, such as the error text of a failed replay */
-  Details?: string;
-  Guard?: WithheldGuard;
-  GuardChange?: GuardDelta;
-  /** Path of the mutation; empty for resource-level conflicts */
-  Path?: string;
-  /** Why the mutation was dropped */
-  Reason?: string;
-  Resource?: ResourceInfo;
-  Source?: MutationInfo;
-  Target?: MutationInfo;
-  /** ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve) */
-  UnitID?: string;
-};
-export type MutationConflictList = MutationConflict[];
 export type PathAnnotations = {
   [key: string]: {
     [key: string]: string;
@@ -15137,6 +15184,7 @@ export type Link = {
   DownstreamSetters?: ParameterizedFunction[];
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
+  Guards?: GuardStamp;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
   Labels?: {
     [key: string]: string;
@@ -15205,6 +15253,7 @@ export type LinkRead = {
   EntityType?: string;
   /** Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit. */
   FromUnitID: string;
+  Guards?: GuardStamp;
   /** SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution. */
   Hash?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -16034,6 +16083,7 @@ export type Trigger = {
   FailOpenAfter?: number | null;
   /** Function name */
   FunctionName?: string;
+  Guards?: GuardStamp;
   /** InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation. */
   InvocationID?: string;
   /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
@@ -16103,6 +16153,7 @@ export type TriggerRead = {
   FailOpenAfter?: number | null;
   /** Function name */
   FunctionName?: string;
+  Guards?: GuardStamp;
   /** SHA256 hash of the trigger's specification fields, used to detect changes. */
   Hash?: string;
   /** InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation. */

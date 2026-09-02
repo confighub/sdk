@@ -4802,6 +4802,15 @@
             }
           },
           {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "change_set_id",
             "in": "query",
             "description": "Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions",
@@ -6296,6 +6305,15 @@
                     "format": "uuid",
                     "nullable": true
                   },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.",
+                    "nullable": true
+                  },
                   "Labels": {
                     "type": "object",
                     "additionalProperties": {
@@ -6633,6 +6651,15 @@
                     "type": "string",
                     "description": "",
                     "format": "uuid",
+                    "nullable": true
+                  },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.",
                     "nullable": true
                   },
                   "Labels": {
@@ -14659,6 +14686,15 @@
             }
           },
           {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "change_set_id",
             "in": "query",
             "description": "Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions",
@@ -16361,6 +16397,15 @@
                     "type": "string",
                     "description": "",
                     "format": "uuid",
+                    "nullable": true
+                  },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.",
                     "nullable": true
                   },
                   "Labels": {
@@ -19971,6 +20016,15 @@
                     "description": "Function name",
                     "nullable": true
                   },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.",
+                    "nullable": true
+                  },
                   "InvocationID": {
                     "type": "string",
                     "description": "",
@@ -20950,6 +21004,15 @@
             }
           },
           {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "squash",
             "in": "query",
             "description": "Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.",
@@ -21350,6 +21413,15 @@
             "name": "clearance",
             "in": "query",
             "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
             "required": false,
             "schema": {
               "type": "string"
@@ -22023,6 +22095,15 @@
             "name": "clearance",
             "in": "query",
             "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
             "required": false,
             "schema": {
               "type": "string"
@@ -26967,6 +27048,15 @@
                     "description": "Function name",
                     "nullable": true
                   },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.",
+                    "nullable": true
+                  },
                   "InvocationID": {
                     "type": "string",
                     "description": "",
@@ -27295,6 +27385,15 @@
                   "FunctionName": {
                     "type": "string",
                     "description": "Function name",
+                    "nullable": true
+                  },
+                  "Guards": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.",
                     "nullable": true
                   },
                   "InvocationID": {
@@ -27884,6 +27983,15 @@
             "name": "clearance",
             "in": "query",
             "description": "The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "guards",
+            "in": "query",
+            "description": "The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).",
             "required": false,
             "schema": {
               "type": "string"
@@ -33303,6 +33411,9 @@
             "description": "Function name",
             "x-go-type-skip-optional-pointer": true
           },
+          "Guards": {
+            "$ref": "#/components/schemas/GuardStamp"
+          },
           "Params": {
             "type": "object",
             "additionalProperties": {},
@@ -33402,6 +33513,9 @@
             "type": "string",
             "description": "The resulting configuration data; present only when the invocation changed it",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Conflicts": {
+            "$ref": "#/components/schemas/MutationConflictList"
           },
           "DataHash": {
             "type": "string",
@@ -33716,6 +33830,12 @@
           }
         }
       },
+      "GuardStamp": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
       "Invocation": {
         "required": [
           "Slug",
@@ -33978,6 +34098,9 @@
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Guards": {
+            "$ref": "#/components/schemas/GuardStamp"
           },
           "Hash": {
             "type": "string",
@@ -36562,6 +36685,9 @@
             "type": "string",
             "description": "Function name",
             "x-go-type-skip-optional-pointer": true
+          },
+          "Guards": {
+            "$ref": "#/components/schemas/GuardStamp"
           },
           "Hash": {
             "type": "string",

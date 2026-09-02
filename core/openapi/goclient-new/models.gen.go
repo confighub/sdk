@@ -1444,7 +1444,8 @@ type FunctionInvocation struct {
 	Clearance *Clearance         `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// FunctionName Function name
-	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	FunctionName string      `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	Guards       *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
@@ -1492,7 +1493,8 @@ type FunctionInvocationsRequest struct {
 // FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
 type FunctionInvocationsResponse struct {
 	// ConfigData The resulting configuration data; present only when the invocation changed it
-	ConfigData string `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+	Conflicts  *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// DataHash SHA256 of the resulting configuration data, whether or not ConfigData is present
 	DataHash string         `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
@@ -1647,6 +1649,9 @@ type GuardDelta struct {
 	Set map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
 }
 
+// GuardStamp defines model for GuardStamp.
+type GuardStamp map[string]string
+
 // Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 type Invocation struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1760,6 +1765,7 @@ type Link struct {
 
 	// FromUnitID Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.
 	FromUnitID openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
+	Guards     *GuardStamp        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -3063,7 +3069,8 @@ type Trigger struct {
 	FailOpenAfter int `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
-	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	FunctionName string      `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+	Guards       *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -6297,6 +6304,9 @@ type InvokeFunctionsOnOrgParams struct {
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
 
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -7032,6 +7042,9 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
 
+	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
 	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
@@ -7157,6 +7170,9 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
 	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
+
+	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -9062,6 +9078,9 @@ type InvokeFunctionsParams struct {
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
 
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
+
 	// ChangeSetId Must match ChangeSetID of affected Units unless in dry run mode; not valid when invoked on Revisions
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
@@ -9429,6 +9448,9 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	DownstreamPaths                 *[]map[string]interface{} `json:"DownstreamPaths" yaml:"DownstreamPaths"`
 	DownstreamSetters               *[]map[string]interface{} `json:"DownstreamSetters" yaml:"DownstreamSetters"`
 	FromUnitID                      *openapi_types.UUID       `json:"FromUnitID" yaml:"FromUnitID"`
+
+	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
@@ -10030,7 +10052,10 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
-	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+
+	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
+	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -10266,6 +10291,9 @@ type PatchUnitParams struct {
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
 
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
+
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
 
@@ -10376,6 +10404,9 @@ type UpdateUnitParams struct {
 
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`
@@ -10496,6 +10527,9 @@ type UploadUnitDataParams struct {
 
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
 	// MergeBase Merge base revision, which provides the base configuration data of the changes to merge. With merge_source, this is a revision of the merge source unit. With merge_external_source, this is a revision of the unit being updated and overrides the default selection of the latest MergeExternal revision. Supports: Named revisions ('HeadRevisionNum', 'LastReleasedRevisionNum'), direct revision number (e.g., '42'), or entity references ('Tag:uuid', 'ChangeSet:uuid', 'ChangeOrder:uuid', 'Revision:uuid'). Can be prefixed with 'Before:' to select the revision immediately before the specified one (e.g., 'Before:LastReleasedRevisionNum', 'Before:42'). When using Tag or ChangeSet references, the latest revision associated with that entity is selected. 'ChangeOrder:uuid' selects the revision the change order ended at on this Unit and 'Before:ChangeOrder:uuid' the one before it began, which is what undoes a promotion however many revisions it made.
 	MergeBase *string `form:"merge_base,omitempty" json:"merge_base,omitempty" yaml:"merge_base,omitempty"`
@@ -12202,7 +12236,10 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
-	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+
+	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
+	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -12329,7 +12366,10 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	FailOpenAfter *int    `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
-	FunctionName *string             `json:"FunctionName" yaml:"FunctionName"`
+	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
+
+	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
+	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -12819,6 +12859,9 @@ type BulkPatchUnitsParams struct {
 
 	// Clearance The classes of guarded reason this operation is cleared for, as a JSON Clearance -- a list of {Key, Operator, Values} requirements, where Operator is Exists, In, NotIn, or DoesNotExist. A path whose guards this does not cover is not written, and the withheld change is reported as a Guarded conflict. An absent or empty clearance clears nothing, which only matters for a Unit that has guards.
 	Clearance *string `form:"clearance,omitempty" json:"clearance,omitempty" yaml:"clearance,omitempty"`
+
+	// Guards The guards this operation records on the paths it writes, as a JSON object of guard key to value -- the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. The guard analogue of protect: protect claims the paths, this says why. It only ever adds and overwrites the keys it names -- retiring a guard is the /guard API (cub unit set-guard --remove-guard).
+	Guards *string `form:"guards,omitempty" json:"guards,omitempty" yaml:"guards,omitempty"`
 
 	// Squash Merge the range as one rebased diff and record it as one Revision, instead of walking it. By default a merge replays: it takes the source's Revisions in order and, where a Revision records function invocations that can be re-executed, runs them against this Unit rather than rebasing their recorded paths onto it -- so a change lands where this Unit's own structure puts it -- and records each source Revision that has an effect here as a Revision of its own, carrying that Revision's change description, its own conflicts, and one Mutation per source Mutation. Squashing gives up both: the range arrives as a single rebased patch in a single Revision, which is what a merge did before replay existed. Accepted with upgrade, merge_source, and resolve of an UpgradeUnit or MergeUnits Link, and refused elsewhere, since there is no range to walk. A Link can ask for it standingly with its Squash field.
 	Squash *bool `form:"squash,omitempty" json:"squash,omitempty" yaml:"squash,omitempty"`

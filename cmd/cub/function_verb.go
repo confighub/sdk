@@ -241,6 +241,11 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	cmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
+	// The other two of the same family. A verb command runs the same invocation path as
+	// function do, so leaving these off made a guarded Unit refuse the write with no way to
+	// say the reason was understood, and no way to state a new one.
+	addClearanceFlag(cmd)
+	addGuardFlag(cmd)
 	cmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	cmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")

@@ -94,6 +94,7 @@ func unitDataParamsFromUpdate(p *goclientnew.UpdateUnitParams, changeDescription
 		DryRun:                 p.DryRun,
 		Protect:                p.Protect,
 		Clearance:              p.Clearance,
+		Guards:                 p.Guards,
 		MergeBase:              p.MergeBase,
 		MergeExternalSource:    p.MergeExternalSource,
 		MergeEnableSubtraction: p.MergeEnableSubtraction,

@@ -140,19 +140,26 @@ func addClearanceFlag(cmd *cobra.Command) {
 // clearance travels as a JSON query parameter rather than a repeated scalar because a
 // requirement is a triple, and flattening it into a string grammar the server would have to
 // re-parse is how two grammars drift apart.
-func clearanceJSON() string {
+//
+// A malformed flag is an error rather than an empty result. Dropping it would send the change
+// with no clearance, and a guarded path would be withheld with nothing said about why -- the
+// operator stated the reason and was told, silently, that they had not.
+func clearanceJSON() (string, error) {
 	if len(changeClearance) == 0 {
-		return ""
+		return "", nil
 	}
 	clearance, err := parseClearanceSpecs(changeClearance)
-	if err != nil || len(clearance) == 0 {
-		return ""
+	if err != nil {
+		return "", err
+	}
+	if len(clearance) == 0 {
+		return "", nil
 	}
 	encoded, err := json.Marshal(clearance)
 	if err != nil {
-		return ""
+		return "", err
 	}
-	return string(encoded)
+	return string(encoded), nil
 }
 
 // addPersistentClearanceFlag is addClearanceFlag for a command whose subcommands all write

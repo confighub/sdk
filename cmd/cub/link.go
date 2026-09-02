@@ -34,6 +34,7 @@ var (
 	linkProtect                      bool
 	linkNoProtect                    bool
 	linkClearance                    []string
+	linkGuardSpecs                   []string
 	linkSquash                       bool
 	linkNoSquash                     bool
 	linkMakeCurrent                  bool
@@ -54,6 +55,8 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
 	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
 		"class of guarded reason this link's merges are cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
+	cmd.Flags().StringArrayVar(&linkGuardSpecs, "guard", nil,
+		"reason to record on the paths this link's resolve writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths; refused on UpgradeUnit and MergeUnits links, whose guards propagate from upstream. Pass an empty value to clear")
 	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoSquash, "no-squash", false, "return this link to the default: its resolve walks the range")
 	cmd.Flags().BoolVar(&linkMakeCurrent, "make-current", false, "set link revision numbers to current unit revisions; on create this skips the initial merge, on update it re-points the link at what the units now hold")
@@ -160,6 +163,16 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 		}
 		link.Clearance = &clearance
 	}
+	if cmd.Flags().Changed("guard") {
+		guards, err := parseGuardStampSpecs(linkGuardSpecs)
+		if err != nil {
+			return err
+		}
+		if guards == nil {
+			guards = goclientnew.GuardStamp{}
+		}
+		link.Guards = &guards
+	}
 	if linkSquash {
 		link.Squash = true
 	}
@@ -217,6 +230,16 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		}
 		link.Clearance = &clearance
 	}
+	if cmd.Flags().Changed("guard") {
+		guards, err := parseGuardStampSpecs(linkGuardSpecs)
+		if err != nil {
+			return err
+		}
+		if guards == nil {
+			guards = goclientnew.GuardStamp{}
+		}
+		link.Guards = &guards
+	}
 	if linkSquash {
 		link.Squash = true
 	} else if linkNoSquash {
@@ -268,10 +291,22 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		} else if linkNoMergeEnableSubtraction {
 			patchMap["MergeEnableSubtraction"] = false
 		}
+		// A malformed flag leaves the field out rather than failing, since a PatchEnhancer
+		// has no way to report an error. Both are validated again on the way in, so a
+		// malformed one is refused at the create and update paths that can say so.
 		if cmd.Flags().Changed("clearance") {
 			clearance, err := parseClearanceSpecs(linkClearance)
 			if err == nil {
 				patchMap["Clearance"] = clearance
+			}
+		}
+		if cmd.Flags().Changed("guard") {
+			guards, err := parseGuardStampSpecs(linkGuardSpecs)
+			if err == nil {
+				if guards == nil {
+					guards = goclientnew.GuardStamp{}
+				}
+				patchMap["Guards"] = guards
 			}
 		}
 		if linkProtect {
@@ -310,6 +345,7 @@ func hasLinkFieldFlags(cmd *cobra.Command) bool {
 		linkMergeEnableSubtraction || linkNoMergeEnableSubtraction ||
 		linkProtect || linkNoProtect ||
 		cmd.Flags().Changed("clearance") ||
+		cmd.Flags().Changed("guard") ||
 		linkSquash || linkNoSquash ||
 		linkMakeCurrent ||
 		cmd.Flags().Changed("upstream-last-merged-revision") ||

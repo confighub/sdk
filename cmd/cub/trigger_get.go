@@ -105,6 +105,16 @@ func displayExtendedTriggerDetails(extendedTrigger *goclientnew.ExtendedTrigger)
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
+	// Protect, and the two statements about guards beside it, are shown the way cub link get
+	// shows them: what a Trigger claims and states about what it writes belongs next to what
+	// it does, not somewhere a reader has to go looking for it.
+	view.Append([]string{"Protect", strconv.FormatBool(trigger.Protect)})
+	if clearance := formatClearance(trigger.Clearance); clearance != "" {
+		view.Append([]string{"Clearance", clearance})
+	}
+	if guards := formatGuardStamp(trigger.Guards); guards != "" {
+		view.Append([]string{"Guards", guards})
+	}
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
 	if trigger.Description != "" {
 		view.Append([]string{"Description", trigger.Description})
@@ -166,6 +176,16 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 	view.Append([]string{"Validating", strconv.FormatBool(trigger.Validating)})
 	view.Append([]string{"Disabled", strconv.FormatBool(trigger.Disabled)})
 	view.Append([]string{"Warn", strconv.FormatBool(trigger.Warn)})
+	// Protect, and the two statements about guards beside it, are shown the way cub link get
+	// shows them: what a Trigger claims and states about what it writes belongs next to what
+	// it does, not somewhere a reader has to go looking for it.
+	view.Append([]string{"Protect", strconv.FormatBool(trigger.Protect)})
+	if clearance := formatClearance(trigger.Clearance); clearance != "" {
+		view.Append([]string{"Clearance", clearance})
+	}
+	if guards := formatGuardStamp(trigger.Guards); guards != "" {
+		view.Append([]string{"Guards", guards})
+	}
 	view.Append([]string{"Toolchain Type", (trigger.ToolchainType)})
 	if trigger.Description != "" {
 		view.Append([]string{"Description", trigger.Description})
