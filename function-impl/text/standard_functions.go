@@ -32,16 +32,13 @@ func initStandardFunctions(rp *textkit.TextResourceProviderType) {
 			},
 		},
 	}
-	setterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-default-names",
-	}
 	for resourceType, pathInfos := range defaultNames {
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
 			api.AttributeNameDefaultName,
 			resourceType,
 			pathInfos,
-			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
+			nil,
 			false, false,
 		)
 	}

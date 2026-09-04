@@ -1,0 +1,114 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "confighubplaceholder/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  },
+  {
+    "ResourceName": "confighubplaceholder/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.?name=main.envFrom.0.configMapRef.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ConfigMapFormat": "KeyValue",
+        "ResourceType": "v1/ConfigMap"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  },
+  {
+    "ResourceName": "confighubplaceholder/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.serviceAccountName",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "v1/ServiceAccount"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  },
+  {
+    "ResourceName": "confighubplaceholder/myconfig",
+    "ResourceNameWithoutScope": "myconfig",
+    "ResourceType": "v1/ConfigMap",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  },
+  {
+    "ResourceName": "confighubplaceholder/myservice",
+    "ResourceNameWithoutScope": "myservice",
+    "ResourceType": "v1/Service",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  },
+  {
+    "ResourceName": "confighubplaceholder/mysa",
+    "ResourceNameWithoutScope": "mysa",
+    "ResourceType": "v1/ServiceAccount",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.namespace",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "v1/Namespace"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references"
+  }
+]

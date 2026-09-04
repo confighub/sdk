@@ -490,11 +490,18 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 		return nil, fmt.Errorf("failed to get revision %d for unit '%s': %w", revisionNum, unitSlug, err)
 	}
 
-	// Call the API with revision parameters
+	return invokeFunctionsOnRevisionID(unit.UnitID, revision.RevisionID, body, dryRun)
+}
+
+// invokeFunctionsOnRevisionID invokes functions against the configuration of one Revision,
+// which the server requires to be named by both its Unit and its own ID. The Revision is the
+// data the functions run on, so it is how a function reads a Unit at a point other than its
+// head.
+func invokeFunctionsOnRevisionID(unitID, revisionID uuid.UUID, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	newParams := &goclientnew.InvokeFunctionsParams{}
 	newParams.Include = invokeIncludeConfigData()
-	unitUUID := goclientnew.UUID(unit.UnitID)
-	revisionUUID := goclientnew.UUID(revision.RevisionID)
+	unitUUID := goclientnew.UUID(unitID)
+	revisionUUID := goclientnew.UUID(revisionID)
 	newParams.UnitId = &unitUUID
 	newParams.RevisionId = &revisionUUID
 	if dryRun {

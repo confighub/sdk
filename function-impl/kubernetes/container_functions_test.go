@@ -764,8 +764,8 @@ spec:
 
 	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
-		ParsedData:     docs,
-		Arguments:      stringArgsToFunctionArgs([]string{"my-app", "port", "9090"}),
+		ParsedData:      docs,
+		Arguments:       stringArgsToFunctionArgs([]string{"my-app", "port", "9090"}),
 	})
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "--port=9090")
@@ -795,8 +795,8 @@ spec:
 
 	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
-		ParsedData:     docs,
-		Arguments:      stringArgsToFunctionArgs([]string{"traefik", "entryPoints.web.address", ":9000/tcp"}),
+		ParsedData:      docs,
+		Arguments:       stringArgsToFunctionArgs([]string{"traefik", "entryPoints.web.address", ":9000/tcp"}),
 	})
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "--entryPoints.web.address=:9000/tcp")

@@ -6,6 +6,8 @@ package api
 import (
 	"fmt"
 	"regexp"
+	"slices"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -76,8 +78,8 @@ const (
 	// This is used to indicate that no path is registered in the path registry
 	AttributeNameNone = AttributeName("none")
 
-	// TODO: Convert these to attribute groups once they are registered under more specific attributes.
-	AttributeNameDetail      = AttributeName("detail")
+	// TODO: Convert this to an attribute group once its paths are registered under more
+	// specific attributes.
 	AttributeNameDefaultName = AttributeName("default-name")
 
 	// Attributes with registered paths
@@ -92,8 +94,45 @@ const (
 	AttributeNameSubdomain               = AttributeName("subdomain")
 )
 
-func AttributeNameForResourceType(resourceType ResourceType) AttributeName {
-	return AttributeName(string(AttributeNameResourceName) + "/" + string(resourceType))
+// PropertyKeyResourceType is the needs/provides property naming the resource type a reference
+// points at. A reference is matched by this property rather than by a per-target attribute name:
+// an attribute name is a name, and property keys are where the qualifiers belong.
+const PropertyKeyResourceType = "ResourceType"
+
+// PropertyValueSeparator joins the alternatives a needed property will accept. A reference
+// field that can point at several kinds -- an HPA's scaleTargetRef naming any workload
+// controller, a RoleBinding's roleRef naming a Role or a ClusterRole -- requires one of them,
+// not all and not anything.
+const PropertyValueSeparator = ","
+
+// PropertyValueAlternatives splits a property value into the alternatives it accepts.
+func PropertyValueAlternatives(value string) []string {
+	return strings.Split(value, PropertyValueSeparator)
+}
+
+// PropertyValueSatisfiedBy reports whether a provided value satisfies a needed one. A needed
+// value naming several alternatives is satisfied by any of them; an empty needed value requires
+// nothing.
+func PropertyValueSatisfiedBy(neededValue, providedValue string) bool {
+	if neededValue == "" {
+		return true
+	}
+	return slices.Contains(PropertyValueAlternatives(neededValue), providedValue)
+}
+
+// UnionPropertyValue adds a value to a needed property's alternatives, keeping them sorted so
+// that a set assembled in any order reads and compares the same way.
+func UnionPropertyValue(existing, value string) string {
+	if existing == "" {
+		return value
+	}
+	alternatives := PropertyValueAlternatives(existing)
+	if slices.Contains(alternatives, value) {
+		return existing
+	}
+	alternatives = append(alternatives, value)
+	slices.Sort(alternatives)
+	return strings.Join(alternatives, PropertyValueSeparator)
 }
 
 // AttributeVisitorDetails extends AttributeDetails with registration-time metadata
@@ -163,9 +202,13 @@ type AttributeNeedsProvidesDetails struct {
 // AttributeDetails provides the getter and (potentially multiple) setter functions for the
 // resource attribute, and other information.
 type AttributeDetails struct {
-	GetterInvocation  *FunctionInvocation  `json:",omitempty" description:"Function invocation used to get the attribute, if any"`                        // used for matching
-	SetterInvocations []FunctionInvocation `json:",omitempty" description:"Function invocation used to set the attribute (except for the value), if any"` // used for matching
-	Description       string               `json:",omitempty" description:"Description of the attribute"`
+	Description string `json:",omitempty" description:"Description of the attribute"`
+
+	// DefaultValue is what a defaulting function writes at this path, and what the
+	// corresponding vet function checks the current value against. It is per path because
+	// that is what varies: one attribute, a different value at each of its fields.
+	DefaultValue any `json:",omitempty" description:"Value a defaulting function writes at this path, if any"`
+
 	AttributeNeedsProvidesDetails
 }
 
@@ -219,17 +262,8 @@ func DeepCopyAttributeDetails(d *AttributeDetails) *AttributeDetails {
 	}
 	result := &AttributeDetails{
 		Description:                   d.Description,
+		DefaultValue:                  d.DefaultValue,
 		AttributeNeedsProvidesDetails: DeepCopyAttributeNeedsProvidesDetails(d.AttributeNeedsProvidesDetails),
-	}
-	if d.GetterInvocation != nil {
-		gi := DeepCopyFunctionInvocation(*d.GetterInvocation)
-		result.GetterInvocation = &gi
-	}
-	if d.SetterInvocations != nil {
-		result.SetterInvocations = make([]FunctionInvocation, len(d.SetterInvocations))
-		for i, si := range d.SetterInvocations {
-			result.SetterInvocations[i] = DeepCopyFunctionInvocation(si)
-		}
 	}
 	return result
 }

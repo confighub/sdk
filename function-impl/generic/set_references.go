@@ -81,14 +81,11 @@ func registerSetReferencesOfType(fh handler.FunctionRegistry, converter configki
 	}
 }
 
-func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {
-	return api.AttributeName(string(api.AttributeNameResourceName) + "/" + string(resourceType))
-}
-
 func genericFnGetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, args []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
 	resourceType := args[0].Value.(string)
 
-	paths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeNameForResourceType(api.ResourceType(resourceType)))
+	paths := yamlkit.GetPathRegistryForAttributeNameByProperty(
+		resourceProvider, api.AttributeNameResourceName, api.PropertyKeyResourceType, resourceType)
 	if paths == nil {
 		return parsedData, nil, nil
 	}
@@ -101,7 +98,8 @@ func genericFnSetReferencesOfType(resourceProvider yamlkit.ResourceProvider, _ *
 	resourceName := args[1].Value.(string)
 
 	var err error
-	paths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, attributeNameForResourceType(api.ResourceType(resourceType)))
+	paths := yamlkit.GetPathRegistryForAttributeNameByProperty(
+		resourceProvider, api.AttributeNameResourceName, api.PropertyKeyResourceType, resourceType)
 	if paths != nil {
 		err = yamlkit.UpdateStringPaths(parsedData, paths, []any{}, resourceProvider, resourceName, false, options)
 	}

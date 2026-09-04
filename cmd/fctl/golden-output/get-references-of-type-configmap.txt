@@ -1,0 +1,29 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "confighubplaceholder/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.?name=main.envFrom.0.configMapRef.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-references-of-type"
+  },
+  {
+    "ResourceName": "confighubplaceholder/myconfig",
+    "ResourceNameWithoutScope": "myconfig",
+    "ResourceType": "v1/ConfigMap",
+    "ResourceCategory": "Resource",
+    "Path": "metadata.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Value": "myconfig",
+    "Index": 0,
+    "FunctionName": "get-references-of-type"
+  }
+]

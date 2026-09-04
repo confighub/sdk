@@ -54,7 +54,7 @@ func (m RegexpMatcher) Matches(value any) bool {
 }
 
 func newAttributeValue(path api.ResolvedPath, resourceInfo *api.ResourceInfo, value any) api.AttributeValue {
-	// TODO: attributeName, dataType, Info.GetterInvocation, Info.SetterInvocations, Comment
+	// TODO: attributeName, dataType, Comment
 	var attributeValue api.AttributeValue
 	attributeValue.ResourceInfo = *resourceInfo
 	attributeValue.Path = path

@@ -29243,12 +29243,13 @@ components:
             needed path, for cross-link score comparison
           type: object
           x-go-type-skip-optional-pointer: true
+        DefaultValue:
+          description: Value a defaulting function writes at this path, if any
+          x-go-type-skip-optional-pointer: true
         Description:
           description: Description of the attribute
           type: string
           x-go-type-skip-optional-pointer: true
-        GetterInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
         IsNeeded:
           description: Whether this attribute is a needed value
           type: boolean
@@ -29277,13 +29278,6 @@ components:
           description: Key/value properties describing what this provided value offers,
             for matching
           type: object
-          x-go-type-skip-optional-pointer: true
-        SetterInvocations:
-          description: Function invocation used to set the attribute (except for the
-            value), if any
-          items:
-            $ref: '#/components/schemas/FunctionInvocation'
-          type: array
           x-go-type-skip-optional-pointer: true
       type: object
     AttributeInfo:
@@ -32765,8 +32759,6 @@ components:
             needed path, for cross-link score comparison
           type: object
           x-go-type-skip-optional-pointer: true
-        GetterInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
         IsNeeded:
           description: Whether this attribute is a needed value
           type: boolean
@@ -32801,8 +32793,6 @@ components:
         ResourceType:
           type: string
           x-go-type-skip-optional-pointer: true
-        SetterInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
       type: object
     ResponseError:
       properties:

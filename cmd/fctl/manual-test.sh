@@ -33,7 +33,6 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-namespace myns > ${DIR}/
 ${FCTL} do test-data/deployment.yaml "MyDeployment" get-namespace > ${DIR}/get-namespace.txt
 ${FCTL} do test-data/rolebinding.yaml "MyRB" set-namespace myns > ${DIR}/set-namespace2.txt
 ${FCTL} do test-data/rolebinding.yaml "MyRB" get-namespace > ${DIR}/get-namespace2.txt
-${FCTL} do test-data/rolebinding.yaml "MyRB" get-needed-namespaces > ${DIR}/get-needed-namespaces.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-annotation confighub.com/key changed > ${DIR}/set-annotation.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-annotation confighub.com/upsert-test new-value > ${DIR}/set-annotation-upsert.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" set-label app nginx > ${DIR}/set-label.txt
@@ -63,10 +62,27 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-automount-se
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-pod-container-security-context-defaults > ${DIR}/set-pod-container-security-context-defaults.yaml
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-container-resources-defaults > ${DIR}/set-container-resources-defaults.yaml
 ${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-container-probe-defaults > ${DIR}/set-container-probe-defaults.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-automount-service-account-token-false > ${DIR}/set-automount-service-account-token-false.yaml
+
+# Container attributes, whose paths are declared on the Containers shape. Each writes through
+# the path it is registered at, so a wrong element spelling shows up here as a missed write.
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-image nginx > ${DIR}/get-container-image.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" --data-only set-container-image nginx nginx:1.27.0 > ${DIR}/set-container-image.yaml
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-repository-uri nginx > ${DIR}/get-container-repository-uri.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-container-image-reference nginx > ${DIR}/get-container-image-reference.txt
+${FCTL} do test-data/deployment.yaml "MyDeployment" get-workload-labels > ${DIR}/get-workload-labels.txt
+
+# References. get-references is what cub variant upload and the installer match on to create
+# links; the -of-type pair selects the same paths by their ResourceType property.
+${FCTL} do test-data/all-in-one.yaml "MyUnit" get-references > ${DIR}/get-references.txt
+${FCTL} do test-data/all-in-one.yaml "MyUnit" get-references-of-type v1/ConfigMap > ${DIR}/get-references-of-type-configmap.txt
+${FCTL} do test-data/all-in-one.yaml "MyUnit" --data-only set-references-of-type v1/ConfigMap renamed-cm > ${DIR}/set-references-of-type-configmap.yaml
 ${FCTL} do test-data/deployment-sample.yaml "MyDeployment" set-default-names "template:{{.UnitSlug | normalizeName}}-{{.SpaceSlug | normalizeName}}" > ${DIR}/set-default-names.txt
 ${FCTL} do test-data/deployment-sample.yaml "MyApp" get-needed > ${DIR}/get-needed.txt
-#TODO: needs to use ordered map
-#${FCTL} do test-data/hpa.yaml "MyObj" get-needed > ${DIR}/get-needed2.txt
+# An HPA's scaleTargetRef requires one of several workload controllers, so its needed path
+# carries them as alternatives. This was disabled for producing unordered output; reference
+# registration is sorted now.
+${FCTL} do test-data/hpa.yaml "MyObj" get-needed > ${DIR}/get-needed2.txt
 ${FCTL} do test-data/kubernetes-headlamp.yaml "Headlamp" get-needed > ${DIR}/get-needed3.txt
 ${FCTL} do test-data/namespace.yaml "MyNS" get-provided > ${DIR}/get-provided.txt
 ${FCTL} do test-data/deployment.yaml MyApp vet-celexpr 'r.kind != "Deployment" || r.spec.replicas > 1' > ${DIR}/vet-celexpr.txt
@@ -111,7 +127,6 @@ ${FCTL} do test-data/deployment.yaml "MyDeployment" set-yq '.spec.replicas = 7' 
 ${FCTL} do test-data/service.yaml "MyService" ensure-namespaces > ${DIR}/ensure-namespaces-insert.txt
 ${FCTL} do test-data/all-in-one.yaml "MyUnit" ensure-namespaces > ${DIR}/ensure-namespaces-skipclusterscoped.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" ensure-context true > ${DIR}/ensure-context-true.txt
-${FCTL} do test-data/all-in-one.yaml "MyUnit" get-details > ${DIR}/get-details-all.txt
 ${FCTL} do test-data/deployment10.yaml "MyDeployment" compute-mutations "$(<test-data/deployment.yaml)" 0 > ${DIR}/compute-mutations.txt
 ${FCTL} do test-data/deployment.yaml "MyDeployment" patch-mutations "$(<test-data/original-mutations.json)" "$(<test-data/patch-mutations.json)" > ${DIR}/patch-mutations.txt
 ${FCTL} do test-data/all-in-one-resolved.yaml "MyDeployment" reset "$(<test-data/reset-preds.json)" > ${DIR}/reset.txt

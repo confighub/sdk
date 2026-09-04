@@ -29,26 +29,10 @@ func initStandardFunctions(rp *propkit.PropertiesResourceProviderType) {
 			},
 		},
 	}
-	setterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-default-names",
-	}
 	for resourceType, pathInfos := range defaultNames {
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
 			api.AttributeNameDefaultName,
-			resourceType,
-			pathInfos,
-			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
-			false, false,
-		)
-	}
-
-	// TODO
-	var detailPaths = api.ResourceTypeToPathToVisitorInfoType{}
-	for resourceType, pathInfos := range detailPaths {
-		yamlkit.RegisterPathsByAttributeName(
-			rp,
-			api.AttributeNameDetail,
 			resourceType,
 			pathInfos,
 			nil,

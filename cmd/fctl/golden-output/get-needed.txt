@@ -11,17 +11,6 @@ OUTPUT
     "AttributeName": "resource-name",
     "DataType": "string",
     "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/Namespace"
-            }
-          ]
-        }
-      ],
       "NeededRequired": {
         "ResourceType": "v1/Namespace"
       },
@@ -40,17 +29,6 @@ OUTPUT
     "AttributeName": "resource-name",
     "DataType": "string",
     "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/ConfigMap"
-            }
-          ]
-        }
-      ],
       "NeededRequired": {
         "ConfigMapFormat": "KeyValue",
         "ResourceType": "v1/ConfigMap"
@@ -70,17 +48,6 @@ OUTPUT
     "AttributeName": "resource-name",
     "DataType": "string",
     "Details": {
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-references-of-type",
-          "Arguments": [
-            {
-              "ParameterName": "resource-type",
-              "Value": "v1/ServiceAccount"
-            }
-          ]
-        }
-      ],
       "NeededRequired": {
         "ResourceType": "v1/ServiceAccount"
       },

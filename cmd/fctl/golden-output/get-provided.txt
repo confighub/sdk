@@ -11,15 +11,6 @@ OUTPUT
     "AttributeName": "resource-name",
     "DataType": "string",
     "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-resources-of-type",
-        "Arguments": [
-          {
-            "ParameterName": "resource-type",
-            "Value": "v1/Namespace"
-          }
-        ]
-      },
       "ProvidedProperties": {
         "ResourceType": "v1/Namespace"
       },

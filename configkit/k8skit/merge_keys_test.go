@@ -206,58 +206,54 @@ func TestMergeKeyForPath(t *testing.T) {
 	}
 }
 
-func TestNormalizeMergeKeyPath(t *testing.T) {
-	tests := []struct {
-		input string
-		want  string
-	}{
-		{"spec.containers", "spec.containers"},
-		{"spec.containers.0.env", "spec.containers.*.env"},
-		{"spec.containers.12.env.3", "spec.containers.*.env.*"},
-		{"metadata.ownerReferences", "metadata.ownerReferences"},
-		{"webhooks.0.matchConditions", "webhooks.*.matchConditions"},
-		{"spec.template.spec.containers.?name=nginx.env", "spec.template.spec.containers.*.env"},
-		{"spec.template.spec.containers.?name=nginx;@0.env", "spec.template.spec.containers.*.env"},
-	}
+func TestCompiledStructureCoversTheWorkloadPrefixes(t *testing.T) {
+	rp := NewK8sResourceProvider()
 
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got := normalizeMergeKeyPath(tt.input)
-			assert.Equal(t, tt.want, got)
-		})
-	}
+	// The universal spec, which every resource type falls back to.
+	keys, found := rp.MergeKeysForPath(api.ResourceType("v1/ConfigMap"), "metadata.ownerReferences")
+	assert.True(t, found, "universal entries should apply to any type")
+	assert.Equal(t, []string{"uid"}, keys)
+
+	// A Deployment reaches its PodSpec through a pod template at spec.template.
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("apps/v1/Deployment"), "spec.template.spec.containers")
+	assert.Equal(t, []string{"name"}, keys)
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("apps/v1/Deployment"), "spec.template.spec.containers.*.env")
+	assert.Equal(t, []string{"name"}, keys)
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("apps/v1/Deployment"), "spec.template.spec.containers.*.ports")
+	assert.Equal(t, []string{"containerPort", "protocol"}, keys,
+		"a container port is identified by its number and its protocol")
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("apps/v1/Deployment"), "spec.template.spec.volumes")
+	assert.Equal(t, []string{"name"}, keys)
+
+	// A Pod carries a PodSpec directly, so the same container shape lands one level up.
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("v1/Pod"), "spec.containers")
+	assert.Equal(t, []string{"name"}, keys)
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("v1/Pod"), "spec.containers.*.env")
+	assert.Equal(t, []string{"name"}, keys)
+
+	// A CronJob nests a job template in front of the pod template.
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("batch/v1/CronJob"), "spec.jobTemplate.spec.template.spec.containers")
+	assert.Equal(t, []string{"name"}, keys)
+
+	// A type with no pod template still gets the keys it declares itself.
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("v1/Service"), "spec.ports")
+	assert.Equal(t, []string{"port", "protocol"}, keys)
 }
 
-func TestBuildMergeKeyLookup(t *testing.T) {
-	lookup := buildMergeKeyLookup()
+// A Pod has no pod template, so it must not get the pod-template metadata paths. The tables
+// this replaced derived that path from the PodSpec path by trimming a `.spec` suffix, which
+// a Pod's `spec` does not have, and registered spec.metadata.labels.* -- a path that does
+// not exist in a Pod.
+func TestPodHasNoPodTemplateMetadataPaths(t *testing.T) {
+	rp := NewK8sResourceProvider()
 
-	// Verify universal entries exist
-	universalMap, ok := lookup[api.ResourceType("*")]
-	assert.True(t, ok, "universal entries should exist")
-	assert.Equal(t, []string{"uid"}, universalMap["metadata.ownerReferences"])
+	assert.False(t, rp.IsMapKeyPath(api.ResourceType("v1/Pod"), "spec.metadata.labels.*"))
+	assert.False(t, rp.IsMapKeyPath(api.ResourceType("v1/Pod"), "spec.metadata.annotations.*"))
 
-	// Verify Deployment has pod spec entries
-	deployMap, ok := lookup[api.ResourceType("apps/v1/Deployment")]
-	assert.True(t, ok, "Deployment entries should exist")
-	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.containers"])
-	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.containers.*.env"])
-	assert.Equal(t, []string{"containerPort", "protocol"}, deployMap["spec.template.spec.containers.*.ports"],
-		"a container port is identified by its number and its protocol")
-	assert.Equal(t, []string{"name"}, deployMap["spec.template.spec.volumes"])
+	// A Pod's own labels are universal, and still reachable.
+	assert.True(t, rp.IsMapKeyPath(api.ResourceType("v1/Pod"), "metadata.labels.*"))
 
-	// Verify Pod has different prefix
-	podMap, ok := lookup[api.ResourceType("v1/Pod")]
-	assert.True(t, ok, "Pod entries should exist")
-	assert.Equal(t, []string{"name"}, podMap["spec.containers"])
-	assert.Equal(t, []string{"name"}, podMap["spec.containers.*.env"])
-
-	// Verify CronJob has deep prefix
-	cronMap, ok := lookup[api.ResourceType("batch/v1/CronJob")]
-	assert.True(t, ok, "CronJob entries should exist")
-	assert.Equal(t, []string{"name"}, cronMap["spec.jobTemplate.spec.template.spec.containers"])
-
-	// Verify Service has its own entries
-	svcMap, ok := lookup[api.ResourceType("v1/Service")]
-	assert.True(t, ok, "Service entries should exist")
-	assert.Equal(t, []string{"port", "protocol"}, svcMap["spec.ports"])
+	// A Deployment's pod template does have them.
+	assert.True(t, rp.IsMapKeyPath(api.ResourceType("apps/v1/Deployment"), "spec.template.metadata.labels.*"))
+	assert.True(t, rp.IsMapKeyPath(api.ResourceType("batch/v1/CronJob"), "spec.jobTemplate.spec.template.metadata.labels.*"))
 }

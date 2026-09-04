@@ -44,7 +44,7 @@ spec:
 	assert.NoError(t, err)
 
 	args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.replicas > 1"})
-	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultTrue, result)
 }
@@ -107,7 +107,7 @@ spec:
 
 	for _, expression := range expressions {
 		args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", expression})
-		_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+		_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 		assert.NoError(t, err)
 		assert.Equal(t, api.ValidationResultTrue, result, "Expression %s expected true", expression)
 	}
@@ -155,7 +155,7 @@ spec:
 
 	for _, expression := range expressions {
 		args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", expression})
-		_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+		_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 		assert.NoError(t, err)
 		assert.Equal(t, api.ValidationResultTrue, result, "Expression %s expected true", expression)
 	}
@@ -172,7 +172,7 @@ metadata:
 	assert.NoError(t, err)
 
 	args := stringArgsToFunctionArgs([]string{"v1/ConfigMap", ""})
-	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultTrue, result)
 }
@@ -248,7 +248,7 @@ spec:
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", tc.expression})
-			_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+			_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedResult, result, "Expression: %s", tc.expression)
 		})
@@ -284,13 +284,13 @@ spec:
 
 	// Test that != evaluates to true for missing properties
 	args := stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true"})
-	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+	_, result, err := k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultTrue, result)
 
 	// Test that = evaluates to false for missing properties
 	args = stringArgsToFunctionArgs([]string{"apps/v1/Deployment", "spec.template.spec.containers.*.|securityContext.runAsNonRoot = false"})
-	_, result, err = k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext,docs, args)
+	_, result, err = k8sFnResourceWhereMatch(testResourceProvider, nil, &fakeContext, docs, args)
 	assert.NoError(t, err)
 	assert.Equal(t, api.ValidationResultFalse, result)
 }

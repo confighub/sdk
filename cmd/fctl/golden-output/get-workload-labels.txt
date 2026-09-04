@@ -1,0 +1,29 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.selector.matchLabels",
+    "AttributeName": "pod-label-selector",
+    "DataType": "YAML",
+    "Value": "app: mydep",
+    "Index": 0,
+    "FunctionName": "get-workload-labels"
+  },
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.metadata.labels",
+    "AttributeName": "pod-template-labels",
+    "DataType": "YAML",
+    "Value": "app: mydep",
+    "Index": 0,
+    "FunctionName": "get-workload-labels"
+  }
+]

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -121,28 +122,6 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 		" metadata.name in resources. Use --where-resource to scope to a specific resource type.",
 		AttributeNameMetadataName, rp, true, false, false)
 	api.InitTypeSchemas()
-	if err := fh.RegisterFunction("get-needed-namespaces", &handler.FunctionRegistration{
-		FunctionSignature: api.FunctionSignature{
-			FunctionName: "get-needed-namespaces",
-			OutputInfo: &api.FunctionOutput{
-				ResultName:  "namespace-name",
-				Description: "Namespace attributes in the resources that need to be set",
-				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &api.AttributeValueListSchema,
-			},
-			Mutating:              false,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
-			Description:           "Get needed namespace attributes in each resource",
-			FunctionType:          api.FunctionTypePathVisitor,
-			AttributeName:         AttributeNameNamespaceNameReference,
-			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny}, // technically only namespace-scoped resources
-		},
-		Function: makeK8sFnNeededNamespaces(rp),
-	}); err != nil {
-		slog.Error("failed to register function", "error", err)
-	}
 	annotationParameters := []api.FunctionParameter{
 		{
 			ParameterName: "annotation-key",
@@ -178,8 +157,8 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 		" a label", AttributeNameLabelValue, rp, true, true, false)
 
 	workloadLabelResourceTypes := unionResourceTypes(
-		k8skit.ResourceTypeToPodTemplateLabelsPaths,
-		k8skit.ResourceTypeToPodLabelSelectorPaths,
+		k8skit.DeclaredAttributePaths(k8skit.AttributeNamePodTemplateLabels),
+		k8skit.DeclaredAttributePaths(k8skit.AttributeNamePodLabelSelector),
 	)
 	if err := fh.RegisterFunction("get-workload-labels", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
@@ -249,33 +228,15 @@ const AttributeNameNamespaceNameReference = api.AttributeName("namespace-name-re
 const AttributeNameAnnotationValue = api.AttributeName("annotation-value")
 const AttributeNameLabelValue = api.AttributeName("label-value")
 const AttributeNameMetadataName = api.AttributeName("metadata-name")
-const AttributeNameWorkloadLabels = api.AttributeName("workload-labels")
+
+// The attributes carrying pod labels are declared in k8skit, beside the specs that say where
+// they live. workload-labels is the group standing for both.
+const (
+	AttributeNameWorkloadLabels = k8skit.AttributeNameWorkloadLabels
+)
 
 func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 	namespaceResourceType := api.ResourceType("v1/Namespace")
-
-	var resourceTypeToNamespaceNamePath = api.ResourceTypeToPathToVisitorInfoType{
-		namespaceResourceType: {
-			api.UnresolvedPath("metadata.name"): {
-				Path:          api.UnresolvedPath("metadata.name"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-	}
-	pathInfos := resourceTypeToNamespaceNamePath[namespaceResourceType]
-	getterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "get-resources-of-type",
-		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(namespaceResourceType)}},
-	}
-	yamlkit.RegisterPathsByAttributeName(rp, api.AttributeNameResourceName, namespaceResourceType, pathInfos,
-		&yamlkit.AttributeRegistrationDetails{
-			GetterInvocation: getterFunctionInvocation,
-			AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
-				ProvidedProperties: map[string]string{"ResourceType": string(namespaceResourceType)},
-			},
-		},
-		false, true)
 
 	// Register metadata.name on every Kubernetes resource type so that set-name / get-name
 	// can target it. Callers should use --where-resource to scope the operation to a single
@@ -288,126 +249,73 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		},
 	}, nil, false, false)
 
-	// These paths are not included in kustomize's namereference list.
+	// The type-specific namespace fields are declared in the resource-type specs, as
+	// resource-name paths naming a v1/Namespace and namespace-name-reference paths both. These
+	// two are not.
 	//
-	// The `|` prefix on a leaf segment (e.g. `service.|namespace`) gates upsert:
-	// the parent chain up to that segment must already exist in the resource for
-	// the path to resolve, but the leaf itself will be created if missing. That
-	// keeps `set-namespace` from inventing optional sub-objects (e.g. a CRD's
-	// spec.conversion.webhook) on resources that don't have them, while still
-	// adding `metadata.namespace` to every namespaced resource and
-	// `subjects[*].namespace` to every ServiceAccount subject in an RB/CRB.
-	var resourceTypeToNamespacePath = api.ResourceTypeToPathToVisitorInfoType{
-		api.ResourceType("v1/Namespace"): {
+	// metadata.namespace is registered against every resource type at once and skipped on the
+	// cluster-scoped ones, by a list of types and by a predicate for the families too large to
+	// list, such as Crossplane's group-suffix convention. Scope is not a field a spec carries
+	// yet, and without the exceptions set-namespace would write a namespace into cluster-scoped
+	// managed resources.
+	//
+	// A Namespace's own metadata.name is a namespace field that is not a reference to a
+	// Namespace -- it is the Namespace -- so it has no target to declare. set-namespace renames
+	// it; get-references leaves it alone, which is what makes a Namespace not refer to itself.
+	namespaceFieldPaths := map[api.ResourceType]api.PathToVisitorInfoType{
+		api.ResourceType(api.ResourceTypeAny): {
+			api.UnresolvedPath("metadata.namespace"): {
+				Path:              api.UnresolvedPath("metadata.namespace"),
+				AttributeName:     api.AttributeNameResourceName,
+				DataType:          api.DataTypeString,
+				TypeExceptions:    k8skit.K8sClusterScopedResourceTypes,
+				TypeExceptionFunc: api.TypeExceptionPredicate(k8skit.IsResourceTypeClusterScoped),
+			},
+		},
+		namespaceResourceType: {
 			api.UnresolvedPath("metadata.name"): {
 				Path:          api.UnresolvedPath("metadata.name"),
 				AttributeName: api.AttributeNameResourceName,
 				DataType:      api.DataTypeString,
 			},
 		},
-		api.ResourceType(api.ResourceTypeAny): {
-			api.UnresolvedPath("metadata.namespace"): {
-				Path:          api.UnresolvedPath("metadata.namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-				// The curated map covers the types we enumerate; the predicate covers rules that
-				// cannot be enumerated, such as Crossplane's group-suffix convention. Without the
-				// predicate, set-namespace would write metadata.namespace into cluster-scoped
-				// managed resources — the map alone cannot express a family of thousands of types.
-				TypeExceptions:    k8skit.K8sClusterScopedResourceTypes,
-				TypeExceptionFunc: api.TypeExceptionPredicate(k8skit.IsResourceTypeClusterScoped),
-			},
-		},
-		api.ResourceType("rbac.authorization.k8s.io/v1/RoleBinding"): {
-			api.UnresolvedPath("subjects.*?kind=ServiceAccount.|namespace"): {
-				Path:          api.UnresolvedPath("subjects.*?kind=ServiceAccount.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRoleBinding"): {
-			api.UnresolvedPath("subjects.*?kind=ServiceAccount.|namespace"): {
-				Path:          api.UnresolvedPath("subjects.*?kind=ServiceAccount.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("apiextensions.k8s.io/v1/CustomResourceDefinition"): {
-			api.UnresolvedPath("spec.conversion.webhook.clientConfig.service.|namespace"): {
-				Path:          api.UnresolvedPath("spec.conversion.webhook.clientConfig.service.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("apiregistration.k8s.io/v1/APIService"): {
-			api.UnresolvedPath("spec.service.|namespace"): {
-				Path:          api.UnresolvedPath("spec.service.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("admissionregistration.k8s.io/v1/MutatingWebhookConfiguration"): {
-			api.UnresolvedPath("webhooks.*.clientConfig.service.|namespace"): {
-				Path:          api.UnresolvedPath("webhooks.*.clientConfig.service.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration"): {
-			api.UnresolvedPath("webhooks.*.clientConfig.service.|namespace"): {
-				Path:          api.UnresolvedPath("webhooks.*.clientConfig.service.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("kustomize.toolkit.fluxcd.io/v1/Kustomization"): {
-			api.UnresolvedPath("spec.|targetNamespace"): {
-				Path:          api.UnresolvedPath("spec.|targetNamespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
-		api.ResourceType("helm.toolkit.fluxcd.io/v2/HelmRelease"): {
-			api.UnresolvedPath("spec.chartRef.|namespace"): {
-				Path:          api.UnresolvedPath("spec.chartRef.|namespace"),
-				AttributeName: api.AttributeNameResourceName,
-				DataType:      api.DataTypeString,
-			},
-		},
 	}
-	setterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-references-of-type",
-		Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(namespaceResourceType)}},
+	namespaceIsRequired := api.AttributeNeedsProvidesDetails{
+		NeededRequired: map[string]string{api.PropertyKeyResourceType: string(namespaceResourceType)},
 	}
-	for resourceType, pathInfos := range resourceTypeToNamespacePath {
+	// Both registrations of metadata.namespace state the requirement rather than relying on
+	// the other to state it. The registry is read one attribute at a time -- set-namespace
+	// reads namespace-name-reference on its own -- as well as merged across all of them, so a
+	// requirement stated only under the other name is absent from half the answers.
+	for _, attributeName := range []api.AttributeName{
+		AttributeNameNamespaceNameReference,
+		api.AttributeNameResourceName,
+	} {
 		yamlkit.RegisterPathsByAttributeName(
 			rp,
-			AttributeNameNamespaceNameReference,
-			resourceType,
-			pathInfos,
-			&yamlkit.AttributeRegistrationDetails{SetterInvocation: setterFunctionInvocation},
-			true, false,
-		)
-		// The Namespace resource provides (rather than needs) its own namespace
-		// name; its metadata.name registration as a Provides was handled above via
-		// resourceTypeToNamespaceNamePath. Don't re-register it as a Needs here.
-		if resourceType == namespaceResourceType {
-			continue
-		}
-		yamlkit.RegisterPathsByAttributeName(
-			rp,
-			api.AttributeNameResourceName,
-			resourceType,
-			pathInfos,
+			attributeName,
+			api.ResourceType(api.ResourceTypeAny),
+			namespaceFieldPaths[api.ResourceType(api.ResourceTypeAny)],
 			&yamlkit.AttributeRegistrationDetails{
-				SetterInvocation: setterFunctionInvocation,
-				AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
-					NeededRequired: map[string]string{"ResourceType": string(namespaceResourceType)},
-				},
+				AttributeNeedsProvidesDetails: namespaceIsRequired,
 			},
 			true, false,
 		)
 	}
+
+	// A Namespace's own name is neither needed nor provided as a namespace reference. It is not
+	// a reference -- it is the Namespace -- so it states no required resource type, and it is
+	// not needed, because nothing provides a name for it: a Link that filled it in would be one
+	// Namespace taking another's name. set-namespace still renames it -- it reads this registry
+	// directly and does not consult the flag.
+	yamlkit.RegisterPathsByAttributeName(
+		rp,
+		AttributeNameNamespaceNameReference,
+		namespaceResourceType,
+		namespaceFieldPaths[namespaceResourceType],
+		nil,
+		false, false,
+	)
 
 	attributePath := api.UnresolvedPath("metadata.annotations.@%s:annotation-key")
 	var resourceTypeToAnnotationPath = api.ResourceTypeToPathToVisitorInfoType{
@@ -419,21 +327,13 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 			},
 		},
 	}
-	pathInfos = resourceTypeToAnnotationPath[api.ResourceTypeAny]
-	setterFunctionInvocation = &api.FunctionInvocation{
-		FunctionName: "set-annotation",
-		// arguments will be filled in during traversal
-	}
-	getterFunctionInvocation = &api.FunctionInvocation{
-		FunctionName: "get-annotation",
-		// arguments will be filled in during traversal
-	}
+	pathInfos := resourceTypeToAnnotationPath[api.ResourceTypeAny]
 	yamlkit.RegisterPathsByAttributeName(
 		rp,
 		AttributeNameAnnotationValue,
 		api.ResourceTypeAny,
 		pathInfos,
-		&yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation, SetterInvocation: setterFunctionInvocation},
+		nil,
 		false, false,
 	)
 
@@ -448,20 +348,12 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 		},
 	}
 	pathInfos = resourceTypeToLabelPath[api.ResourceTypeAny]
-	setterFunctionInvocation = &api.FunctionInvocation{
-		FunctionName: "set-label",
-		// arguments will be filled in during traversal
-	}
-	getterFunctionInvocation = &api.FunctionInvocation{
-		FunctionName: "get-label",
-		// arguments will be filled in during traversal
-	}
 	yamlkit.RegisterPathsByAttributeName(
 		rp,
 		AttributeNameLabelValue,
 		api.ResourceTypeAny,
 		pathInfos,
-		&yamlkit.AttributeRegistrationDetails{GetterInvocation: getterFunctionInvocation, SetterInvocation: setterFunctionInvocation},
+		nil,
 		false, false,
 	)
 
@@ -514,19 +406,6 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		return parsedData, nil, err
 	}
 	return parsedData, nil, nil
-}
-
-func makeK8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
-	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-		return k8sFnNeededNamespaces(rp, fArgs.ParsedData, fArgs.Options)
-	}
-}
-
-func k8sFnNeededNamespaces(rp *k8skit.K8sResourceProviderType, parsedData gaby.Container, options *api.FunctionOptions) (gaby.Container, any, error) {
-	// No arguments
-	resourceTypeToNamespacePath := yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameNamespaceNameReference)
-	values, err := yamlkit.GetNeededStringPaths(parsedData, resourceTypeToNamespacePath, []any{}, rp, options)
-	return parsedData, values, err
 }
 
 func makeK8sFnSetNamespace(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
@@ -670,7 +549,8 @@ func overlayClusterScopedExceptions(
 // `<service>.<oldNS>.svc[...]` with `<service>.<newNS>.svc[...]`. Returns nil
 // (no errors) if the resource type has no container paths registered.
 func rewriteContainerDNS(doc *gaby.YamlDoc, resourceType api.ResourceType, oldNS, newNS string) []error {
-	containerPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceType]
+	containerPaths := k8skit.ContainerArrayPaths(resourceType)
+	ok := len(containerPaths) > 0
 	if !ok {
 		return nil
 	}
@@ -735,37 +615,12 @@ func makeK8sFnSetWorkloadLabels(rp *k8skit.K8sResourceProviderType) handler.Func
 	}
 }
 
-// workloadLabelPathRegistry builds the registry of pod-template-labels and pod-label-selector
-// map paths for use by get-workload-labels. The same paths drive set-workload-labels.
-func workloadLabelPathRegistry() api.ResourceTypeToPathToVisitorInfoType {
-	registry := api.ResourceTypeToPathToVisitorInfoType{}
-	for rt, paths := range k8skit.ResourceTypeToPodTemplateLabelsPaths {
-		if _, ok := registry[rt]; !ok {
-			registry[rt] = api.PathToVisitorInfoType{}
-		}
-		for _, p := range paths {
-			path := api.UnresolvedPath(p)
-			registry[rt][path] = &api.PathVisitorInfo{
-				Path:          path,
-				AttributeName: AttributeNameWorkloadLabels,
-				DataType:      api.DataTypeYAML,
-			}
-		}
-	}
-	for rt, paths := range k8skit.ResourceTypeToPodLabelSelectorPaths {
-		if _, ok := registry[rt]; !ok {
-			registry[rt] = api.PathToVisitorInfoType{}
-		}
-		for _, p := range paths {
-			path := api.UnresolvedPath(p)
-			registry[rt][path] = &api.PathVisitorInfo{
-				Path:          path,
-				AttributeName: AttributeNameWorkloadLabels,
-				DataType:      api.DataTypeYAML,
-			}
-		}
-	}
-	return registry
+// workloadLabelPathRegistry returns the registered pod-template-labels and pod-label-selector
+// map paths, which workload-labels is the attribute group for. Both get-workload-labels and
+// set-workload-labels read them together; they are separate attributes because only the
+// template labels are safe to change freely.
+func workloadLabelPathRegistry(rp *k8skit.K8sResourceProviderType) api.ResourceTypeToPathToVisitorInfoType {
+	return yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameWorkloadLabels)
 }
 
 func makeK8sFnGetWorkloadLabels(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
@@ -780,7 +635,7 @@ func makeK8sFnGetWorkloadLabels(rp *k8skit.K8sResourceProviderType) handler.Func
 func k8sFnGetWorkloadLabels(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container) (gaby.Container, any, error) {
 	values, err := yamlkit.GetPathsAnyType(
 		parsedData,
-		workloadLabelPathRegistry(),
+		workloadLabelPathRegistry(rp),
 		[]any{},
 		rp,
 		api.DataTypeYAML,
@@ -792,11 +647,11 @@ func k8sFnGetWorkloadLabels(rp *k8skit.K8sResourceProviderType, options *api.Fun
 
 // k8sFnSetWorkloadLabels upserts pod-template labels and pod label-selectors on
 // each visited resource. Argument values must be key=value strings; an empty
-// value (key=) removes the entry. The same change is applied to every relevant
-// labels/selector map registered for the resource type in k8skit. Selectors
-// that reference *other* workloads (NetworkPolicy ingress/egress podSelectors,
-// ServiceMonitor service selectors) are intentionally excluded — see
-// k8skit.ResourceTypeToPodLabelSelectorPaths.
+// value (key=) removes the entry. The same change is applied to every path the
+// resource type declares under workload-labels. Selectors that reference *other*
+// workloads (NetworkPolicy ingress/egress podSelectors, ServiceMonitor service
+// selectors) are deliberately not declared — see the attribute's description in
+// k8skit's resource_type_specs.yaml.
 func k8sFnSetWorkloadLabels(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
 	multiErrs := []error{}
 	pairs := map[string]string{}
@@ -828,12 +683,15 @@ func k8sFnSetWorkloadLabels(rp *k8skit.K8sResourceProviderType, options *api.Fun
 		return parsedData, nil, errors.WithStack(errors.New("no valid key-value pairs"))
 	}
 
+	labelPaths := workloadLabelPathRegistry(rp)
+
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		var visitorErrs []error
-		mapPaths := append(
-			append([]string{}, k8skit.ResourceTypeToPodTemplateLabelsPaths[resourceInfo.ResourceType]...),
-			k8skit.ResourceTypeToPodLabelSelectorPaths[resourceInfo.ResourceType]...,
-		)
+		mapPaths := make([]string, 0, len(labelPaths[resourceInfo.ResourceType]))
+		for path := range labelPaths[resourceInfo.ResourceType] {
+			mapPaths = append(mapPaths, string(path))
+		}
+		sort.Strings(mapPaths)
 		if len(mapPaths) == 0 {
 			return output, nil
 		}

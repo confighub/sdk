@@ -5,7 +5,6 @@ package kubernetes
 
 import (
 	"log/slog"
-	"sort"
 	"strings"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
@@ -17,110 +16,12 @@ import (
 	"github.com/confighub/sdk/core/third_party/gaby"
 )
 
-// defaultField describes a field path with its default value and data type.
-type defaultField struct {
-	path     string
-	value    any
-	dataType api.DataType
-}
-
 const (
 	attributeNamePodSecurityDefaults             = api.AttributeName("pod-security-defaults")
 	attributeNameAutomountServiceAccountToken    = api.AttributeName("automount-service-account-token")
 	attributeNamePodContainerSecurityCtxDefaults = api.AttributeName("pod-container-security-context-defaults")
 	attributeNameContainerResourcesDefaults      = api.AttributeName("container-resources-defaults")
 )
-
-// visitorSetter creates a $visitor FunctionInvocation with the given value.
-func visitorSetter(value any) *api.FunctionInvocation {
-	return &api.FunctionInvocation{
-		FunctionName: yamlkit.VisitorSetterInvocationFunctionName,
-		Arguments: []api.FunctionArgument{
-			{Value: value},
-		},
-	}
-}
-
-// sortedResourceTypes returns the keys of a ResourceTypeToPathToVisitorInfoType in sorted order.
-func sortedResourceTypes(m api.ResourceTypeToPathToVisitorInfoType) []api.ResourceType {
-	keys := make([]api.ResourceType, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Slice(keys, func(i, j int) bool { return keys[i] < keys[j] })
-	return keys
-}
-
-// registerDefaultPaths registers paths from a ResourceTypeToPathToVisitorInfoType in deterministic order.
-func registerDefaultPaths(rp *k8skit.K8sResourceProviderType, attributeName api.AttributeName, paths api.ResourceTypeToPathToVisitorInfoType) {
-	for _, resourceType := range sortedResourceTypes(paths) {
-		yamlkit.RegisterPathsByAttributeName(
-			rp, attributeName, resourceType,
-			paths[resourceType], nil,
-			false, false,
-		)
-	}
-}
-
-// makePodSpecDefaultPaths creates a ResourceTypeToPathToVisitorInfoType for a single field
-// relative to pod spec paths, using the given attribute name and setter invocation.
-func makePodSpecDefaultPaths(
-	attributeName api.AttributeName,
-	relativePath string,
-	dataType api.DataType,
-	setter *api.FunctionInvocation,
-) api.ResourceTypeToPathToVisitorInfoType {
-	result := api.ResourceTypeToPathToVisitorInfoType{}
-	for resourceType, podSpecPaths := range k8skit.ResourceTypeToPodSpecPaths {
-		pathMap := api.PathToVisitorInfoType{}
-		for _, podSpecPath := range podSpecPaths {
-			fullPath := api.UnresolvedPath(podSpecPath + "." + relativePath)
-			pathInfo := &api.PathVisitorInfo{
-				Path:          fullPath,
-				AttributeName: attributeName,
-				DataType:      dataType,
-			}
-			if setter != nil {
-				pathInfo.Details = &api.AttributeDetails{
-					SetterInvocations: []api.FunctionInvocation{*setter},
-				}
-			}
-			pathMap[fullPath] = pathInfo
-		}
-		result[resourceType] = pathMap
-	}
-	return result
-}
-
-// makeContainerDefaultPaths creates a ResourceTypeToPathToVisitorInfoType for a field
-// relative to each container path (containers, initContainers, ephemeralContainers).
-func makeContainerDefaultPaths(
-	attributeName api.AttributeName,
-	relativePath string,
-	dataType api.DataType,
-	setter *api.FunctionInvocation,
-) api.ResourceTypeToPathToVisitorInfoType {
-	result := api.ResourceTypeToPathToVisitorInfoType{}
-	for resourceType, containerPaths := range k8skit.ResourceTypeToContainersPaths {
-		pathMap := api.PathToVisitorInfoType{}
-		for _, containerPath := range containerPaths {
-			fullPath := api.UnresolvedPath(containerPath + ".*." + relativePath)
-			pathInfo := &api.PathVisitorInfo{
-				Path:          fullPath,
-				AttributeName: attributeName,
-				DataType:      dataType,
-			}
-			if setter != nil {
-				pathInfo.Details = &api.AttributeDetails{
-					SetterInvocations: []api.FunctionInvocation{*setter},
-				}
-			}
-			pathMap[fullPath] = pathInfo
-		}
-		result[resourceType] = pathMap
-	}
-	return result
-}
 
 func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 	// Pod security defaults: labels on Namespace resources
@@ -142,9 +43,7 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 			Path:          path,
 			AttributeName: attributeNamePodSecurityDefaults,
 			DataType:      api.DataTypeString,
-			Details: &api.AttributeDetails{
-				SetterInvocations: []api.FunctionInvocation{*visitorSetter(entry.value)},
-			},
+			Details: &api.AttributeDetails{DefaultValue: entry.value},
 		}
 	}
 	yamlkit.RegisterPathsByAttributeName(
@@ -152,67 +51,6 @@ func initDefaultingFunctions(rp *k8skit.K8sResourceProviderType) {
 		namespaceLabelPaths, nil,
 		false, false,
 	)
-
-	// Automount service account token
-	automountPaths := makePodSpecDefaultPaths(
-		attributeNameAutomountServiceAccountToken,
-		"automountServiceAccountToken",
-		api.DataTypeBool,
-		visitorSetter(false),
-	)
-	registerDefaultPaths(rp, attributeNameAutomountServiceAccountToken, automountPaths)
-
-	// Pod-level security context defaults
-	podSecCtxFields := []defaultField{
-		{"securityContext.seccompProfile.type", "RuntimeDefault", api.DataTypeString},
-		{"securityContext.runAsNonRoot", true, api.DataTypeBool},
-		{"securityContext.runAsUser", 1000, api.DataTypeInt},
-		{"securityContext.runAsGroup", 3000, api.DataTypeInt},
-		{"securityContext.fsGroup", 2000, api.DataTypeInt},
-	}
-	for _, field := range podSecCtxFields {
-		paths := makePodSpecDefaultPaths(
-			attributeNamePodContainerSecurityCtxDefaults, field.path, field.dataType,
-			visitorSetter(field.value),
-		)
-		registerDefaultPaths(rp, attributeNamePodContainerSecurityCtxDefaults, paths)
-	}
-
-	// Container-level security context defaults
-	containerSecCtxFields := []defaultField{
-		{"securityContext.allowPrivilegeEscalation", false, api.DataTypeBool},
-		{"securityContext.privileged", false, api.DataTypeBool},
-		{"securityContext.readOnlyRootFilesystem", true, api.DataTypeBool},
-	}
-	for _, field := range containerSecCtxFields {
-		paths := makeContainerDefaultPaths(
-			attributeNamePodContainerSecurityCtxDefaults, field.path, field.dataType,
-			visitorSetter(field.value),
-		)
-		registerDefaultPaths(rp, attributeNamePodContainerSecurityCtxDefaults, paths)
-	}
-
-	// Drop all capabilities by default at the container level
-	capDropPaths := makeContainerDefaultPaths(
-		attributeNamePodContainerSecurityCtxDefaults,
-		"securityContext.capabilities.drop",
-		api.DataTypeStringArray,
-		visitorSetter([]any{"ALL"}),
-	)
-	registerDefaultPaths(rp, attributeNamePodContainerSecurityCtxDefaults, capDropPaths)
-
-	// Container resource defaults
-	containerResourceFields := []defaultField{
-		{"resources.requests.cpu", "128m", api.DataTypeString},
-		{"resources.requests.memory", "128Mi", api.DataTypeString},
-	}
-	for _, field := range containerResourceFields {
-		paths := makeContainerDefaultPaths(
-			attributeNameContainerResourcesDefaults, field.path, field.dataType,
-			visitorSetter(field.value),
-		)
-		registerDefaultPaths(rp, attributeNameContainerResourcesDefaults, paths)
-	}
 }
 
 func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResourceProviderType) {
@@ -301,7 +139,7 @@ func registerDefaultingFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sReso
 	}
 
 	// set-container-probe-defaults
-	resourceTypes := yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
+	resourceTypes := k8skit.PodSpecResourceTypes()
 	if err := fh.RegisterFunction("set-container-probe-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-container-probe-defaults",
@@ -377,7 +215,8 @@ func makeK8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType) hand
 
 func k8sFnSetContainerProbeDefaults(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, paths probePaths) (gaby.Container, any, error) {
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
+		podSpecPaths := k8skit.PodSpecPaths(resourceInfo.ResourceType)
+		ok := len(podSpecPaths) > 0
 		if !ok {
 			return output, nil
 		}

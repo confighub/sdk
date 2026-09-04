@@ -1,0 +1,1087 @@
+# declared attributes: resourceType	attributeName	path	dataType[	target]
+attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	namespace-name-reference	webhooks.*.clientConfig.service.|namespace		v1/Namespace
+attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.name		v1/Service
+attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.|namespace		v1/Namespace
+attribute	admissionregistration.k8s.io/v1/ValidatingAdmissionPolicyBinding	resource-name	spec.policyName		admissionregistration.k8s.io/v1/ValidatingAdmissionPolicy
+attribute	admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration	namespace-name-reference	webhooks.*.clientConfig.service.|namespace		v1/Namespace
+attribute	admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.name		v1/Service
+attribute	admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.|namespace		v1/Namespace
+attribute	apiextensions.crossplane.io/v1/Composition	resource-name	spec.compositeTypeRef.kind		apiextensions.crossplane.io/v1/CompositeResourceDefinition
+attribute	apiextensions.k8s.io/v1/CustomResourceDefinition	namespace-name-reference	spec.conversion.webhook.clientConfig.service.|namespace		v1/Namespace
+attribute	apiextensions.k8s.io/v1/CustomResourceDefinition	resource-name	spec.conversion.webhook.clientConfig.service.|namespace		v1/Namespace
+attribute	apiregistration.k8s.io/v1/APIService	namespace-name-reference	spec.service.|namespace		v1/Namespace
+attribute	apiregistration.k8s.io/v1/APIService	resource-name	spec.service.name		v1/Service
+attribute	apiregistration.k8s.io/v1/APIService	resource-name	spec.service.|namespace		v1/Namespace
+attribute	apps/v1/DaemonSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	apps/v1/DaemonSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/DaemonSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/DaemonSet	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	apps/v1/DaemonSet	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	apps/v1/DaemonSet	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	apps/v1/DaemonSet	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	apps/v1/DaemonSet	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/DaemonSet	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/DaemonSet	container-name	spec.template.spec.containers.*.name	
+attribute	apps/v1/DaemonSet	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	apps/v1/DaemonSet	container-name	spec.template.spec.initContainers.*.name	
+attribute	apps/v1/DaemonSet	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	apps/v1/DaemonSet	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/DaemonSet	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/DaemonSet	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/DaemonSet	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/DaemonSet	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	apps/v1/DaemonSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/DaemonSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/DaemonSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/DaemonSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/DaemonSet	immutable	spec.selector	
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	apps/v1/DaemonSet	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	apps/v1/DaemonSet	pod-label-selector	spec.selector.matchLabels	
+attribute	apps/v1/DaemonSet	pod-template-labels	spec.template.metadata.labels	
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	apps/v1/DaemonSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	apps/v1/Deployment	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	apps/v1/Deployment	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/Deployment	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/Deployment	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/Deployment	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/Deployment	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	apps/v1/Deployment	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	apps/v1/Deployment	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	apps/v1/Deployment	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	apps/v1/Deployment	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/Deployment	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/Deployment	container-name	spec.template.spec.containers.*.name	
+attribute	apps/v1/Deployment	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	apps/v1/Deployment	container-name	spec.template.spec.initContainers.*.name	
+attribute	apps/v1/Deployment	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	apps/v1/Deployment	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/Deployment	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/Deployment	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/Deployment	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/Deployment	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	apps/v1/Deployment	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/Deployment	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/Deployment	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/Deployment	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/Deployment	immutable	spec.selector	
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	apps/v1/Deployment	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	apps/v1/Deployment	pod-label-selector	spec.selector.matchLabels	
+attribute	apps/v1/Deployment	pod-template-labels	spec.template.metadata.labels	
+attribute	apps/v1/Deployment	replicas	spec.replicas	
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	apps/v1/Deployment	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	apps/v1/ReplicaSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	apps/v1/ReplicaSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/ReplicaSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/ReplicaSet	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	apps/v1/ReplicaSet	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	apps/v1/ReplicaSet	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	apps/v1/ReplicaSet	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	apps/v1/ReplicaSet	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/ReplicaSet	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/ReplicaSet	container-name	spec.template.spec.containers.*.name	
+attribute	apps/v1/ReplicaSet	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	apps/v1/ReplicaSet	container-name	spec.template.spec.initContainers.*.name	
+attribute	apps/v1/ReplicaSet	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	apps/v1/ReplicaSet	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/ReplicaSet	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/ReplicaSet	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/ReplicaSet	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/ReplicaSet	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	apps/v1/ReplicaSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/ReplicaSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/ReplicaSet	immutable	spec.selector	
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	apps/v1/ReplicaSet	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	apps/v1/ReplicaSet	pod-label-selector	spec.selector.matchLabels	
+attribute	apps/v1/ReplicaSet	pod-template-labels	spec.template.metadata.labels	
+attribute	apps/v1/ReplicaSet	replicas	spec.replicas	
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	apps/v1/ReplicaSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	apps/v1/StatefulSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	apps/v1/StatefulSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/StatefulSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	apps/v1/StatefulSet	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	apps/v1/StatefulSet	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	apps/v1/StatefulSet	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	apps/v1/StatefulSet	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	apps/v1/StatefulSet	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/StatefulSet	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	apps/v1/StatefulSet	container-name	spec.template.spec.containers.*.name	
+attribute	apps/v1/StatefulSet	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	apps/v1/StatefulSet	container-name	spec.template.spec.initContainers.*.name	
+attribute	apps/v1/StatefulSet	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	apps/v1/StatefulSet	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/StatefulSet	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	apps/v1/StatefulSet	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/StatefulSet	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/StatefulSet	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	apps/v1/StatefulSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	apps/v1/StatefulSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/StatefulSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/StatefulSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	apps/v1/StatefulSet	immutable	spec.podManagementPolicy	
+attribute	apps/v1/StatefulSet	immutable	spec.selector	
+attribute	apps/v1/StatefulSet	immutable	spec.serviceName	
+attribute	apps/v1/StatefulSet	immutable	spec.volumeClaimTemplates	
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	apps/v1/StatefulSet	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	apps/v1/StatefulSet	pod-label-selector	spec.selector.matchLabels	
+attribute	apps/v1/StatefulSet	pod-template-labels	spec.template.metadata.labels	
+attribute	apps/v1/StatefulSet	replicas	spec.replicas	
+attribute	apps/v1/StatefulSet	resource-name	spec.serviceName		v1/Service
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	apps/v1/StatefulSet	resource-name	spec.volumeClaimTemplates.*.spec.storageClassName		storage.k8s.io/v1/StorageClass
+attribute	argoproj.io/v1alpha1/Application	resource-name	spec.project		argoproj.io/v1alpha1/AppProject
+attribute	argoproj.io/v1alpha1/ApplicationSet	resource-name	spec.generators.*.matrix.generators.*.plugin.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/ApplicationSet	resource-name	spec.generators.*.merge.generators.*.plugin.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/ApplicationSet	resource-name	spec.generators.*.plugin.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/CronWorkflow	resource-name	spec.workflowSpec.serviceAccountName		v1/ServiceAccount
+attribute	argoproj.io/v1alpha1/Rollout	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	argoproj.io/v1alpha1/Rollout	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	argoproj.io/v1alpha1/Rollout	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	argoproj.io/v1alpha1/Rollout	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	argoproj.io/v1alpha1/Rollout	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	argoproj.io/v1alpha1/Rollout	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	argoproj.io/v1alpha1/Rollout	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	argoproj.io/v1alpha1/Rollout	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	argoproj.io/v1alpha1/Rollout	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	argoproj.io/v1alpha1/Rollout	container-name	spec.template.spec.containers.*.name	
+attribute	argoproj.io/v1alpha1/Rollout	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	argoproj.io/v1alpha1/Rollout	container-name	spec.template.spec.initContainers.*.name	
+attribute	argoproj.io/v1alpha1/Rollout	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	argoproj.io/v1alpha1/Rollout	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	argoproj.io/v1alpha1/Rollout	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	argoproj.io/v1alpha1/Rollout	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	argoproj.io/v1alpha1/Rollout	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	argoproj.io/v1alpha1/Rollout	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	argoproj.io/v1alpha1/Rollout	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	argoproj.io/v1alpha1/Rollout	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	argoproj.io/v1alpha1/Rollout	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	argoproj.io/v1alpha1/Rollout	pod-label-selector	spec.selector.matchLabels	
+attribute	argoproj.io/v1alpha1/Rollout	pod-template-labels	spec.template.metadata.labels	
+attribute	argoproj.io/v1alpha1/Rollout	replicas	spec.replicas	
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.blueGreen.activeService		v1/Service
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.blueGreen.previewService		v1/Service
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.canary.canaryService		v1/Service
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.canary.pingPongService		v1/Service
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.canary.stableService		v1/Service
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.canary.trafficRouting.istio.destinationRule.name		networking.istio.io/v1/DestinationRule
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.strategy.canary.trafficRouting.istio.virtualService.name		networking.istio.io/v1/VirtualService
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	argoproj.io/v1alpha1/Rollout	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	argoproj.io/v1alpha1/Workflow	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetRef.name		apps/v1/Deployment
+attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetRef.name		apps/v1/ReplicaSet
+attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetRef.name		apps/v1/StatefulSet
+attribute	autoscaling/v2/HorizontalPodAutoscaler	resource-name	spec.scaleTargetRef.name		v1/ReplicationController
+attribute	batch/v1/CronJob	automount-service-account-token	spec.jobTemplate.spec.template.spec.automountServiceAccountToken	bool
+attribute	batch/v1/CronJob	configmap-hash	spec.jobTemplate.spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/CronJob	container-flag	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/CronJob	container-image	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.image	
+attribute	batch/v1/CronJob	container-image	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	batch/v1/CronJob	container-image	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	batch/v1/CronJob	container-image-reference	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	batch/v1/CronJob	container-image-reference	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	batch/v1/CronJob	container-image-reference	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	batch/v1/CronJob	container-name	spec.jobTemplate.spec.template.spec.containers.*.name	
+attribute	batch/v1/CronJob	container-name	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.name	
+attribute	batch/v1/CronJob	container-name	spec.jobTemplate.spec.template.spec.initContainers.*.name	
+attribute	batch/v1/CronJob	container-repository-uri	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	batch/v1/CronJob	container-repository-uri	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	batch/v1/CronJob	container-repository-uri	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	batch/v1/CronJob	container-resources	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/CronJob	container-resources	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/CronJob	container-resources	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.containers.*.resources.requests.memory	string
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	batch/v1/CronJob	container-resources-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/CronJob	env-value	spec.jobTemplate.spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.securityContext.fsGroup	int
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.securityContext.runAsGroup	int
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.securityContext.runAsUser	int
+attribute	batch/v1/CronJob	pod-container-security-context-defaults	spec.jobTemplate.spec.template.spec.securityContext.seccompProfile.type	string
+attribute	batch/v1/CronJob	pod-label-selector	spec.jobTemplate.spec.selector.matchLabels	
+attribute	batch/v1/CronJob	pod-template-labels	spec.jobTemplate.spec.template.metadata.labels	
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	batch/v1/CronJob	resource-name	spec.jobTemplate.spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	batch/v1/Job	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	batch/v1/Job	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	batch/v1/Job	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/Job	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/Job	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	batch/v1/Job	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	batch/v1/Job	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	batch/v1/Job	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	batch/v1/Job	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	batch/v1/Job	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	batch/v1/Job	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	batch/v1/Job	container-name	spec.template.spec.containers.*.name	
+attribute	batch/v1/Job	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	batch/v1/Job	container-name	spec.template.spec.initContainers.*.name	
+attribute	batch/v1/Job	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	batch/v1/Job	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	batch/v1/Job	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	batch/v1/Job	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/Job	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/Job	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	batch/v1/Job	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	batch/v1/Job	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/Job	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/Job	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	batch/v1/Job	immutable	spec.backoffLimitPerIndex	
+attribute	batch/v1/Job	immutable	spec.completionMode	
+attribute	batch/v1/Job	immutable	spec.completions	
+attribute	batch/v1/Job	immutable	spec.managedBy	
+attribute	batch/v1/Job	immutable	spec.podFailurePolicy	
+attribute	batch/v1/Job	immutable	spec.selector	
+attribute	batch/v1/Job	immutable	spec.successPolicy	
+attribute	batch/v1/Job	immutable	spec.template	
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	batch/v1/Job	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	batch/v1/Job	pod-label-selector	spec.selector.matchLabels	
+attribute	batch/v1/Job	pod-template-labels	spec.template.metadata.labels	
+attribute	batch/v1/Job	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	batch/v1/Job	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	batch/v1/Job	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	batch/v1/Job	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	batch/v1/Job	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	batch/v1/Job	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	cert-manager.io/v1/Certificate	hostname	spec.commonName	
+attribute	cert-manager.io/v1/Certificate	hostname	spec.dnsNames.*	
+attribute	cert-manager.io/v1/Certificate	resource-name	spec.issuerRef.name		cert-manager.io/v1/Issuer
+attribute	cert-manager.io/v1/Certificate	resource-name	spec.secretName		v1/Secret
+attribute	cert-manager.io/v1/ClusterIssuer	resource-name	spec.acme.solvers.*.http01.ingress.podTemplate.spec.serviceAccountName		v1/ServiceAccount
+attribute	cert-manager.io/v1/ClusterIssuer	resource-name	spec.ca.secretName		v1/Secret
+attribute	cert-manager.io/v1/ClusterIssuer	resource-name	spec.vault.auth.clientCertificate.secretName		v1/Secret
+attribute	cert-manager.io/v1/ClusterIssuer	resource-name	spec.vault.auth.kubernetes.serviceAccountRef.name		v1/ServiceAccount
+attribute	cert-manager.io/v1/Issuer	resource-name	spec.acme.solvers.*.http01.ingress.podTemplate.spec.serviceAccountName		v1/ServiceAccount
+attribute	cert-manager.io/v1/Issuer	resource-name	spec.ca.secretName		v1/Secret
+attribute	cert-manager.io/v1/Issuer	resource-name	spec.vault.auth.clientCertificate.secretName		v1/Secret
+attribute	cert-manager.io/v1/Issuer	resource-name	spec.vault.auth.kubernetes.serviceAccountRef.name		v1/ServiceAccount
+attribute	discovery.k8s.io/v1/EndpointSlice	immutable	addressType	
+attribute	ec2.services.k8s.aws/v1alpha1/DHCPOptions	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/DHCPOptions	resource-name	spec.vpcRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/Instance	resource-name	spec.launchTemplate.launchTemplateRef.from.name		ec2.services.k8s.aws/v1alpha1/LaunchTemplate
+attribute	ec2.services.k8s.aws/v1alpha1/Instance	resource-name	spec.subnetRef.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	ec2.services.k8s.aws/v1alpha1/InternetGateway	resource-name	spec.routeTableRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/RouteTable
+attribute	ec2.services.k8s.aws/v1alpha1/InternetGateway	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/NATGateway	resource-name	spec.allocationRef.from.name		ec2.services.k8s.aws/v1alpha1/ElasticIPAddress
+attribute	ec2.services.k8s.aws/v1alpha1/NATGateway	resource-name	spec.subnetRef.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	ec2.services.k8s.aws/v1alpha1/NATGateway	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/NetworkACL	resource-name	spec.subnetRef.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	ec2.services.k8s.aws/v1alpha1/NetworkACL	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.routes.*.gatewayRef.from.name		ec2.services.k8s.aws/v1alpha1/InternetGateway
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.routes.*.natGatewayRef.from.name		ec2.services.k8s.aws/v1alpha1/NATGateway
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.routes.*.transitGatewayRef.from.name		ec2.services.k8s.aws/v1alpha1/TransitGateway
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.routes.*.vpcEndpointRef.from.name		ec2.services.k8s.aws/v1alpha1/VPCEndpoint
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.routes.*.vpcPeeringConnectionRef.from.name		ec2.services.k8s.aws/v1alpha1/VPCPeeringConnection
+attribute	ec2.services.k8s.aws/v1alpha1/RouteTable	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/SecurityGroup	resource-name	spec.egressRules.*.groupRef.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	ec2.services.k8s.aws/v1alpha1/SecurityGroup	resource-name	spec.ingressRules.*.groupRef.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	ec2.services.k8s.aws/v1alpha1/SecurityGroup	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/Subnet	resource-name	spec.routeTableRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/RouteTable
+attribute	ec2.services.k8s.aws/v1alpha1/Subnet	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/TransitGatewayVPCAttachment	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	ec2.services.k8s.aws/v1alpha1/TransitGatewayVPCAttachment	resource-name	spec.transitGatewayRef.from.name		ec2.services.k8s.aws/v1alpha1/TransitGateway
+attribute	ec2.services.k8s.aws/v1alpha1/TransitGatewayVPCAttachment	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	immutable	spec.serviceNetworkARN	
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	immutable	spec.serviceRegion	
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	resource-name	spec.routeTableRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/RouteTable
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	resource-name	spec.securityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	ec2.services.k8s.aws/v1alpha1/VPCEndpoint	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/VPCPeeringConnection	resource-name	spec.peerVPCRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	ec2.services.k8s.aws/v1alpha1/VPCPeeringConnection	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	eks.services.k8s.aws/v1alpha1/AccessEntry	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/Addon	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/Addon	resource-name	spec.serviceAccountRoleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	eks.services.k8s.aws/v1alpha1/Capability	immutable	spec.clusterName	
+attribute	eks.services.k8s.aws/v1alpha1/Capability	immutable	spec.name	
+attribute	eks.services.k8s.aws/v1alpha1/Capability	immutable	spec.type	
+attribute	eks.services.k8s.aws/v1alpha1/Cluster	immutable	spec.encryptionConfig	
+attribute	eks.services.k8s.aws/v1alpha1/Cluster	resource-name	spec.resourcesVPCConfig.securityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	eks.services.k8s.aws/v1alpha1/Cluster	resource-name	spec.resourcesVPCConfig.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	eks.services.k8s.aws/v1alpha1/Cluster	resource-name	spec.roleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	eks.services.k8s.aws/v1alpha1/FargateProfile	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/FargateProfile	resource-name	spec.podExecutionRoleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	eks.services.k8s.aws/v1alpha1/FargateProfile	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	eks.services.k8s.aws/v1alpha1/IdentityProviderConfig	immutable	spec.clusterName	
+attribute	eks.services.k8s.aws/v1alpha1/IdentityProviderConfig	immutable	spec.oidc	
+attribute	eks.services.k8s.aws/v1alpha1/IdentityProviderConfig	immutable	spec.tags	
+attribute	eks.services.k8s.aws/v1alpha1/IdentityProviderConfig	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.amiType	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.clusterName	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.diskSize	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.instanceTypes	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.name	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.nodeRole	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.remoteAccess	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	immutable	spec.subnets	
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	resource-name	spec.nodeRoleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	resource-name	spec.remoteAccess.sourceSecurityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	eks.services.k8s.aws/v1alpha1/Nodegroup	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	eks.services.k8s.aws/v1alpha1/PodIdentityAssociation	resource-name	spec.clusterRef.from.name		eks.services.k8s.aws/v1alpha1/Cluster
+attribute	eks.services.k8s.aws/v1alpha1/PodIdentityAssociation	resource-name	spec.roleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	elbv2.services.k8s.aws/v1alpha1/Listener	resource-name	spec.defaultActions.*.forwardConfig.targetGroups.*.targetGroupRef.from.name		elbv2.services.k8s.aws/v1alpha1/TargetGroup
+attribute	elbv2.services.k8s.aws/v1alpha1/Listener	resource-name	spec.defaultActions.*.targetGroupRef.from.name		elbv2.services.k8s.aws/v1alpha1/TargetGroup
+attribute	elbv2.services.k8s.aws/v1alpha1/Listener	resource-name	spec.loadBalancerRef.from.name		elbv2.services.k8s.aws/v1alpha1/LoadBalancer
+attribute	elbv2.services.k8s.aws/v1alpha1/LoadBalancer	resource-name	spec.securityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	elbv2.services.k8s.aws/v1alpha1/LoadBalancer	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	elbv2.services.k8s.aws/v1alpha1/Rule	resource-name	spec.actions.*.forwardConfig.targetGroups.*.targetGroupRef.from.name		elbv2.services.k8s.aws/v1alpha1/TargetGroup
+attribute	elbv2.services.k8s.aws/v1alpha1/Rule	resource-name	spec.actions.*.targetGroupRef.from.name		elbv2.services.k8s.aws/v1alpha1/TargetGroup
+attribute	elbv2.services.k8s.aws/v1alpha1/Rule	resource-name	spec.listenerRef.from.name		elbv2.services.k8s.aws/v1alpha1/Listener
+attribute	elbv2.services.k8s.aws/v1alpha1/TargetGroup	resource-name	spec.vpcRef.from.name		ec2.services.k8s.aws/v1alpha1/VPC
+attribute	external-secrets.io/v1/ClusterSecretStore	resource-name	spec.provider.kubernetes.auth.serviceAccount.name		v1/ServiceAccount
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.data.*.sourceRef.storeRef.name		external-secrets.io/v1/SecretStore
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.dataFrom.*.sourceRef.storeRef.name		external-secrets.io/v1/SecretStore
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.secretStoreRef.name		external-secrets.io/v1/SecretStore
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.target.name		v1/Secret
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.target.template.templateFrom.*.configMap.name		v1/ConfigMap
+attribute	external-secrets.io/v1/ExternalSecret	resource-name	spec.target.template.templateFrom.*.secret.name		v1/Secret
+attribute	external-secrets.io/v1/SecretStore	resource-name	spec.provider.kubernetes.auth.serviceAccount.name		v1/ServiceAccount
+attribute	external-secrets.io/v1beta1/ClusterSecretStore	resource-name	spec.provider.kubernetes.auth.serviceAccount.name		v1/ServiceAccount
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.data.*.sourceRef.storeRef.name		external-secrets.io/v1beta1/SecretStore
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.dataFrom.*.sourceRef.storeRef.name		external-secrets.io/v1beta1/SecretStore
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.secretStoreRef.name		external-secrets.io/v1beta1/SecretStore
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.target.name		v1/Secret
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.target.template.templateFrom.*.configMap.name		v1/ConfigMap
+attribute	external-secrets.io/v1beta1/ExternalSecret	resource-name	spec.target.template.templateFrom.*.secret.name		v1/Secret
+attribute	external-secrets.io/v1beta1/SecretStore	resource-name	spec.provider.kubernetes.auth.serviceAccount.name		v1/ServiceAccount
+attribute	externaldns.k8s.io/v1alpha1/DNSEndpoint	hostname	spec.endpoints.*.dnsName	
+attribute	gateway.networking.k8s.io/v1/GRPCRoute	hostname	spec.hostnames.*	
+attribute	gateway.networking.k8s.io/v1/GRPCRoute	resource-name	spec.rules.*.backendRefs.*.name		v1/Service
+attribute	gateway.networking.k8s.io/v1/Gateway	hostname	spec.listeners.*.hostname	
+attribute	gateway.networking.k8s.io/v1/Gateway	resource-name	spec.gatewayClassName		gateway.networking.k8s.io/v1/GatewayClass
+attribute	gateway.networking.k8s.io/v1/Gateway	resource-name	spec.listeners.*.tls.certificateRefs.*.name		v1/Secret
+attribute	gateway.networking.k8s.io/v1/HTTPRoute	hostname	spec.hostnames.*	
+attribute	gateway.networking.k8s.io/v1/HTTPRoute	resource-name	spec.rules.*.backendRefs.*.name		v1/Service
+attribute	gateway.networking.k8s.io/v1/HTTPRoute	resource-name	spec.rules.*.filters.*.requestMirror.backendRef.name		v1/Service
+attribute	gateway.networking.k8s.io/v1alpha2/TCPRoute	resource-name	spec.rules.*.backendRefs.*.name		v1/Service
+attribute	gateway.networking.k8s.io/v1alpha2/UDPRoute	resource-name	spec.rules.*.backendRefs.*.name		v1/Service
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	namespace-name-reference	spec.chartRef.|namespace		v1/Namespace
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.chart.spec.sourceRef.name		source.toolkit.fluxcd.io/v1/HelmRepository
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.chartRef.name		source.toolkit.fluxcd.io/v1/HelmChart
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.chartRef.|namespace		v1/Namespace
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.kubeConfig.secretRef.name		v1/Secret
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	helm.toolkit.fluxcd.io/v2/HelmRelease	resource-name	spec.valuesFrom.*.name		v1/ConfigMap
+attribute	iam.services.k8s.aws/v1alpha1/Group	resource-name	spec.policyRefs.*.from.name		iam.services.k8s.aws/v1alpha1/Policy
+attribute	iam.services.k8s.aws/v1alpha1/InstanceProfile	immutable	spec.path	
+attribute	iam.services.k8s.aws/v1alpha1/InstanceProfile	resource-name	spec.roleRef.from.name		iam.services.k8s.aws/v1alpha1/Role
+attribute	iam.services.k8s.aws/v1alpha1/OpenIDConnectProvider	immutable	spec.url	
+attribute	iam.services.k8s.aws/v1alpha1/Policy	immutable	spec.description	
+attribute	iam.services.k8s.aws/v1alpha1/Role	resource-name	spec.permissionsBoundaryRef.from.name		iam.services.k8s.aws/v1alpha1/Policy
+attribute	iam.services.k8s.aws/v1alpha1/Role	resource-name	spec.policyRefs.*.from.name		iam.services.k8s.aws/v1alpha1/Policy
+attribute	iam.services.k8s.aws/v1alpha1/ServiceLinkedRole	immutable	spec.awsServiceName	
+attribute	iam.services.k8s.aws/v1alpha1/ServiceLinkedRole	immutable	spec.customSuffix	
+attribute	iam.services.k8s.aws/v1alpha1/User	resource-name	spec.permissionsBoundaryRef.from.name		iam.services.k8s.aws/v1alpha1/Policy
+attribute	iam.services.k8s.aws/v1alpha1/User	resource-name	spec.policyRefs.*.from.name		iam.services.k8s.aws/v1alpha1/Policy
+attribute	image.toolkit.fluxcd.io/v1beta2/ImagePolicy	resource-name	spec.imageRepositoryRef.name		image.toolkit.fluxcd.io/v1beta2/ImageRepository
+attribute	image.toolkit.fluxcd.io/v1beta2/ImageRepository	resource-name	spec.certSecretRef.name		v1/Secret
+attribute	image.toolkit.fluxcd.io/v1beta2/ImageRepository	resource-name	spec.secretRef.name		v1/Secret
+attribute	image.toolkit.fluxcd.io/v1beta2/ImageRepository	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	image.toolkit.fluxcd.io/v1beta2/ImageUpdateAutomation	resource-name	spec.sourceRef.name		source.toolkit.fluxcd.io/v1/GitRepository
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	namespace-name-reference	spec.|targetNamespace		v1/Namespace
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	resource-name	spec.decryption.secretRef.name		v1/Secret
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	resource-name	spec.kubeConfig.secretRef.name		v1/Secret
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	resource-name	spec.sourceRef.name		source.toolkit.fluxcd.io/v1/GitRepository
+attribute	kustomize.toolkit.fluxcd.io/v1/Kustomization	resource-name	spec.|targetNamespace		v1/Namespace
+attribute	monitoring.coreos.com/v1/Alertmanager	resource-name	spec.configSecret		v1/Secret
+attribute	monitoring.coreos.com/v1/Alertmanager	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	monitoring.coreos.com/v1/PodMonitor	pod-label-selector	spec.selector.matchLabels	
+attribute	monitoring.coreos.com/v1/Prometheus	resource-name	spec.alerting.alertmanagers.*.name		v1/Service
+attribute	monitoring.coreos.com/v1/Prometheus	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	monitoring.coreos.com/v1/Prometheus	resource-name	spec.serviceName		v1/Service
+attribute	networking.istio.io/v1/DestinationRule	resource-name	spec.host		v1/Service
+attribute	networking.istio.io/v1/Gateway	resource-name	spec.servers.*.tls.credentialName		v1/Secret
+attribute	networking.istio.io/v1/VirtualService	resource-name	spec.http.*.mirror.host		v1/Service
+attribute	networking.istio.io/v1/VirtualService	resource-name	spec.http.*.mirrors.*.destination.host		v1/Service
+attribute	networking.istio.io/v1/VirtualService	resource-name	spec.http.*.route.*.destination.host		v1/Service
+attribute	networking.istio.io/v1/VirtualService	resource-name	spec.tcp.*.route.*.destination.host		v1/Service
+attribute	networking.istio.io/v1/VirtualService	resource-name	spec.tls.*.route.*.destination.host		v1/Service
+attribute	networking.k8s.io/v1/Ingress	hostname	spec.rules.*.host	
+attribute	networking.k8s.io/v1/Ingress	hostname	spec.tls.*.hosts.*	
+attribute	networking.k8s.io/v1/Ingress	resource-name	metadata.annotations.ingress~1kubernetes~1io/auth-secret		v1/Secret
+attribute	networking.k8s.io/v1/Ingress	resource-name	metadata.annotations.nginx~1ingress~1kubernetes~1io/auth-secret		v1/Secret
+attribute	networking.k8s.io/v1/Ingress	resource-name	metadata.annotations.nginx~1ingress~1kubernetes~1io/auth-tls-secret		v1/Secret
+attribute	networking.k8s.io/v1/Ingress	resource-name	metadata.annotations.nginx~1ingress~1kubernetes~1io/fastcgi-params-configmap		v1/ConfigMap
+attribute	networking.k8s.io/v1/Ingress	resource-name	spec.defaultBackend.service.name		v1/Service
+attribute	networking.k8s.io/v1/Ingress	resource-name	spec.ingressClassName		networking.k8s.io/v1/IngressClass
+attribute	networking.k8s.io/v1/Ingress	resource-name	spec.rules.*.http.paths.*.backend.service.name		v1/Service
+attribute	networking.k8s.io/v1/Ingress	resource-name	spec.tls.secretName		v1/Secret
+attribute	networking.k8s.io/v1/IngressClass	immutable	spec.controller	
+attribute	networking.k8s.io/v1/NetworkPolicy	pod-label-selector	spec.podSelector.matchLabels	
+attribute	notification.toolkit.fluxcd.io/v1beta3/Alert	resource-name	spec.providerRef.name		notification.toolkit.fluxcd.io/v1beta3/Provider
+attribute	notification.toolkit.fluxcd.io/v1beta3/Provider	resource-name	spec.certSecretRef.name		v1/Secret
+attribute	notification.toolkit.fluxcd.io/v1beta3/Provider	resource-name	spec.secretRef.name		v1/Secret
+attribute	pkg.crossplane.io/v1/Provider	resource-name	spec.runtimeConfigRef.name		pkg.crossplane.io/v1beta1/DeploymentRuntimeConfig
+attribute	policy/v1/PodDisruptionBudget	pod-label-selector	spec.selector.matchLabels	
+attribute	projectcontour.io/v1/HTTPProxy	resource-name	spec.includes.*.name		projectcontour.io/v1/HTTPProxy
+attribute	projectcontour.io/v1/HTTPProxy	resource-name	spec.routes.*.services.*.name		v1/Service
+attribute	projectcontour.io/v1/HTTPProxy	resource-name	spec.virtualhost.tls.secretName		v1/Secret
+attribute	projectcontour.io/v1/TLSCertificateDelegation	resource-name	spec.delegations.*.secretName		v1/Secret
+attribute	rbac.authorization.k8s.io/v1/ClusterRole	resource-name	rules.*.resourceNames.*		v1/ConfigMap
+attribute	rbac.authorization.k8s.io/v1/ClusterRole	resource-name	rules.*.resourceNames.*		v1/PersistentVolume
+attribute	rbac.authorization.k8s.io/v1/ClusterRole	resource-name	rules.*.resourceNames.*		v1/Secret
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	immutable	roleRef	
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	namespace-name-reference	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/ClusterRole
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	subjects.*.name		v1/ServiceAccount
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
+attribute	rbac.authorization.k8s.io/v1/Role	resource-name	rules.*.resourceNames.*		v1/ConfigMap
+attribute	rbac.authorization.k8s.io/v1/Role	resource-name	rules.*.resourceNames.*		v1/Secret
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	immutable	roleRef	
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	namespace-name-reference	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/ClusterRole
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/Role
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	subjects.*.name		v1/ServiceAccount
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
+attribute	rds.services.k8s.aws/v1alpha1/DBCluster	resource-name	spec.dbClusterParameterGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBClusterParameterGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBCluster	resource-name	spec.dbSubnetGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBSubnetGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBCluster	resource-name	spec.vpcSecurityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBClusterEndpoint	resource-name	spec.dbClusterIdentifierRef.from.name		rds.services.k8s.aws/v1alpha1/DBCluster
+attribute	rds.services.k8s.aws/v1alpha1/DBClusterSnapshot	resource-name	spec.dbClusterIdentifierRef.from.name		rds.services.k8s.aws/v1alpha1/DBCluster
+attribute	rds.services.k8s.aws/v1alpha1/DBInstance	immutable	spec.availabilityZone	
+attribute	rds.services.k8s.aws/v1alpha1/DBInstance	resource-name	spec.dbParameterGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBParameterGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBInstance	resource-name	spec.dbSubnetGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBSubnetGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBInstance	resource-name	spec.vpcSecurityGroupRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/SecurityGroup
+attribute	rds.services.k8s.aws/v1alpha1/DBSnapshot	resource-name	spec.dbInstanceIdentifierRef.from.name		rds.services.k8s.aws/v1alpha1/DBInstance
+attribute	rds.services.k8s.aws/v1alpha1/DBSubnetGroup	resource-name	spec.subnetRefs.*.from.name		ec2.services.k8s.aws/v1alpha1/Subnet
+attribute	s3.services.k8s.aws/v1alpha1/Bucket	immutable	spec.name	
+attribute	scheduling.k8s.io/v1/PriorityClass	immutable	preemptionPolicy	
+attribute	scheduling.k8s.io/v1/PriorityClass	immutable	value	
+attribute	serving.knative.dev/v1/Service	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	serving.knative.dev/v1/Service	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	serving.knative.dev/v1/Service	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	serving.knative.dev/v1/Service	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	serving.knative.dev/v1/Service	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	serving.knative.dev/v1/Service	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	serving.knative.dev/v1/Service	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	serving.knative.dev/v1/Service	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	serving.knative.dev/v1/Service	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	serving.knative.dev/v1/Service	container-name	spec.template.spec.containers.*.name	
+attribute	serving.knative.dev/v1/Service	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	serving.knative.dev/v1/Service	container-name	spec.template.spec.initContainers.*.name	
+attribute	serving.knative.dev/v1/Service	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	serving.knative.dev/v1/Service	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	serving.knative.dev/v1/Service	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	serving.knative.dev/v1/Service	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	serving.knative.dev/v1/Service	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	serving.knative.dev/v1/Service	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	serving.knative.dev/v1/Service	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	serving.knative.dev/v1/Service	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	serving.knative.dev/v1/Service	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	serving.knative.dev/v1/Service	pod-template-labels	spec.template.metadata.labels	
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	serving.knative.dev/v1/Service	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1/GitRepository	resource-name	spec.secretRef.name		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1/HelmChart	resource-name	spec.sourceRef.name		source.toolkit.fluxcd.io/v1/HelmRepository
+attribute	source.toolkit.fluxcd.io/v1/HelmChart	resource-name	spec.valuesFiles.*.name		v1/ConfigMap
+attribute	source.toolkit.fluxcd.io/v1/HelmRepository	resource-name	spec.secretRef.name		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1beta2/Bucket	resource-name	spec.secretRef.name		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1beta2/OCIRepository	resource-name	spec.certSecretRef.name		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1beta2/OCIRepository	resource-name	spec.secretRef.name		v1/Secret
+attribute	source.toolkit.fluxcd.io/v1beta2/OCIRepository	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	storage.k8s.io/v1/StorageClass	immutable	parameters	
+attribute	storage.k8s.io/v1/StorageClass	immutable	provisioner	
+attribute	storage.k8s.io/v1/StorageClass	immutable	reclaimPolicy	
+attribute	storage.k8s.io/v1/StorageClass	immutable	volumeBindingMode	
+attribute	storage.k8s.io/v1/StorageClass	resource-name	parameters.adminSecretName		v1/Secret
+attribute	storage.k8s.io/v1/StorageClass	resource-name	parameters.secretName		v1/Secret
+attribute	storage.k8s.io/v1/StorageClass	resource-name	parameters.secretRef		v1/Secret
+attribute	storage.k8s.io/v1/StorageClass	resource-name	parameters.userSecretName		v1/Secret
+attribute	traefik.io/v1alpha1/IngressRoute	resource-name	spec.routes.*.middlewares.*.name		traefik.io/v1alpha1/Middleware
+attribute	traefik.io/v1alpha1/IngressRoute	resource-name	spec.routes.*.services.*.name		v1/Service
+attribute	traefik.io/v1alpha1/IngressRoute	resource-name	spec.tls.secretName		v1/Secret
+attribute	traefik.io/v1alpha1/IngressRouteTCP	resource-name	spec.routes.*.services.*.name		v1/Service
+attribute	traefik.io/v1alpha1/IngressRouteTCP	resource-name	spec.tls.secretName		v1/Secret
+attribute	traefik.io/v1alpha1/IngressRouteUDP	resource-name	spec.routes.*.services.*.name		v1/Service
+attribute	v1/ConfigMap	configmap-hash	metadata.annotations.confighub~1com/Hash	
+attribute	v1/Node	resource-name	spec.configSource.configMap.name		v1/ConfigMap
+attribute	v1/PersistentVolume	immutable	spec.nodeAffinity	
+attribute	v1/PersistentVolume	immutable	spec.persistentVolumeSource	
+attribute	v1/PersistentVolume	immutable	spec.storageClassName	
+attribute	v1/PersistentVolume	immutable	spec.volumeMode	
+attribute	v1/PersistentVolume	resource-name	spec.azureFile.secretName		v1/Secret
+attribute	v1/PersistentVolume	resource-name	spec.storageClassName		storage.k8s.io/v1/StorageClass
+attribute	v1/PersistentVolumeClaim	immutable	spec.accessModes	
+attribute	v1/PersistentVolumeClaim	immutable	spec.dataSource	
+attribute	v1/PersistentVolumeClaim	immutable	spec.dataSourceRef	
+attribute	v1/PersistentVolumeClaim	immutable	spec.selector	
+attribute	v1/PersistentVolumeClaim	immutable	spec.storageClassName	
+attribute	v1/PersistentVolumeClaim	immutable	spec.volumeMode	
+attribute	v1/PersistentVolumeClaim	immutable	spec.volumeName	
+attribute	v1/PersistentVolumeClaim	resource-name	spec.storageClassName		storage.k8s.io/v1/StorageClass
+attribute	v1/PersistentVolumeClaim	resource-name	spec.volumeName		v1/PersistentVolume
+attribute	v1/Pod	automount-service-account-token	spec.automountServiceAccountToken	bool
+attribute	v1/Pod	configmap-hash	metadata.annotations.confighub~1com/Hash	
+attribute	v1/Pod	container-flag	spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/Pod	container-flag	spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/Pod	container-flag	spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/Pod	container-image	spec.containers.?name:container-name=%s.image	
+attribute	v1/Pod	container-image	spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	v1/Pod	container-image	spec.initContainers.?name:container-name=%s.image	
+attribute	v1/Pod	container-image-reference	spec.containers.?name:container-name=%s.image#reference	
+attribute	v1/Pod	container-image-reference	spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	v1/Pod	container-image-reference	spec.initContainers.?name:container-name=%s.image#reference	
+attribute	v1/Pod	container-name	spec.containers.*.name	
+attribute	v1/Pod	container-name	spec.ephemeralContainers.*.name	
+attribute	v1/Pod	container-name	spec.initContainers.*.name	
+attribute	v1/Pod	container-repository-uri	spec.containers.?name:container-name=%s.image#uri	
+attribute	v1/Pod	container-repository-uri	spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	v1/Pod	container-repository-uri	spec.initContainers.?name:container-name=%s.image#uri	
+attribute	v1/Pod	container-resources	spec.containers.?name:container-name=%s.resources	YAML
+attribute	v1/Pod	container-resources	spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	v1/Pod	container-resources	spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	v1/Pod	container-resources-defaults	spec.containers.*.resources.requests.cpu	string
+attribute	v1/Pod	container-resources-defaults	spec.containers.*.resources.requests.memory	string
+attribute	v1/Pod	container-resources-defaults	spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	v1/Pod	container-resources-defaults	spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	v1/Pod	container-resources-defaults	spec.initContainers.*.resources.requests.cpu	string
+attribute	v1/Pod	container-resources-defaults	spec.initContainers.*.resources.requests.memory	string
+attribute	v1/Pod	env-value	spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/Pod	env-value	spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/Pod	env-value	spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/Pod	immutable	spec.affinity	
+attribute	v1/Pod	immutable	spec.automountServiceAccountToken	
+attribute	v1/Pod	immutable	spec.containers	
+attribute	v1/Pod	immutable	spec.dnsConfig	
+attribute	v1/Pod	immutable	spec.dnsPolicy	
+attribute	v1/Pod	immutable	spec.enableServiceLinks	
+attribute	v1/Pod	immutable	spec.ephemeralContainers	
+attribute	v1/Pod	immutable	spec.hostAliases	
+attribute	v1/Pod	immutable	spec.hostIPC	
+attribute	v1/Pod	immutable	spec.hostNetwork	
+attribute	v1/Pod	immutable	spec.hostPID	
+attribute	v1/Pod	immutable	spec.hostUsers	
+attribute	v1/Pod	immutable	spec.hostname	
+attribute	v1/Pod	immutable	spec.imagePullSecrets	
+attribute	v1/Pod	immutable	spec.initContainers	
+attribute	v1/Pod	immutable	spec.nodeName	
+attribute	v1/Pod	immutable	spec.nodeSelector	
+attribute	v1/Pod	immutable	spec.os	
+attribute	v1/Pod	immutable	spec.overhead	
+attribute	v1/Pod	immutable	spec.preemptionPolicy	
+attribute	v1/Pod	immutable	spec.priority	
+attribute	v1/Pod	immutable	spec.priorityClassName	
+attribute	v1/Pod	immutable	spec.readinessGates	
+attribute	v1/Pod	immutable	spec.resourceClaims	
+attribute	v1/Pod	immutable	spec.restartPolicy	
+attribute	v1/Pod	immutable	spec.runtimeClassName	
+attribute	v1/Pod	immutable	spec.schedulerName	
+attribute	v1/Pod	immutable	spec.securityContext	
+attribute	v1/Pod	immutable	spec.serviceAccountName	
+attribute	v1/Pod	immutable	spec.setHostnameAsFQDN	
+attribute	v1/Pod	immutable	spec.shareProcessNamespace	
+attribute	v1/Pod	immutable	spec.subdomain	
+attribute	v1/Pod	immutable	spec.topologySpreadConstraints	
+attribute	v1/Pod	immutable	spec.volumes	
+attribute	v1/Pod	pod-container-security-context-defaults	spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	v1/Pod	pod-container-security-context-defaults	spec.containers.*.securityContext.privileged	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/Pod	pod-container-security-context-defaults	spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/Pod	pod-container-security-context-defaults	spec.initContainers.*.securityContext.privileged	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.securityContext.fsGroup	int
+attribute	v1/Pod	pod-container-security-context-defaults	spec.securityContext.runAsGroup	int
+attribute	v1/Pod	pod-container-security-context-defaults	spec.securityContext.runAsNonRoot	bool
+attribute	v1/Pod	pod-container-security-context-defaults	spec.securityContext.runAsUser	int
+attribute	v1/Pod	pod-container-security-context-defaults	spec.securityContext.seccompProfile.type	string
+attribute	v1/Pod	pod-template-labels	metadata.labels	
+attribute	v1/Pod	resource-name	spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.imagePullSecrets.*.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	v1/Pod	resource-name	spec.serviceAccountName		v1/ServiceAccount
+attribute	v1/Pod	resource-name	spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	v1/Pod	resource-name	spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	v1/Pod	resource-name	spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	v1/Pod	resource-name	spec.volumes.*.secret.secretName		v1/Secret
+attribute	v1/PodTemplate	automount-service-account-token	template.spec.automountServiceAccountToken	bool
+attribute	v1/PodTemplate	configmap-hash	template.metadata.annotations.confighub~1com/Hash	
+attribute	v1/PodTemplate	container-flag	template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/PodTemplate	container-flag	template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/PodTemplate	container-flag	template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/PodTemplate	container-image	template.spec.containers.?name:container-name=%s.image	
+attribute	v1/PodTemplate	container-image	template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	v1/PodTemplate	container-image	template.spec.initContainers.?name:container-name=%s.image	
+attribute	v1/PodTemplate	container-image-reference	template.spec.containers.?name:container-name=%s.image#reference	
+attribute	v1/PodTemplate	container-image-reference	template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	v1/PodTemplate	container-image-reference	template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	v1/PodTemplate	container-name	template.spec.containers.*.name	
+attribute	v1/PodTemplate	container-name	template.spec.ephemeralContainers.*.name	
+attribute	v1/PodTemplate	container-name	template.spec.initContainers.*.name	
+attribute	v1/PodTemplate	container-repository-uri	template.spec.containers.?name:container-name=%s.image#uri	
+attribute	v1/PodTemplate	container-repository-uri	template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	v1/PodTemplate	container-repository-uri	template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	v1/PodTemplate	container-resources	template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	v1/PodTemplate	container-resources	template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	v1/PodTemplate	container-resources	template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.containers.*.resources.requests.cpu	string
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.containers.*.resources.requests.memory	string
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.initContainers.*.resources.requests.cpu	string
+attribute	v1/PodTemplate	container-resources-defaults	template.spec.initContainers.*.resources.requests.memory	string
+attribute	v1/PodTemplate	env-value	template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/PodTemplate	env-value	template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/PodTemplate	env-value	template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.containers.*.securityContext.privileged	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.initContainers.*.securityContext.privileged	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.securityContext.fsGroup	int
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.securityContext.runAsGroup	int
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.securityContext.runAsNonRoot	bool
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.securityContext.runAsUser	int
+attribute	v1/PodTemplate	pod-container-security-context-defaults	template.spec.securityContext.seccompProfile.type	string
+attribute	v1/PodTemplate	pod-template-labels	template.metadata.labels	
+attribute	v1/PodTemplate	resource-name	template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	v1/PodTemplate	resource-name	template.spec.serviceAccountName		v1/ServiceAccount
+attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	v1/PodTemplate	resource-name	template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	v1/ReplicationController	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	v1/ReplicationController	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	v1/ReplicationController	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/ReplicationController	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/ReplicationController	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	v1/ReplicationController	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	v1/ReplicationController	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	v1/ReplicationController	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	v1/ReplicationController	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	v1/ReplicationController	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	v1/ReplicationController	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	v1/ReplicationController	container-name	spec.template.spec.containers.*.name	
+attribute	v1/ReplicationController	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	v1/ReplicationController	container-name	spec.template.spec.initContainers.*.name	
+attribute	v1/ReplicationController	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	v1/ReplicationController	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	v1/ReplicationController	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	v1/ReplicationController	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	v1/ReplicationController	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	v1/ReplicationController	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	v1/ReplicationController	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	v1/ReplicationController	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/ReplicationController	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/ReplicationController	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	v1/ReplicationController	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	v1/ReplicationController	pod-label-selector	spec.selector	
+attribute	v1/ReplicationController	pod-template-labels	spec.template.metadata.labels	
+attribute	v1/ReplicationController	replicas	spec.replicas	
+attribute	v1/ReplicationController	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	v1/ReplicationController	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	v1/ReplicationController	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	v1/ResourceQuota	immutable	spec.scopes	
+attribute	v1/Secret	immutable	type	
+attribute	v1/Service	hostname	metadata.annotations.external-dns~1alpha~1kubernetes~1io/hostname	
+attribute	v1/Service	immutable	spec.clusterIP	
+attribute	v1/Service	immutable	spec.clusterIPs	
+attribute	v1/Service	immutable	spec.healthCheckNodePort	
+attribute	v1/Service	immutable	spec.ipFamilies	
+attribute	v1/Service	immutable	spec.ipFamilyPolicy	
+attribute	v1/Service	pod-label-selector	spec.selector	
+attribute	v1/ServiceAccount	resource-name	imagePullSecrets.*.name		v1/Secret

@@ -78,12 +78,6 @@ func displayExtendedAttributeDetails(extendedAttr *goclientnew.ExtendedAttribute
 					rtpLines = append(rtpLines, fmt.Sprintf("    - %s", path))
 				}
 			}
-			if entry.GetterInvocation != nil {
-				rtpLines = append(rtpLines, fmt.Sprintf("    getter: %s", entry.GetterInvocation.FunctionName))
-			}
-			if entry.SetterInvocation != nil {
-				rtpLines = append(rtpLines, fmt.Sprintf("    setter: %s", entry.SetterInvocation.FunctionName))
-			}
 		}
 		view.Append([]string{"Resource Type Paths", strings.Join(rtpLines, "\n")})
 	}

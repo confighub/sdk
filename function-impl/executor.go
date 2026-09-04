@@ -20,7 +20,6 @@ import (
 	"github.com/confighub/sdk/configkit/tomlkit"
 	"github.com/confighub/sdk/core/configkit/cubkit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
-	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/function/executor"
 	"github.com/confighub/sdk/core/function/handler"
 	"github.com/confighub/sdk/core/workerapi"
@@ -117,28 +116,12 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 
 			// Register paths for each ResourceType entry
 			for _, entry := range attr.ResourceTypePaths {
-				// Use user-provided invocations if present, otherwise default to get-/set-<name>
-				getterInvocation := entry.GetterInvocation
-				if getterInvocation == nil && !isBuiltIn {
-					getterInvocation = &api.FunctionInvocation{
-						FunctionName: "get-" + name,
-					}
-				}
-				setterInvocation := entry.SetterInvocation
-				if setterInvocation == nil && !isBuiltIn {
-					setterInvocation = &api.FunctionInvocation{
-						FunctionName: "set-" + name,
-					}
-				}
-
 				yamlkit.RegisterPathsByAttributeName(
 					resourceProvider,
 					attr.AttributeName,
 					entry.ResourceType,
 					entry.Paths,
 					&yamlkit.AttributeRegistrationDetails{
-						GetterInvocation:              getterInvocation,
-						SetterInvocation:              setterInvocation,
 						AttributeNeedsProvidesDetails: entry.AttributeNeedsProvidesDetails,
 					},
 					false, false,
@@ -147,18 +130,15 @@ func NewStandardExecutorWithAttributes(toolchainTypes []workerapi.ToolchainType,
 
 			// Register getter/setter functions only for non-built-in attributes
 			if !isBuiltIn {
-				// Detect $visitor setter pattern in path Details to enable defaults mode
+				// A path carrying a default value puts the attribute in defaults mode: its
+				// setter takes no value, writing what each path declares instead.
 				defaults := false
 			outer:
 				for _, entry := range attr.ResourceTypePaths {
 					for _, pathInfo := range entry.Paths {
-						if pathInfo.Details != nil {
-							for _, si := range pathInfo.Details.SetterInvocations {
-								if si.FunctionName == yamlkit.VisitorSetterInvocationFunctionName {
-									defaults = true
-									break outer
-								}
-							}
+						if pathInfo.Details != nil && pathInfo.Details.DefaultValue != nil {
+							defaults = true
+							break outer
 						}
 					}
 				}

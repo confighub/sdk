@@ -31537,13 +31537,14 @@
             "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
             "x-go-type-skip-optional-pointer": true
           },
+          "DefaultValue": {
+            "description": "Value a defaulting function writes at this path, if any",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Description": {
             "type": "string",
             "description": "Description of the attribute",
             "x-go-type-skip-optional-pointer": true
-          },
-          "GetterInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
           },
           "IsNeeded": {
             "type": "boolean",
@@ -31577,14 +31578,6 @@
               "type": "string"
             },
             "description": "Key/value properties describing what this provided value offers, for matching",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "SetterInvocations": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FunctionInvocation"
-            },
-            "description": "Function invocation used to set the attribute (except for the value), if any",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -35604,9 +35597,6 @@
             "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
             "x-go-type-skip-optional-pointer": true
           },
-          "GetterInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
-          },
           "IsNeeded": {
             "type": "boolean",
             "description": "Whether this attribute is a needed value",
@@ -35647,9 +35637,6 @@
           "ResourceType": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
-          },
-          "SetterInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
           }
         }
       },

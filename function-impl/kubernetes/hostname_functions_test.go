@@ -16,7 +16,7 @@ import (
 )
 
 // hostnameResources is a multi-resource Unit covering every resource type wired
-// into k8skit.ResourceTypeToNeededHostnamePaths whose hostnames live in their own
+// declaring the hostname attribute, whose hostnames live in their own
 // scalar (or string-array element). Traefik is intentionally absent — it packs
 // multiple hostnames into one match string and is handled separately.
 const hostnameResources = `apiVersion: networking.k8s.io/v1

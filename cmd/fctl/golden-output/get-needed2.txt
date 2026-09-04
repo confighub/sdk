@@ -1,0 +1,23 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "/myscaler",
+    "ResourceNameWithoutScope": "myscaler",
+    "ResourceType": "autoscaling/v2/HorizontalPodAutoscaler",
+    "ResourceCategory": "Resource",
+    "Path": "spec.scaleTargetRef.name",
+    "AttributeName": "resource-name",
+    "DataType": "string",
+    "Details": {
+      "NeededRequired": {
+        "ResourceType": "apps/v1/Deployment,apps/v1/ReplicaSet,apps/v1/StatefulSet,v1/ReplicationController"
+      },
+      "IsNeeded": true
+    },
+    "Value": "confighubplaceholder",
+    "Index": 0,
+    "FunctionName": "get-needed"
+  }
+]

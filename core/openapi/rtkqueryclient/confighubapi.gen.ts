@@ -13616,37 +13616,6 @@ export type FunctionParameter = {
   Required?: boolean;
   Schema?: Schema;
 };
-export type FunctionArgument = {
-  Evaluator?: string;
-  ParameterName?: string;
-  Value?: string | number | boolean;
-};
-export type ClearanceRequirement = {
-  /** The guard key this requirement is about */
-  Key?: string;
-  /** Exists, In, NotIn, or DoesNotExist */
-  Operator?: string;
-  /** The values In and NotIn compare against; unused by Exists and DoesNotExist */
-  Values?: string[];
-};
-export type Clearance = ClearanceRequirement[];
-export type GuardStamp = {
-  [key: string]: string;
-};
-export type FunctionInvocation = {
-  /** Function arguments */
-  Arguments?: FunctionArgument[] | null;
-  Clearance?: Clearance;
-  /** Function name */
-  FunctionName?: string;
-  Guards?: GuardStamp;
-  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
-  Params?: {
-    [key: string]: any;
-  };
-  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
-  WhereResource?: string;
-};
 export type AttributeDetails = {
   /** ID of the Link that bound this needed path to a provided value */
   BoundLinkID?: string;
@@ -13654,9 +13623,10 @@ export type AttributeDetails = {
   BoundProvidedProperties?: {
     [key: string]: string;
   };
+  /** Value a defaulting function writes at this path, if any */
+  DefaultValue?: any;
   /** Description of the attribute */
   Description?: string;
-  GetterInvocation?: FunctionInvocation;
   /** Whether this attribute is a needed value */
   IsNeeded?: boolean;
   /** Whether this attribute is a provided value */
@@ -13673,8 +13643,6 @@ export type AttributeDetails = {
   ProvidedProperties?: {
     [key: string]: string;
   };
-  /** Function invocation used to set the attribute (except for the value), if any */
-  SetterInvocations?: FunctionInvocation[];
 };
 export type PathVisitorInfo = {
   /** AttributeName for the path */
@@ -13705,7 +13673,6 @@ export type ResourceTypePathsEntry = {
   BoundProvidedProperties?: {
     [key: string]: string;
   };
-  GetterInvocation?: FunctionInvocation;
   /** Whether this attribute is a needed value */
   IsNeeded?: boolean;
   /** Whether this attribute is a provided value */
@@ -13724,7 +13691,6 @@ export type ResourceTypePathsEntry = {
     [key: string]: string;
   };
   ResourceType?: string;
-  SetterInvocation?: FunctionInvocation;
 };
 export type Attribute = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -14718,6 +14684,37 @@ export type FunctionInvocationsResponse = {
   UnitID?: string;
   /** Slug of the Unit */
   UnitSlug?: string;
+};
+export type FunctionArgument = {
+  Evaluator?: string;
+  ParameterName?: string;
+  Value?: string | number | boolean;
+};
+export type ClearanceRequirement = {
+  /** The guard key this requirement is about */
+  Key?: string;
+  /** Exists, In, NotIn, or DoesNotExist */
+  Operator?: string;
+  /** The values In and NotIn compare against; unused by Exists and DoesNotExist */
+  Values?: string[];
+};
+export type Clearance = ClearanceRequirement[];
+export type GuardStamp = {
+  [key: string]: string;
+};
+export type FunctionInvocation = {
+  /** Function arguments */
+  Arguments?: FunctionArgument[] | null;
+  Clearance?: Clearance;
+  /** Function name */
+  FunctionName?: string;
+  Guards?: GuardStamp;
+  /** Caller-supplied parameter values for expanding templated argument Values; transient, not persisted */
+  Params?: {
+    [key: string]: any;
+  };
+  /** Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource). */
+  WhereResource?: string;
 };
 export type FunctionInvocationList = FunctionInvocation[] | null;
 export type ParameterizedInvocationRef = {

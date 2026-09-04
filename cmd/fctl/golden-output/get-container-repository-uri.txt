@@ -1,0 +1,17 @@
+SUCCESS    true    
+OUTPUT
+------
+[
+  {
+    "ResourceName": "example/mydep",
+    "ResourceNameWithoutScope": "mydep",
+    "ResourceType": "apps/v1/Deployment",
+    "ResourceCategory": "Resource",
+    "Path": "spec.template.spec.containers.?name=nginx.image#uri",
+    "AttributeName": "container-repository-uri",
+    "DataType": "string",
+    "Value": "nginx",
+    "Index": 0,
+    "FunctionName": "get-container-repository-uri"
+  }
+]

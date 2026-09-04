@@ -1,0 +1,1267 @@
+# One declaration per Kubernetes resource type, replacing the per-concern tables that each
+# named a subset of the types. See docs/design/resource-type-specs.md.
+#
+# It carries the structure half -- merge keys, exclusive fields, and map-key paths, which is
+# what decides whether a stored path is `containers.?name=runner` or `containers.0` -- and the
+# attribute half: which attributes a type has and where they live.
+#
+# It is embedded with go:embed and compiled at package init. The same format loads from a
+# file, and is the format a stored spec Unit is meant to hold, so a type registered without a
+# ConfigHub release is registered the way the built-ins are.
+#
+# Paths are gaby dot syntax, `*` for any array index. Every path in a shape is relative to
+# wherever that shape is embedded; every path on a resource type is relative to the resource.
+#
+# Attributes declared here:
+#
+#   immutable        Fields that cannot change after creation; changing one requires deleting
+#                    and recreating the resource. Transcribed from Kubernetes validation source
+#                    and from the ACK and Crossplane CRDs. Read by vet-immutable.
+#
+#   hostname         Fields holding a single DNS hostname. Each path must address one hostname
+#                    scalar -- an element of a string array via `*` is fine -- because the
+#                    subdomain and domain within it are read through an accessor at
+#                    "<path>#subdomain" and "<path>#domain". A field packing several hostnames
+#                    into one string, such as a Traefik IngressRoute match expression, does not
+#                    belong here.
+#
+#   replicas         The desired number of pods, on the controllers that manage a replicated
+#                    set of them. Read by get-replicas and written by set-replicas.
+#
+#   pod-template-labels
+#                    The labels that end up on the pods a workload produces. Declared on the
+#                    PodTemplate shape, so every type embedding a pod template has it at the
+#                    right depth. v1/Pod declares its own metadata.labels: it produces no pods
+#                    because it is one.
+#
+#   pod-label-selector
+#                    Where the selector that finds those pods lives. For matchLabels-style
+#                    selectors that is the matchLabels map; for the flat v1/Service selector it
+#                    is spec.selector itself.
+#
+#                    Only selectors targeting the resource's *own* pods belong here. A
+#                    NetworkPolicy's spec.podSelector does; its spec.ingress[].from[].podSelector
+#                    and spec.egress[].to[].podSelector do not, because those reference other
+#                    workloads and rewriting them would repoint the policy.
+#
+#                    These two were one attribute, workload-labels, when they were two tables.
+#                    They are separate because only one of them is safe to change freely: a
+#                    selector is immutable on most workloads. get/set-workload-labels still read
+#                    both, through the workload-labels attribute group.
+#
+#   resource-name    A field naming another resource, declared with `target:` -- the type it
+#                    names. It compiles to the ResourceType property that needs and provides
+#                    matching selects on, so a Link can resolve the field to a Unit holding a
+#                    resource of that type.
+#
+#                    Pod-spec references are declared on the PodSpec and Containers shapes, so
+#                    every type carrying a pod spec has them at the right depth and every
+#                    container array has them, rather than each type listing its own.
+#
+#                    The built-in types' references were transcribed from kustomize's
+#                    NameReferenceFieldSpecs; see function-impl/third_party/kustomize.
+#
+#                    A namespace field is declared twice, once here and once as a
+#                    namespace-name-reference, because it is two things: a reference to a
+#                    Namespace, and the namespace of the resource holding it. get-namespace and
+#                    set-namespace read the second name. The exceptions are metadata.namespace,
+#                    which is registered against every type at once, and a Namespace's own
+#                    metadata.name, which is the namespace rather than a reference to one; both
+#                    are registered in function-impl/kubernetes.
+#
+#                    A `|` prefix on a leaf segment (`service.|namespace`) gates upsert: the
+#                    parent chain up to that segment must already exist for the path to resolve,
+#                    but the leaf is created if missing. That keeps set-namespace from inventing
+#                    optional sub-objects -- a CRD's spec.conversion.webhook -- on resources that
+#                    do not have them, while still adding subjects[*].namespace to every
+#                    ServiceAccount subject of a binding that does.
+
+toolchainType: Kubernetes/YAML
+
+shapes:
+  # A container array. Every container kind -- containers, initContainers,
+  # ephemeralContainers -- has the same shape, which is why it is declared once and embedded
+  # three times rather than enumerated per array.
+  #
+  # The shape sits at the array rather than at an element, because the element is not spelled
+  # the same way throughout. Structure holds for any element, so it is stated with a wildcard.
+  # An attribute acts on one container, so it states the selector that picks it --
+  # `?name:container-name=%s` -- and that spelling is kept in the registered path because it is
+  # what a setter writes through. container-name is the exception: it enumerates the containers,
+  # so that functions taking a container-name argument have something to enumerate.
+  Containers:
+    mergeKeys:
+      - {path: "*.env", key: name}
+      - {path: "*.ports", key: containerPort, extraKeys: [protocol]}
+      - {path: "*.volumeDevices", key: devicePath}
+      - {path: "*.volumeMounts", key: mountPath}
+    exclusiveFields:
+      # The fields that say *how* to probe, as opposed to the timing fields beside them.
+      - {path: "*.livenessProbe", members: [exec, grpc, httpGet, tcpSocket]}
+      - {path: "*.readinessProbe", members: [exec, grpc, httpGet, tcpSocket]}
+      - {path: "*.startupProbe", members: [exec, grpc, httpGet, tcpSocket]}
+      - {path: "*.lifecycle.postStart", members: [exec, grpc, httpGet, tcpSocket]}
+      - {path: "*.lifecycle.preStop", members: [exec, grpc, httpGet, tcpSocket]}
+      # An env var has a literal value or a reference, never both.
+      - {path: "*.env.*", members: [value, valueFrom]}
+      # io.k8s.api.core.v1.EnvVarSource.
+      - path: "*.env.*.valueFrom"
+        members: [configMapKeyRef, fieldRef, fileKeyRef, resourceFieldRef, secretKeyRef]
+    attributes:
+      # Enumerates the containers, so that functions operating on a specified container have
+      # something to enumerate. That is why it is the one path stated for any element.
+      container-name:
+        - {path: "*.name"}
+      # The rest act on one container, so they carry the selector that picks it.
+      # container-resources registers no getter or setter because set-container-resources is not
+      # a path setter: it takes an operation (all, cap or floor) alongside the cpu and memory to
+      # set, and decides per value whether to write. The path is registered so the resources are
+      # addressable; the function reaches them itself.
+      container-image:
+        - {path: "?name:container-name=%s.image"}
+      container-repository-uri:
+        - {path: "?name:container-name=%s.image#uri"}
+      container-image-reference:
+        - {path: "?name:container-name=%s.image#reference"}
+      env-value:
+        - {path: "?name:container-name=%s.env.?name:env-var=%s.value"}
+      container-resources:
+        - {path: "?name:container-name=%s.resources", dataType: YAML}
+      container-flag:
+        - {path: "?name:container-name=%s.args.?flag:container-flag=%s#value"}
+      # Defaults written by set-pod-security-defaults, per container. The value is on the path
+      # because that is what varies: one attribute, a different default at each field.
+      pod-container-security-context-defaults:
+        - {path: "*.securityContext.allowPrivilegeEscalation", dataType: bool, default: false}
+        - {path: "*.securityContext.privileged", dataType: bool, default: false}
+        - {path: "*.securityContext.readOnlyRootFilesystem", dataType: bool, default: true}
+        - {path: "*.securityContext.capabilities.drop", dataType: "[]string", default: [ALL]}
+      # Written by set-container-resource-defaults.
+      container-resources-defaults:
+        - {path: "*.resources.requests.cpu", dataType: string, default: 128m}
+        - {path: "*.resources.requests.memory", dataType: string, default: 128Mi}
+      # Fields naming another resource. Declared on the shape, so every container array has
+      # them -- including ephemeralContainers, which the per-type table did not reach.
+      resource-name:
+        - {path: "*.env.*.valueFrom.configMapKeyRef.name", target: v1/ConfigMap}
+        - {path: "*.env.*.valueFrom.secretKeyRef.name", target: v1/Secret}
+        - {path: "*.envFrom.*.configMapRef.name", target: v1/ConfigMap}
+        - {path: "*.envFrom.*.secretRef.name", target: v1/Secret}
+
+  # io.k8s.api.core.v1.PodSpec, relative to wherever a type puts one.
+  PodSpec:
+    embeds:
+      - {shape: Containers, path: containers}
+      - {shape: Containers, path: initContainers}
+      - {shape: Containers, path: ephemeralContainers}
+    mergeKeys:
+      - {path: containers, key: name}
+      - {path: ephemeralContainers, key: name}
+      - {path: hostAliases, key: ip}
+      - {path: imagePullSecrets, key: name}
+      - {path: initContainers, key: name}
+      - {path: resourceClaims, key: name}
+      - {path: schedulingGates, key: name}
+      - {path: topologySpreadConstraints, key: topologyKey, extraKeys: [whenUnsatisfiable]}
+      - {path: volumes, key: name}
+    exclusiveFields:
+      # The inline members of a Volume's source union, from io.k8s.api.core.v1.Volume: every
+      # property but `name`. There is no discriminator -- the member that is present is what
+      # says which kind of volume this is.
+      - path: volumes.*
+        members:
+          - awsElasticBlockStore
+          - azureDisk
+          - azureFile
+          - cephfs
+          - cinder
+          - configMap
+          - csi
+          - downwardAPI
+          - emptyDir
+          - ephemeral
+          - fc
+          - flexVolume
+          - flocker
+          - gcePersistentDisk
+          - gitRepo
+          - glusterfs
+          - hostPath
+          - image
+          - iscsi
+          - nfs
+          - persistentVolumeClaim
+          - photonPersistentDisk
+          - portworxVolume
+          - projected
+          - quobyte
+          - rbd
+          - scaleIO
+          - secret
+          - storageos
+          - vsphereVolume
+      # A pod's claim names either a claim or a template, never both.
+      - {path: resourceClaims.*, members: [resourceClaimName, resourceClaimTemplateName]}
+
+    attributes:
+      # Written by set-automount-service-account-token.
+      automount-service-account-token:
+        - {path: automountServiceAccountToken, dataType: bool, default: false}
+      # Pod-level half of set-pod-security-defaults; the container-level half is on Containers.
+      pod-container-security-context-defaults:
+        - {path: securityContext.seccompProfile.type, dataType: string, default: RuntimeDefault}
+        - {path: securityContext.runAsNonRoot, dataType: bool, default: true}
+        - {path: securityContext.runAsUser, dataType: int, default: 1000}
+        - {path: securityContext.runAsGroup, dataType: int, default: 3000}
+        - {path: securityContext.fsGroup, dataType: int, default: 2000}
+      # Fields naming another resource. Stated once here rather than once per type that
+      # carries a pod spec, which is what left ReplicationController, ReplicaSet and
+      # PodTemplate with some of them and not others.
+      resource-name:
+        - {path: imagePullSecrets.*.name, target: v1/Secret}
+        - {path: priorityClassName, target: scheduling.k8s.io/v1/PriorityClass}
+        - {path: serviceAccountName, target: v1/ServiceAccount}
+        - {path: volumes.*.configMap.name, target: v1/ConfigMap}
+        - {path: volumes.*.persistentVolumeClaim.claimName, target: v1/PersistentVolumeClaim}
+        - {path: volumes.*.projected.sources.*.configMap.name, target: v1/ConfigMap}
+        - {path: volumes.*.projected.sources.*.secret.name, target: v1/Secret}
+        - {path: volumes.*.secret.secretName, target: v1/Secret}
+
+  # io.k8s.api.core.v1.PodTemplateSpec: pod metadata beside a PodSpec. The metadata path is
+  # what the tables could not express -- they stored the PodSpec path and derived the metadata
+  # path back out of it by string surgery.
+  PodTemplate:
+    embeds:
+      - {shape: PodSpec, path: spec}
+    mapKeyPaths:
+      - metadata.labels.*
+      - metadata.annotations.*
+    attributes:
+      # The labels that end up on the pods this template produces. Declared here rather than
+      # per type, so every type that embeds a pod template gets it at the right depth.
+      pod-template-labels:
+        - {path: metadata.labels}
+      # The hash of a ConfigMap this workload mounts, propagated here so that a change to the
+      # ConfigMap's content rolls the pods it produces. Declared on the shape, so every type
+      # carrying a pod template wants it at the right depth.
+      configmap-hash:
+        - {path: metadata.annotations.confighub~1com/Hash, needed: true}
+
+resourceTypes:
+  # ---------------------------------------------------------------------------------------
+  # Universal: facts that hold for every Kubernetes resource type
+  # ---------------------------------------------------------------------------------------
+  - type: "*"
+    mergeKeys:
+      - {path: metadata.ownerReferences, key: uid}
+    mapKeyPaths:
+      - metadata.labels.*
+      - metadata.annotations.*
+      - spec.selector.matchLabels.*
+
+  # ---------------------------------------------------------------------------------------
+  # Workloads
+  #
+  # A rolling-update strategy is one optional member gated by a `type` discriminator. Recreate
+  # and OnDelete permit nothing, which is the whole point -- a strategy that has moved off
+  # RollingUpdate must not still carry rollingUpdate.
+  # ---------------------------------------------------------------------------------------
+  - type: apps/v1/Deployment
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    exclusiveFields:
+      - path: spec.strategy
+        members: [rollingUpdate]
+        discriminator: type
+        allowedMember: {RollingUpdate: rollingUpdate}
+    attributes:
+      replicas:
+        - {path: spec.replicas}
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+      immutable:
+        - {path: spec.selector}
+
+  - type: apps/v1/ReplicaSet
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    attributes:
+      replicas:
+        - {path: spec.replicas}
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+      immutable:
+        - {path: spec.selector}
+
+  - type: apps/v1/DaemonSet
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    exclusiveFields:
+      - path: spec.updateStrategy
+        members: [rollingUpdate]
+        discriminator: type
+        allowedMember: {RollingUpdate: rollingUpdate}
+    attributes:
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+      immutable:
+        - {path: spec.selector}
+
+  - type: apps/v1/StatefulSet
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    mergeKeys:
+      - {path: spec.volumeClaimTemplates.*.metadata.ownerReferences, key: uid}
+    exclusiveFields:
+      - path: spec.updateStrategy
+        members: [rollingUpdate]
+        discriminator: type
+        allowedMember: {RollingUpdate: rollingUpdate}
+    attributes:
+      resource-name:
+        - {path: spec.serviceName, target: v1/Service}
+        - {path: spec.volumeClaimTemplates.*.spec.storageClassName, target: storage.k8s.io/v1/StorageClass}
+      replicas:
+        - {path: spec.replicas}
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+      immutable:
+        - {path: spec.selector}
+        - {path: spec.serviceName}
+        - {path: spec.podManagementPolicy}
+        - {path: spec.volumeClaimTemplates}
+
+  - type: batch/v1/Job
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    attributes:
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+      immutable:
+        - {path: spec.selector}
+        - {path: spec.completionMode}
+        - {path: spec.completions}
+        - {path: spec.template}
+        - {path: spec.podFailurePolicy}
+        - {path: spec.backoffLimitPerIndex}
+        - {path: spec.managedBy}
+        - {path: spec.successPolicy}
+
+  - type: batch/v1/CronJob
+    embeds:
+      - {shape: PodTemplate, path: spec.jobTemplate.spec.template}
+    attributes:
+      pod-label-selector:
+        - {path: spec.jobTemplate.spec.selector.matchLabels}
+
+  # A ReplicationController's selector is a flat map, like a Service's, not matchLabels.
+  - type: v1/ReplicationController
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    attributes:
+      replicas:
+        - {path: spec.replicas}
+      pod-label-selector:
+        - {path: spec.selector}
+
+  - type: v1/PodTemplate
+    embeds:
+      - {shape: PodTemplate, path: template}
+
+  - type: argoproj.io/v1alpha1/Rollout
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+    attributes:
+      resource-name:
+        - {path: spec.strategy.blueGreen.activeService, target: v1/Service}
+        - {path: spec.strategy.blueGreen.previewService, target: v1/Service}
+        - {path: spec.strategy.canary.canaryService, target: v1/Service}
+        - {path: spec.strategy.canary.pingPongService, target: v1/Service}
+        - {path: spec.strategy.canary.stableService, target: v1/Service}
+        - {path: spec.strategy.canary.trafficRouting.istio.destinationRule.name, target: networking.istio.io/v1/DestinationRule}
+        - {path: spec.strategy.canary.trafficRouting.istio.virtualService.name, target: networking.istio.io/v1/VirtualService}
+      replicas:
+        - {path: spec.replicas}
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+
+  # A Pod carries a PodSpec directly. It has no pod template, so it gets no pod-template
+  # metadata paths -- which is why `spec.metadata.labels.*`, a path that does not exist in a
+  # Pod, is not here. The tables derived it by trimming a `.spec` suffix a Pod's `spec` does
+  # not have.
+  - type: v1/Pod
+    embeds:
+      - {shape: PodSpec, path: spec}
+    attributes:
+      configmap-hash:
+        - {path: metadata.annotations.confighub~1com/Hash, needed: true}
+      pod-template-labels:
+        - {path: metadata.labels}
+      immutable:
+        - {path: spec.volumes}
+        - {path: spec.initContainers}
+        - {path: spec.containers}
+        - {path: spec.ephemeralContainers}
+        - {path: spec.restartPolicy}
+        - {path: spec.dnsPolicy}
+        - {path: spec.dnsConfig}
+        - {path: spec.nodeSelector}
+        - {path: spec.nodeName}
+        - {path: spec.serviceAccountName}
+        - {path: spec.automountServiceAccountToken}
+        - {path: spec.hostNetwork}
+        - {path: spec.hostPID}
+        - {path: spec.hostIPC}
+        - {path: spec.hostUsers}
+        - {path: spec.shareProcessNamespace}
+        - {path: spec.securityContext}
+        - {path: spec.imagePullSecrets}
+        - {path: spec.hostname}
+        - {path: spec.subdomain}
+        - {path: spec.setHostnameAsFQDN}
+        - {path: spec.affinity}
+        - {path: spec.schedulerName}
+        - {path: spec.hostAliases}
+        - {path: spec.priorityClassName}
+        - {path: spec.priority}
+        - {path: spec.preemptionPolicy}
+        - {path: spec.readinessGates}
+        - {path: spec.runtimeClassName}
+        - {path: spec.enableServiceLinks}
+        - {path: spec.overhead}
+        - {path: spec.topologySpreadConstraints}
+        - {path: spec.os}
+        - {path: spec.resourceClaims}
+
+  # ---------------------------------------------------------------------------------------
+  # Admission registration
+  # ---------------------------------------------------------------------------------------
+  - type: admissionregistration.k8s.io/v1/MutatingAdmissionPolicy
+    mergeKeys:
+      - {path: spec.matchConditions, key: name}
+
+  - type: admissionregistration.k8s.io/v1/ValidatingAdmissionPolicy
+    mergeKeys:
+      - {path: spec.matchConditions, key: name}
+      - {path: spec.variables, key: name}
+
+  - type: admissionregistration.k8s.io/v1/MutatingWebhookConfiguration
+    mergeKeys:
+      - {path: webhooks, key: name}
+      - {path: webhooks.*.matchConditions, key: name}
+    attributes:
+      namespace-name-reference:
+        - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
+        - {path: webhooks.*.clientConfig.service.name, target: v1/Service}
+
+  - type: admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration
+    mergeKeys:
+      - {path: webhooks, key: name}
+      - {path: webhooks.*.matchConditions, key: name}
+    attributes:
+      namespace-name-reference:
+        - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
+        - {path: webhooks.*.clientConfig.service.name, target: v1/Service}
+
+  # ---------------------------------------------------------------------------------------
+  # CRDs
+  # ---------------------------------------------------------------------------------------
+  - type: apiextensions.k8s.io/v1/CustomResourceDefinition
+    mergeKeys:
+      - {path: spec.versions.*.schema.openAPIV3Schema.x-kubernetes-validations, key: rule}
+    attributes:
+      resource-name:
+        - {path: "spec.conversion.webhook.clientConfig.service.|namespace", target: v1/Namespace}
+      namespace-name-reference:
+        - {path: "spec.conversion.webhook.clientConfig.service.|namespace", target: v1/Namespace}
+
+  # ---------------------------------------------------------------------------------------
+  # Core
+  # ---------------------------------------------------------------------------------------
+  - type: v1/Service
+    mergeKeys:
+      - {path: spec.ports, key: port, extraKeys: [protocol]}
+    attributes:
+      hostname:
+        - {path: metadata.annotations.external-dns~1alpha~1kubernetes~1io/hostname}
+      pod-label-selector:
+        - {path: spec.selector}
+      immutable:
+        - {path: spec.clusterIP}
+        - {path: spec.clusterIPs}
+        - {path: spec.ipFamilies}
+        - {path: spec.ipFamilyPolicy}
+        - {path: spec.healthCheckNodePort}
+
+  - type: v1/ServiceAccount
+    mergeKeys:
+      - {path: secrets, key: name}
+    attributes:
+      resource-name:
+        - {path: imagePullSecrets.*.name, target: v1/Secret}
+
+  # Deprecated but still in the spec.
+  - type: v1/ComponentStatus
+    mergeKeys:
+      - {path: conditions, key: type}
+
+  # The same volume-source union as a PodSpec volume, inline on the spec.
+  - type: v1/PersistentVolume
+    exclusiveFields:
+      - path: spec
+        members:
+          - awsElasticBlockStore
+          - azureDisk
+          - azureFile
+          - cephfs
+          - cinder
+          - configMap
+          - csi
+          - downwardAPI
+          - emptyDir
+          - ephemeral
+          - fc
+          - flexVolume
+          - flocker
+          - gcePersistentDisk
+          - gitRepo
+          - glusterfs
+          - hostPath
+          - image
+          - iscsi
+          - nfs
+          - persistentVolumeClaim
+          - photonPersistentDisk
+          - portworxVolume
+          - projected
+          - quobyte
+          - rbd
+          - scaleIO
+          - secret
+          - storageos
+          - vsphereVolume
+    attributes:
+      resource-name:
+        - {path: spec.azureFile.secretName, target: v1/Secret}
+        - {path: spec.storageClassName, target: storage.k8s.io/v1/StorageClass}
+      immutable:
+        - {path: spec.persistentVolumeSource}
+        - {path: spec.volumeMode}
+        - {path: spec.storageClassName}
+        - {path: spec.nodeAffinity}
+
+  # ---------------------------------------------------------------------------------------
+  # Storage
+  # ---------------------------------------------------------------------------------------
+  - type: storage.k8s.io/v1/CSINode
+    mergeKeys:
+      - {path: spec.drivers, key: name}
+
+  # ---------------------------------------------------------------------------------------
+  # Types whose only declared fact is which of their fields are immutable after creation.
+  #
+  # Transcribed from Kubernetes validation source -- pkg/apis/{core,apps,batch,storage,
+  # networking,discovery,rbac,scheduling}/validation -- and from the ACK and Crossplane
+  # CRDs. Not exhaustive: a type absent from this file is ordinary, not an error.
+  # ---------------------------------------------------------------------------------------
+  - type: discovery.k8s.io/v1/EndpointSlice
+    attributes:
+      immutable:
+        - {path: addressType}
+
+  - type: ec2.services.k8s.aws/v1alpha1/VPCEndpoint
+    attributes:
+      resource-name:
+        - {path: spec.routeTableRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/RouteTable}
+        - {path: spec.securityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+      immutable:
+        - {path: spec.serviceNetworkARN}
+        - {path: spec.serviceRegion}
+
+  - type: eks.services.k8s.aws/v1alpha1/Capability
+    attributes:
+      immutable:
+        - {path: spec.clusterName}
+        - {path: spec.name}
+        - {path: spec.type}
+
+  - type: eks.services.k8s.aws/v1alpha1/Cluster
+    attributes:
+      resource-name:
+        - {path: spec.resourcesVPCConfig.securityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.resourcesVPCConfig.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+        - {path: spec.roleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+      immutable:
+        - {path: spec.encryptionConfig}
+
+  - type: eks.services.k8s.aws/v1alpha1/IdentityProviderConfig
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+      immutable:
+        - {path: spec.clusterName}
+        - {path: spec.oidc}
+        - {path: spec.tags}
+
+  - type: eks.services.k8s.aws/v1alpha1/Nodegroup
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+        - {path: spec.nodeRoleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+        - {path: spec.remoteAccess.sourceSecurityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+      immutable:
+        - {path: spec.amiType}
+        - {path: spec.clusterName}
+        - {path: spec.diskSize}
+        - {path: spec.instanceTypes}
+        - {path: spec.name}
+        - {path: spec.nodeRole}
+        - {path: spec.remoteAccess}
+        - {path: spec.subnets}
+
+  - type: iam.services.k8s.aws/v1alpha1/InstanceProfile
+    attributes:
+      resource-name:
+        - {path: spec.roleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+      immutable:
+        - {path: spec.path}
+
+  - type: iam.services.k8s.aws/v1alpha1/OpenIDConnectProvider
+    attributes:
+      immutable:
+        - {path: spec.url}
+
+  - type: iam.services.k8s.aws/v1alpha1/Policy
+    attributes:
+      immutable:
+        - {path: spec.description}
+
+  - type: iam.services.k8s.aws/v1alpha1/ServiceLinkedRole
+    attributes:
+      immutable:
+        - {path: spec.awsServiceName}
+        - {path: spec.customSuffix}
+
+  - type: networking.k8s.io/v1/IngressClass
+    attributes:
+      immutable:
+        - {path: spec.controller}
+
+  - type: rbac.authorization.k8s.io/v1/ClusterRoleBinding
+    attributes:
+      namespace-name-reference:
+        - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
+        - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
+        - {path: subjects.*.name, target: v1/ServiceAccount}
+      immutable:
+        - {path: roleRef}
+
+  - type: rbac.authorization.k8s.io/v1/RoleBinding
+    attributes:
+      namespace-name-reference:
+        - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
+        - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
+        - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/Role}
+        - {path: subjects.*.name, target: v1/ServiceAccount}
+      immutable:
+        - {path: roleRef}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBInstance
+    attributes:
+      resource-name:
+        - {path: spec.dbParameterGroupRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBParameterGroup}
+        - {path: spec.dbSubnetGroupRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBSubnetGroup}
+        - {path: spec.vpcSecurityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+      immutable:
+        - {path: spec.availabilityZone}
+
+  - type: s3.services.k8s.aws/v1alpha1/Bucket
+    attributes:
+      immutable:
+        - {path: spec.name}
+
+  - type: scheduling.k8s.io/v1/PriorityClass
+    attributes:
+      immutable:
+        - {path: value}
+        - {path: preemptionPolicy}
+
+  - type: storage.k8s.io/v1/StorageClass
+    attributes:
+      resource-name:
+        - {path: parameters.adminSecretName, target: v1/Secret}
+        - {path: parameters.secretName, target: v1/Secret}
+        - {path: parameters.secretRef, target: v1/Secret}
+        - {path: parameters.userSecretName, target: v1/Secret}
+      immutable:
+        - {path: parameters}
+        - {path: provisioner}
+        - {path: reclaimPolicy}
+        - {path: volumeBindingMode}
+
+  - type: v1/PersistentVolumeClaim
+    attributes:
+      resource-name:
+        - {path: spec.storageClassName, target: storage.k8s.io/v1/StorageClass}
+        - {path: spec.volumeName, target: v1/PersistentVolume}
+      immutable:
+        - {path: spec.accessModes}
+        - {path: spec.selector}
+        - {path: spec.storageClassName}
+        - {path: spec.volumeMode}
+        - {path: spec.volumeName}
+        - {path: spec.dataSource}
+        - {path: spec.dataSourceRef}
+
+  - type: v1/ResourceQuota
+    attributes:
+      immutable:
+        - {path: spec.scopes}
+
+  - type: v1/Secret
+    attributes:
+      immutable:
+        - {path: type}
+
+  # ---------------------------------------------------------------------------------------
+  # Types whose only declared fact is where the labels that select their pods live.
+  # ---------------------------------------------------------------------------------------
+  - type: monitoring.coreos.com/v1/PodMonitor
+    attributes:
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+
+  # spec.podSelector picks the pods this policy applies to. The podSelectors under
+  # spec.ingress and spec.egress pick *other* workloads and are deliberately absent.
+  - type: networking.k8s.io/v1/NetworkPolicy
+    attributes:
+      pod-label-selector:
+        - {path: spec.podSelector.matchLabels}
+
+  - type: policy/v1/PodDisruptionBudget
+    attributes:
+      pod-label-selector:
+        - {path: spec.selector.matchLabels}
+
+  # ---------------------------------------------------------------------------------------
+  # Types whose only declared fact is where they carry a DNS hostname.
+  # ---------------------------------------------------------------------------------------
+  - type: networking.k8s.io/v1/Ingress
+    attributes:
+      resource-name:
+        - {path: metadata.annotations.ingress~1kubernetes~1io/auth-secret, target: v1/Secret}
+        - {path: metadata.annotations.nginx~1ingress~1kubernetes~1io/auth-secret, target: v1/Secret}
+        - {path: metadata.annotations.nginx~1ingress~1kubernetes~1io/auth-tls-secret, target: v1/Secret}
+        - {path: metadata.annotations.nginx~1ingress~1kubernetes~1io/fastcgi-params-configmap, target: v1/ConfigMap}
+        - {path: spec.defaultBackend.service.name, target: v1/Service}
+        - {path: spec.ingressClassName, target: networking.k8s.io/v1/IngressClass}
+        - {path: spec.rules.*.http.paths.*.backend.service.name, target: v1/Service}
+        - {path: spec.tls.secretName, target: v1/Secret}
+      hostname:
+        - {path: spec.rules.*.host}
+        - {path: spec.tls.*.hosts.*}
+
+  - type: cert-manager.io/v1/Certificate
+    attributes:
+      resource-name:
+        - {path: spec.issuerRef.name, target: cert-manager.io/v1/Issuer}
+        - {path: spec.secretName, target: v1/Secret}
+      hostname:
+        - {path: spec.commonName}
+        - {path: spec.dnsNames.*}
+
+  - type: gateway.networking.k8s.io/v1/Gateway
+    attributes:
+      resource-name:
+        - {path: spec.gatewayClassName, target: gateway.networking.k8s.io/v1/GatewayClass}
+        - {path: spec.listeners.*.tls.certificateRefs.*.name, target: v1/Secret}
+      hostname:
+        - {path: spec.listeners.*.hostname}
+
+  - type: gateway.networking.k8s.io/v1/HTTPRoute
+    attributes:
+      resource-name:
+        - {path: spec.rules.*.backendRefs.*.name, target: v1/Service}
+        - {path: spec.rules.*.filters.*.requestMirror.backendRef.name, target: v1/Service}
+      hostname:
+        - {path: spec.hostnames.*}
+
+  - type: gateway.networking.k8s.io/v1/GRPCRoute
+    attributes:
+      resource-name:
+        - {path: spec.rules.*.backendRefs.*.name, target: v1/Service}
+      hostname:
+        - {path: spec.hostnames.*}
+
+  - type: externaldns.k8s.io/v1alpha1/DNSEndpoint
+    attributes:
+      hostname:
+        - {path: spec.endpoints.*.dnsName}
+
+  # -------------------------------------------------------------------------------
+  # Types below are here only because they name another resource. A reference is a
+  # resource-name path with the type it points at, and a type with nothing else to declare
+  # still earns a stanza: the registry is what ConfigHub knows anything about, not what it
+  # understands deeply.
+  # -------------------------------------------------------------------------------
+
+  - type: apiextensions.crossplane.io/v1/Composition
+    attributes:
+      resource-name:
+        - {path: spec.compositeTypeRef.kind, target: apiextensions.crossplane.io/v1/CompositeResourceDefinition}
+
+  - type: argoproj.io/v1alpha1/Application
+    attributes:
+      resource-name:
+        - {path: spec.project, target: argoproj.io/v1alpha1/AppProject}
+
+  - type: argoproj.io/v1alpha1/ApplicationSet
+    attributes:
+      resource-name:
+        - {path: spec.generators.*.matrix.generators.*.plugin.configMapRef.name, target: v1/ConfigMap}
+        - {path: spec.generators.*.merge.generators.*.plugin.configMapRef.name, target: v1/ConfigMap}
+        - {path: spec.generators.*.plugin.configMapRef.name, target: v1/ConfigMap}
+
+  - type: argoproj.io/v1alpha1/CronWorkflow
+    attributes:
+      resource-name:
+        - {path: spec.workflowSpec.serviceAccountName, target: v1/ServiceAccount}
+
+  - type: argoproj.io/v1alpha1/Workflow
+    attributes:
+      resource-name:
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+
+  - type: cert-manager.io/v1/ClusterIssuer
+    attributes:
+      resource-name:
+        - {path: spec.acme.solvers.*.http01.ingress.podTemplate.spec.serviceAccountName, target: v1/ServiceAccount}
+        - {path: spec.ca.secretName, target: v1/Secret}
+        - {path: spec.vault.auth.clientCertificate.secretName, target: v1/Secret}
+        - {path: spec.vault.auth.kubernetes.serviceAccountRef.name, target: v1/ServiceAccount}
+
+  - type: cert-manager.io/v1/Issuer
+    attributes:
+      resource-name:
+        - {path: spec.acme.solvers.*.http01.ingress.podTemplate.spec.serviceAccountName, target: v1/ServiceAccount}
+        - {path: spec.ca.secretName, target: v1/Secret}
+        - {path: spec.vault.auth.clientCertificate.secretName, target: v1/Secret}
+        - {path: spec.vault.auth.kubernetes.serviceAccountRef.name, target: v1/ServiceAccount}
+
+  - type: ec2.services.k8s.aws/v1alpha1/DHCPOptions
+    attributes:
+      resource-name:
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+        - {path: spec.vpcRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/Instance
+    attributes:
+      resource-name:
+        - {path: spec.launchTemplate.launchTemplateRef.from.name, target: ec2.services.k8s.aws/v1alpha1/LaunchTemplate}
+        - {path: spec.subnetRef.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+
+  - type: ec2.services.k8s.aws/v1alpha1/InternetGateway
+    attributes:
+      resource-name:
+        - {path: spec.routeTableRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/RouteTable}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/NATGateway
+    attributes:
+      resource-name:
+        - {path: spec.allocationRef.from.name, target: ec2.services.k8s.aws/v1alpha1/ElasticIPAddress}
+        - {path: spec.subnetRef.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/NetworkACL
+    attributes:
+      resource-name:
+        - {path: spec.subnetRef.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/RouteTable
+    attributes:
+      resource-name:
+        - {path: spec.routes.*.gatewayRef.from.name, target: ec2.services.k8s.aws/v1alpha1/InternetGateway}
+        - {path: spec.routes.*.natGatewayRef.from.name, target: ec2.services.k8s.aws/v1alpha1/NATGateway}
+        - {path: spec.routes.*.transitGatewayRef.from.name, target: ec2.services.k8s.aws/v1alpha1/TransitGateway}
+        - {path: spec.routes.*.vpcEndpointRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPCEndpoint}
+        - {path: spec.routes.*.vpcPeeringConnectionRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPCPeeringConnection}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/SecurityGroup
+    attributes:
+      resource-name:
+        - {path: spec.egressRules.*.groupRef.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.ingressRules.*.groupRef.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/Subnet
+    attributes:
+      resource-name:
+        - {path: spec.routeTableRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/RouteTable}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/TransitGatewayVPCAttachment
+    attributes:
+      resource-name:
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+        - {path: spec.transitGatewayRef.from.name, target: ec2.services.k8s.aws/v1alpha1/TransitGateway}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: ec2.services.k8s.aws/v1alpha1/VPCPeeringConnection
+    attributes:
+      resource-name:
+        - {path: spec.peerVPCRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: eks.services.k8s.aws/v1alpha1/AccessEntry
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+
+  - type: eks.services.k8s.aws/v1alpha1/Addon
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+        - {path: spec.serviceAccountRoleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+
+  - type: eks.services.k8s.aws/v1alpha1/FargateProfile
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+        - {path: spec.podExecutionRoleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+
+  - type: eks.services.k8s.aws/v1alpha1/PodIdentityAssociation
+    attributes:
+      resource-name:
+        - {path: spec.clusterRef.from.name, target: eks.services.k8s.aws/v1alpha1/Cluster}
+        - {path: spec.roleRef.from.name, target: iam.services.k8s.aws/v1alpha1/Role}
+
+  - type: elbv2.services.k8s.aws/v1alpha1/Listener
+    attributes:
+      resource-name:
+        - {path: spec.defaultActions.*.forwardConfig.targetGroups.*.targetGroupRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/TargetGroup}
+        - {path: spec.defaultActions.*.targetGroupRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/TargetGroup}
+        - {path: spec.loadBalancerRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/LoadBalancer}
+
+  - type: elbv2.services.k8s.aws/v1alpha1/LoadBalancer
+    attributes:
+      resource-name:
+        - {path: spec.securityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+
+  - type: elbv2.services.k8s.aws/v1alpha1/Rule
+    attributes:
+      resource-name:
+        - {path: spec.actions.*.forwardConfig.targetGroups.*.targetGroupRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/TargetGroup}
+        - {path: spec.actions.*.targetGroupRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/TargetGroup}
+        - {path: spec.listenerRef.from.name, target: elbv2.services.k8s.aws/v1alpha1/Listener}
+
+  - type: elbv2.services.k8s.aws/v1alpha1/TargetGroup
+    attributes:
+      resource-name:
+        - {path: spec.vpcRef.from.name, target: ec2.services.k8s.aws/v1alpha1/VPC}
+
+  - type: external-secrets.io/v1/ClusterSecretStore
+    attributes:
+      resource-name:
+        - {path: spec.provider.kubernetes.auth.serviceAccount.name, target: v1/ServiceAccount}
+
+  - type: external-secrets.io/v1/ExternalSecret
+    attributes:
+      resource-name:
+        - {path: spec.data.*.sourceRef.storeRef.name, target: external-secrets.io/v1/SecretStore}
+        - {path: spec.dataFrom.*.sourceRef.storeRef.name, target: external-secrets.io/v1/SecretStore}
+        - {path: spec.secretStoreRef.name, target: external-secrets.io/v1/SecretStore}
+        - {path: spec.target.name, target: v1/Secret}
+        - {path: spec.target.template.templateFrom.*.configMap.name, target: v1/ConfigMap}
+        - {path: spec.target.template.templateFrom.*.secret.name, target: v1/Secret}
+
+  - type: external-secrets.io/v1/SecretStore
+    attributes:
+      resource-name:
+        - {path: spec.provider.kubernetes.auth.serviceAccount.name, target: v1/ServiceAccount}
+
+  - type: external-secrets.io/v1beta1/ClusterSecretStore
+    attributes:
+      resource-name:
+        - {path: spec.provider.kubernetes.auth.serviceAccount.name, target: v1/ServiceAccount}
+
+  - type: external-secrets.io/v1beta1/ExternalSecret
+    attributes:
+      resource-name:
+        - {path: spec.data.*.sourceRef.storeRef.name, target: external-secrets.io/v1beta1/SecretStore}
+        - {path: spec.dataFrom.*.sourceRef.storeRef.name, target: external-secrets.io/v1beta1/SecretStore}
+        - {path: spec.secretStoreRef.name, target: external-secrets.io/v1beta1/SecretStore}
+        - {path: spec.target.name, target: v1/Secret}
+        - {path: spec.target.template.templateFrom.*.configMap.name, target: v1/ConfigMap}
+        - {path: spec.target.template.templateFrom.*.secret.name, target: v1/Secret}
+
+  - type: external-secrets.io/v1beta1/SecretStore
+    attributes:
+      resource-name:
+        - {path: spec.provider.kubernetes.auth.serviceAccount.name, target: v1/ServiceAccount}
+
+  - type: gateway.networking.k8s.io/v1alpha2/TCPRoute
+    attributes:
+      resource-name:
+        - {path: spec.rules.*.backendRefs.*.name, target: v1/Service}
+
+  - type: gateway.networking.k8s.io/v1alpha2/UDPRoute
+    attributes:
+      resource-name:
+        - {path: spec.rules.*.backendRefs.*.name, target: v1/Service}
+
+  - type: helm.toolkit.fluxcd.io/v2/HelmRelease
+    attributes:
+      namespace-name-reference:
+        - {path: "spec.chartRef.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "spec.chartRef.|namespace", target: v1/Namespace}
+        - {path: spec.chart.spec.sourceRef.name, target: source.toolkit.fluxcd.io/v1/HelmRepository}
+        - {path: spec.chartRef.name, target: source.toolkit.fluxcd.io/v1/HelmChart}
+        - {path: spec.kubeConfig.secretRef.name, target: v1/Secret}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+        - {path: spec.valuesFrom.*.name, target: v1/ConfigMap}
+
+  - type: iam.services.k8s.aws/v1alpha1/Group
+    attributes:
+      resource-name:
+        - {path: spec.policyRefs.*.from.name, target: iam.services.k8s.aws/v1alpha1/Policy}
+
+  - type: iam.services.k8s.aws/v1alpha1/Role
+    attributes:
+      resource-name:
+        - {path: spec.permissionsBoundaryRef.from.name, target: iam.services.k8s.aws/v1alpha1/Policy}
+        - {path: spec.policyRefs.*.from.name, target: iam.services.k8s.aws/v1alpha1/Policy}
+
+  - type: iam.services.k8s.aws/v1alpha1/User
+    attributes:
+      resource-name:
+        - {path: spec.permissionsBoundaryRef.from.name, target: iam.services.k8s.aws/v1alpha1/Policy}
+        - {path: spec.policyRefs.*.from.name, target: iam.services.k8s.aws/v1alpha1/Policy}
+
+  - type: image.toolkit.fluxcd.io/v1beta2/ImagePolicy
+    attributes:
+      resource-name:
+        - {path: spec.imageRepositoryRef.name, target: image.toolkit.fluxcd.io/v1beta2/ImageRepository}
+
+  - type: image.toolkit.fluxcd.io/v1beta2/ImageRepository
+    attributes:
+      resource-name:
+        - {path: spec.certSecretRef.name, target: v1/Secret}
+        - {path: spec.secretRef.name, target: v1/Secret}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+
+  - type: image.toolkit.fluxcd.io/v1beta2/ImageUpdateAutomation
+    attributes:
+      resource-name:
+        - {path: spec.sourceRef.name, target: source.toolkit.fluxcd.io/v1/GitRepository}
+
+  - type: kustomize.toolkit.fluxcd.io/v1/Kustomization
+    attributes:
+      namespace-name-reference:
+        - {path: "spec.|targetNamespace", target: v1/Namespace}
+      resource-name:
+        - {path: "spec.|targetNamespace", target: v1/Namespace}
+        - {path: spec.decryption.secretRef.name, target: v1/Secret}
+        - {path: spec.kubeConfig.secretRef.name, target: v1/Secret}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+        - {path: spec.sourceRef.name, target: source.toolkit.fluxcd.io/v1/GitRepository}
+
+  - type: monitoring.coreos.com/v1/Alertmanager
+    attributes:
+      resource-name:
+        - {path: spec.configSecret, target: v1/Secret}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+
+  - type: monitoring.coreos.com/v1/Prometheus
+    attributes:
+      resource-name:
+        - {path: spec.alerting.alertmanagers.*.name, target: v1/Service}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+        - {path: spec.serviceName, target: v1/Service}
+
+  - type: networking.istio.io/v1/DestinationRule
+    attributes:
+      resource-name:
+        - {path: spec.host, target: v1/Service}
+
+  - type: networking.istio.io/v1/Gateway
+    attributes:
+      resource-name:
+        - {path: spec.servers.*.tls.credentialName, target: v1/Secret}
+
+  - type: networking.istio.io/v1/VirtualService
+    attributes:
+      resource-name:
+        - {path: spec.http.*.mirror.host, target: v1/Service}
+        - {path: spec.http.*.mirrors.*.destination.host, target: v1/Service}
+        - {path: spec.http.*.route.*.destination.host, target: v1/Service}
+        - {path: spec.tcp.*.route.*.destination.host, target: v1/Service}
+        - {path: spec.tls.*.route.*.destination.host, target: v1/Service}
+
+  - type: notification.toolkit.fluxcd.io/v1beta3/Alert
+    attributes:
+      resource-name:
+        - {path: spec.providerRef.name, target: notification.toolkit.fluxcd.io/v1beta3/Provider}
+
+  - type: notification.toolkit.fluxcd.io/v1beta3/Provider
+    attributes:
+      resource-name:
+        - {path: spec.certSecretRef.name, target: v1/Secret}
+        - {path: spec.secretRef.name, target: v1/Secret}
+
+  - type: pkg.crossplane.io/v1/Provider
+    attributes:
+      resource-name:
+        - {path: spec.runtimeConfigRef.name, target: pkg.crossplane.io/v1beta1/DeploymentRuntimeConfig}
+
+  - type: projectcontour.io/v1/HTTPProxy
+    attributes:
+      resource-name:
+        - {path: spec.includes.*.name, target: projectcontour.io/v1/HTTPProxy}
+        - {path: spec.routes.*.services.*.name, target: v1/Service}
+        - {path: spec.virtualhost.tls.secretName, target: v1/Secret}
+
+  - type: projectcontour.io/v1/TLSCertificateDelegation
+    attributes:
+      resource-name:
+        - {path: spec.delegations.*.secretName, target: v1/Secret}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBCluster
+    attributes:
+      resource-name:
+        - {path: spec.dbClusterParameterGroupRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBClusterParameterGroup}
+        - {path: spec.dbSubnetGroupRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBSubnetGroup}
+        - {path: spec.vpcSecurityGroupRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/SecurityGroup}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBClusterEndpoint
+    attributes:
+      resource-name:
+        - {path: spec.dbClusterIdentifierRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBCluster}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBClusterSnapshot
+    attributes:
+      resource-name:
+        - {path: spec.dbClusterIdentifierRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBCluster}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBSnapshot
+    attributes:
+      resource-name:
+        - {path: spec.dbInstanceIdentifierRef.from.name, target: rds.services.k8s.aws/v1alpha1/DBInstance}
+
+  - type: rds.services.k8s.aws/v1alpha1/DBSubnetGroup
+    attributes:
+      resource-name:
+        - {path: spec.subnetRefs.*.from.name, target: ec2.services.k8s.aws/v1alpha1/Subnet}
+
+  - type: source.toolkit.fluxcd.io/v1/GitRepository
+    attributes:
+      resource-name:
+        - {path: spec.secretRef.name, target: v1/Secret}
+
+  - type: source.toolkit.fluxcd.io/v1/HelmChart
+    attributes:
+      resource-name:
+        - {path: spec.sourceRef.name, target: source.toolkit.fluxcd.io/v1/HelmRepository}
+        - {path: spec.valuesFiles.*.name, target: v1/ConfigMap}
+
+  - type: source.toolkit.fluxcd.io/v1/HelmRepository
+    attributes:
+      resource-name:
+        - {path: spec.secretRef.name, target: v1/Secret}
+
+  - type: source.toolkit.fluxcd.io/v1beta2/Bucket
+    attributes:
+      resource-name:
+        - {path: spec.secretRef.name, target: v1/Secret}
+
+  - type: source.toolkit.fluxcd.io/v1beta2/OCIRepository
+    attributes:
+      resource-name:
+        - {path: spec.certSecretRef.name, target: v1/Secret}
+        - {path: spec.secretRef.name, target: v1/Secret}
+        - {path: spec.serviceAccountName, target: v1/ServiceAccount}
+
+  - type: traefik.io/v1alpha1/IngressRoute
+    attributes:
+      resource-name:
+        - {path: spec.routes.*.middlewares.*.name, target: traefik.io/v1alpha1/Middleware}
+        - {path: spec.routes.*.services.*.name, target: v1/Service}
+        - {path: spec.tls.secretName, target: v1/Secret}
+
+  - type: traefik.io/v1alpha1/IngressRouteTCP
+    attributes:
+      resource-name:
+        - {path: spec.routes.*.services.*.name, target: v1/Service}
+        - {path: spec.tls.secretName, target: v1/Secret}
+
+  - type: traefik.io/v1alpha1/IngressRouteUDP
+    attributes:
+      resource-name:
+        - {path: spec.routes.*.services.*.name, target: v1/Service}
+  - type: admissionregistration.k8s.io/v1/ValidatingAdmissionPolicyBinding
+    attributes:
+      resource-name:
+        - {path: spec.policyName, target: admissionregistration.k8s.io/v1/ValidatingAdmissionPolicy}
+
+  - type: apiregistration.k8s.io/v1/APIService
+    attributes:
+      namespace-name-reference:
+        - {path: "spec.service.|namespace", target: v1/Namespace}
+      resource-name:
+        - {path: "spec.service.|namespace", target: v1/Namespace}
+        - {path: spec.service.name, target: v1/Service}
+
+  - type: autoscaling/v2/HorizontalPodAutoscaler
+    attributes:
+      resource-name:
+        - {path: spec.scaleTargetRef.name, target: apps/v1/Deployment}
+        - {path: spec.scaleTargetRef.name, target: apps/v1/ReplicaSet}
+        - {path: spec.scaleTargetRef.name, target: apps/v1/StatefulSet}
+        - {path: spec.scaleTargetRef.name, target: v1/ReplicationController}
+
+  - type: rbac.authorization.k8s.io/v1/ClusterRole
+    attributes:
+      resource-name:
+        - {path: rules.*.resourceNames.*, target: v1/ConfigMap}
+        - {path: rules.*.resourceNames.*, target: v1/PersistentVolume}
+        - {path: rules.*.resourceNames.*, target: v1/Secret}
+
+  - type: rbac.authorization.k8s.io/v1/Role
+    attributes:
+      resource-name:
+        - {path: rules.*.resourceNames.*, target: v1/ConfigMap}
+        - {path: rules.*.resourceNames.*, target: v1/Secret}
+
+  # A Knative Service's spec.template is a RevisionTemplateSpec: pod metadata beside a
+  # RevisionSpec, which embeds a PodSpec. So it carries a pod template like any workload,
+  # and the upstream reference table listed exactly one of the pod spec's references for it.
+  - type: serving.knative.dev/v1/Service
+    embeds:
+      - {shape: PodTemplate, path: spec.template}
+
+  - type: v1/Node
+    attributes:
+      resource-name:
+        - {path: spec.configSource.configMap.name, target: v1/ConfigMap}
+
+  - type: v1/ConfigMap
+    attributes:
+      configmap-hash:
+        - {path: metadata.annotations.confighub~1com/Hash, provided: true}
+

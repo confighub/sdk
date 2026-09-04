@@ -258,7 +258,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}
 	generic.RegisterPathSetterAndGetter(fh, "replicas", replicasParameters,
 		" the replicas for workload controllers", attributeNameReplicas, rp, true, true, false)
-	resourceTypes = yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToContainersPaths)
+	resourceTypes = k8skit.ContainerResourceTypes()
 	if err := fh.RegisterFunction("set-env", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-env",
@@ -383,7 +383,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
-	resourceTypes = yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths)
+	resourceTypes = k8skit.PodSpecResourceTypes()
 	if err := fh.RegisterFunction("set-pod-defaults", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-pod-defaults",
@@ -517,7 +517,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			Idempotent:            true,
 			Description:           "Set a volume mount for a container and ensure the volume exists in the pod spec",
 			FunctionType:          api.FunctionTypeCustom,
-			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToPodSpecPaths),
+			AffectedResourceTypes: k8skit.PodSpecResourceTypes(),
 		},
 		Function: makeK8sFnSetContainerVolumeMountPath(rp),
 	}); err != nil {
@@ -569,7 +569,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 			Idempotent:            true,
 			Description:           "Set a port for a container, adding it if not present",
 			FunctionType:          api.FunctionTypeCustom,
-			AffectedResourceTypes: yamlkit.ResourceTypesForPathMap(k8skit.ResourceTypeToContainersPaths),
+			AffectedResourceTypes: k8skit.ContainerResourceTypes(),
 		},
 		Function: makeK8sFnSetContainerPort(rp),
 	}); err != nil {
@@ -622,7 +622,7 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
-// Hostname-bearing paths are registered from k8skit.ResourceTypeToNeededHostnamePaths.
+// Hostname-bearing paths are declared as the hostname attribute in k8skit's resource type specs.
 
 // Image paths:
 // https://github.com/kubernetes-sigs/kustomize/blob/master/api/internal/konfig/builtinpluginconsts/images.go
@@ -725,387 +725,11 @@ func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
 		panic("Image URI+reference regexp doesn't contain exactly 2 segments")
 	}
 
-	for resourceType, containerPaths := range k8skit.ResourceTypeToContainersPaths {
-		for _, pathPrefix := range containerPaths {
-			var attributePath api.UnresolvedPath
-			var pathInfo *api.PathVisitorInfo
-
-			containerNameGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-container-name",
-				// Arguments will be added during traversal
-			}
-
-			// All container names
-			attributePath = api.UnresolvedPath(pathPrefix + ".*.name")
-			pathInfo = &api.PathVisitorInfo{
-				Path:          attributePath,
-				AttributeName: api.AttributeNameContainerName,
-				DataType:      api.DataTypeString,
-			}
-			pathInfos := api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameContainerName,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: containerNameGetterFunctionInvocation},
-				false, false,
-			)
-
-			imageGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-container-image",
-				// Arguments will be added during traversal
-			}
-			imageSetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-container-image",
-				// Arguments will be added during traversal
-			}
-
-			// Specific container image
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.image")
-			pathInfo = &api.PathVisitorInfo{
-				Path:          attributePath,
-				AttributeName: api.AttributeNameContainerImage,
-				DataType:      api.DataTypeString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameContainerImage,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: imageGetterFunctionInvocation, SetterInvocation: imageSetterFunctionInvocation},
-				false, false,
-			)
-
-			repoURIGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-container-repository-uri",
-				// Arguments will be added during traversal
-			}
-			repoURISetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-container-repository-uri",
-				// Arguments will be added during traversal
-			}
-
-			// Specific repo URI
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.image#uri")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          api.AttributeNameContainerRepositoryURI,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: imageURIReferenceRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameContainerRepositoryURI,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: repoURIGetterFunctionInvocation, SetterInvocation: repoURISetterFunctionInvocation},
-				false, false,
-			)
-
-			// All repo URIs (for get-details)
-			attributePath = api.UnresolvedPath(pathPrefix + ".*?name:container-name.image#uri")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          api.AttributeNameContainerRepositoryURI,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: imageURIReferenceRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameDetail,
-				resourceType,
-				pathInfos,
-				nil,
-				false, false,
-			)
-
-			imageRefGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-container-image-reference",
-				// Arguments will be added during traversal
-			}
-			imageRefSetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-container-image-reference",
-				// Arguments will be added during traversal
-			}
-
-			// Specific image reference
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.image#reference")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          api.AttributeNameContainerImageReference,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: imageURIReferenceRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameContainerImageReference,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: imageRefGetterFunctionInvocation, SetterInvocation: imageRefSetterFunctionInvocation},
-				false, false,
-			)
-
-			// All image references (for get-details)
-			attributePath = api.UnresolvedPath(pathPrefix + ".*?name:container-name.image#reference")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          api.AttributeNameContainerImageReference,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: imageURIReferenceRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameDetail,
-				resourceType,
-				pathInfos,
-				nil,
-				false, false,
-			)
-
-			envVarGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-env-var",
-				// Arguments will be added during traversal
-			}
-			envVarSetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-env-var",
-				// Arguments will be added during traversal
-			}
-
-			// Specific env var. All env vars maybe not useful.
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.env.?name:env-var=%s.value")
-			pathInfo = &api.PathVisitorInfo{
-				Path:          attributePath,
-				AttributeName: attributeNameEnvValue,
-				DataType:      api.DataTypeString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				attributeNameEnvValue,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: envVarGetterFunctionInvocation, SetterInvocation: envVarSetterFunctionInvocation},
-				false, false,
-			)
-
-			// Specific container resources
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.resources")
-			pathInfo = &api.PathVisitorInfo{
-				Path:          attributePath,
-				AttributeName: attributeNameContainerResources,
-				DataType:      api.DataTypeYAML,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				attributeNameContainerResources,
-				resourceType,
-				pathInfos,
-				nil, // don't register getters and setters for now
-				false, false,
-			)
-
-			pflagGetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "get-container-flag",
-				// Arguments will be added during traversal
-			}
-			pflagSetterFunctionInvocation := &api.FunctionInvocation{
-				FunctionName: "set-container-flag",
-				// Arguments will be added during traversal
-			}
-
-			// Specific container flag value
-			attributePath = api.UnresolvedPath(pathPrefix + ".?name:container-name=%s.args.?flag:container-flag=%s#value")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          attributeNameContainerFlag,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: pflagRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				attributeNameContainerFlag,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: pflagGetterFunctionInvocation, SetterInvocation: pflagSetterFunctionInvocation},
-				false, false,
-			)
-
-			// All container flags (for get-details)
-			attributePath = api.UnresolvedPath(pathPrefix + ".*?name:container-name.args.*?flag:container-flag#value")
-			pathInfo = &api.PathVisitorInfo{
-				Path:                   attributePath,
-				AttributeName:          attributeNameContainerFlag,
-				DataType:               api.DataTypeString,
-				EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-				EmbeddedAccessorConfig: pflagRegexpString,
-			}
-			pathInfos = api.PathToVisitorInfoType{attributePath: pathInfo}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameDetail,
-				resourceType,
-				pathInfos,
-				nil,
-				false, false,
-			)
-
-		}
-	}
-
-	replicasGetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "get-replicas",
-		// Arguments will be added during traversal
-	}
-	replicasSetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-replicas",
-		// Arguments will be added during traversal
-	}
-
-	for _, resourceType := range k8skit.ReplicatedControllerResourceTypes {
-		attributePath := api.UnresolvedPath("spec.replicas")
-		pathInfos := api.PathToVisitorInfoType{
-			attributePath: {
-				Path:          attributePath,
-				AttributeName: attributeNameReplicas,
-				DataType:      api.DataTypeInt,
-			},
-		}
-		addDescriptionToPathInfos(resourceType, pathInfos)
-		yamlkit.RegisterPathsByAttributeName(
-			rp,
-			attributeNameReplicas,
-			resourceType,
-			pathInfos,
-			&yamlkit.AttributeRegistrationDetails{GetterInvocation: replicasGetterFunctionInvocation, SetterInvocation: replicasSetterFunctionInvocation},
-			false, false,
-		)
-		yamlkit.RegisterPathsByAttributeName(
-			rp,
-			api.AttributeNameDetail,
-			resourceType,
-			pathInfos,
-			nil,
-			false, false,
-		)
-	}
-
-	hostnameGetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "get-hostname",
-		// Arguments will be added during traversal
-	}
-	hostnameSetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-hostname",
-		// Arguments will be added during traversal
-	}
-
 	dnsSubdomainRegexp = regexp.MustCompile(dnsSubdomainDomainRegexpString)
 	segmentNames = dnsSubdomainRegexp.SubexpNames()
 	if len(segmentNames) != 3 {
 		slog.Error("DNS subdomain+domain regexp doesn't contain exactly 2 segments", "count", len(segmentNames))
 		panic("DNS subdomain+domain regexp doesn't contain exactly 2 segments")
-	}
-
-	subdomainGetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "get-hostname-subdomain",
-		// Arguments will be added during traversal
-	}
-	subdomainSetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-hostname-subdomain",
-		// Arguments will be added during traversal
-	}
-
-	domainGetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "get-hostname-domain",
-		// Arguments will be added during traversal
-	}
-	domainSetterFunctionInvocation := &api.FunctionInvocation{
-		FunctionName: "set-hostname-domain",
-		// Arguments will be added during traversal
-	}
-
-	for resourceType, paths := range k8skit.ResourceTypeToNeededHostnamePaths {
-		for _, attributePath := range paths {
-			pathInfos := api.PathToVisitorInfoType{
-				api.UnresolvedPath(attributePath): {
-					Path:          api.UnresolvedPath(attributePath),
-					AttributeName: api.AttributeNameHostname,
-					DataType:      api.DataTypeString,
-				},
-			}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameHostname,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: hostnameGetterFunctionInvocation, SetterInvocation: hostnameSetterFunctionInvocation},
-				false, false,
-			)
-			// This is already added to details in standard_functions.go
-
-			// Split hostname into 2 parts for needs/provides
-
-			pathInfos = api.PathToVisitorInfoType{
-				api.UnresolvedPath(attributePath + "#subdomain"): {
-					Path:                   api.UnresolvedPath(attributePath + "#subdomain"),
-					AttributeName:          api.AttributeNameSubdomain,
-					DataType:               api.DataTypeString,
-					EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-					EmbeddedAccessorConfig: dnsSubdomainDomainRegexpString,
-				},
-			}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameSubdomain,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: subdomainGetterFunctionInvocation, SetterInvocation: subdomainSetterFunctionInvocation},
-				false, false,
-			)
-
-			pathInfos = api.PathToVisitorInfoType{
-				api.UnresolvedPath(attributePath + "#domain"): {
-					Path:                   api.UnresolvedPath(attributePath + "#domain"),
-					AttributeName:          api.AttributeNameDomain,
-					DataType:               api.DataTypeString,
-					EmbeddedAccessorType:   api.EmbeddedAccessorRegexp,
-					EmbeddedAccessorConfig: dnsSubdomainDomainRegexpString,
-				},
-			}
-			addDescriptionToPathInfos(resourceType, pathInfos)
-			yamlkit.RegisterPathsByAttributeName(
-				rp,
-				api.AttributeNameDomain,
-				resourceType,
-				pathInfos,
-				&yamlkit.AttributeRegistrationDetails{GetterInvocation: domainGetterFunctionInvocation, SetterInvocation: domainSetterFunctionInvocation},
-				true, false,
-			)
-		}
 	}
 }
 
@@ -1227,7 +851,8 @@ func k8sFnSetEnv(rp *k8skit.K8sResourceProviderType, options *api.FunctionOption
 	}
 
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		cPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceInfo.ResourceType]
+		cPaths := k8skit.ContainerArrayPaths(resourceInfo.ResourceType)
+		ok := len(cPaths) > 0
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
 		}
@@ -1575,7 +1200,8 @@ func k8sFnSetPodDefaults(rp *k8skit.K8sResourceProviderType, options *api.Functi
 			}
 			return output, visitorErrs
 		}
-		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
+		podSpecPaths := k8skit.PodSpecPaths(resourceInfo.ResourceType)
+		ok := len(podSpecPaths) > 0
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
 		}
@@ -1788,7 +1414,8 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, option
 	}
 
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		podSpecPaths, ok := k8skit.ResourceTypeToPodSpecPaths[resourceInfo.ResourceType]
+		podSpecPaths := k8skit.PodSpecPaths(resourceInfo.ResourceType)
+		ok := len(podSpecPaths) > 0
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
 		}
@@ -1805,7 +1432,8 @@ func k8sFnSetContainerVolumeMountPath(rp *k8skit.K8sResourceProviderType, option
 			}
 
 			// Find the container
-			cPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceInfo.ResourceType]
+			cPaths := k8skit.ContainerArrayPaths(resourceInfo.ResourceType)
+			ok := len(cPaths) > 0
 			if !ok {
 				continue
 			}
@@ -1982,7 +1610,8 @@ func k8sFnSetContainerPort(rp *k8skit.K8sResourceProviderType, options *api.Func
 	}
 
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		cPaths, ok := k8skit.ResourceTypeToContainersPaths[resourceInfo.ResourceType]
+		cPaths := k8skit.ContainerArrayPaths(resourceInfo.ResourceType)
+		ok := len(cPaths) > 0
 		if !ok {
 			return output, nil // Skip resource kinds we don't handle
 		}

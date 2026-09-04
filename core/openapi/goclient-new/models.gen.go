@@ -285,9 +285,11 @@ type AttributeDetails struct {
 	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
 	BoundProvidedProperties map[string]string `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
 
+	// DefaultValue Value a defaulting function writes at this path, if any
+	DefaultValue interface{} `json:"DefaultValue,omitempty" yaml:"DefaultValue,omitempty"`
+
 	// Description Description of the attribute
-	Description      string              `json:"Description,omitempty" yaml:"Description,omitempty"`
-	GetterInvocation *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
 
 	// IsNeeded Whether this attribute is a needed value
 	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
@@ -303,9 +305,6 @@ type AttributeDetails struct {
 
 	// ProvidedProperties Key/value properties describing what this provided value offers, for matching
 	ProvidedProperties map[string]string `json:"ProvidedProperties,omitempty" yaml:"ProvidedProperties,omitempty"`
-
-	// SetterInvocations Function invocation used to set the attribute (except for the value), if any
-	SetterInvocations []FunctionInvocation `json:"SetterInvocations,omitempty" yaml:"SetterInvocations,omitempty"`
 }
 
 // AttributeInfo defines model for AttributeInfo.
@@ -2462,8 +2461,7 @@ type ResourceTypePathsEntry struct {
 	BoundLinkID openapi_types.UUID `json:"BoundLinkID,omitempty" yaml:"BoundLinkID,omitempty"`
 
 	// BoundProvidedProperties ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison
-	BoundProvidedProperties map[string]string   `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
-	GetterInvocation        *FunctionInvocation `json:"GetterInvocation,omitempty" yaml:"GetterInvocation,omitempty"`
+	BoundProvidedProperties map[string]string `json:"BoundProvidedProperties,omitempty" yaml:"BoundProvidedProperties,omitempty"`
 
 	// IsNeeded Whether this attribute is a needed value
 	IsNeeded bool `json:"IsNeeded,omitempty" yaml:"IsNeeded,omitempty"`
@@ -2479,9 +2477,8 @@ type ResourceTypePathsEntry struct {
 	Paths          *PathToVisitorInfoType `json:"Paths,omitempty" yaml:"Paths,omitempty"`
 
 	// ProvidedProperties Key/value properties describing what this provided value offers, for matching
-	ProvidedProperties map[string]string   `json:"ProvidedProperties,omitempty" yaml:"ProvidedProperties,omitempty"`
-	ResourceType       string              `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
-	SetterInvocation   *FunctionInvocation `json:"SetterInvocation,omitempty" yaml:"SetterInvocation,omitempty"`
+	ProvidedProperties map[string]string `json:"ProvidedProperties,omitempty" yaml:"ProvidedProperties,omitempty"`
+	ResourceType       string            `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
 }
 
 // ResponseError defines model for ResponseError.

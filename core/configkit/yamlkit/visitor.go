@@ -418,21 +418,6 @@ func appendFunctionInvocationArguments(sharedFunctionInvocation *api.FunctionInv
 	return &functionInvocation
 }
 
-func appendGetterAndSetterArguments(details *api.AttributeDetails, arguments []api.FunctionArgument) {
-	if details == nil || len(arguments) == 0 {
-		return
-	}
-	if details.GetterInvocation == nil && len(details.SetterInvocations) == 0 {
-		return
-	}
-	if details.GetterInvocation != nil {
-		details.GetterInvocation = appendFunctionInvocationArguments(details.GetterInvocation, arguments)
-	}
-	for i := range details.SetterInvocations {
-		details.SetterInvocations[i] = *appendFunctionInvocationArguments(&details.SetterInvocations[i], arguments)
-	}
-}
-
 // TODO: Refactor the layer on top of the base visitors
 
 // GetPaths traverses the specified path patterns of the specified resource types and returns
@@ -576,9 +561,6 @@ func GetPathsAnyType(
 		if neededValuesOnly || providedValuesOnly || api.GetIncludeDetails(options) {
 			deepCopiedAttr := api.DeepCopyAttributeInfo(attr)
 			attributeValue = api.AttributeValue{AttributeInfo: deepCopiedAttr, Value: currentValue, Comment: comment}
-
-			// Append getter and setter arguments to the deep-copied details.
-			appendGetterAndSetterArguments(deepCopiedAttr.Details, context.Arguments)
 
 			// TODO
 			// For needed values, auto-extract merge keys from the resolved path as preferred properties.
@@ -783,14 +765,8 @@ func GetRegisteredProvidedStringPaths(
 	return GetPathsAnyType(parsedData, resourceTypeToProvidedPaths, []any{}, resourceProvider, api.DataTypeString, false, true, options)
 }
 
-// VisitorSetterInvocationFunctionName is a special function name used to indicate that the
-// setter invocation value should be used directly by the visitor, rather than invoking a
-// real function. It is not a valid function name.
-const VisitorSetterInvocationFunctionName = "$visitor"
-
 // UpdatePathsSetterArgument traverses the specified path patterns of the specified resource types.
-// For each path, if the visitor context has Details with a SetterInvocation using
-// VisitorSetterInvocationFunctionName, the value at the path is set to the first argument's Value.
+// For each path whose Details carry a DefaultValue, the value at the path is set to it.
 // Supports string, int, and bool values. Skips paths where the current value is already set to
 // a non-placeholder value. Otherwise, the path is not updated.
 func UpdatePathsSetterArgument(
@@ -802,14 +778,10 @@ func UpdatePathsSetterArgument(
 	options *api.FunctionOptions,
 ) error {
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		if context.Details == nil ||
-			len(context.Details.SetterInvocations) == 0 ||
-			context.Details.SetterInvocations[0].FunctionName != VisitorSetterInvocationFunctionName ||
-			len(context.Details.SetterInvocations[0].Arguments) == 0 ||
-			context.Details.SetterInvocations[0].Arguments[0].Value == nil {
+		if context.Details == nil || context.Details.DefaultValue == nil {
 			return output, nil
 		}
-		newValue := context.Details.SetterInvocations[0].Arguments[0].Value
+		newValue := context.Details.DefaultValue
 		switch newValue.(type) {
 		case string, int, bool, []any:
 			// valid scalar or array type (gaby's setValue requires []interface{})
@@ -828,8 +800,8 @@ func UpdatePathsSetterArgument(
 }
 
 // VetPathsSetterArgument traverses the specified path patterns and validates that current values
-// match the expected default values from $visitor setter invocations. Returns a ValidationResult
-// with Passed=false and FailedAttributes listing any mismatched paths.
+// match the DefaultValue their Details carry. Returns a ValidationResult with Passed=false and
+// FailedAttributes listing any mismatched paths.
 func VetPathsSetterArgument(
 	parsedData gaby.Container,
 	resourceTypeToPaths api.ResourceTypeToPathToVisitorInfoType,
@@ -838,14 +810,10 @@ func VetPathsSetterArgument(
 	options *api.FunctionOptions,
 ) (api.ValidationResult, error) {
 	visitor := func(doc *gaby.YamlDoc, output any, context VisitorContext, currentDoc *gaby.YamlDoc) (any, error) {
-		if context.Details == nil ||
-			len(context.Details.SetterInvocations) == 0 ||
-			context.Details.SetterInvocations[0].FunctionName != VisitorSetterInvocationFunctionName ||
-			len(context.Details.SetterInvocations[0].Arguments) == 0 ||
-			context.Details.SetterInvocations[0].Arguments[0].Value == nil {
+		if context.Details == nil || context.Details.DefaultValue == nil {
 			return output, nil
 		}
-		expectedValue := context.Details.SetterInvocations[0].Arguments[0].Value
+		expectedValue := context.Details.DefaultValue
 		var currentValue any
 		if currentDoc != nil {
 			currentValue = currentDoc.Data()

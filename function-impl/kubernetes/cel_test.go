@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/function-impl/generic"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/function-impl/generic"
 )
 
 const celDeploymentFixture = `apiVersion: apps/v1

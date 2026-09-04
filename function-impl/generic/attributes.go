@@ -250,36 +250,3 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 	}
 	return parsedData, nil, nil
 }
-
-func registerGetDetails(fh handler.FunctionRegistry, converter configkit.ConfigConverter, resourceProvider yamlkit.ResourceProvider) {
-	if err := fh.RegisterFunction("get-details", &handler.FunctionRegistration{
-		FunctionSignature: api.FunctionSignature{
-			FunctionName: "get-details",
-			OutputInfo: &api.FunctionOutput{
-				ResultName:  "attribute-list",
-				Description: "Selected resource attributes",
-				OutputType:  api.OutputTypeAttributeValueList,
-				Schema:      &api.AttributeValueListSchema,
-			},
-			Mutating:              false,
-			Validating:            false,
-			Hermetic:              true,
-			Idempotent:            true,
-			Description:           "Returns a list of curated resource attributes",
-			FunctionType:          api.FunctionTypePathVisitor,
-			AttributeName:         api.AttributeNameDetail,
-			AffectedResourceTypes: []api.ResourceType{api.ResourceTypeAny},
-		},
-		Function: func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {
-			return genericFnGetDetails(resourceProvider, fArgs.FunctionContext, fArgs.ParsedData, fArgs.Arguments, fArgs.Options)
-		},
-	}); err != nil {
-		slog.Error("failed to register function", "error", err)
-	}
-}
-
-func genericFnGetDetails(resourceProvider yamlkit.ResourceProvider, _ *api.FunctionContext, parsedData gaby.Container, _ []api.FunctionArgument, options *api.FunctionOptions) (gaby.Container, any, error) {
-	detailPaths := yamlkit.GetPathRegistryForAttributeName(resourceProvider, api.AttributeNameDetail)
-	values, err := yamlkit.GetPathsAnyType(parsedData, detailPaths, []any{}, resourceProvider, api.DataTypeNone, false, false, options)
-	return parsedData, values, err
-}

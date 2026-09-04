@@ -11,26 +11,6 @@ OUTPUT
     "AttributeName": "container-image",
     "DataType": "string",
     "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-image",
-        "Arguments": [
-          {
-            "ParameterName": "container-name",
-            "Value": "db-init"
-          }
-        ]
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-container-image",
-          "Arguments": [
-            {
-              "ParameterName": "container-name",
-              "Value": "db-init"
-            }
-          ]
-        }
-      ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
     "Value": "ghcr.io/example/app:v1.0.0",
@@ -46,24 +26,6 @@ OUTPUT
     "AttributeName": "container-image",
     "DataType": "string",
     "Details": {
-      "GetterInvocation": {
-        "FunctionName": "get-container-image",
-        "Arguments": [
-          {
-            "Value": "db-migrate"
-          }
-        ]
-      },
-      "SetterInvocations": [
-        {
-          "FunctionName": "set-container-image",
-          "Arguments": [
-            {
-              "Value": "db-migrate"
-            }
-          ]
-        }
-      ],
       "Description": "Container image name. More info: https://kubernetes.io/docs/concepts/containers/images This field is optional to allow higher level config management to default or override container images in workload controllers like Deployments and StatefulSets."
     },
     "Value": "ghcr.io/example/app:v1.0.0",

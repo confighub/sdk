@@ -158,12 +158,11 @@ func (e *ConcreteFunctionExecutor) GetHandler(toolchain workerapi.ToolchainType)
 	return fh, ok
 }
 
-// ResourceTypePathsEntry pairs a resource type with paths and optional getter/setter invocations.
+// ResourceTypePathsEntry pairs a resource type with the paths an Attribute declares for it,
+// and what those paths need and provide.
 type ResourceTypePathsEntry struct {
-	ResourceType     funcapi.ResourceType
-	Paths            funcapi.PathToVisitorInfoType
-	GetterInvocation *funcapi.FunctionInvocation
-	SetterInvocation *funcapi.FunctionInvocation
+	ResourceType funcapi.ResourceType
+	Paths        funcapi.PathToVisitorInfoType
 	funcapi.AttributeNeedsProvidesDetails
 }
 

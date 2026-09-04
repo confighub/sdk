@@ -32,7 +32,13 @@ func FunctionInvocationsEqual(fi1, fi2 *api.FunctionInvocation) bool {
 
 // AttributeDetailsEqual reports whether two sets of attribute details, optionally including
 // getter and setter invocations, match.
-func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunctions bool) bool {
+//
+// Needs/provides properties are compared for compatibility rather than equality: a path
+// registered twice with different required values accepts either, and registerPaths unions them.
+// A reference field naming any workload controller is registered once per controller, and those
+// registrations agreeing about everything except which type they name is the normal case, not a
+// mismatch to report.
+func AttributeDetailsEqual(details1, details2 *api.AttributeDetails) bool {
 	isDescription1 := (details1 != nil && details1.Description != "")
 	isDescription2 := (details2 != nil && details2.Description != "")
 	if isDescription1 != isDescription2 ||
@@ -40,7 +46,6 @@ func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunc
 			details1.Description != details2.Description) {
 		return false
 	}
-	// Compare IsNeeded/IsProvided flags
 	isNeeded1 := details1 != nil && details1.IsNeeded
 	isNeeded2 := details2 != nil && details2.IsNeeded
 	if isNeeded1 != isNeeded2 {
@@ -51,27 +56,24 @@ func AttributeDetailsEqual(details1, details2 *api.AttributeDetails, compareFunc
 	if isProvided1 != isProvided2 {
 		return false
 	}
-	// Compare property maps
 	if !stringMapsEqual(details1.ProvidedProperties, details2.ProvidedProperties) {
 		return false
 	}
-	if !stringMapsEqual(details1.NeededRequired, details2.NeededRequired) {
+	if !requiredPropertiesCompatible(details1.NeededRequired, details2.NeededRequired) {
 		return false
 	}
-	if !stringMapsEqual(details1.NeededPreferred, details2.NeededPreferred) {
+	return stringMapsEqual(details1.NeededPreferred, details2.NeededPreferred)
+}
+
+// requiredPropertiesCompatible reports whether two sets of required properties can be unioned:
+// same keys, and values that are alternatives of one requirement rather than two requirements
+// that disagree about anything else.
+func requiredPropertiesCompatible(m1, m2 map[string]string) bool {
+	if len(m1) != len(m2) {
 		return false
 	}
-	if !compareFunctions {
-		return true
-	}
-	if !FunctionInvocationsEqual(details1.GetterInvocation, details2.GetterInvocation) {
-		return false
-	}
-	if len(details1.SetterInvocations) != len(details2.SetterInvocations) {
-		return false
-	}
-	for i := range details1.SetterInvocations {
-		if !FunctionInvocationsEqual(&details1.SetterInvocations[i], &details2.SetterInvocations[i]) {
+	for k := range m1 {
+		if _, present := m2[k]; !present {
 			return false
 		}
 	}
@@ -92,48 +94,12 @@ func stringMapsEqual(m1, m2 map[string]string) bool {
 
 // VisitorInfoEqual reports whether two path visitor specifications, optionally including
 // getter and setter invocations, match.
-func VisitorInfoEqual(pathVisitorInfo1, pathVisitorInfo2 *api.PathVisitorInfo, compareFunctions bool) bool {
+func VisitorInfoEqual(pathVisitorInfo1, pathVisitorInfo2 *api.PathVisitorInfo) bool {
 	return pathVisitorInfo1.AttributeName == pathVisitorInfo2.AttributeName &&
 		pathVisitorInfo1.DataType == pathVisitorInfo2.DataType &&
 		pathVisitorInfo1.EmbeddedAccessorType == pathVisitorInfo2.EmbeddedAccessorType &&
 		pathVisitorInfo1.EmbeddedAccessorConfig == pathVisitorInfo2.EmbeddedAccessorConfig &&
-		AttributeDetailsEqual(pathVisitorInfo1.Details, pathVisitorInfo2.Details, compareFunctions)
-}
-
-func setFunctionInvocationsInVisitorPathInfo(
-	pathInfo *api.PathVisitorInfo,
-	getterFunctionInvocation *api.FunctionInvocation,
-	setterFunctionInvocation *api.FunctionInvocation,
-) {
-	if getterFunctionInvocation == nil && setterFunctionInvocation == nil {
-		return
-	}
-	if pathInfo.Details == nil {
-		pathInfo.Details = &api.AttributeDetails{}
-	}
-	// The getter should be the same.
-	if getterFunctionInvocation != nil {
-		if pathInfo.Details.GetterInvocation != nil &&
-			!FunctionInvocationsEqual(pathInfo.Details.GetterInvocation, getterFunctionInvocation) {
-			slog.Error("different getter function invocations registered",
-				"existing", pathInfo.Details.GetterInvocation, "new", getterFunctionInvocation)
-		}
-		pathInfo.Details.GetterInvocation = getterFunctionInvocation
-	}
-	if setterFunctionInvocation != nil {
-		found := false
-		for _, setterInvocation := range pathInfo.Details.SetterInvocations {
-			// The function name could be different and/or the argument values could be different.
-			// Example: resource references that could refer to multiple resource types.
-			if FunctionInvocationsEqual(&setterInvocation, setterFunctionInvocation) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			pathInfo.Details.SetterInvocations = append(pathInfo.Details.SetterInvocations, *setterFunctionInvocation)
-		}
-	}
+		AttributeDetailsEqual(pathVisitorInfo1.Details, pathVisitorInfo2.Details)
 }
 
 // setNeedsProvidesDetailsInVisitorPathInfo merges AttributeNeedsProvidesDetails from
@@ -152,13 +118,11 @@ func setNeedsProvidesDetailsInVisitorPathInfo(pathInfo *api.PathVisitorInfo, npd
 		if pathInfo.Details.NeededRequired == nil {
 			pathInfo.Details.NeededRequired = make(map[string]string)
 		}
-		if existing, ok := pathInfo.Details.NeededRequired[k]; ok && existing != v {
-			// Multiple different values for the same required key means
-			// the field can reference multiple types — mark as empty to
-			// prevent subsequent registrations from re-adding a value.
-			pathInfo.Details.NeededRequired[k] = ""
-		} else if ok && existing == "" {
-			// Already marked as multi-value — don't overwrite
+		if existing, ok := pathInfo.Details.NeededRequired[k]; ok {
+			// The same path registered with a different value for a required key is a field
+			// that accepts either -- an HPA's scaleTargetRef naming any workload controller.
+			// The requirement is the union, not the absence of one.
+			pathInfo.Details.NeededRequired[k] = api.UnionPropertyValue(existing, v)
 		} else {
 			pathInfo.Details.NeededRequired[k] = v
 		}
@@ -177,52 +141,42 @@ func registerPaths(
 	pathInfos api.PathToVisitorInfoType,
 	details *AttributeRegistrationDetails,
 ) {
-	var getterFunctionInvocation *api.FunctionInvocation
-	var setterFunctionInvocation *api.FunctionInvocation
 	var enricher AttributeEnricher
 	if details != nil {
-		getterFunctionInvocation = details.GetterInvocation
-		setterFunctionInvocation = details.SetterInvocation
 		enricher = details.Enricher
 	}
-	_, ok := registry[resourceType]
-	if !ok {
+	if _, ok := registry[resourceType]; !ok {
 		registry[resourceType] = make(api.PathToVisitorInfoType)
-		for path, pathInfo := range pathInfos {
-			registry[resourceType][path] = pathInfo
-			setFunctionInvocationsInVisitorPathInfo(pathInfo, getterFunctionInvocation, setterFunctionInvocation)
-			if details != nil {
-				setNeedsProvidesDetailsInVisitorPathInfo(pathInfo, details.AttributeNeedsProvidesDetails)
-			}
-			if enricher != nil {
-				pathInfo.Enricher = enricher
-			}
-		}
-		return
 	}
 
 	// Some paths could already be registered under the same attribute name.
 	// Example: resource references that could refer to multiple resource types.
 	for path, newPathInfo := range pathInfos {
-		oldPathInfo, present := registry[resourceType][path]
-		if present {
-			if !VisitorInfoEqual(oldPathInfo, newPathInfo, false) {
+		// A registration states its needs/provides properties in details, not on the path
+		// info, so apply them before comparing. Otherwise the comparison is between an
+		// incoming registration that has no properties yet and a stored one that has
+		// accumulated them, which no second registration of a path can ever satisfy.
+		if details != nil {
+			setNeedsProvidesDetailsInVisitorPathInfo(newPathInfo, details.AttributeNeedsProvidesDetails)
+		}
+		registeredPathInfo := newPathInfo
+		if oldPathInfo, present := registry[resourceType][path]; present {
+			if !VisitorInfoEqual(oldPathInfo, newPathInfo) {
 				slog.Error("info mismatch for path",
 					"path", newPathInfo.Path, "resourceType", resourceType,
 					"newPathInfo", newPathInfo, "oldPathInfo", oldPathInfo,
 					"newDetails", newPathInfo.Details, "oldDetails", oldPathInfo.Details,
 				)
 			}
-			newPathInfo = oldPathInfo
+			registeredPathInfo = oldPathInfo
+			if details != nil {
+				setNeedsProvidesDetailsInVisitorPathInfo(registeredPathInfo, details.AttributeNeedsProvidesDetails)
+			}
 		} else {
 			registry[resourceType][path] = newPathInfo
 		}
-		setFunctionInvocationsInVisitorPathInfo(newPathInfo, getterFunctionInvocation, setterFunctionInvocation)
-		if details != nil {
-			setNeedsProvidesDetailsInVisitorPathInfo(newPathInfo, details.AttributeNeedsProvidesDetails)
-		}
 		if enricher != nil {
-			newPathInfo.Enricher = enricher
+			registeredPathInfo.Enricher = enricher
 		}
 	}
 }
@@ -236,8 +190,6 @@ type AttributeEnricher func(doc *gaby.YamlDoc, attrInfo *api.AttributeValue, isP
 // AttributeRegistrationDetails specifies getter/setter invocations and an optional
 // Enricher function for use when registering paths via RegisterPathsByAttributeName.
 type AttributeRegistrationDetails struct {
-	GetterInvocation *api.FunctionInvocation
-	SetterInvocation *api.FunctionInvocation
 	api.AttributeNeedsProvidesDetails
 	Enricher AttributeEnricher
 }
@@ -275,13 +227,6 @@ func RegisterPathsByAttributeName(
 		}
 	}
 
-	var getterFunctionInvocation *api.FunctionInvocation
-	var setterFunctionInvocation *api.FunctionInvocation
-	if details != nil {
-		getterFunctionInvocation = details.GetterInvocation
-		setterFunctionInvocation = details.SetterInvocation
-	}
-
 	pathRegistry := resourceProvider.GetPathRegistry()
 	_, present := pathRegistry[attributeName]
 	if !present {
@@ -290,44 +235,18 @@ func RegisterPathsByAttributeName(
 
 	attributeRegistry := resourceProvider.GetAttributeRegistry()
 	if _, exists := attributeRegistry[attributeName]; !exists {
-		attributeRegistry[attributeName] = &api.AttributeDescriptor{
-			AttributeName: attributeName,
-			AttributeVisitorDetails: api.AttributeVisitorDetails{
-				AttributeDetails: api.AttributeDetails{
-					GetterInvocation: getterFunctionInvocation,
-					SetterInvocations: func() []api.FunctionInvocation {
-						if setterFunctionInvocation != nil {
-							return []api.FunctionInvocation{*setterFunctionInvocation}
-						}
-						return nil
-					}(),
-				},
-			},
-		}
-	} else {
-		descriptor := attributeRegistry[attributeName]
-		if getterFunctionInvocation != nil && descriptor.GetterInvocation == nil {
-			descriptor.GetterInvocation = getterFunctionInvocation
-		}
-		if setterFunctionInvocation != nil {
-			found := false
-			for _, setter := range descriptor.SetterInvocations {
-				if FunctionInvocationsEqual(&setter, setterFunctionInvocation) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				descriptor.SetterInvocations = append(descriptor.SetterInvocations, *setterFunctionInvocation)
-			}
-		}
+		attributeRegistry[attributeName] = &api.AttributeDescriptor{AttributeName: attributeName}
 	}
-
 	// Always normalize paths so that registered paths and lookup paths use the same form.
 	newPathInfos := make(api.PathToVisitorInfoType)
 	for path, pathInfo := range pathInfos {
 		normalizedPath := normalizePath(resourceProvider, resourceType, path)
-		newPathInfo := *pathInfo // deep copy
+		newPathInfo := *pathInfo
+		// Details too, and not the pointer to them: registration merges into the details it
+		// stores, so a caller that registers one pathInfos map for several resource types
+		// would otherwise have every one of those registrations merging into a single shared
+		// set of details.
+		newPathInfo.Details = api.DeepCopyAttributeDetails(pathInfo.Details)
 		newPathInfos[normalizedPath] = &newPathInfo
 	}
 	registerPaths(
@@ -368,6 +287,46 @@ func GetPathRegistryForAttributeName(
 	var resourceTypeToPathToVisitorInfo api.ResourceTypeToPathToVisitorInfoType
 	resourceTypeToPathToVisitorInfo, _ = pathRegistry[attributeName]
 	return resourceTypeToPathToVisitorInfo
+}
+
+// GetPathRegistryForAttributeNameByProperty returns the paths registered under an attribute
+// whose needs/provides properties carry propertyKey with propertyValue, on either side: a
+// provided path offering it, or a needed path requiring it.
+//
+// This is how a reference selects the paths that point at one resource type. Splitting the
+// attribute into a name per target would answer the same question by string convention, which is
+// a second encoding of what the properties already say -- and a convention spelled differently in
+// two places matches nothing, silently.
+func GetPathRegistryForAttributeNameByProperty(
+	resourceProvider ResourceProvider,
+	attributeName api.AttributeName,
+	propertyKey string,
+	propertyValue string,
+) api.ResourceTypeToPathToVisitorInfoType {
+	matching := make(api.ResourceTypeToPathToVisitorInfoType)
+	for resourceType, pathToVisitorInfo := range GetPathRegistryForAttributeName(resourceProvider, attributeName) {
+		for path, info := range pathToVisitorInfo {
+			if info.Details == nil {
+				continue
+			}
+			provided := info.Details.ProvidedProperties[propertyKey] == propertyValue
+			needed := api.PropertyValueSatisfiedBy(info.Details.NeededRequired[propertyKey], propertyValue)
+			if _, requires := info.Details.NeededRequired[propertyKey]; !requires {
+				needed = false
+			}
+			if !provided && !needed {
+				continue
+			}
+			if matching[resourceType] == nil {
+				matching[resourceType] = make(api.PathToVisitorInfoType)
+			}
+			matching[resourceType][path] = info
+		}
+	}
+	if len(matching) == 0 {
+		return nil
+	}
+	return matching
 }
 
 // ResourceTypesForAttribute returns a list of resource types associated with the specified attribute.
@@ -548,21 +507,6 @@ func mergeDetails(dst, src *api.PathVisitorInfo) {
 	}
 	if dst.Details == nil {
 		dst.Details = &api.AttributeDetails{}
-	}
-	if src.Details.GetterInvocation != nil && dst.Details.GetterInvocation == nil {
-		dst.Details.GetterInvocation = src.Details.GetterInvocation
-	}
-	for _, setter := range src.Details.SetterInvocations {
-		found := false
-		for _, existingSetter := range dst.Details.SetterInvocations {
-			if FunctionInvocationsEqual(&existingSetter, &setter) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			dst.Details.SetterInvocations = append(dst.Details.SetterInvocations, setter)
-		}
 	}
 	// Merge property maps (don't overwrite existing entries)
 	for k, v := range src.Details.ProvidedProperties {

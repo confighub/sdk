@@ -129,6 +129,23 @@ func DataTypeIsExpression(dataType DataType) bool {
 	return false
 }
 
+// DataTypeOfValue reports the DataType of a decoded scalar value. YAML admits values the
+// DataType vocabulary has no name for -- floats, timestamps, explicit nulls -- and those
+// are reported as DataTypeNone rather than squeezed into a type that would misdescribe
+// them to a caller deciding which setter to use.
+func DataTypeOfValue(value any) DataType {
+	switch value.(type) {
+	case string:
+		return DataTypeString
+	case bool:
+		return DataTypeBool
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+		return DataTypeInt
+	default:
+		return DataTypeNone
+	}
+}
+
 // ParseStringArrayCSV parses a DataTypeStringArray argument value serialized as
 // a comma-separated string into a []string. Whitespace around each element is
 // trimmed and empty elements are dropped. A nil value or empty string returns

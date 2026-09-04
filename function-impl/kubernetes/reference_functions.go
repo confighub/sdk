@@ -5,164 +5,74 @@ package kubernetes
 
 import (
 	"fmt"
-	"log/slog"
+	"sort"
 	"strings"
-
-	"sigs.k8s.io/kustomize/kyaml/resid"
-	"sigs.k8s.io/yaml"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
-	kustomizeexcerpts "github.com/confighub/sdk/function-impl/third_party/kustomize"
 )
 
-// This file consolidates registration of all cross-resource name-reference paths
-// (needs and provides) into a single place. References come from two sources:
+// This file registers every cross-resource name reference, needs and provides. A reference is
+// a resource-name path declared with the type it names, so what to register is read from the
+// resource-type specs rather than assembled here.
 //
-//  1. kustomize's NameReferenceFieldSpecs — built-in Kubernetes types (Service,
-//     ConfigMap, Secret, ServiceAccount, etc.).
-//  2. k8skit.CRDReferenceFields — CRD-specific references (Traefik, Flux, cert-manager,
-//     ACK, Istio, Gateway API, etc.).
-//
-// For each referring field path we register a Needs; for each referenced (target)
-// resource type we register metadata.name as a Provides so that a resource of that
-// type can satisfy references to it. Needs and provides for a given target type share
-// the attribute name attributeNameForResourceType(target), which is how the
-// needs/provides resolver matches them.
-
-var noncoreDefaultGroup = map[string]string{
-	"Deployment":              "apps",
-	"ReplicaSet":              "apps",
-	"StatefulSet":             "apps",
-	"DaemonSet":               "apps",
-	"Job":                     "batch",
-	"CronJob":                 "batch",
-	"HorizontalPodAutoscaler": "autoscaling",
-	"Role":                    "rbac.authorization.k8s.io",
-	"ClusterRole":             "rbac.authorization.k8s.io",
-	"RoleBinding":             "rbac.authorization.k8s.io",
-	"ClusterRoleBinding":      "rbac.authorization.k8s.io",
-	"Ingress":                 "networking.k8s.io",
-	"IngressClass":            "networking.k8s.io",
-}
-
-func gvkString(gvk resid.Gvk) api.ResourceType {
-	g := gvk.Group
-	v := gvk.Version
-	k := gvk.Kind
-	if g == "" {
-		g = noncoreDefaultGroup[k]
-	}
-	if v == "" {
-		if k == "HorizontalPodAutoscaler" {
-			v = "v2"
-		} else {
-			v = "v1"
-		}
-	}
-	if k == "" {
-		// This shouldn't happen
-		k = "NoKind"
-	}
-	if g == "" {
-		return api.ResourceType(v + "/" + k)
-	}
-	return api.ResourceType(g + "/" + v + "/" + k)
-}
-
-// Create a resource-type-specific attribute name that matches AttributeName character restrictions.
-func attributeNameForResourceType(resourceType api.ResourceType) api.AttributeName {
-	return api.AttributeName(string(api.AttributeNameResourceName) + "-" + strings.ReplaceAll(string(resourceType), "/", "-"))
-}
-
-var segmentIsArray = map[string]struct{}{
-	"containers":       {},
-	"initContainers":   {},
-	"volumes":          {},
-	"env":              {},
-	"envFrom":          {},
-	"sources":          {},
-	"imagePullSecrets": {},
-	"parameters":       {},
-	"paths":            {},
-	"webhooks":         {},
-	"subjects":         {},
-	"apiGroups":        {},
-	"nonResourceURLs":  {},
-	"resources":        {},
-	"resourceNames":    {},
-	"verbs":            {},
-	"rules":            {}, // in both Roles/ClusterRoles and Ingress
-}
+// For each declared path we register a Needs; for each type named by one we register
+// metadata.name as a Provides, so a resource of that type can satisfy references to it. Both
+// sides carry a ResourceType property naming the target, which is what the resolver matches on.
 
 // referenceSpec describes a single referring field path and the resource type it points at.
+// attributeName is the attribute the path is a path of: resource-name for a plain reference,
+// and a second, narrower name for a path that is also something else -- a namespace field is a
+// reference to a Namespace and the resource's own namespace, and get-namespace reads it under
+// the second name.
 type referenceSpec struct {
-	referrer api.ResourceType
-	path     api.UnresolvedPath
-	target   api.ResourceType
+	referrer      api.ResourceType
+	attributeName api.AttributeName
+	path          api.UnresolvedPath
+	target        api.ResourceType
 }
 
-// initReferenceFunctions registers all cross-resource name-reference needs and provides
-// from kustomize's NameReferenceFieldSpecs and k8skit.CRDReferenceFields.
+// initReferenceFunctions registers the needs and provides for every reference the
+// resource-type specs declare.
 func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 	var needs []referenceSpec
 	// targets is the set of every referenced resource type. Each provides its own
 	// metadata.name so that a resource of that type can satisfy a reference to it.
 	targets := map[api.ResourceType]struct{}{}
 
-	// Source 1: kustomize NameReferenceFieldSpecs. These are stored as inverted
-	// backreferences: each entry names a target Gvk and the referring fields that
-	// point at it.
-	namespaceNbrs := kustomizeexcerpts.NbrSlice{}
-	if err := yaml.Unmarshal([]byte(kustomizeexcerpts.NameReferenceFieldSpecs), &namespaceNbrs); err != nil {
-		slog.Error("couldn't unmarshal NameReferenceFieldSpecs", "error", err)
-	} else {
-		for _, nbr := range namespaceNbrs {
-			target := gvkString(nbr.Gvk)
-			targets[target] = struct{}{}
-			for _, field := range nbr.Referrers {
-				// This is kind of hacky in lieu of actual schemas. Kustomize always
-				// searches arrays, so turn known array segments into wildcards.
-				pathSegments := strings.Split(field.Path, "/")
-				for i, pathSegment := range pathSegments {
-					if _, ok := segmentIsArray[pathSegment]; ok {
-						pathSegments[i] = pathSegment + ".*"
-					}
-				}
-				// NOTE: We'd need to insert a path segment above in order to use
-				// yamlkit.JoinPathSegments. Kubernetes resources don't have fields with
-				// dots in their paths, fortunately.
-				needs = append(needs, referenceSpec{
-					referrer: gvkString(field.Gvk),
-					path:     api.UnresolvedPath(strings.Join(pathSegments, ".")),
-					target:   target,
-				})
-			}
+	// Every declaring type and every target provides its own metadata.name. Registering
+	// provides for a declaring type that is never itself a target (e.g. IngressRoute) is
+	// harmless and lets it satisfy a reference should one be added later.
+	for _, reference := range k8skit.DeclaredReferences() {
+		// A wildcard type is not a resource type, so it provides no name of its own. A field
+		// every resource has -- metadata.namespace -- is declared against it.
+		if reference.ResourceType != api.ResourceTypeAny {
+			targets[reference.ResourceType] = struct{}{}
 		}
-	}
-
-	// Source 2: CRD reference fields. Every referring type (map key) and every target
-	// provides its own metadata.name. Registering provides for a referring type that is
-	// never itself a target (e.g. IngressRoute) is harmless and lets it satisfy a
-	// reference should one be added later.
-	for referrer, refs := range k8skit.CRDReferenceFields {
-		targets[referrer] = struct{}{}
-		for _, ref := range refs {
-			targets[ref.Target] = struct{}{}
-			needs = append(needs, referenceSpec{
-				referrer: referrer,
-				path:     api.UnresolvedPath(ref.Path),
-				target:   ref.Target,
-			})
-		}
+		targets[reference.Target] = struct{}{}
+		needs = append(needs, referenceSpec{
+			referrer:      reference.ResourceType,
+			attributeName: reference.AttributeName,
+			path:          api.UnresolvedPath(reference.Path),
+			target:        reference.Target,
+		})
 	}
 
 	// Register metadata.name as a Provides for every referenced resource type.
+	//
+	// Sorted, as are the needs below, because both are assembled by ranging over maps and a
+	// path that several of them reach accumulates its setters and its required alternatives in
+	// the order they arrive. Registration that differs run to run is a registry that differs
+	// run to run, and it is served that way on /paths.
+	sortedTargets := make([]api.ResourceType, 0, len(targets))
 	for target := range targets {
-		attributeName := attributeNameForResourceType(target)
+		sortedTargets = append(sortedTargets, target)
+	}
+	sort.Slice(sortedTargets, func(i, j int) bool { return sortedTargets[i] < sortedTargets[j] })
+	for _, target := range sortedTargets {
 		// Attach the ConfigMap enricher for ConfigMap resource types.
 		var enricher yamlkit.AttributeEnricher
 		if target == "v1/ConfigMap" {
@@ -175,12 +85,7 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 				DataType:      api.DataTypeString,
 			},
 		}
-		yamlkit.RegisterPathsByAttributeName(rp, attributeName, target, pathInfos, &yamlkit.AttributeRegistrationDetails{
-			// Function to get the value.
-			GetterInvocation: &api.FunctionInvocation{
-				FunctionName: "get-resources-of-type",
-				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(target)}},
-			},
+		yamlkit.RegisterPathsByAttributeName(rp, api.AttributeNameResourceName, target, pathInfos, &yamlkit.AttributeRegistrationDetails{
 			Enricher: enricher,
 			AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
 				ProvidedProperties: map[string]string{"ResourceType": string(target)},
@@ -189,8 +94,19 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 	}
 
 	// Register each referring field path as a Needs.
+	sort.Slice(needs, func(i, j int) bool {
+		if needs[i].referrer != needs[j].referrer {
+			return needs[i].referrer < needs[j].referrer
+		}
+		if needs[i].attributeName != needs[j].attributeName {
+			return needs[i].attributeName < needs[j].attributeName
+		}
+		if needs[i].path != needs[j].path {
+			return needs[i].path < needs[j].path
+		}
+		return needs[i].target < needs[j].target
+	})
 	for _, spec := range needs {
-		attributeName := attributeNameForResourceType(spec.target)
 		// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
 		var enricher yamlkit.AttributeEnricher
 		if spec.target == "v1/ConfigMap" {
@@ -203,13 +119,9 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 				DataType:      api.DataTypeString,
 			},
 		}
-		yamlkit.RegisterPathsByAttributeName(rp, attributeName, spec.referrer, pathInfos, &yamlkit.AttributeRegistrationDetails{
+		yamlkit.RegisterPathsByAttributeName(rp, spec.attributeName, spec.referrer, pathInfos, &yamlkit.AttributeRegistrationDetails{
 			// Function to set the value. The parameters are expected to match the
 			// corresponding get function's parameters plus its result.
-			SetterInvocation: &api.FunctionInvocation{
-				FunctionName: "set-references-of-type",
-				Arguments:    []api.FunctionArgument{{ParameterName: "resource-type", Value: string(spec.target)}},
-			},
 			Enricher: enricher,
 			AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
 				NeededRequired: map[string]string{"ResourceType": string(spec.target)},
@@ -299,8 +211,8 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 			attr.Details.NeededPreferred = make(map[string]string)
 		}
 		attr.Details.NeededPreferred["Name"] = volumeName
-		containersPaths, ok := k8skit.ResourceTypeToContainersPaths[attr.ResourceType]
-		if !ok {
+		containersPaths := k8skit.ContainerArrayPaths(attr.ResourceType)
+		if len(containersPaths) == 0 {
 			return nil
 		}
 		for _, containersPath := range containersPaths {

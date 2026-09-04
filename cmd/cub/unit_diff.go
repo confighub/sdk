@@ -254,7 +254,7 @@ func printNumberedDiff(segments []diffSegment) {
 	}
 }
 
-func printUnifiedDiff(segments []diffSegment, oldFile, newFile string) {
+func printUnifiedDiff(segments []diffSegment, oldFile, newFile string, colorize bool) {
 	// Check if there are any actual changes
 	hasChanges := false
 	for _, seg := range segments {
@@ -371,13 +371,13 @@ func printUnifiedDiff(segments []diffSegment, oldFile, newFile string) {
 			case segEqual:
 				fmt.Printf(" %s\n", l.Content)
 			case segDelete:
-				if unitDiffArgs.colorOutput {
+				if colorize {
 					fmt.Printf("%s-%s%s\n", colorRed, l.Content, colorReset)
 				} else {
 					fmt.Printf("-%s\n", l.Content)
 				}
 			case segAdd:
-				if unitDiffArgs.colorOutput {
+				if colorize {
 					fmt.Printf("%s+%s%s\n", colorGreen, l.Content, colorReset)
 				} else {
 					fmt.Printf("+%s\n", l.Content)
@@ -510,7 +510,11 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	if unitDiffArgs.displayMutations || outputFormat == "mutations" {
 		// Display mutations instead of text diff
 		lookupMutationsUnitID = toUnit.UnitID.String()
-		displayMutationsFromDryRun(fromData, toData, toUnit.SpaceID.String(), "diff")
+		displayMutationsFromDryRun(fromData, changedRevision{
+			UnitID:     toUnit.UnitID,
+			RevisionID: revToData.RevisionID,
+			Data:       toData,
+		}, toUnit.SpaceID.String(), "diff")
 	} else {
 		// Compute text diff
 		diffSegments := ComputeStructuredDiff(fromData, toData)
@@ -523,7 +527,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 
 		// Print diff in requested format
 		if unitDiffArgs.unifiedDiff {
-			printUnifiedDiff(diffSegments, fromLabel, toLabel)
+			printUnifiedDiff(diffSegments, fromLabel, toLabel, unitDiffArgs.colorOutput)
 		} else {
 			printNumberedDiff(diffSegments)
 		}
