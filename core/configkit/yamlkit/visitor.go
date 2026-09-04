@@ -407,16 +407,6 @@ func UpdatePathsFunctionDoc(
 	return err
 }
 
-func appendFunctionInvocationArguments(sharedFunctionInvocation *api.FunctionInvocation, arguments []api.FunctionArgument) *api.FunctionInvocation {
-	// Deep copy so that we don't append to the args repeatedly
-	functionInvocation := *sharedFunctionInvocation
-	functionInvocation.Arguments = make([]api.FunctionArgument,
-		len(sharedFunctionInvocation.Arguments),
-		len(sharedFunctionInvocation.Arguments)+len(arguments))
-	copy(functionInvocation.Arguments, sharedFunctionInvocation.Arguments)
-	functionInvocation.Arguments = append(functionInvocation.Arguments, arguments...)
-	return &functionInvocation
-}
 
 // TODO: Refactor the layer on top of the base visitors
 

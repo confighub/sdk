@@ -4,9 +4,13 @@
 package kubernetes
 
 import (
+	"context"
+	"encoding/json"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
@@ -102,4 +106,75 @@ func TestNeededNamespacePathsKeepTheirRequiredType(t *testing.T) {
 		assert.Equal(t, "v1/Namespace", info.Details.NeededRequired[api.PropertyKeyResourceType],
 			"%s %s must require a Namespace", testCase.resourceType, testCase.path)
 	}
+}
+
+// TestGetPathsTakesPropertiesFromTheRegistry covers what a stored NeededPath contributes to a
+// resolve. NeededPaths and ProvidedPaths were stored (#3785) before the properties matching reads
+// existed (#4063), so a record stored between the two states no requirement at all -- and a
+// needed path that requires nothing matches every provided value of its attribute. get-paths
+// therefore takes the properties from the registry and carries across only what the record alone
+// knows: which Link bound it, and what that value offered.
+func TestGetPathsTakesPropertiesFromTheRegistry(t *testing.T) {
+	const deployment = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydep
+  namespace: confighubplaceholder
+spec:
+  template:
+    spec:
+      containers:
+        - name: app
+          image: nginx
+`
+	boundLink := uuid.New()
+	// A record as a pre-#4063 version stored it: no NeededRequired, and binding fields that
+	// exist nowhere but here.
+	stored := []api.AttributeValue{{
+		AttributeInfo: api.AttributeInfo{
+			AttributeIdentifier: api.AttributeIdentifier{
+				ResourceInfo: api.ResourceInfo{
+					ResourceName: "confighubplaceholder/mydep",
+					ResourceType: "apps/v1/Deployment",
+				},
+				Path: "metadata.namespace",
+			},
+			AttributeMetadata: api.AttributeMetadata{
+				AttributeName: api.AttributeNameResourceName,
+				DataType:      api.DataTypeString,
+				Details: &api.AttributeDetails{AttributeNeedsProvidesDetails: api.AttributeNeedsProvidesDetails{
+					IsNeeded:                true,
+					BoundLinkID:             boundLink,
+					BoundProvidedProperties: map[string]string{"ResourceType": "v1/Namespace"},
+				}},
+			},
+		},
+		Value: "confighubplaceholder",
+	}}
+	storedJSON, err := json.Marshal(stored)
+	require.NoError(t, err)
+
+	resp, err := testFunctionHandler.InvokeCore(context.Background(), &api.FunctionInvocationRequest{
+		ConfigData: deployment,
+		FunctionInvocations: []api.FunctionInvocation{{
+			FunctionName: "get-paths",
+			Arguments:    []api.FunctionArgument{{Value: string(storedJSON)}},
+		}},
+	})
+	require.NoError(t, err)
+	require.True(t, resp.Success, "get-paths should succeed; errors: %v", resp.ErrorMessages)
+
+	out, ok := resp.Outputs[api.OutputTypeAttributeValueList]
+	require.True(t, ok, "expected an AttributeValueList output")
+	var values api.AttributeValueList
+	require.NoError(t, json.Unmarshal(out, &values))
+	require.Len(t, values, 1)
+
+	require.NotNil(t, values[0].Details)
+	assert.Equal(t, "v1/Namespace", values[0].Details.NeededRequired[api.PropertyKeyResourceType],
+		"the requirement should come from the registry, not from the record that lacks it")
+	assert.Equal(t, boundLink, values[0].Details.BoundLinkID,
+		"which Link bound the path lives only in the stored record")
+	assert.Equal(t, map[string]string{"ResourceType": "v1/Namespace"}, values[0].Details.BoundProvidedProperties,
+		"what the bound value offered lives only in the stored record")
 }

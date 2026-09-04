@@ -200,14 +200,28 @@ func genericFnGetPaths(resourceProvider yamlkit.ResourceProvider, parsedData gab
 			if values[i].DataType == api.DataTypeNone || values[i].DataType == "" {
 				values[i].DataType = info.DataType
 			}
-			// Use the stored Details from the input AttributeInfo. The stored
-			// Details came from get-needed/get-provided and have the correct
-			// getter/setter invocations with proper arguments. The visitor may
-			// produce different Details from generic path registrations that
-			// don't match the needed/provided context.
-			// Deep copy so that enrichers below don't mutate the shared input Details.
-			if info.Details != nil {
+			// What a path needs and provides is decided by the registry, which is current,
+			// rather than by the stored record, which was written by whatever version stored
+			// it. A record written before a property existed states nothing where the registry
+			// states a requirement, and a needed path that requires nothing matches anything.
+			//
+			// Two things live only in the stored record and are carried across: which Link
+			// bound this path, and what the value it bound to offered. Cross-link scoring
+			// compares against them, and nothing recomputes them.
+			//
+			// A path the registry does not know keeps its stored Details whole. That is a
+			// Binding naming a path nothing registered -- one of the reasons the paths are
+			// stored at all -- and the registry has nothing to say about it.
+			//
+			// Deep copy either way, so that the enrichers below do not mutate shared state.
+			if values[i].Details == nil {
 				values[i].Details = api.DeepCopyAttributeDetails(info.Details)
+			} else {
+				values[i].Details = api.DeepCopyAttributeDetails(values[i].Details)
+				if info.Details != nil {
+					values[i].Details.BoundLinkID = info.Details.BoundLinkID
+					values[i].Details.BoundProvidedProperties = info.Details.BoundProvidedProperties
+				}
 			}
 			// For needed paths, extract merge keys as NeededPreferred properties.
 			if isNeeded {
