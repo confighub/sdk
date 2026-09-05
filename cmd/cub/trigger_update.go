@@ -27,7 +27,7 @@ Once a named argument is used, all subsequent arguments must be named. Use "--" 
 
 Example with named arguments:
 `+"```"+`
-  cub trigger update --space my-space my-trigger Mutation Kubernetes/YAML -- set-annotation --key=cloned --value=true
+  cub trigger update --space my-space my-trigger Mutation Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
 `+"```"+`
 
 Bulk update with --patch:

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"slices"
 	"strings"
 
 	"log/slog"
@@ -302,11 +303,10 @@ func makeK8sFnVetSchemas(rp *k8skit.K8sResourceProviderType) handler.FunctionImp
 }
 
 func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOptions, parsedData gaby.Container, args []api.FunctionArgument) (gaby.Container, any, error) {
-	// See https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go
-	schemaLocations := []string{
-		"https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/{{ .NormalizedKubernetesVersion }}-standalone{{ .StrictSuffix }}/{{ .ResourceKind }}{{ .KindSuffix }}.json",
-		"https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json",
-	}
+	// Where the schemas are is declared in the resource-type specs, not written here. See
+	// https://github.com/yannh/kubeconform/blob/master/pkg/validator/validator.go for the
+	// template syntax.
+	schemaLocations := k8skit.SchemaLocations()
 	cacheDir := "/tmp/kubeconform-cache"
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		slog.Warn("failed to create kubeconform cache directory", "error", err)
@@ -324,14 +324,30 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		return parsedData, api.ValidationResultFalse, errors.Wrap(err, "failed to initialize kubeconform validator")
 	}
 
+	// What was not checked, so that a pass says which types it is a pass for. Kubeconform runs
+	// with IgnoreMissingSchemas, so a type whose schema could not be fetched is Skipped -- and
+	// a skip and a validation are indistinguishable in the result unless one of them says so.
+	var skipped []api.ResourceType
+	noteSkipped := func(resourceType api.ResourceType) {
+		if !slices.Contains(skipped, resourceType) {
+			skipped = append(skipped, resourceType)
+		}
+	}
+
 	result := api.ValidationResult{Passed: true}
 	output, err := yamlkit.VisitResourcesFiltered(parsedData, &result, rp, options, func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
 		vr := output.(*api.ValidationResult)
+		// A type the specs say has no schema is skipped without asking the network for one
+		// that cannot be there.
+		if k8skit.SchemaFor(resourceInfo.ResourceType) == yamlkit.SchemaNone {
+			noteSkipped(resourceInfo.ResourceType)
+			return vr, nil
+		}
 		res := resource.Resource{Bytes: doc.BytesWithoutCommentKeys()}
 		valResult := v.ValidateResource(res)
 		switch valResult.Status {
 		case validator.Skipped, validator.Empty:
-			// N/A
+			noteSkipped(resourceInfo.ResourceType)
 		case validator.Valid:
 			// Passed
 		case validator.Invalid:
@@ -368,6 +384,22 @@ func k8sFnVetSchemas(rp *k8skit.K8sResourceProviderType, options *api.FunctionOp
 		}
 		return vr, nil
 	})
+
+	// A pass that checked nothing reads exactly like a pass that checked everything, so say
+	// which types went unchecked. This is what IgnoreMissingSchemas costs, and it used to cost
+	// it silently.
+	if vr, _ := output.(*api.ValidationResult); vr != nil && len(skipped) > 0 {
+		types := make([]string, 0, len(skipped))
+		for _, resourceType := range skipped {
+			types = append(types, string(resourceType))
+		}
+		slices.Sort(types)
+		vr.Issues = append(vr.Issues, api.Issue{
+			Identifier: "SchemaNotValidated",
+			Message: "no schema was found for " + strings.Join(types, ", ") +
+				", so resources of those types were not validated",
+		})
+	}
 
 	if err != nil {
 		// VisitResources collects errors from both GetResourceInfo failures and validator errors

@@ -24,22 +24,12 @@ type PropertiesResourceProviderType struct {
 // NewPropertiesResourceProvider creates a new PropertiesResourceProviderType with its own path registry.
 func NewPropertiesResourceProvider() *PropertiesResourceProviderType {
 	return &PropertiesResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigProperties),
 	}
 }
 
-func (*PropertiesResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*PropertiesResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*PropertiesResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*PropertiesResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

@@ -5,10 +5,11 @@ go 1.25.0
 toolchain go1.25.11
 
 require (
-	github.com/confighub/sdk/core v0.4.9
+	github.com/confighub/sdk/core v0.0.0
 	github.com/gosimple/slug v1.15.0
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/text v0.38.0
+	sigs.k8s.io/yaml v1.4.0
 )
 
 require (
@@ -45,6 +46,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/kustomize/kyaml v0.19.0 // indirect
-	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
+replace github.com/confighub/sdk/core => ../../core

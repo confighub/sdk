@@ -16,19 +16,68 @@ import (
 // This is not in a more general place because it is expected to be used after conversion of other
 // formats to YAML.
 
-// ResourceProviderRegistry holds the path and attribute registries common to all
-// ResourceProvider implementations.
+// ResourceProviderRegistry holds what one provider knows: the path and attribute registries
+// its functions read, and the compiled structure its lookups answer from. Every
+// ResourceProvider embeds it, so all of that is per-instance and built during construction --
+// which is what §5.2 of docs/design/resource-type-specs.md asks for, and why the structure
+// lookups below are not package globals.
 type ResourceProviderRegistry struct {
 	PathRegistry      api.AttributeNameToResourceTypeToPathToVisitorInfoType
 	AttributeRegistry api.AttributeNameToAttributeDescriptor
+
+	// toolchainType is this provider's, since a resource type means different things in
+	// different toolchains and the compiled specs are keyed by both.
+	toolchainType workerapi.ToolchainType
+
+	// specs is the compiled structure, or nil for a toolchain that has declared none. Nil is
+	// the ordinary case: a format with no schema declaring keyed lists, unions or freeform
+	// maps answers "none" to all three lookups, which is what the eight formats other than
+	// Kubernetes each used to say in three hand-written methods of their own.
+	specs *CompiledSpecs
 }
 
-// NewResourceProviderRegistry creates a new ResourceProviderRegistry with initialized maps.
-func NewResourceProviderRegistry() ResourceProviderRegistry {
+// NewResourceProviderRegistry creates a registry for a toolchain that declares no structure.
+func NewResourceProviderRegistry(toolchainType workerapi.ToolchainType) ResourceProviderRegistry {
+	return NewResourceProviderRegistryWithSpecs(toolchainType, nil)
+}
+
+// NewResourceProviderRegistryWithSpecs creates a registry whose structure lookups read the
+// given compiled specs.
+func NewResourceProviderRegistryWithSpecs(toolchainType workerapi.ToolchainType, specs *CompiledSpecs) ResourceProviderRegistry {
 	return ResourceProviderRegistry{
 		PathRegistry:      make(api.AttributeNameToResourceTypeToPathToVisitorInfoType),
 		AttributeRegistry: make(api.AttributeNameToAttributeDescriptor),
+		toolchainType:     toolchainType,
+		specs:             specs,
 	}
+}
+
+// MergeKeysForPath implements the ResourceProvider method for every toolchain. See the
+// interface for what it answers and why more than one key comes back.
+func (r *ResourceProviderRegistry) MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool) {
+	if r.specs == nil {
+		return nil, false
+	}
+	return r.specs.MergeKeysForPath(r.toolchainType, resourceType, path)
+}
+
+// ExclusiveFieldsForPath implements the ResourceProvider method for every toolchain. The path
+// may use numeric indices or associative segments; both normalize to wildcards for lookup, as
+// they do for merge keys.
+func (r *ResourceProviderRegistry) ExclusiveFieldsForPath(resourceType api.ResourceType, path string) (ExclusiveFields, bool) {
+	if r.specs == nil {
+		return ExclusiveFields{}, false
+	}
+	return r.specs.ExclusiveFieldsForPath(r.toolchainType, resourceType, path)
+}
+
+// IsMapKeyPath implements the ResourceProvider method for every toolchain. The path should end
+// with ".*", since the question is always about a path's children.
+func (r *ResourceProviderRegistry) IsMapKeyPath(resourceType api.ResourceType, path string) bool {
+	if r.specs == nil {
+		return false
+	}
+	return r.specs.IsMapKeyPath(r.toolchainType, resourceType, path)
 }
 
 func (r *ResourceProviderRegistry) GetPathRegistry() api.AttributeNameToResourceTypeToPathToVisitorInfoType {

@@ -118,71 +118,22 @@ var K8sInternalLabelPrefixes = []string{
 // Messages should be acceptable to return to the user, and should indicate the
 // location of the problem in the configuration data.
 
+// K8sResourceProviderType must be built with NewK8sResourceProvider. The embedded registry
+// carries both the path registry a provider registers into and the compiled structure its
+// merge-key, exclusive-field and map-key lookups read, and a zero value has neither -- so one
+// would answer "no merge keys" for every path, silently, which is the failure this package
+// exists to stop.
 type K8sResourceProviderType struct {
 	yamlkit.ResourceProviderRegistry
 }
 
-// NewK8sResourceProvider creates a new K8sResourceProviderType with its own path registry.
+// NewK8sResourceProvider creates a new K8sResourceProviderType with its own path registry and
+// the built-in resource-type specs as its structure.
 func NewK8sResourceProvider() *K8sResourceProviderType {
 	return &K8sResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistryWithSpecs(
+			workerapi.ToolchainKubernetesYAML, compiledK8sSpecs),
 	}
-}
-
-// K8sNamespacedResourceTypes contains all known namespaced resource types
-var K8sNamespacedResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("v1/Pod"):                                   {},
-	api.ResourceType("v1/Service"):                               {},
-	api.ResourceType("v1/ConfigMap"):                             {},
-	api.ResourceType("v1/Secret"):                                {},
-	api.ResourceType("v1/ServiceAccount"):                        {},
-	api.ResourceType("apps/v1/Deployment"):                       {},
-	api.ResourceType("apps/v1/StatefulSet"):                      {},
-	api.ResourceType("apps/v1/DaemonSet"):                        {},
-	api.ResourceType("apps/v1/ReplicaSet"):                       {},
-	api.ResourceType("batch/v1/Job"):                             {},
-	api.ResourceType("batch/v1/CronJob"):                         {},
-	api.ResourceType("networking.k8s.io/v1/Ingress"):             {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/Role"):        {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/RoleBinding"): {},
-	// Add more namespaced resource types as needed
-}
-
-// K8sWorkloadResourceTypes contains resource types that are workload resources
-// These types all contain pod specs in the same location, so sometimes people may
-// change the resource type.
-var K8sWorkloadResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("apps/v1/Deployment"):  {},
-	api.ResourceType("apps/v1/ReplicaSet"):  {},
-	api.ResourceType("apps/v1/DaemonSet"):   {},
-	api.ResourceType("apps/v1/StatefulSet"): {},
-	api.ResourceType("batch/v1/Job"):        {},
-	api.ResourceType("batch/v1/CronJob"):    {},
-}
-
-// K8sConfigResourceTypes contains resource types that store configuration
-var K8sConfigResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("v1/ConfigMap"): {},
-	api.ResourceType("v1/Secret"):    {},
-}
-
-// K8sRoleResourceTypes contains resource types related to RBAC roles
-var K8sRoleResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("rbac.authorization.k8s.io/v1/Role"):        {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRole"): {},
-}
-
-// K8sRoleBindingResourceTypes contains resource types related to RBAC role bindings
-var K8sRoleBindingResourceTypes = map[api.ResourceType]struct{}{
-	api.ResourceType("rbac.authorization.k8s.io/v1/RoleBinding"):        {},
-	api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRoleBinding"): {},
-}
-
-// areBothInTypeSet checks if both resource types are in the given type set
-func areBothInTypeSet(resourceTypeA, resourceTypeB api.ResourceType, typeSet map[api.ResourceType]struct{}) bool {
-	_, aIsInSet := typeSet[resourceTypeA]
-	_, bIsInSet := typeSet[resourceTypeB]
-	return aIsInSet && bIsInSet
 }
 
 // DefaultResourceCategory returns the default resource category to asssume, which is Resource in this case.
@@ -280,11 +231,10 @@ func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceT
 	if resourceTypeASegments[len(resourceTypeASegments)-1] == resourceTypeBSegments[len(resourceTypeBSegments)-1] {
 		return true
 	}
-	// Check structurally similar types
-	return areBothInTypeSet(resourceTypeA, resourceTypeB, K8sWorkloadResourceTypes) ||
-		areBothInTypeSet(resourceTypeA, resourceTypeB, K8sConfigResourceTypes) ||
-		areBothInTypeSet(resourceTypeA, resourceTypeB, K8sRoleResourceTypes) ||
-		areBothInTypeSet(resourceTypeA, resourceTypeB, K8sRoleBindingResourceTypes)
+	// Check structurally similar types: two types are similar when both declare the same
+	// similarity class, which is what the four hand-kept sets said one set at a time.
+	class := SimilarityClassOf(resourceTypeA)
+	return class != "" && class == SimilarityClassOf(resourceTypeB)
 }
 
 // ResourceAndCategoryTypeMaps returns maps of all resources in the provided list of parsed YAML

@@ -411,7 +411,7 @@ resourceTypes:
 	compiled, err := CompileSpecSets(set)
 	require.NoError(t, err)
 
-	rp := &testResourceProvider{registry: NewResourceProviderRegistry()}
+	rp := &testResourceProvider{registry: NewResourceProviderRegistry(testToolchain)}
 	require.NoError(t, RegisterDeclaredAttributePaths(rp, compiled, testToolchain,
 		map[api.AttributeName]AttributeDescriptor{"defaults": {}}, nil))
 
@@ -419,4 +419,54 @@ resourceTypes:
 	assert.Equal(t, 1000, paths["spec.securityContext.runAsUser"].Details.DefaultValue,
 		"an int default must not stay a float64")
 	assert.Equal(t, true, paths["spec.securityContext.runAsNonRoot"].Details.DefaultValue)
+}
+
+// Where a schema is fetched from is declared, not written into the function that fetches it.
+// The locations are per toolchain because that is the granularity a catalog covers; the
+// per-type field is for the one whose schema is not where the templates say, and for the one
+// that has none.
+func TestSchemaLocationsAreDeclaredPerToolchain(t *testing.T) {
+	kubernetes, err := LoadSpecSet([]byte(`
+toolchainType: Kubernetes/YAML
+schemaLocations:
+  - https://example.com/k8s/{{.ResourceKind}}.json
+  - https://example.com/crds/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
+resourceTypes:
+  - type: example.com/v1/Widget
+    schema: https://example.com/one-off/widget.json
+  - type: example.com/v1/Gadget
+    schema: none
+  - type: example.com/v1/Ordinary
+`))
+	require.NoError(t, err)
+	appconfig, err := LoadSpecSet([]byte(`
+toolchainType: AppConfig/TOML
+resourceTypes:
+  - type: Config
+`))
+	require.NoError(t, err)
+
+	compiled, err := CompileSpecSets(kubernetes, appconfig)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{
+		"https://example.com/k8s/{{.ResourceKind}}.json",
+		"https://example.com/crds/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json",
+	}, compiled.SchemaLocationsFor(workerapi.ToolchainKubernetesYAML), "in declaration order, most authoritative first")
+
+	assert.Empty(t, compiled.SchemaLocationsFor(workerapi.ToolchainAppConfigTOML),
+		"a toolchain whose formats have no schema to fetch declares none")
+
+	assert.Equal(t, "https://example.com/one-off/widget.json",
+		compiled.SchemaFor(workerapi.ToolchainKubernetesYAML, "example.com/v1/Widget"))
+	assert.Equal(t, SchemaNone,
+		compiled.SchemaFor(workerapi.ToolchainKubernetesYAML, "example.com/v1/Gadget"),
+		"a type known to have no schema says so, so a validator can report it as unchecked")
+	assert.Empty(t, compiled.SchemaFor(workerapi.ToolchainKubernetesYAML, "example.com/v1/Ordinary"),
+		"the ordinary case is to look where the templates say")
+
+	// The returned slice is the caller's, not the snapshot's.
+	locations := compiled.SchemaLocationsFor(workerapi.ToolchainKubernetesYAML)
+	locations[0] = "mutated"
+	assert.NotEqual(t, "mutated", compiled.SchemaLocationsFor(workerapi.ToolchainKubernetesYAML)[0])
 }

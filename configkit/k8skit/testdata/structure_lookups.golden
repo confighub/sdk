@@ -1,5 +1,68 @@
 # merge keys: resourceType	path	keys
 mergeKey	*	metadata.ownerReferences	uid
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.hostAliases	ip
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.imagePullSecrets	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.resourceClaims	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.schedulingGates	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.topologySpreadConstraints	topologyKey,whenUnsatisfiable
+mergeKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.volumes	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.hostAliases	ip
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.imagePullSecrets	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.resourceClaims	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.schedulingGates	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.topologySpreadConstraints	topologyKey,whenUnsatisfiable
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.volumes	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.hostAliases	ip
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.imagePullSecrets	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.env	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.ports	containerPort,protocol
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.volumeDevices	devicePath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.volumeMounts	mountPath
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.resourceClaims	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.schedulingGates	name
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.topologySpreadConstraints	topologyKey,whenUnsatisfiable
+mergeKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.volumes	name
 mergeKey	admissionregistration.k8s.io/v1/MutatingAdmissionPolicy	spec.matchConditions	name
 mergeKey	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	webhooks	name
 mergeKey	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	webhooks.*.matchConditions	name
@@ -246,6 +309,75 @@ mergeKey	v1/Service	spec.ports	port,protocol
 mergeKey	v1/ServiceAccount	secrets	name
 
 # exclusive fields: resourceType	path	members	discriminator	allowedMember
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.containers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.ephemeralContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.initContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.resourceClaims.*	resourceClaimName,resourceClaimTemplateName		
+exclusive	actions.github.com/v1alpha1/AutoscalingListener	spec.template.spec.volumes.*	awsElasticBlockStore,azureDisk,azureFile,cephfs,cinder,configMap,csi,downwardAPI,emptyDir,ephemeral,fc,flexVolume,flocker,gcePersistentDisk,gitRepo,glusterfs,hostPath,image,iscsi,nfs,persistentVolumeClaim,photonPersistentDisk,portworxVolume,projected,quobyte,rbd,scaleIO,secret,storageos,vsphereVolume		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.containers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.ephemeralContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.initContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.resourceClaims.*	resourceClaimName,resourceClaimTemplateName		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.spec.volumes.*	awsElasticBlockStore,azureDisk,azureFile,cephfs,cinder,configMap,csi,downwardAPI,emptyDir,ephemeral,fc,flexVolume,flocker,gcePersistentDisk,gitRepo,glusterfs,hostPath,image,iscsi,nfs,persistentVolumeClaim,photonPersistentDisk,portworxVolume,projected,quobyte,rbd,scaleIO,secret,storageos,vsphereVolume		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.containers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.ephemeralContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.env.*	value,valueFrom		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.lifecycle.preStop	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.livenessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.readinessProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.initContainers.*.startupProbe	exec,grpc,httpGet,tcpSocket		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.resourceClaims.*	resourceClaimName,resourceClaimTemplateName		
+exclusive	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.spec.volumes.*	awsElasticBlockStore,azureDisk,azureFile,cephfs,cinder,configMap,csi,downwardAPI,emptyDir,ephemeral,fc,flexVolume,flocker,gcePersistentDisk,gitRepo,glusterfs,hostPath,image,iscsi,nfs,persistentVolumeClaim,photonPersistentDisk,portworxVolume,projected,quobyte,rbd,scaleIO,secret,storageos,vsphereVolume		
 exclusive	apps/v1/DaemonSet	spec.template.spec.containers.*.env.*	value,valueFrom		
 exclusive	apps/v1/DaemonSet	spec.template.spec.containers.*.env.*.valueFrom	configMapKeyRef,fieldRef,fileKeyRef,resourceFieldRef,secretKeyRef		
 exclusive	apps/v1/DaemonSet	spec.template.spec.containers.*.lifecycle.postStart	exec,grpc,httpGet,tcpSocket		
@@ -508,6 +640,42 @@ exclusive	v1/ReplicationController	spec.template.spec.volumes.*	awsElasticBlockS
 mapKey	*	metadata.annotations.*
 mapKey	*	metadata.labels.*
 mapKey	*	spec.selector.matchLabels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.configSecretMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.configSecretMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.metrics.counters.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.metrics.gauges.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.metrics.histograms.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.roleBindingMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.roleBindingMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.roleMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.roleMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.serviceAccountMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.serviceAccountMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.metadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingListener	spec.template.metadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.autoscalingListener.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.autoscalingListener.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerConfigSecretMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerConfigSecretMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerSetMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.ephemeralRunnerSetMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerConfigSecretMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerConfigSecretMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerMetrics.counters.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerMetrics.gauges.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerMetrics.histograms.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerRoleBindingMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerRoleBindingMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerRoleMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerRoleMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerServiceAccountMetadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerServiceAccountMetadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.metadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.listenerTemplate.metadata.labels.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.metadata.annotations.*
+mapKey	actions.github.com/v1alpha1/AutoscalingRunnerSet	spec.template.metadata.labels.*
 mapKey	apps/v1/DaemonSet	spec.template.metadata.annotations.*
 mapKey	apps/v1/DaemonSet	spec.template.metadata.labels.*
 mapKey	apps/v1/Deployment	spec.template.metadata.annotations.*
@@ -522,6 +690,20 @@ mapKey	batch/v1/CronJob	spec.jobTemplate.spec.template.metadata.annotations.*
 mapKey	batch/v1/CronJob	spec.jobTemplate.spec.template.metadata.labels.*
 mapKey	batch/v1/Job	spec.template.metadata.annotations.*
 mapKey	batch/v1/Job	spec.template.metadata.labels.*
+mapKey	eks.services.k8s.aws/v1alpha1/Capability	spec.tags.*
+mapKey	elbv2.services.k8s.aws/v1alpha1/Listener	spec.defaultActions.*.authenticateCognitoConfig.authenticationRequestExtraParams.*
+mapKey	elbv2.services.k8s.aws/v1alpha1/Listener	spec.defaultActions.*.authenticateOIDCConfig.authenticationRequestExtraParams.*
+mapKey	elbv2.services.k8s.aws/v1alpha1/Rule	spec.actions.*.authenticateCognitoConfig.authenticationRequestExtraParams.*
+mapKey	elbv2.services.k8s.aws/v1alpha1/Rule	spec.actions.*.authenticateOIDCConfig.authenticationRequestExtraParams.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.apiKey.forwardHeaders.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.apiKey.keys.*.metadata.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.jwt.forwardHeaders.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oAuthIntro.clientConfig.headers.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oAuthIntro.forwardHeaders.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oidc.authParams.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oidc.forwardHeaders.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oidcGoogle.authParams.*
+mapKey	hub.traefik.io/v1alpha1/AccessControlPolicy	spec.oidcGoogle.forwardHeaders.*
 mapKey	serving.knative.dev/v1/Service	spec.template.metadata.annotations.*
 mapKey	serving.knative.dev/v1/Service	spec.template.metadata.labels.*
 mapKey	v1/PodTemplate	template.metadata.annotations.*

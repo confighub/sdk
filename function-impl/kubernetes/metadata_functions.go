@@ -254,10 +254,9 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 	// two are not.
 	//
 	// metadata.namespace is registered against every resource type at once and skipped on the
-	// cluster-scoped ones, by a list of types and by a predicate for the families too large to
-	// list, such as Crossplane's group-suffix convention. Scope is not a field a spec carries
-	// yet, and without the exceptions set-namespace would write a namespace into cluster-scoped
-	// managed resources.
+	// cluster-scoped ones. The exceptions come from the specs' declared scope, plus a predicate
+	// for the families too large to enumerate, such as Crossplane's group-suffix convention.
+	// Without them set-namespace would write a namespace into cluster-scoped resources.
 	//
 	// A Namespace's own metadata.name is a namespace field that is not a reference to a
 	// Namespace -- it is the Namespace -- so it has no target to declare. set-namespace renames
@@ -268,7 +267,7 @@ func initMetadataFunctions(rp *k8skit.K8sResourceProviderType) {
 				Path:              api.UnresolvedPath("metadata.namespace"),
 				AttributeName:     api.AttributeNameResourceName,
 				DataType:          api.DataTypeString,
-				TypeExceptions:    k8skit.K8sClusterScopedResourceTypes,
+				TypeExceptions:    k8skit.ClusterScopedResourceTypeSet(),
 				TypeExceptionFunc: api.TypeExceptionPredicate(k8skit.IsResourceTypeClusterScoped),
 			},
 		},

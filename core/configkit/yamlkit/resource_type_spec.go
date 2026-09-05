@@ -6,6 +6,7 @@ package yamlkit
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -139,13 +140,60 @@ type Declaration struct {
 	Attributes map[api.AttributeName][]AttributePath `json:"attributes,omitempty"`
 }
 
+// Scope says what a resource type's names are scoped by. Every toolchain already has the
+// concept -- ResourceProvider carries RemoveScopeFromResourceName and ScopelessResourceNamePath
+// -- but not the same values, so the values are the toolchain's to define. Kubernetes has two,
+// below; another toolchain may have others, or more than two.
+type Scope string
+
+const (
+	// ScopeNamespaced and ScopeCluster are Kubernetes' scopes: a namespaced type's names are
+	// scoped by a namespace, a cluster-scoped type's are not.
+	ScopeNamespaced Scope = "Namespaced"
+	ScopeCluster    Scope = "Cluster"
+)
+
 // ResourceTypeSpec is what any toolchain declares about one resource type. ToolchainType may
 // be left empty, in which case the containing SpecSet's applies.
+//
+// The three fields below the declaration are carried rather than interpreted: the compiler
+// stores them and hands them back, and what they mean is the toolchain's business. They are here
+// rather than on a per-toolchain type because the concepts generalize -- ResourceTypesAreSimilar
+// and the scope of a resource name are already on the ResourceProvider interface -- and because
+// one spec file, one loader and one stored representation is what §6.1 and §9.3 need. A spec
+// registering a CRD has to be able to say the CRD's scope, and it is written in the same file as
+// everything else.
 type ResourceTypeSpec struct {
 	Type          api.ResourceType        `json:"type"`
 	ToolchainType workerapi.ToolchainType `json:"toolchainType,omitempty"`
 	Declaration
+
+	// Scope is what this type's names are scoped by, in the toolchain's own terms.
+	Scope Scope `json:"scope,omitempty"`
+
+	// SimilarityClass names a set of types that are interchangeable enough that a mutation to
+	// one can be replayed against another -- Kubernetes workload controllers, which carry a pod
+	// spec in the same place, are the case it exists for. Two types are similar when they
+	// declare the same class. It is a free string so that a toolchain names its own classes.
+	SimilarityClass string `json:"similarityClass,omitempty"`
+
+	// ApplyPriority orders this type against others when a set of resources is applied
+	// together; lower goes first. A pointer, because zero is a usable priority and "unset" has
+	// to be distinguishable from it.
+	ApplyPriority *int `json:"applyPriority,omitempty"`
+
+	// Schema is where this type's schema is, for a type the set's SchemaLocations do not
+	// address. Two values are special: empty means "try the set's locations", and "none"
+	// means this type has no schema to find. The difference matters to a validator, which
+	// otherwise cannot tell a type it skipped from a type that passed -- the distinction
+	// vet-schemas passes silently over today.
+	Schema string `json:"schema,omitempty"`
 }
+
+// SchemaNone is ResourceTypeSpec.Schema for a type known to have no schema anywhere. Stating
+// it stops a validator reporting the type as validated when it was skipped, and stops a
+// fetch that can only ever fail.
+const SchemaNone = "none"
 
 // SpecSet is a set of resource-type specs and the shapes they embed: one file, and the unit a
 // stored spec Unit would hold. ToolchainType is the default for specs that do not state one,
@@ -154,6 +202,16 @@ type SpecSet struct {
 	ToolchainType workerapi.ToolchainType `json:"toolchainType,omitempty"`
 	Shapes        map[string]Declaration  `json:"shapes,omitempty"`
 	ResourceTypes []ResourceTypeSpec      `json:"resourceTypes,omitempty"`
+
+	// SchemaLocations are where a type's schema is fetched from, most authoritative first.
+	// Each is a template over the resource type, in the syntax kubeconform reads, so one
+	// entry covers every type rather than each type naming its own URL -- which would be the
+	// per-type table this file exists to remove.
+	//
+	// They are per set rather than per type because that is the granularity at which they
+	// vary: a catalog covers a whole family of types, and adding a catalog is one line.
+	// ResourceTypeSpec.Schema is for the type whose schema is not where the templates say.
+	SchemaLocations []string `json:"schemaLocations,omitempty"`
 }
 
 // LoadSpecSet parses a spec set from YAML or JSON.
@@ -199,6 +257,23 @@ type CompiledSpecs struct {
 	// that wants "where is this type's PodSpec" needs the question answered rather than a table
 	// restating the answer.
 	shapeEmbeds map[specKey]map[string][]string
+
+	// facts carries what a toolchain declares about a type without the compiler interpreting
+	// it: scope, similarity class, apply priority, and where its schema is.
+	facts map[specKey]typeFacts
+
+	// schemaLocations is per toolchain rather than per type, because that is the granularity
+	// at which a schema catalog varies. Sets contributing to one toolchain are concatenated in
+	// the order they were compiled, so the first set's locations are tried first.
+	schemaLocations map[workerapi.ToolchainType][]string
+}
+
+// typeFacts is the carried, uninterpreted part of a resource type spec.
+type typeFacts struct {
+	scope           Scope
+	similarityClass string
+	applyPriority   *int
+	schema          string
 }
 
 // CompileSpecSets compiles spec sets into one immutable snapshot. Shapes are resolved across
@@ -222,8 +297,14 @@ func CompileSpecSets(sets ...SpecSet) (*CompiledSpecs, error) {
 		mapKeyPaths:     make(map[specKey]map[string]bool),
 		attributes:      make(map[specKey]map[api.AttributeName][]AttributePath),
 		shapeEmbeds:     make(map[specKey]map[string][]string),
+		facts:           make(map[specKey]typeFacts),
+		schemaLocations: make(map[workerapi.ToolchainType][]string),
 	}
 	for _, set := range sets {
+		if len(set.SchemaLocations) > 0 {
+			compiled.schemaLocations[set.ToolchainType] = append(
+				compiled.schemaLocations[set.ToolchainType], set.SchemaLocations...)
+		}
 		for _, spec := range set.ResourceTypes {
 			toolchainType := spec.ToolchainType
 			if toolchainType == "" {
@@ -236,6 +317,20 @@ func CompileSpecSets(sets ...SpecSet) (*CompiledSpecs, error) {
 			if err := compiled.addDeclaration(key, "", spec.Declaration, shapes, nil); err != nil {
 				return nil, fmt.Errorf("resource type %s/%s: %w", toolchainType, spec.Type, err)
 			}
+			facts := compiled.facts[key]
+			if spec.Scope != "" {
+				facts.scope = spec.Scope
+			}
+			if spec.SimilarityClass != "" {
+				facts.similarityClass = spec.SimilarityClass
+			}
+			if spec.ApplyPriority != nil {
+				facts.applyPriority = spec.ApplyPriority
+			}
+			if spec.Schema != "" {
+				facts.schema = spec.Schema
+			}
+			compiled.facts[key] = facts
 		}
 	}
 	return compiled, nil
@@ -406,6 +501,52 @@ func (c *CompiledSpecs) IsMapKeyPath(
 		}
 	}
 	return false
+}
+
+// ScopeOf returns the scope a type declares, or "" if it declares none.
+func (c *CompiledSpecs) ScopeOf(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) Scope {
+	return c.facts[specKey{toolchainType, resourceType}].scope
+}
+
+// SimilarityClassOf returns the similarity class a type declares, or "" if it declares none.
+// Two types are similar when both declare the same non-empty class.
+func (c *CompiledSpecs) SimilarityClassOf(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) string {
+	return c.facts[specKey{toolchainType, resourceType}].similarityClass
+}
+
+// ApplyPriorityOf returns the apply priority a type declares, and whether it declares one.
+func (c *CompiledSpecs) ApplyPriorityOf(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) (int, bool) {
+	priority := c.facts[specKey{toolchainType, resourceType}].applyPriority
+	if priority == nil {
+		return 0, false
+	}
+	return *priority, true
+}
+
+// SchemaLocationsFor returns where a toolchain's schemas are fetched from, most authoritative
+// first, as templates over the resource type. Empty for a toolchain that declares none, which
+// is every toolchain whose formats have no schema to fetch.
+func (c *CompiledSpecs) SchemaLocationsFor(toolchainType workerapi.ToolchainType) []string {
+	return slices.Clone(c.schemaLocations[toolchainType])
+}
+
+// SchemaFor returns what a type declares about where its own schema is: a location that
+// overrides the toolchain's templates, SchemaNone for a type known to have none, or "" for the
+// ordinary case of "look where the templates say".
+func (c *CompiledSpecs) SchemaFor(toolchainType workerapi.ToolchainType, resourceType api.ResourceType) string {
+	return c.facts[specKey{toolchainType, resourceType}].schema
+}
+
+// ResourceTypesWithScope returns every type declaring the given scope, sorted.
+func (c *CompiledSpecs) ResourceTypesWithScope(toolchainType workerapi.ToolchainType, scope Scope) []api.ResourceType {
+	var types []api.ResourceType
+	for key, facts := range c.facts {
+		if key.toolchainType == toolchainType && facts.scope == scope {
+			types = append(types, key.resourceType)
+		}
+	}
+	sort.Slice(types, func(i, j int) bool { return types[i] < types[j] })
+	return types
 }
 
 // DeclaredAttributes returns the attribute paths declared for one resource type of one

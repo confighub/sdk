@@ -81,7 +81,7 @@ func (testResourceProvider) GetToolchainType() workerapi.ToolchainType {
 }
 
 var testProvider = &testResourceProvider{
-	registry: NewResourceProviderRegistry(),
+	registry: NewResourceProviderRegistry(workerapi.ToolchainKubernetesYAML),
 }
 
 func TestResolveAssociation(t *testing.T) {

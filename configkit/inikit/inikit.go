@@ -31,22 +31,12 @@ type INIResourceProviderType struct {
 // NewINIResourceProvider creates a new INIResourceProviderType with its own path registry.
 func NewINIResourceProvider() *INIResourceProviderType {
 	return &INIResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigINI),
 	}
 }
 
-func (*INIResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*INIResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*INIResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*INIResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

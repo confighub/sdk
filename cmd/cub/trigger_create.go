@@ -92,7 +92,7 @@ Single Trigger Examples:
   cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML set-annotation cloned true
 
   # Using named arguments for clarity (note the "--" separator)
-  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML -- set-annotation --key=cloned --value=true
+  cub trigger create --space my-space --json stamp PostClone Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
 ` + "```" + `
 
 Bulk Create Examples:

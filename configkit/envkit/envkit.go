@@ -32,22 +32,12 @@ type EnvResourceProviderType struct {
 // NewEnvResourceProvider creates a new EnvResourceProviderType with its own path registry.
 func NewEnvResourceProvider() *EnvResourceProviderType {
 	return &EnvResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigEnv),
 	}
 }
 
-func (*EnvResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*EnvResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*EnvResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*EnvResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

@@ -16,7 +16,8 @@ var k8sCmd = &cobra.Command{
 kubectl does; they show configuration, not live cluster state. "source", "refresh" and
 "collect" reach out to a cluster: to trace a live resource back to its Unit, to bring a
 resource's cluster-side changes back into that Unit, and to record cluster facts on a
-Target.`, ""),
+Target. "crd-spec" reads neither, taking a CustomResourceDefinition file and writing the
+resource-type spec that teaches ConfigHub how to address a custom resource's fields.`, ""),
 }
 
 func init() {

@@ -2615,6 +2615,11 @@ func PatchMutations(parsedData gaby.Container, mutationsProtection, mutationsPat
 // names the reason and can be cleared by an operation that knows it -- and Protected does not
 // migrate onto a guard key until guards carry the traffic.
 func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutationsPatch, mutationsToSubtract api.ResourceMutationList, guards *GuardFilter, resourceProvider ResourceProvider, options *api.FunctionOptions) (gaby.Container, api.MutationConflictList, error) {
+	// The protection record is stored, so its keys may name array elements by a position that
+	// had no merge key when they were written. The patch is a freshly computed diff and needs
+	// no such treatment; the subtrahend is the target's own diff and is freshly computed too.
+	mutationsProtection, _ = CanonicalizeStoredMutationPaths(mutationsProtection, parsedData, resourceProvider)
+
 	var conflicts api.MutationConflictList
 	if len(mutationsToSubtract) > 0 {
 		var subtractConflicts api.MutationConflictList
@@ -3874,6 +3879,8 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 // Used by the "reset" function to revert the leaves last touched by a chosen subset of
 // historical mutations to their unset state, leaving everything else alone.
 func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
+	mutationsProtection, _ = CanonicalizeStoredMutationPaths(mutationsProtection, parsedData, resourceProvider)
+
 	protectionMap := make(map[api.ResourceTypeAndName]int)
 	for i := range mutationsProtection {
 		resourceInfo := mutationsProtection[i].Resource
@@ -4390,6 +4397,8 @@ func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) (a
 // index. Both may be nil; the lookup then covers only the paths that match textually.
 func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMutationList,
 	resource api.ResourceInfo, path api.ResolvedPath, resourceProvider ResourceProvider) (int64, bool) {
+	mutationSources, _ = CanonicalizeStoredMutationPaths(mutationSources, parsedData, resourceProvider)
+
 	idx := api.NewResourceMutationIndex(mutationSources)
 	mi, found := idx.Find(resource, nil)
 	if !found {
@@ -4447,8 +4456,8 @@ func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMu
 //
 // The Protected flag records whether the path is a local override a merge must not
 // overwrite: true protects it, false leaves it the merge's to update.
-// SetMutationProtection consumes these stored values when no WhereMutation filter is
-// supplied, so editing them changes what a subsequent upgrade/merge will overwrite.
+// A merge consumes these stored values, so editing them changes what a subsequent
+// upgrade/merge will overwrite.
 //
 // For each (path, value) in protection:
 //
@@ -4469,6 +4478,11 @@ func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMu
 // resourceProvider are used to locate the resource's document and read the value at each
 // path. mutations is modified in place and also returned for convenience.
 func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList, resource api.ResourceInfo, protection map[api.ResolvedPath]bool, resourceProvider ResourceProvider) (api.ResourceMutationList, []api.ResolvedPath) {
+	// The record being edited is the stored one, so its keys are read with today's merge keys
+	// before a path is looked up in it. Returned as it is edited, so the caller stores the
+	// canonical form.
+	mutations, _ = CanonicalizeStoredMutationPaths(mutations, parsedData, resourceProvider)
+
 	var unresolved []api.ResolvedPath
 	idx := api.NewResourceMutationIndex(mutations)
 	mi, found := idx.Find(resource, nil)

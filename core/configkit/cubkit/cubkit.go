@@ -28,22 +28,12 @@ type ConfigHubResourceProviderType struct {
 // NewConfigHubResourceProvider creates a new ConfigHubResourceProviderType with its own path registry.
 func NewConfigHubResourceProvider() *ConfigHubResourceProviderType {
 	return &ConfigHubResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainConfigHubYAML),
 	}
 }
 
-func (*ConfigHubResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*ConfigHubResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*ConfigHubResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*ConfigHubResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

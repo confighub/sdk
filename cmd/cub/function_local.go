@@ -303,18 +303,8 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 			} else if outputJQ != "" {
 				displayJQ(payload)
 			} else {
-				for _, result := range payload {
-					details := ""
-					if len(result.Details) > 0 {
-						details = ": " + strings.Join(result.Details, ", ")
-					}
-					fmt.Printf("Passed: %v%s\n", result.Passed, details)
-					if len(result.FailedAttributes) > 0 {
-						fmt.Println("Failed Attributes:")
-						for _, attr := range result.FailedAttributes {
-							fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
-						}
-					}
+				for i := range payload {
+					displayValidationResult(&payload[i])
 				}
 			}
 		} else {
@@ -326,17 +316,7 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 				} else if outputJQ != "" {
 					displayJQ(payload)
 				} else {
-					details := ""
-					if len(singleResult.Details) > 0 {
-						details = ": " + strings.Join(singleResult.Details, ", ")
-					}
-					fmt.Printf("Passed: %v%s\n", singleResult.Passed, details)
-					if len(singleResult.FailedAttributes) > 0 {
-						fmt.Println("Failed Attributes:")
-						for _, attr := range singleResult.FailedAttributes {
-							fmt.Printf("  %v %s %s %s %s\n", attr.Value, attr.DataType, attr.Path, attr.ResourceName, attr.ResourceType)
-						}
-					}
+					displayValidationResult(&singleResult)
 				}
 			} else {
 				fmt.Print(string(outputBytes))

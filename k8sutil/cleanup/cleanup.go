@@ -73,9 +73,9 @@ func IsPersistentVolume(gvk *schema.GroupVersionKind) bool {
 
 func IsStandardWorkload(gvk *schema.GroupVersionKind) bool {
 	resourceType := GvkToResourceType(gvk)
-	_, present := k8skit.K8sWorkloadResourceTypes[resourceType]
+	isWorkload := k8skit.SimilarityClassOf(resourceType) == k8skit.SimilarityClassWorkload
 	// TODO: Handle CronJob
-	return present && resourceType != funcapi.ResourceType("batch/v1/CronJob")
+	return isWorkload && resourceType != funcapi.ResourceType("batch/v1/CronJob")
 }
 
 // Field managers whose managed fields should be removed during import/refresh

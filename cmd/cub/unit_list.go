@@ -56,6 +56,12 @@ Examples:
   # List units with upstream revisions
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
 
+  # List units that need a value and have none of it bound to a link yet
+  cub unit list --space "*" --where "NeededPaths.*.AttributeName IS NOT NULL AND NeededPaths.*.Details.BoundLinkID IS NULL"
+
+  # List units that provide a named attribute
+  cub unit list --space "*" --where "ProvidedPaths.*.AttributeName = 'image'"
+
   # List units with jq filtering
   cub unit list --space my-space --quiet -o jq='.[].Unit.Slug'
 

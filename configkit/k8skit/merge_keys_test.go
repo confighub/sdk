@@ -257,3 +257,44 @@ func TestPodHasNoPodTemplateMetadataPaths(t *testing.T) {
 	assert.True(t, rp.IsMapKeyPath(api.ResourceType("apps/v1/Deployment"), "spec.template.metadata.labels.*"))
 	assert.True(t, rp.IsMapKeyPath(api.ResourceType("batch/v1/CronJob"), "spec.jobTemplate.spec.template.metadata.labels.*"))
 }
+
+// #5085: a PodSpec inside a custom resource got no merge keys, so every path into its
+// containers was recorded positionally, and a protected path drifted the moment a container or
+// an env var was inserted ahead of it. Declaring where the pod template is gives the CRD the
+// same keys a Deployment has.
+func TestCRDWorkloadsGetTheirPodSpecMergeKeys(t *testing.T) {
+	rp := NewK8sResourceProvider()
+
+	runnerSet := api.ResourceType("actions.github.com/v1alpha1/AutoscalingRunnerSet")
+	keys, found := rp.MergeKeysForPath(runnerSet, "spec.template.spec.containers")
+	assert.True(t, found)
+	assert.Equal(t, []string{"name"}, keys)
+	keys, _ = rp.MergeKeysForPath(runnerSet, "spec.template.spec.initContainers.*.env")
+	assert.Equal(t, []string{"name"}, keys)
+	keys, _ = rp.MergeKeysForPath(runnerSet, "spec.template.spec.volumes")
+	assert.Equal(t, []string{"name"}, keys)
+
+	// A Knative Service reaches its PodSpec through a RevisionTemplateSpec, which is a pod
+	// template in the same place.
+	keys, _ = rp.MergeKeysForPath(api.ResourceType("serving.knative.dev/v1/Service"), "spec.template.spec.containers")
+	assert.Equal(t, []string{"name"}, keys)
+}
+
+// A runner scale set carries two pod templates -- the runners it scales and the listener that
+// watches GitHub for jobs -- so embedding the shape twice is what gives both of them merge keys.
+// The second was missed when the stanza was written by hand and found by reading the CRD.
+func TestARunnerScaleSetHasTwoPodTemplates(t *testing.T) {
+	runnerSet := api.ResourceType("actions.github.com/v1alpha1/AutoscalingRunnerSet")
+
+	// Declaration order, which is the spec file's order and is therefore stable.
+	assert.Equal(t, []string{"spec.template.spec", "spec.listenerTemplate.spec"}, PodSpecPaths(runnerSet))
+
+	rp := NewK8sResourceProvider()
+	keys, found := rp.MergeKeysForPath(runnerSet, "spec.listenerTemplate.spec.containers")
+	assert.True(t, found)
+	assert.Equal(t, []string{"name"}, keys)
+
+	// The metadata maps the CRD declares are maps, so a dotted label key is a key and not a
+	// path of its own.
+	assert.True(t, rp.IsMapKeyPath(runnerSet, "spec.listenerRoleMetadata.labels.*"))
+}

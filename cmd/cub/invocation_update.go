@@ -26,7 +26,7 @@ Once a named argument is used, all subsequent arguments must be named. Use "--" 
 
 Example with named arguments:
 `+"```"+`
-  cub invocation update --space my-space my-invocation Kubernetes/YAML -- set-annotation --key=cloned --value=true
+  cub invocation update --space my-space my-invocation Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
 `+"```"+`
 
 An Invocation can call several functions, which are executed in the order they are listed.

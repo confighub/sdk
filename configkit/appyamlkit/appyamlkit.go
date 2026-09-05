@@ -24,22 +24,12 @@ type AppConfigYAMLResourceProviderType struct {
 // NewAppConfigYAMLResourceProvider creates a new AppConfigYAMLResourceProviderType with its own path registry.
 func NewAppConfigYAMLResourceProvider() *AppConfigYAMLResourceProviderType {
 	return &AppConfigYAMLResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigYAML),
 	}
 }
 
-func (*AppConfigYAMLResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*AppConfigYAMLResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*AppConfigYAMLResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*AppConfigYAMLResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

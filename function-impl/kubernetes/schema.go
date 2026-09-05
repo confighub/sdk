@@ -4,10 +4,7 @@
 package kubernetes
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"regexp"
 	"strings"
 	"sync"
@@ -37,9 +34,6 @@ func InitSchemaFinder() error {
 
 type SchemaFinder struct {
 	resources openapi.Resources
-	// Cache for CRDs-catalog JSON schemas, keyed by "group/kind_version"
-	crdSchemas map[string]*jsonSchema
-	crdMu      sync.Mutex
 }
 
 type SchemaInfo struct {
@@ -59,7 +53,7 @@ func NewSchemaFinder() (*SchemaFinder, error) {
 		return nil, fmt.Errorf("failed to create OpenAPI resources: %w", err)
 	}
 
-	return &SchemaFinder{resources: resources, crdSchemas: make(map[string]*jsonSchema)}, nil
+	return &SchemaFinder{resources: resources}, nil
 }
 
 func LookupPath(gvkString, fieldPath string) (*SchemaInfo, error) {
@@ -122,143 +116,26 @@ func (e *SchemaFinder) LookupPath(gvkString, fieldPath string) (*SchemaInfo, err
 		return e.getSchemaInfo(s), nil
 	}
 
-	// Fall back to CRDs-catalog for custom resources
-	return e.lookupCRDPath(gvk, fieldPath)
+	// TODO: field descriptions for custom resource types. See §7 of
+	// docs/design/resource-type-specs.md.
+	//
+	// There used to be a fallback here that fetched the type's schema from the CRDs-catalog.
+	// It could never run: the only caller of LookupPath is addDescriptionToPathInfos, which
+	// skips any type without a bundled schema precisely so that registration does not reach
+	// the network -- it runs at process init, in the server and in every worker. So the
+	// fallback served no caller and was removed rather than left looking live.
+	//
+	// Whatever replaces it has to resolve descriptions somewhere other than registration:
+	// lazily when one is displayed, or from schemas distributed with the specs, which is the
+	// question §7 leaves open. 144 of the 185 declared resource types have no bundled schema,
+	// so this is every custom type.
+	return nil, fmt.Errorf("no bundled schema for %s", gvk)
 }
 
 func (e *SchemaFinder) getSchemaInfo(s proto.Schema) *SchemaInfo {
 	return &SchemaInfo{
 		Description: s.GetDescription(),
 	}
-}
-
-// jsonSchema is a minimal representation of a JSON Schema document,
-// sufficient to extract field descriptions from CRDs-catalog schemas.
-type jsonSchema struct {
-	Description string                `json:"description"`
-	Properties  map[string]jsonSchema `json:"properties"`
-	Items       *jsonSchema           `json:"items"`
-	// AllOf, AnyOf, and OneOf may contain additional properties/descriptions
-	AllOf []jsonSchema `json:"allOf"`
-	AnyOf []jsonSchema `json:"anyOf"`
-	OneOf []jsonSchema `json:"oneOf"`
-	Ref   string       `json:"$ref"`
-	// Top-level definitions for $ref resolution
-	Definitions map[string]jsonSchema `json:"definitions"`
-}
-
-// mergedProperties returns properties from this schema and any allOf/anyOf/oneOf members.
-func (s *jsonSchema) mergedProperties() map[string]jsonSchema {
-	if len(s.AllOf) == 0 && len(s.AnyOf) == 0 && len(s.OneOf) == 0 {
-		return s.Properties
-	}
-	merged := make(map[string]jsonSchema)
-	for k, v := range s.Properties {
-		merged[k] = v
-	}
-	for _, schemas := range [][]jsonSchema{s.AllOf, s.AnyOf, s.OneOf} {
-		for _, sub := range schemas {
-			for k, v := range sub.Properties {
-				merged[k] = v
-			}
-		}
-	}
-	return merged
-}
-
-// resolveRef resolves a $ref like "#/definitions/Foo" against the root schema's definitions.
-func (s *jsonSchema) resolveRef(root *jsonSchema) *jsonSchema {
-	if s.Ref == "" {
-		return s
-	}
-	const prefix = "#/definitions/"
-	if !strings.HasPrefix(s.Ref, prefix) {
-		return s
-	}
-	name := strings.TrimPrefix(s.Ref, prefix)
-	if def, ok := root.Definitions[name]; ok {
-		return &def
-	}
-	return s
-}
-
-func crdsCatalogURL(gvk schema.GroupVersionKind) string {
-	return fmt.Sprintf(
-		"https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/%s/%s_%s.json",
-		gvk.Group, strings.ToLower(gvk.Kind), gvk.Version,
-	)
-}
-
-func (e *SchemaFinder) fetchCRDSchema(gvk schema.GroupVersionKind) (*jsonSchema, error) {
-	cacheKey := fmt.Sprintf("%s/%s_%s", gvk.Group, strings.ToLower(gvk.Kind), gvk.Version)
-
-	e.crdMu.Lock()
-	if cached, ok := e.crdSchemas[cacheKey]; ok {
-		e.crdMu.Unlock()
-		return cached, nil
-	}
-	e.crdMu.Unlock()
-
-	url := crdsCatalogURL(gvk)
-	resp, err := http.Get(url) //nolint:gosec,noctx
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch CRD schema from %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("CRD schema not found at %s (status %d)", url, resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read CRD schema response: %w", err)
-	}
-
-	var s jsonSchema
-	if err := json.Unmarshal(body, &s); err != nil {
-		return nil, fmt.Errorf("failed to parse CRD schema: %w", err)
-	}
-
-	e.crdMu.Lock()
-	e.crdSchemas[cacheKey] = &s
-	e.crdMu.Unlock()
-
-	return &s, nil
-}
-
-func (e *SchemaFinder) lookupCRDPath(gvk schema.GroupVersionKind, fieldPath string) (*SchemaInfo, error) {
-	root, err := e.fetchCRDSchema(gvk)
-	if err != nil {
-		return nil, err
-	}
-
-	current := root
-	fields := gaby.DotPathToSlice(fieldPath)
-
-	for _, field := range fields {
-		field = strings.Split(field, "#")[0]
-
-		// Skip array indices
-		if integerLiteralOnlyRegexp.MatchString(field) || strings.ContainsAny(field, "*?") {
-			if current.Items != nil {
-				resolved := current.Items.resolveRef(root)
-				current = resolved
-			}
-			continue
-		}
-
-		resolved := current.resolveRef(root)
-		props := resolved.mergedProperties()
-		if sub, ok := props[field]; ok {
-			r := sub.resolveRef(root)
-			current = r
-		} else {
-			return nil, fmt.Errorf("field %q not found in CRD schema for %q", field, gvk)
-		}
-	}
-
-	return &SchemaInfo{Description: current.Description}, nil
 }
 
 var integerLiteralOnlyRegexpString = "^[0-9][0-9]{0,9}$"

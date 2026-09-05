@@ -46,6 +46,15 @@ Examples:
 
   # List the links that are behind their upstream unit and do not update themselves
   cub link list --space "*" --where "Stale = true AND AutoUpdate = false"
+
+  # List the links that carry a named attribute
+  cub link list --space "*" --where "Bindings.*.AttributeName = 'image'"
+
+  # List the transform links that write a path
+  cub link list --space "*" --where "DownstreamPaths.*.Path LIKE 'spec.replicas%'"
+
+  # List the links that stamp a guard on what they write
+  cub link list --space "*" --where "Guards.owner = 'transform-link'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

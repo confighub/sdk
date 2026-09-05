@@ -1,4 +1,207 @@
 # declared attributes: resourceType	attributeName	path	dataType[	target]
+attribute	actions.github.com/v1alpha1/AutoscalingListener	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-name	spec.template.spec.containers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-name	spec.template.spec.initContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	actions.github.com/v1alpha1/AutoscalingListener	pod-template-labels	spec.template.metadata.labels	
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.githubConfigSecret		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingListener	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	automount-service-account-token	spec.listenerTemplate.spec.automountServiceAccountToken	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.listenerTemplate.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.template.spec.ephemeralContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-flag	spec.template.spec.initContainers.?name:container-name=%s.args.?flag:container-flag=%s#value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.listenerTemplate.spec.containers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.template.spec.containers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.template.spec.ephemeralContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image	spec.template.spec.initContainers.?name:container-name=%s.image	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.listenerTemplate.spec.containers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.template.spec.containers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-image-reference	spec.template.spec.initContainers.?name:container-name=%s.image#reference	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.listenerTemplate.spec.containers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.listenerTemplate.spec.ephemeralContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.listenerTemplate.spec.initContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.template.spec.containers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.template.spec.ephemeralContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-name	spec.template.spec.initContainers.*.name	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.listenerTemplate.spec.containers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.template.spec.containers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.template.spec.ephemeralContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-repository-uri	spec.template.spec.initContainers.?name:container-name=%s.image#uri	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.listenerTemplate.spec.containers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.template.spec.containers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.template.spec.ephemeralContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources	spec.template.spec.initContainers.?name:container-name=%s.resources	YAML
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.containers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.containers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.initContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.listenerTemplate.spec.initContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.containers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.ephemeralContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.cpu	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	container-resources-defaults	spec.template.spec.initContainers.*.resources.requests.memory	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.listenerTemplate.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.template.spec.containers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.template.spec.ephemeralContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	env-value	spec.template.spec.initContainers.?name:container-name=%s.env.?name:env-var=%s.value	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.containers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.initContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.securityContext.fsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.securityContext.runAsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.securityContext.runAsNonRoot	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.securityContext.runAsUser	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.listenerTemplate.spec.securityContext.seccompProfile.type	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.containers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.ephemeralContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.allowPrivilegeEscalation	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.capabilities.drop	[]string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.privileged	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.initContainers.*.securityContext.readOnlyRootFilesystem	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.securityContext.fsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsGroup	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsNonRoot	bool
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.securityContext.runAsUser	int
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-container-security-context-defaults	spec.template.spec.securityContext.seccompProfile.type	string
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-template-labels	spec.listenerTemplate.metadata.labels	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	pod-template-labels	spec.template.metadata.labels	
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.githubConfigSecret		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.imagePullSecrets.*.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.serviceAccountName		v1/ServiceAccount
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.listenerTemplate.spec.volumes.*.secret.secretName		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.containers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.containers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.containers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.ephemeralContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.ephemeralContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.imagePullSecrets.*.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.configMapKeyRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.initContainers.*.env.*.valueFrom.secretKeyRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.configMapRef.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.initContainers.*.envFrom.*.secretRef.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.priorityClassName		scheduling.k8s.io/v1/PriorityClass
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.serviceAccountName		v1/ServiceAccount
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.volumes.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.volumes.*.persistentVolumeClaim.claimName		v1/PersistentVolumeClaim
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.configMap.name		v1/ConfigMap
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.volumes.*.projected.sources.*.secret.name		v1/Secret
+attribute	actions.github.com/v1alpha1/AutoscalingRunnerSet	resource-name	spec.template.spec.volumes.*.secret.secretName		v1/Secret
 attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	namespace-name-reference	webhooks.*.clientConfig.service.|namespace		v1/Namespace
 attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.name		v1/Service
 attribute	admissionregistration.k8s.io/v1/MutatingWebhookConfiguration	resource-name	webhooks.*.clientConfig.service.|namespace		v1/Namespace

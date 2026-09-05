@@ -49,6 +49,18 @@ Examples:
 
   # List disabled triggers across all spaces
   cub trigger list --space "*" --where "Disabled = true"
+
+  # List triggers that set a particular attribute, by the argument bound to a named parameter
+  cub trigger list --space "*" --where "Arguments.?ParameterName=attribute-name.Value = 'owner'"
+
+  # List triggers whose function takes a given value as any argument
+  cub trigger list --space "*" --where "Arguments.*.Value LIKE 'confighub.com/%'"
+
+  # List triggers cleared to overwrite a guarded path
+  cub trigger list --space "*" --where "Clearance.*.Key = 'owner'"
+
+  # List triggers that stamp a guard on what they write
+  cub trigger list --space "*" --where "Guards.owner = 'platform-trigger'"
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(0),

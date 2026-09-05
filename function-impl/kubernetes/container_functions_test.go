@@ -803,3 +803,38 @@ spec:
 	assert.Contains(t, newYaml.String(), "--entryPoints.websecure.address=:8443/tcp") // unchanged
 	assert.Contains(t, newYaml.String(), "--log.level=INFO")                          // unchanged
 }
+
+// The evidence in #5085: set-container-image against an AutoscalingRunnerSet returned no error,
+// no warning, and no change, because the visitor looked the type up in a table that named ten
+// built-ins. The assertion that matters is that the old image is gone -- a function that does
+// nothing still leaves the new image absent and the old one present.
+func TestSetImageReachesACRDWorkload(t *testing.T) {
+	const runnerSet = `
+apiVersion: actions.github.com/v1alpha1
+kind: AutoscalingRunnerSet
+metadata:
+  name: gha-runner-scale-set
+spec:
+  githubConfigUrl: https://github.com/example
+  githubConfigSecret: gha-runner-app
+  minRunners: 1
+  template:
+    spec:
+      containers:
+      - name: runner
+        image: ghcr.io/actions/runner:2.320.0
+`
+
+	docs, err := gaby.ParseAll([]byte(runnerSet))
+	require.NoError(t, err)
+
+	newYaml, _, err := setImageHandler(handler.FunctionImplementationArguments{
+		FunctionContext: &fakeContext,
+		ParsedData:      docs,
+		Arguments:       stringArgsToFunctionArgs([]string{"runner", "ghcr.io/actions/runner:2.999.0"}),
+	})
+	require.NoError(t, err)
+	assert.Contains(t, newYaml.String(), "ghcr.io/actions/runner:2.999.0")
+	assert.NotContains(t, newYaml.String(), "ghcr.io/actions/runner:2.320.0",
+		"the old image is still there, so the function did nothing")
+}

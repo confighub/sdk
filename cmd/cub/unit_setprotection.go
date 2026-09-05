@@ -20,10 +20,10 @@ var unitSetProtectionCmd = &cobra.Command{
 
 A protected path is a local override a merge must not overwrite. An unprotected
 path holds a value that came from somewhere else -- a clone, an upgrade, a
-merge -- and is the merge's to update. Merges consult these stored values when
-no WhereMutation filter is supplied, which is the default: the stored
-protection is then the only mechanism preserving local overrides. Turning the
-merge's subtraction step on (via --merge-enable-subtraction or a link's
+merge -- and is the merge's to update. Merges consult these stored values by
+default, and they are then the only mechanism preserving local overrides; a
+WhereMutation filter protects further paths on top of them. Turning the merge's
+subtraction step on (via --merge-enable-subtraction or a link's
 MergeEnableSubtraction) preserves them by a second mechanism, and the stored
 values are not consulted.
 

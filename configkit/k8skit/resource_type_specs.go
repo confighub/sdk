@@ -108,6 +108,54 @@ func DeclaredReferences() []yamlkit.DeclaredReference {
 	return compiledK8sSpecs.ReferencePaths(workerapi.ToolchainKubernetesYAML)
 }
 
+// SchemaLocations returns where a Kubernetes resource type's JSON schema is fetched from, most
+// authoritative first, as the templates kubeconform reads. Declared in the spec file rather than
+// written into the function, so adding a catalog is one line of data.
+func SchemaLocations() []string {
+	return compiledK8sSpecs.SchemaLocationsFor(workerapi.ToolchainKubernetesYAML)
+}
+
+// SchemaFor returns what a resource type declares about its own schema: a location that
+// overrides the templates, yamlkit.SchemaNone for a type known to have none, or "" for the
+// ordinary case.
+func SchemaFor(resourceType api.ResourceType) string {
+	return compiledK8sSpecs.SchemaFor(workerapi.ToolchainKubernetesYAML, resourceType)
+}
+
+// ScopeOf returns the scope the built-in specs declare for a resource type, or "" for a type
+// they say nothing about.
+func ScopeOf(resourceType api.ResourceType) yamlkit.Scope {
+	return compiledK8sSpecs.ScopeOf(workerapi.ToolchainKubernetesYAML, resourceType)
+}
+
+// SimilarityClassOf returns the similarity class the built-in specs declare for a resource type,
+// or "" for a type they place in none.
+func SimilarityClassOf(resourceType api.ResourceType) string {
+	return compiledK8sSpecs.SimilarityClassOf(workerapi.ToolchainKubernetesYAML, resourceType)
+}
+
+// ClusterScopedResourceTypes returns every type the built-in specs declare cluster-scoped,
+// sorted. It is what the curated map used to be, and it is still not exhaustive: see
+// IsResourceTypeClusterScoped for the Crossplane rule that covers what a list cannot.
+func ClusterScopedResourceTypes() []api.ResourceType {
+	return compiledK8sSpecs.ResourceTypesWithScope(workerapi.ToolchainKubernetesYAML, yamlkit.ScopeCluster)
+}
+
+// ClusterScopedResourceTypeSet returns the cluster-scoped types as a set, for a caller that
+// needs to test membership rather than iterate -- a path visitor's TypeExceptions, say.
+func ClusterScopedResourceTypeSet() map[api.ResourceType]struct{} {
+	types := ClusterScopedResourceTypes()
+	set := make(map[api.ResourceType]struct{}, len(types))
+	for _, resourceType := range types {
+		set[resourceType] = struct{}{}
+	}
+	return set
+}
+
+// SimilarityClassWorkload is the class of types that carry a pod spec in the same place, which is
+// what lets a mutation to one be replayed against another.
+const SimilarityClassWorkload = "workload"
+
 // GetImmutablePaths returns the immutable field paths the built-in specs declare, keyed by
 // resource type. vet-immutable reads them from the path registry; this is for callers that
 // want the declaration itself without building a provider.
@@ -152,27 +200,4 @@ func RegisterDeclaredAttributePaths(
 ) error {
 	return yamlkit.RegisterDeclaredAttributePaths(
 		rp, compiledK8sSpecs, workerapi.ToolchainKubernetesYAML, descriptors, enrich)
-}
-
-// MergeKeysForPath returns the merge key field names for the given K8s resource type
-// and array path. The path may use numeric indices or wildcards; numeric indices
-// are normalized to wildcards for lookup. Returns (nil, false) if no merge key
-// is defined for the path.
-func (rp *K8sResourceProviderType) MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool) {
-	return compiledK8sSpecs.MergeKeysForPath(workerapi.ToolchainKubernetesYAML, resourceType, path)
-}
-
-// ExclusiveFieldsForPath returns the mutually exclusive sibling fields of the object at the
-// given path. The path may use numeric indices or associative segments; both normalize to
-// wildcards for lookup, as they do for merge keys.
-func (rp *K8sResourceProviderType) ExclusiveFieldsForPath(resourceType api.ResourceType, path string) (yamlkit.ExclusiveFields, bool) {
-	return compiledK8sSpecs.ExclusiveFieldsForPath(workerapi.ToolchainKubernetesYAML, resourceType, path)
-}
-
-// IsMapKeyPath returns true if the given path is a freeform map whose children
-// are dynamic keys (e.g., label keys, annotation keys) rather than schema-defined
-// fields. Child segments of such paths should be wildcarded during normalization.
-// The path should end with ".*" to indicate it's asking about map children.
-func (rp *K8sResourceProviderType) IsMapKeyPath(resourceType api.ResourceType, path string) bool {
-	return compiledK8sSpecs.IsMapKeyPath(workerapi.ToolchainKubernetesYAML, resourceType, path)
 }

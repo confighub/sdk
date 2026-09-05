@@ -47,7 +47,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths); the default is a NeedsProvides link that updates itself")
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes; a link created with no --update-type gets this without asking")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates; a link that does not update itself instead reports Stale when its upstream moves past it")
-	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression to filter mutations during merge")
+	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression selecting mutations of the downstream unit whose paths this link's merges must not overwrite; unioned with the unit's stored path protection, so it protects more and never re-opens a path the unit claimed")
 	cmd.Flags().StringVar(&linkWhereResource, "where-resource", "", "where expression to select upstream resources for propagation")
 	cmd.Flags().BoolVar(&linkMergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the downstream unit's local differences from the patch when resolving this link, on top of the stored path protection that preserves overrides by default")
 	cmd.Flags().BoolVar(&linkNoMergeEnableSubtraction, "no-merge-enable-subtraction", false, "return this link to the default: no subtraction step")

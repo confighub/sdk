@@ -45,6 +45,16 @@ Examples:
 
   # List mutations with specific criteria
   cub mutation list --space my-space --where 'MutationNum > 1' my-ns
+
+  # List mutations that set a particular image. The function invoked is a FunctionInvocation
+  # object in the response, and --where names it the same way.
+  cub mutation list --space my-space --where "FunctionInvocation.FunctionName = 'set-image' AND FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'" my-ns
+
+  # List mutations whose function took a given value as any argument
+  cub mutation list --space my-space --where "FunctionInvocation.Arguments.*.Value = 'production'" my-ns
+
+  # List mutations whose invocation stated a reason for what it wrote
+  cub mutation list --space my-space --where "FunctionInvocation.Guards.owner = 'platform-trigger'" my-ns
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),

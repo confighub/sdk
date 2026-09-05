@@ -28,22 +28,12 @@ type JSONResourceProviderType struct {
 // NewJSONResourceProvider creates a new JSONResourceProviderType with its own path registry.
 func NewJSONResourceProvider() *JSONResourceProviderType {
 	return &JSONResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainAppConfigJSON),
 	}
 }
 
-func (*JSONResourceProviderType) MergeKeysForPath(_ api.ResourceType, _ string) ([]string, bool) {
-	return nil, false
-}
 
-// ExclusiveFieldsForPath returns no union: this format has no schema declaring one.
-func (*JSONResourceProviderType) ExclusiveFieldsForPath(_ api.ResourceType, _ string) (yamlkit.ExclusiveFields, bool) {
-	return yamlkit.ExclusiveFields{}, false
-}
 
-func (*JSONResourceProviderType) IsMapKeyPath(_ api.ResourceType, _ string) bool {
-	return false
-}
 
 // DefaultResourceCategory returns the default resource category to assume, which is AppConfig in this case.
 func (*JSONResourceProviderType) DefaultResourceCategory() api.ResourceCategory {
