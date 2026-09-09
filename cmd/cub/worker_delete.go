@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -79,10 +78,6 @@ func checkWorkerDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -140,16 +135,16 @@ func bridgeworkerDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single bridgeworker delete logic
-	worker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
+	worker, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteBridgeWorkerWithResponse(ctx, uuid.MustParse(selectedSpaceID), worker.BridgeWorkerID)
+	deleteRes, err := cubClientNew.DeleteBridgeWorkerWithResponse(ctx, worker.BridgeWorker.SpaceID, worker.BridgeWorker.BridgeWorkerID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("bridge_worker", args[0], worker.BridgeWorkerID.String(), deleteRes)
+	displayDeleteResults("bridge_worker", args[0], worker.BridgeWorker.BridgeWorkerID.String(), deleteRes)
 	return nil
 }
 

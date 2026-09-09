@@ -129,7 +129,7 @@ var triggerCreateArgs struct {
 func init() {
 	addStandardCreateFlags(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
-	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
+	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ValidationWarnings instead of ValidationErrors")
 	addTriggerClearanceFlag(triggerCreateCmd)
 	addTriggerGuardFlag(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
@@ -272,12 +272,7 @@ func runSingleTriggerCreate(args []string) error {
 		newBody.Guards = &guards
 	}
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerUUID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}
@@ -292,12 +287,7 @@ func runSingleTriggerCreate(args []string) error {
 		newBody.WhereUnit = triggerWhereUnit
 	}
 	if triggerUnitFilter != "" {
-		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
-			triggerUnitFilter,
-			EntityTypeFilter,
-			apiGetFilterFromSlugInSpace,
-			func(f *goclientnew.Filter) string { return f.FilterID.String() },
-		)
+		filterUUID, err := resolveFilterID(triggerUnitFilter)
 		if err != nil {
 			return err
 		}
@@ -325,7 +315,7 @@ func runSingleTriggerCreate(args []string) error {
 
 	if triggerCreateArgs.invocationSlug != "" {
 		// Use invocation instead of function and arguments
-		invocationID, err := parseInvocationSlug(triggerCreateArgs.invocationSlug)
+		invocationID, err := resolveInvocationID(triggerCreateArgs.invocationSlug)
 		if err != nil {
 			return err
 		}

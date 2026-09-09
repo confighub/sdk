@@ -6,9 +6,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -29,11 +27,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(linkGetCmd)
+	enableOptionalSpace(linkGetCmd)
 	linkCmd.AddCommand(linkGetCmd)
 }
 
 func linkGetCmdRun(cmd *cobra.Command, args []string) error {
-	linkDetails, err := apiGetExtendedLinkFromSlug(args[0], selectFields) // use select flag
+	linkDetails, err := resolveLink(args[0], selectedSpaceID, selectFields) // use select flag
 	if err != nil {
 		return err
 	}
@@ -170,82 +169,4 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 		displayJSONSection("Upstream Getters", linkDetails.UpstreamGetters)
 		displayJSONSection("Downstream Setters", linkDetails.DownstreamSetters)
 	}
-}
-
-func apiGetLink(linkID string, selectParam string) (*goclientnew.Link, error) {
-	extendedLink, err := apiGetExtendedLink(linkID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedLink.Link, nil
-}
-
-func apiGetExtendedLink(linkID string, selectParam string) (*goclientnew.ExtendedLink, error) {
-	newParams := &goclientnew.GetLinkParams{}
-	include := "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	linkRes, err := cubClientNew.GetLinkWithResponse(ctx,
-		uuid.MustParse(selectedSpaceID), uuid.MustParse(linkID), newParams)
-	if cubapi.IsAPIError(err, linkRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, linkRes)
-	}
-	return linkRes.JSON200, nil
-}
-
-func apiGetLinkFromSlug(slug string, selectParam string) (*goclientnew.Link, error) {
-	return apiGetLinkFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetLinkFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Link, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetLink(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	links, err := apiListLinks(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	for _, extendedLink := range links {
-		if extendedLink.Link.Slug == slug {
-			return extendedLink.Link, nil
-		}
-	}
-
-	// Get space slug for error message
-	spaceSlug := spaceID
-	if spaceUUID, err := uuid.Parse(spaceID); err == nil {
-		if space, err := apiGetSpace(spaceUUID.String(), "Slug"); err == nil && space != nil {
-			spaceSlug = space.Slug
-		}
-	}
-	return nil, fmt.Errorf("link %s not found in space %s", slug, spaceSlug)
-}
-
-func apiGetExtendedLinkFromSlug(slug string, selectParam string) (*goclientnew.ExtendedLink, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedLink(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	links, err := apiListLinks(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	for _, extendedLink := range links {
-		if extendedLink.Link.Slug == slug {
-			return extendedLink, nil
-		}
-	}
-	return nil, fmt.Errorf("link %s not found in space %s", slug, selectedSpaceID)
 }

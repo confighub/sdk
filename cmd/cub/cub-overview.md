@@ -294,16 +294,16 @@ Find units that have been approved:
 cub unit list --space $SPACE --where 'LEN(ApprovedBy) > 0'
 ```
 
-Find units with apply gates:
+Find units with validation errors:
 
 ```
-cub unit list --space $SPACE --where 'LEN(ApplyGates) > 0'
+cub unit list --space $SPACE --where 'LEN(ValidationErrors) > 0'
 ```
 
-Get all apply gates of units with a specific apply gate:
+Get all validation errors of units with a specific one:
 
 ```
-cub unit list --space $SPACE --where "ApplyGates.complete/vet-placeholders = true" -o jq='.[].ApplyGates'
+cub unit list --space $SPACE --where "ValidationErrors.complete/vet-placeholders = true" -o jq='.[].ValidationErrors'
 ```
 
 Find units with names starting with "test":

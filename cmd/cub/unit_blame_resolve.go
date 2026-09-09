@@ -241,10 +241,10 @@ func (r *blameResolver) spaceSlug(spaceID uuid.UUID) (string, error) {
 	if cached, ok := r.spaces[spaceID]; ok {
 		return cached, nil
 	}
-	space, err := apiGetSpace(spaceID.String(), "SpaceID,Slug")
+	space, err := resolveSpace(spaceID.String(), "SpaceID,Slug")
 	slug := spaceID.String()
-	if err == nil && space != nil && space.Slug != "" {
-		slug = space.Slug
+	if err == nil && space != nil && space.Space.Slug != "" {
+		slug = space.Space.Slug
 	}
 	r.spaces[spaceID] = slug
 	return slug, nil

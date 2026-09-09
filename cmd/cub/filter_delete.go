@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -79,10 +78,6 @@ func checkFilterDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -139,16 +134,16 @@ func filterDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single filter delete logic
-	filterDetails, err := apiGetFilterFromSlug(args[0], "*", selectedSpaceID) // get all fields for now
+	filterDetails, err := resolveFilter(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteFilterWithResponse(ctx, uuid.MustParse(selectedSpaceID), filterDetails.FilterID)
+	deleteRes, err := cubClientNew.DeleteFilterWithResponse(ctx, filterDetails.Filter.SpaceID, filterDetails.Filter.FilterID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("filter", args[0], filterDetails.FilterID.String(), deleteRes)
+	displayDeleteResults("filter", args[0], filterDetails.Filter.FilterID.String(), deleteRes)
 	return nil
 }
 

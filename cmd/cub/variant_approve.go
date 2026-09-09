@@ -90,19 +90,19 @@ func init() {
 	variantCmd.AddCommand(variantApproveCmd)
 }
 
-// reportRemainingApplyGates names the units whose gates outlived the wait. Approval
+// reportRemainingValidationErrors names the units whose gates outlived the wait. Approval
 // clears the gate it answers and no other, so a unit listed here is failing something
 // else -- a policy vet, a placeholder -- and the release will refuse it.
-func reportRemainingApplyGates(units []*goclientnew.Unit) {
+func reportRemainingValidationErrors(units []*goclientnew.Unit) {
 	if quiet || isAlternativeOutput() {
 		return
 	}
 	for _, unit := range units {
-		if unit == nil || len(unit.ApplyGates) == 0 {
+		if unit == nil || len(unit.ValidationErrors) == 0 {
 			continue
 		}
-		tprint("Unit %s (%s) has apply gates: %s",
-			unit.Slug, unit.UnitID.String(), applyGatesToString(unit.ApplyGates))
+		tprint("Unit %s (%s) has validation errors: %s",
+			unit.Slug, unit.UnitID.String(), validationErrorsToString(unit.ValidationErrors))
 	}
 }
 
@@ -130,14 +130,14 @@ func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("approve needs the variant space to approve, either as an argument or as the selected space")
 	}
 
-	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug")
+	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
 	if err != nil {
 		return err
 	}
 	// As "variant promote" does: this command names its space positionally, so the
 	// selected space may be unset or "*". Point it at the space being approved.
-	selectedSpaceID = space.SpaceID.String()
-	selectedSpaceSlug = space.Slug
+	selectedSpaceID = space.Space.SpaceID.String()
+	selectedSpaceSlug = space.Space.Slug
 
 	revisionParam, err := parseApproveRevisionParameter(variantApproveArgs.revision)
 	if err != nil {
@@ -150,7 +150,7 @@ func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
 	effectiveWhere := addSpaceIDToWhereClause(selectionWhere, selectedSpaceID)
 
 	if !quiet && !isAlternativeOutput() {
-		tprint("Approving units in %s", space.Slug)
+		tprint("Approving units in %s", space.Space.Slug)
 	}
 	if err := bulkApproveUnits(effectiveWhere, "", revisionParam); err != nil {
 		return err
@@ -184,7 +184,7 @@ func variantApproveWaitTriggers(selectionWhere string) error {
 	deadline := time.Now().Add(variantApproveTriggerTimeout)
 	backoff := 500 * time.Millisecond
 	for {
-		units, err := apiListUnits(selectedSpaceID, selectionWhere, "UnitID,Slug,ApplyGates")
+		units, err := apiListUnits(selectedSpaceID, selectionWhere, "UnitID,Slug,ValidationErrors")
 		if err != nil {
 			return err
 		}
@@ -193,12 +193,12 @@ func variantApproveWaitTriggers(selectionWhere string) error {
 			if unit == nil {
 				continue
 			}
-			if _, awaiting := unit.ApplyGates["awaiting/triggers"]; awaiting {
+			if _, awaiting := unit.ValidationErrors["awaiting/triggers"]; awaiting {
 				pending++
 			}
 		}
 		if pending == 0 {
-			reportRemainingApplyGates(units)
+			reportRemainingValidationErrors(units)
 			return nil
 		}
 		if time.Now().After(deadline) {

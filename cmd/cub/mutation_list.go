@@ -88,10 +88,12 @@ func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	unit, err = apiGetUnitFromSlugInSpace(args[0], selectedSpaceID, "*")
+	resolved, err := resolveUnit(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
+
+	unit = resolved.Unit
 	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where, selectFields, filterID)
 	if err != nil {
 		return err

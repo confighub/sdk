@@ -69,24 +69,24 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	unitSlug := args[1]
 
 	// Look up the target.
-	target, err := apiGetTargetFromSlugInSpaceCore(targetSlug, selectedSpaceID, "TargetID,BridgeWorkerID")
+	target, err := resolveTargetCore(targetSlug, selectedSpaceID, "TargetID,BridgeWorkerID")
 	if err != nil {
 		return fmt.Errorf("target %q not found in space", targetSlug)
 	}
 
 	// Look up the unit.
-	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID,TargetID,LastReleasedRevisionNum")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID,TargetID,LastReleasedRevisionNum")
 	if err != nil {
 		return fmt.Errorf("unit %q not found in space", unitSlug)
 	}
 
 	// Check the unit is associated with this target.
-	if unit.TargetID == nil || *unit.TargetID != uuid.UUID(target.TargetID) {
+	if unit.Unit.TargetID == nil || *unit.Unit.TargetID != uuid.UUID(target.TargetID) {
 		return fmt.Errorf("unit %q is not associated with target %q; use 'cub unit set-target' first", unitSlug, targetSlug)
 	}
 
 	// Check the unit has been published in a Release.
-	if unit.LastReleasedRevisionNum == 0 {
+	if unit.Unit.LastReleasedRevisionNum == 0 {
 		return fmt.Errorf("unit %q has not been published yet; run 'cub release publish %s' first", unitSlug, selectedSpaceID)
 	}
 

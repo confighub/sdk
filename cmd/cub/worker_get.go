@@ -36,12 +36,13 @@ var includeSecret bool
 
 func init() {
 	addStandardGetFlags(workerGetCmd)
+	enableOptionalSpace(workerGetCmd)
 	workerGetCmd.Flags().BoolVar(&includeSecret, "include-secret", false, "Include worker secret in output")
 	workerCmd.AddCommand(workerGetCmd)
 }
 
 func workerGetCmdRun(_ *cobra.Command, args []string) error {
-	extendedWorker, err := apiGetExtendedBridgeWorkerFromSlug(args[0], selectFields)
+	extendedWorker, err := resolveWorker(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}

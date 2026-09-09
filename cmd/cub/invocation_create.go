@@ -251,12 +251,7 @@ func runSingleInvocationCreate(args []string) error {
 		newBody.DisplayName = args[0]
 	}
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerUUID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}

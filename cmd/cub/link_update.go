@@ -151,11 +151,11 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 			}
 			// Wait for triggers on each affected unit
 			for _, link := range successfulLinks {
-				unitDetails, err := apiGetUnitInSpace(link.FromUnitID.String(), link.SpaceID.String(), "*")
+				unitDetails, err := resolveUnit(link.FromUnitID.String(), link.SpaceID.String(), "*")
 				if err != nil {
 					return err
 				}
-				err = awaitTriggersRemoval(unitDetails)
+				err = awaitTriggersRemoval(unitDetails.Unit)
 				if err != nil {
 					return err
 				}
@@ -233,10 +233,6 @@ func checkLinkConflictingArgs(cmd *cobra.Command, args []string) bool {
 	}
 	// Validate delete gate removal only works with patch
 	if err := ValidateDeleteGateRemoval(deleteGate, linkPatch); err != nil {
-		failOnError(err)
-	}
-
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
 		failOnError(err)
 	}
 
@@ -530,12 +526,13 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	}
 
 	// Get the current link for space and link ID
-	currentLink, err := apiGetLinkFromSlug(linkSlug, "*")
+	currentLinkEnvelope, err := resolveLink(linkSlug, selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
+	currentLink := currentLinkEnvelope.Link
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentLink.SpaceID
 	linkID := currentLink.LinkID
 
 	// Build patch data using consolidated function with link-specific field enhancer
@@ -581,11 +578,11 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnitInSpace(linkDetails.FromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
+		unitDetails, err := resolveUnit(linkDetails.FromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}
@@ -618,12 +615,14 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("specify link slug/id and unit slugs for single update, or use --patch for individual patch")
 	}
 
-	currentLink, err := apiGetLinkFromSlug(args[0], "*") // get all fields for RMW
+	currentLinkEnvelope, err := resolveLink(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentLink := currentLinkEnvelope.Link
+
+	spaceID := currentLink.SpaceID
 	currentLink.SpaceID = spaceID
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
@@ -659,24 +658,24 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentLink.SpaceID = spaceID
 
-	fromUnit, err := apiGetUnitFromSlugInSpace(args[1], spaceID.String(), "*") // get all fields for now
+	fromUnit, err := resolveUnit(args[1], spaceID.String(), "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	fromUnitID := fromUnit.UnitID
+	fromUnitID := fromUnit.Unit.UnitID
 	toSpaceID := selectedSpaceID
 	if len(args) == 4 {
-		toSpace, err := apiGetSpaceFromSlug(args[3], "*") // get all fields for now
+		toSpace, err := resolveSpace(args[3], "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		toSpaceID = toSpace.SpaceID.String()
+		toSpaceID = toSpace.Space.SpaceID.String()
 	}
-	toUnit, err := apiGetUnitFromSlugInSpace(args[2], toSpaceID, "*") // get all fields for now
+	toUnit, err := resolveUnit(args[2], toSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	toUnitID := toUnit.UnitID
+	toUnitID := toUnit.Unit.UnitID
 
 	currentLink.FromUnitID = fromUnitID
 	currentLink.ToUnitID = toUnitID
@@ -687,7 +686,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if linkMakeCurrent {
 		currentLink.UpstreamLastMergedRevisionNum, currentLink.DownstreamLastMergedRevisionNum =
-			makeCurrentPointers(fromUnit, toUnit)
+			makeCurrentPointers(fromUnit.Unit, toUnit.Unit)
 	}
 
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)
@@ -701,11 +700,11 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), spaceID.String(), "*") // get all fields for now
+		unitDetails, err := resolveUnit(fromUnitID.String(), spaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}

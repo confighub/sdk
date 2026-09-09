@@ -72,17 +72,17 @@ func resolveKeyTargetUser() (*goclientnew.User, error) {
 	case userKeyUser != "" && userKeyWorker != "":
 		return nil, fmt.Errorf("--user and --worker name the same thing two ways; use one")
 	case userKeyWorker != "":
-		worker, err := apiGetBridgeWorkerFromSlug(userKeyWorker, "*")
+		worker, err := resolveWorker(userKeyWorker, selectedSpaceID, "*")
 		if err != nil {
 			return nil, err
 		}
-		if worker.UserID == nil || *worker.UserID == uuid.Nil {
+		if worker.BridgeWorker.UserID == nil || *worker.BridgeWorker.UserID == uuid.Nil {
 			// Every worker gets a bot user at creation, so this means the
 			// worker predates that or was created outside the normal path.
 			// Worth saying plainly rather than reporting a nil UUID lookup.
 			return nil, fmt.Errorf("worker %s has no bot user, so it has no identity to hold a key", userKeyWorker)
 		}
-		return apiGetUser(worker.UserID.String())
+		return apiGetUser(worker.BridgeWorker.UserID.String())
 	case userKeyUser != "":
 		return apiGetUserFromUsername(userKeyUser)
 	default:

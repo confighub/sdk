@@ -82,12 +82,12 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep cluster
 	// shared argobot-base Space is intentionally left alone.
 	argobotSlug := clusterArgobotComponent + "-" + opts.name
 	registerRollback(func() {
-		sp, err := apiGetSpaceFromSlug(argobotSlug, "SpaceID")
+		sp, err := resolveSpace(argobotSlug, "SpaceID")
 		if err != nil {
 			return // never created
 		}
 		fmt.Fprintf(out, "Rolling back: cub space delete --recursive %q\n", argobotSlug)
-		_ = clusterClearReleaseTarget(sp.SpaceID)
+		_ = clusterClearReleaseTarget(sp.Space.SpaceID)
 		_ = clusterDeleteSpace(argobotSlug, true)
 	})
 
@@ -199,7 +199,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		return fmt.Errorf("create argobot variant: %w", err)
 	}
 
-	space, err := apiGetSpaceFromSlug(argobotSpace, "SpaceID")
+	space, err := resolveSpace(argobotSpace, "SpaceID")
 	if err != nil {
 		return fmt.Errorf("resolve argobot variant space %q: %w", argobotSpace, err)
 	}
@@ -218,15 +218,15 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	}
 
 	// 4. Publish the variant's Release; Argo pulls argobot's workload from here.
-	unit, err := apiGetUnitFromSlugInSpace(clusterArgobotUnitSlug, space.SpaceID.String(), "UnitID")
+	unit, err := resolveUnit(clusterArgobotUnitSlug, space.Space.SpaceID.String(), "UnitID")
 	if err != nil {
 		return fmt.Errorf("resolve argobot unit: %w", err)
 	}
-	if err := clusterWaitUnitTriggers(space.SpaceID, unit.UnitID); err != nil {
+	if err := clusterWaitUnitTriggers(space.Space.SpaceID, unit.Unit.UnitID); err != nil {
 		return err
 	}
 	fmt.Fprintf(out, "Publishing argobot variant Release (%s)...\n", argobotSpace)
-	if err := clusterPublishRelease(space.SpaceID); err != nil {
+	if err := clusterPublishRelease(space.Space.SpaceID); err != nil {
 		return err
 	}
 

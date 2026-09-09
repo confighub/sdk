@@ -121,7 +121,8 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 
 	workerSlug := args[0]
 	spaceID := uuid.MustParse(selectedSpaceID)
-	worker, err := apiGetBridgeWorkerFromSlug(workerSlug, "*") // get all fields for now
+	var worker *goclientnew.BridgeWorker
+	workerEnvelope, err := resolveWorker(workerSlug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		// Worker not found, create it on the fly
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
@@ -131,6 +132,8 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		worker = workerEnvelope.BridgeWorker
 	}
 
 	// Handle export-secret-only flag first
@@ -200,10 +203,11 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 			// Wait for triggers after function execution
 			if wait {
 				// Get updated unit details after function execution
-				unitDetails, err = apiGetUnitInSpace(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*") // get all fields for now
+				resolved, err := resolveUnit(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*") // get all fields for now
 				if err != nil {
 					return err
 				}
+				unitDetails = resolved.Unit
 				err = awaitTriggersRemoval(unitDetails)
 				if err != nil {
 					return err
@@ -391,7 +395,7 @@ func createUnitWithManifest(worker *goclientnew.BridgeWorker, unitSlug, targetSl
 
 	// Set target if specified
 	if targetSlug != "" {
-		target, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "*") // get all fields for now
+		target, err := resolveTarget(targetSlug, selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return nil, err
 		}

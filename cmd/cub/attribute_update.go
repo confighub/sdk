@@ -86,10 +86,6 @@ func checkAttributeUpdateConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -163,12 +159,12 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return runBulkAttributeUpdate()
 	}
 
-	currentAttr, err := apiGetAttributeFromSlug(args[0], "*")
+	currentAttr, err := resolveAttribute(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentAttr.Attribute.SpaceID
 
 	if attributePatch {
 		attrEnhancer := func(patchData map[string]interface{}) {

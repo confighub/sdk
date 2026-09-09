@@ -4,9 +4,6 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -32,11 +29,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(tagGetCmd)
+	enableOptionalSpace(tagGetCmd)
 	tagCmd.AddCommand(tagGetCmd)
 }
 
 func tagGetCmdRun(cmd *cobra.Command, args []string) error {
-	tagDetails, err := apiGetExtendedTagFromSlug(args[0], selectFields)
+	tagDetails, err := resolveTag(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -81,79 +79,4 @@ func displayExtendedTagDetails(extendedTag *goclientnew.ExtendedTag) {
 	view.Append([]string{"Annotations", annotationsToString(tagDetails.Annotations)})
 	view.Append([]string{"Organization ID", tagDetails.OrganizationID.String()})
 	view.Render()
-}
-
-func apiGetTag(tagID string, selectParam string) (*goclientnew.Tag, error) {
-	extendedTag, err := apiGetExtendedTag(tagID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedTag.Tag, nil
-}
-
-func apiGetExtendedTag(tagID string, selectParam string) (*goclientnew.ExtendedTag, error) {
-	newParams := &goclientnew.GetTagParams{}
-	include := "SpaceID,ChangeSetID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	tagRes, err := cubClientNew.GetTagWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(tagID), newParams)
-	if cubapi.IsAPIError(err, tagRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, tagRes)
-	}
-	return tagRes.JSON200, nil
-}
-
-func apiGetTagFromSlug(slug string, selectParam string) (*goclientnew.Tag, error) {
-	return apiGetTagFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetExtendedTagFromSlug(slug string, selectParam string) (*goclientnew.ExtendedTag, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedTag(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	tags, err := apiListTags(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find tag by slug
-	for _, tag := range tags {
-		if tag.Tag != nil && tag.Tag.Slug == slug {
-			return tag, nil
-		}
-	}
-	return nil, fmt.Errorf("tag %s not found in space %s", slug, selectedSpaceID)
-}
-
-func apiGetTagFromSlugWithSpace(slug string, selectParam string, spaceID string) (*goclientnew.Tag, error) {
-	return apiGetTagFromSlugInSpace(slug, spaceID, selectParam)
-}
-
-func apiGetTagFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Tag, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetTag(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	tags, err := apiListTags(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find tag by slug
-	for _, tag := range tags {
-		if tag.Tag != nil && tag.Tag.Slug == slug {
-			return tag.Tag, nil
-		}
-	}
-	return nil, fmt.Errorf("tag %s not found in space %s", slug, spaceID)
 }

@@ -160,7 +160,7 @@ var unitIdentifiers []string
 var dryRun bool
 var functionTriggerIdentifiers []string
 var functionInvocationIdentifiers []string
-var updateApplyGates bool
+var updateValidationResults bool
 var functionIncludeConflicts bool
 var revisionIdentifier string
 var functionChangesetSlug string
@@ -198,7 +198,9 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	functionDoCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionDoCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
-	functionDoCmd.Flags().BoolVar(&updateApplyGates, "update-apply-gates", false, "update ApplyGates on units based on trigger results (requires --trigger)")
+	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
+	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-apply-gates", false, "deprecated alias for --update-validation-results")
+	_ = functionDoCmd.Flags().MarkDeprecated("update-apply-gates", "use --update-validation-results")
 	functionDoCmd.Flags().BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
 	enableWhereFlag(functionDoCmd)
 	enableFilterFlag(functionDoCmd)
@@ -227,17 +229,12 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.NumFilters = 0
 	req.StopOnError = false
 	req.ChangeDescription = changeDescription
-	req.UpdateApplyGates = updateApplyGates
+	req.UpdateValidationResults = updateValidationResults
 	req.WhereResource = whereResource
 	req.IncludeConflicts = functionIncludeConflicts
 	req.ToolchainType = functionToolchainType
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerUUID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			failOnError(err)
 		}
@@ -253,13 +250,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	// Resolve trigger identifiers to full entities so we also have FunctionName
 	// available without a second API round-trip for verb-scoped validation.
 	if len(functionTriggerIdentifiers) > 0 {
-		triggers, err := parseEntityIdentifiersAsEntities[goclientnew.Trigger](
-			functionTriggerIdentifiers,
-			EntityTypeTrigger,
-			"TriggerID,FunctionName",
-			apiGetTriggerFromSlugInSpaceCore,
-			func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
-		)
+		triggers, err := resolveTriggersCore(functionTriggerIdentifiers, "TriggerID,FunctionName")
 		if err != nil {
 			failOnError(err)
 		}
@@ -276,13 +267,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 
 	// Same shape for invocations.
 	if len(functionInvocationIdentifiers) > 0 {
-		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
-			functionInvocationIdentifiers,
-			EntityTypeInvocation,
-			"InvocationID,FunctionInvocations",
-			apiGetInvocationFromSlugInSpace,
-			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
-		)
+		invocations, err := resolveInvocationsCore(functionInvocationIdentifiers, "InvocationID,FunctionInvocations")
 		if err != nil {
 			failOnError(err)
 		}
@@ -301,13 +286,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	// attaching the supplied parameter values. Resolved into resolvedInvocations
 	// too, so verb-scoped kind validation sees the functions it calls.
 	if parameterizedInvocationIdentifier != "" {
-		invocations, err := parseEntityIdentifiersAsEntities[goclientnew.Invocation](
-			[]string{parameterizedInvocationIdentifier},
-			EntityTypeInvocation,
-			"InvocationID,FunctionInvocations",
-			apiGetInvocationFromSlugInSpace,
-			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
-		)
+		invocations, err := resolveInvocationsCore([]string{parameterizedInvocationIdentifier}, "InvocationID,FunctionInvocations")
 		if err != nil {
 			failOnError(err)
 		}
@@ -479,18 +458,18 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 	}
 
 	// Get unit from slug
-	unit, err := apiGetUnitFromSlug(unitSlug, "UnitID")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
 	}
 
 	// Get revision from number
-	revision, err := apiGetRevisionFromNumber(revisionNum, unit.UnitID.String(), "RevisionID")
+	revision, err := apiGetRevisionFromNumber(revisionNum, unit.Unit.UnitID.String(), "RevisionID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get revision %d for unit '%s': %w", revisionNum, unitSlug, err)
 	}
 
-	return invokeFunctionsOnRevisionID(unit.UnitID, revision.RevisionID, body, dryRun)
+	return invokeFunctionsOnRevisionID(unit.Unit.UnitID, revision.RevisionID, body, dryRun)
 }
 
 // invokeFunctionsOnRevisionID invokes functions against the configuration of one Revision,
@@ -651,7 +630,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 // hasAlternativeFunctionOutput reports whether a function sub-payload selector
 // (--show, or any of the deprecated --output-*/--data-only aliases) is active.
 // Used by helpers like awaitTriggersRemoval to decide whether to print
-// informational lines (e.g., apply-gates warnings) alongside the payload.
+// informational lines (e.g., validation-error warnings) alongside the payload.
 func hasAlternativeFunctionOutput() bool {
 	return effectiveShow() != ShowDefault
 }
@@ -707,7 +686,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 	var changesetID string
 	var changesetUUID uuid.UUID
 	if functionChangesetSlug != "" {
-		changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
+		changesetUUID, err = resolveChangeSetID(functionChangesetSlug)
 		if err != nil {
 			return err
 		}
@@ -792,11 +771,11 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		}
 		// Wait one at a time
 		for _, resp := range *resp {
-			unitDetails, err := apiGetUnitInSpace(resp.UnitID.String(), resp.SpaceID.String(), "*")
+			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")
 			if err != nil {
 				return err
 			}
-			err = awaitTriggersRemoval(unitDetails)
+			err = awaitTriggersRemoval(unitDetails.Unit)
 			if err != nil {
 				return err
 			}

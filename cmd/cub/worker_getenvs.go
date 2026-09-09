@@ -41,14 +41,14 @@ func init() {
 
 func workerEnvsCmdRun(_ *cobra.Command, args []string) error {
 	workerEnvsArgs.slug = args[0]
-	worker, err := apiGetBridgeWorkerFromSlug(workerEnvsArgs.slug, "*") // get all fields for now
+	worker, err := resolveWorker(workerEnvsArgs.slug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
 	if workerEnvsArgs.noExport {
-		tprint("CONFIGHUB_WORKER_ID=%s", worker.BridgeWorkerID.String())
-		tprint("CONFIGHUB_WORKER_SECRET=%s", worker.Secret)
+		tprint("CONFIGHUB_WORKER_ID=%s", worker.BridgeWorker.BridgeWorkerID.String())
+		tprint("CONFIGHUB_WORKER_SECRET=%s", worker.BridgeWorker.Secret)
 		return nil
 	}
 
@@ -60,14 +60,14 @@ func workerEnvsCmdRun(_ *cobra.Command, args []string) error {
 
 	switch {
 	case strings.HasSuffix(shell, "fish"):
-		tprint("set -gx CONFIGHUB_WORKER_ID %s", worker.BridgeWorkerID.String())
-		tprint("set -gx CONFIGHUB_WORKER_SECRET %s", worker.Secret)
+		tprint("set -gx CONFIGHUB_WORKER_ID %s", worker.BridgeWorker.BridgeWorkerID.String())
+		tprint("set -gx CONFIGHUB_WORKER_SECRET %s", worker.BridgeWorker.Secret)
 	case strings.HasSuffix(shell, "csh"), strings.HasSuffix(shell, "tcsh"):
-		tprint("setenv CONFIGHUB_WORKER_ID %s", worker.BridgeWorkerID.String())
-		tprint("setenv CONFIGHUB_WORKER_SECRET %s", worker.Secret)
+		tprint("setenv CONFIGHUB_WORKER_ID %s", worker.BridgeWorker.BridgeWorkerID.String())
+		tprint("setenv CONFIGHUB_WORKER_SECRET %s", worker.BridgeWorker.Secret)
 	default: // sh, bash, zsh, etc
-		tprint("export CONFIGHUB_WORKER_ID=%s", worker.BridgeWorkerID.String())
-		tprint("export CONFIGHUB_WORKER_SECRET=%s", worker.Secret)
+		tprint("export CONFIGHUB_WORKER_ID=%s", worker.BridgeWorker.BridgeWorkerID.String())
+		tprint("export CONFIGHUB_WORKER_SECRET=%s", worker.BridgeWorker.Secret)
 	}
 	return nil
 }

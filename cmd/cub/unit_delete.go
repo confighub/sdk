@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -72,10 +71,6 @@ func checkUnitDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -129,16 +124,16 @@ func unitDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single unit delete logic
-	unitDetails, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	unitDetails, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), unitDetails.UnitID)
+	deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("unit", args[0], unitDetails.UnitID.String(), deleteRes)
+	displayDeleteResults("unit", args[0], unitDetails.Unit.UnitID.String(), deleteRes)
 	return nil
 }
 

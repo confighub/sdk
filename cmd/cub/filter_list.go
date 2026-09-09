@@ -220,146 +220,91 @@ func parseEntityIdentifierForFilter(
 	switch entityType {
 	case "Space":
 		// Organization-level entity
-		space, err := apiGetSpaceFromSlug(identifier, selectParam)
+		space, err := resolveSpace(identifier, selectParam)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Space %s: %w", identifier, err)
 		}
-		return entityType, space.SpaceID.String(), nil
+		return entityType, space.Space.SpaceID.String(), nil
 
 	case "Filter":
-		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
-			identifier,
-			EntityTypeFilter,
-			apiGetFilterFromSlugInSpace,
-			func(f *goclientnew.Filter) string { return f.FilterID.String() },
-		)
+		filterUUID, err := resolveFilterID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Filter %s: %w", identifier, err)
 		}
 		return entityType, filterUUID.String(), nil
 
 	case "View":
-		viewUUID, err := parseEntityIdentifierSingle[goclientnew.View](
-			identifier,
-			EntityTypeView,
-			apiGetViewFromSlugInSpace,
-			func(v *goclientnew.View) string { return v.ViewID.String() },
-		)
+		viewUUID, err := resolveViewID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve View %s: %w", identifier, err)
 		}
 		return entityType, viewUUID.String(), nil
 
 	case "Invocation":
-		invocationUUID, err := parseEntityIdentifierSingle[goclientnew.Invocation](
-			identifier,
-			EntityTypeInvocation,
-			apiGetInvocationFromSlugInSpace,
-			func(i *goclientnew.Invocation) string { return i.InvocationID.String() },
-		)
+		invocationUUID, err := resolveInvocationID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Invocation %s: %w", identifier, err)
 		}
 		return entityType, invocationUUID.String(), nil
 
 	case "Trigger":
-		triggerUUID, err := parseEntityIdentifierSingle[goclientnew.Trigger](
-			identifier,
-			EntityTypeTrigger,
-			apiGetTriggerFromSlugInSpaceCore,
-			func(t *goclientnew.Trigger) string { return t.TriggerID.String() },
-		)
+		triggerUUID, err := resolveTriggerID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Trigger %s: %w", identifier, err)
 		}
 		return entityType, triggerUUID.String(), nil
 
 	case "Tag":
-		tagUUID, err := parseEntityIdentifierSingle[goclientnew.Tag](
-			identifier,
-			EntityTypeTag,
-			apiGetTagFromSlugInSpace,
-			func(t *goclientnew.Tag) string { return t.TagID.String() },
-		)
+		tagUUID, err := resolveTagID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Tag %s: %w", identifier, err)
 		}
 		return entityType, tagUUID.String(), nil
 
 	case "ChangeSet":
-		changeSetUUID, err := parseEntityIdentifierSingle[goclientnew.ChangeSet](
-			identifier,
-			EntityTypeChangeSet,
-			apiGetChangeSetFromSlugInSpace,
-			func(c *goclientnew.ChangeSet) string { return c.ChangeSetID.String() },
-		)
+		changeSetUUID, err := resolveChangeSetID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve ChangeSet %s: %w", identifier, err)
 		}
 		return entityType, changeSetUUID.String(), nil
 
 	case "ChangeOrder":
-		changeOrderUUID, err := parseChangeOrderSlug(identifier)
+		changeOrderUUID, err := resolveChangeOrderID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve ChangeOrder %s: %w", identifier, err)
 		}
 		return entityType, changeOrderUUID.String(), nil
 
 	case "Target":
-		targetUUID, err := parseEntityIdentifierSingle[goclientnew.Target](
-			identifier,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		targetUUID, err := resolveTargetID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Target %s: %w", identifier, err)
 		}
 		return entityType, targetUUID.String(), nil
 
 	case "BridgeWorker":
-		bridgeWorkerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			identifier,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		bridgeWorkerUUID, err := resolveWorkerID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve BridgeWorker %s: %w", identifier, err)
 		}
 		return entityType, bridgeWorkerUUID.String(), nil
 
 	case "Unit":
-		unitUUID, err := parseEntityIdentifierSingle[goclientnew.Unit](
-			identifier,
-			EntityTypeUnit,
-			apiGetUnitFromSlugInSpace,
-			func(u *goclientnew.Unit) string { return u.UnitID.String() },
-		)
+		unitUUID, err := resolveUnitID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Unit %s: %w", identifier, err)
 		}
 		return entityType, unitUUID.String(), nil
 
 	case "Link":
-		linkUUID, err := parseEntityIdentifierSingle[goclientnew.Link](
-			identifier,
-			EntityTypeLink,
-			apiGetLinkFromSlugInSpace,
-			func(l *goclientnew.Link) string { return l.LinkID.String() },
-		)
+		linkUUID, err := resolveLinkID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Link %s: %w", identifier, err)
 		}
 		return entityType, linkUUID.String(), nil
 
 	case "Attribute":
-		attributeUUID, err := parseEntityIdentifierSingle[goclientnew.Attribute](
-			identifier,
-			EntityTypeAttribute,
-			apiGetAttributeFromSlugInSpaceCore,
-			func(l *goclientnew.Attribute) string { return l.AttributeID.String() },
-		)
+		attributeUUID, err := resolveAttributeID(identifier)
 		if err != nil {
 			return "", "", fmt.Errorf("failed to resolve Attribute %s: %w", identifier, err)
 		}

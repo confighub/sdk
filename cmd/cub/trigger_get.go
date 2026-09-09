@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -34,11 +33,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(triggerGetCmd)
+	enableOptionalSpace(triggerGetCmd)
 	triggerCmd.AddCommand(triggerGetCmd)
 }
 
 func triggerGetCmdRun(cmd *cobra.Command, args []string) error {
-	triggerDetails, err := apiGetTriggerFromSlug(args[0], selectFields)
+	triggerDetails, err := resolveTrigger(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -220,57 +220,4 @@ func displayTriggerDetails(trigger *goclientnew.Trigger) {
 		view.Append([]string{"Fail Open After", time.Duration(trigger.FailOpenAfter).String()})
 	}
 	view.Render()
-}
-
-func apiGetTrigger(triggerID string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
-	newParams := &goclientnew.GetTriggerParams{}
-	include := "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	triggerRes, err := cubClientNew.GetTriggerWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(triggerID), newParams)
-	if cubapi.IsAPIError(err, triggerRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, triggerRes)
-	}
-	return triggerRes.JSON200, nil
-}
-
-func apiGetTriggerFromSlug(slug string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
-	return apiGetTriggerFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-// apiGetTriggerFromSlugInSpaceCore returns just the Trigger, for use with parseEntityIdentifiers
-func apiGetTriggerFromSlugInSpaceCore(slug string, spaceID string, selectParam string) (*goclientnew.Trigger, error) {
-	extendedTrigger, err := apiGetTriggerFromSlugInSpace(slug, spaceID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	if extendedTrigger.Trigger == nil {
-		return nil, fmt.Errorf("trigger data not found")
-	}
-	return extendedTrigger.Trigger, nil
-}
-
-func apiGetTriggerFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTrigger, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetTrigger(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	triggers, err := apiListTriggers(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find trigger by slug
-	for _, trigger := range triggers {
-		if trigger.Trigger != nil && trigger.Trigger.Slug == slug {
-			return trigger, nil
-		}
-	}
-	return nil, fmt.Errorf("trigger %s not found in space %s", slug, spaceID)
 }

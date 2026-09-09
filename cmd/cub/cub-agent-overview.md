@@ -87,9 +87,9 @@ truth_test          ::= 'IS' whitespace 'TRUE' | 'IS' whitespace 'FALSE' | 'IS' 
 
 length_expression   ::= 'LEN' '(' attribute_name ')'
 
-map_access          ::= labels_access | apply_gates_access
+map_access          ::= labels_access | validation_access
 labels_access       ::= 'Labels' '.' label_key
-apply_gates_access  ::= 'ApplyGates' '.' slug '/' function_name
+validation_access   ::= ('ValidationErrors' | 'ValidationWarnings') '.' slug '/' function_name
 
 operator            ::= '<=' | '>=' | '<' | '>' | '=' | '!=' | '?' | 'NOT' whitespace 'LIKE' | 'LIKE' | 'ILIKE' | '~~' | '!~~' | '~' | '~*' | '!~' | '!~*' | 'IN' | 'NOT' whitespace 'IN' | 'IS' whitespace 'NULL' | 'IS' whitespace 'NOT' whitespace 'NULL'
 
@@ -160,8 +160,8 @@ The following constraints apply but are not expressible in pure EBNF:
 # Array length
 --where "LEN(ApprovedBy) > 0"
 
-# ApplyGates map access
---where "ApplyGates.low-cost/vet-cel = true"
+# ValidationErrors map access
+--where "ValidationErrors.low-cost/vet-cel = true"
 
 # String pattern matching
 --where "Slug LIKE 'app-%'"

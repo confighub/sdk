@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -79,10 +78,6 @@ func checkChangeOrderDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -136,16 +131,16 @@ func changeorderDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single changeorder delete logic
-	changeorderDetails, err := apiGetChangeOrderFromSlug(args[0], "*") // get all fields for now
+	changeorderDetails, err := resolveChangeOrder(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteChangeOrderWithResponse(ctx, uuid.MustParse(selectedSpaceID), changeorderDetails.ChangeOrderID)
+	deleteRes, err := cubClientNew.DeleteChangeOrderWithResponse(ctx, changeorderDetails.ChangeOrder.SpaceID, changeorderDetails.ChangeOrder.ChangeOrderID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("changeorder", args[0], changeorderDetails.ChangeOrderID.String(), deleteRes)
+	displayDeleteResults("changeorder", args[0], changeorderDetails.ChangeOrder.ChangeOrderID.String(), deleteRes)
 	return nil
 }
 

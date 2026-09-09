@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -82,10 +81,6 @@ func checkViewDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -139,16 +134,16 @@ func viewDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single view delete logic
-	viewDetails, err := apiGetViewFromSlug(args[0], "*") // get all fields for now
+	viewDetails, err := resolveView(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteViewWithResponse(ctx, uuid.MustParse(selectedSpaceID), viewDetails.ViewID)
+	deleteRes, err := cubClientNew.DeleteViewWithResponse(ctx, viewDetails.View.SpaceID, viewDetails.View.ViewID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("view", args[0], viewDetails.ViewID.String(), deleteRes)
+	displayDeleteResults("view", args[0], viewDetails.View.ViewID.String(), deleteRes)
 	return nil
 }
 

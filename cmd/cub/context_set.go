@@ -75,7 +75,7 @@ func contextSetCmdRun(_ *cobra.Command, args []string) error {
 		}
 	} else if isAuthenticated {
 		// Only try to verify the space exists if we're authenticated
-		space, err := apiGetSpaceFromSlug(setSpace, "")
+		space, err := resolveSpace(setSpace, "")
 		if err != nil {
 			// Even though we're authenticated, the space might not exist
 			// or there could be a network issue
@@ -84,12 +84,12 @@ func contextSetCmdRun(_ *cobra.Command, args []string) error {
 			ctx.Settings.DefaultSpace = setSpace
 		} else {
 			// Space was found, use the canonical slug from the API
-			ctx.Settings.DefaultSpace = space.Slug
+			ctx.Settings.DefaultSpace = space.Space.Slug
 
 			// Update global variables for immediate effect only if we modified the current context
 			if ctx.Name == contextManager.ActiveContext().Name {
-				selectedSpaceID = space.SpaceID.String()
-				selectedSpaceSlug = space.Slug
+				selectedSpaceID = space.Space.SpaceID.String()
+				selectedSpaceSlug = space.Space.Slug
 			}
 		}
 	} else {

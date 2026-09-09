@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/confighub/sdk/core/changeworkflow"
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -36,11 +35,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(changeorderGetCmd)
+	enableOptionalSpace(changeorderGetCmd)
 	changeorderCmd.AddCommand(changeorderGetCmd)
 }
 
 func changeorderGetCmdRun(cmd *cobra.Command, args []string) error {
-	changeorderDetails, err := apiGetExtendedChangeOrderFromSlug(args[0], selectFields)
+	changeorderDetails, err := resolveChangeOrder(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func changeOrderIsCompleted(changeWorkflow *changeworkflow.ChangeWorkflow, chang
 		// A prerequisite nothing knows how to check is an error to promotion and
 		// unsatisfied here: there is nothing to refuse at this point, so it holds the
 		// rollout open rather than passing it as completed.
-		if checkVariantPrerequisites(changeWorkflow.Spec.Final.Prerequisites, changeOrder, variant, lastStage.Name, variantName) != nil {
+		if checkVariantPrerequisites(changeWorkflow.Spec.Final.Prerequisites, changeWorkflow.Spec.CustomPrerequisites, changeOrder, variant, lastStage.Name, variantName) != nil {
 			return false
 		}
 	}
@@ -168,6 +168,24 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if extendedChangeOrder.RestoreTag != nil {
 		view.Append([]string{"Restore Tag", extendedChangeOrder.RestoreTag.Slug})
 	}
+	// What an Invoke change order runs, and over which units. Absent on the two update types
+	// that follow links, which take their change from revisions the source unit already has.
+	if extendedChangeOrder.Invocation != nil {
+		view.Append([]string{"Invocation", extendedChangeOrder.Invocation.Slug})
+	} else if changeorderDetails.InvocationID != nil {
+		view.Append([]string{"Invocation ID", changeorderDetails.InvocationID.String()})
+	}
+	if len(changeorderDetails.Parameters) > 0 {
+		view.Append([]string{"Parameters", changeorderParameters(changeorderDetails.Parameters)})
+	}
+	if changeorderDetails.WhereUnit != "" {
+		view.Append([]string{"Where Unit", changeorderDetails.WhereUnit})
+	}
+	if extendedChangeOrder.UnitFilter != nil {
+		view.Append([]string{"Unit Filter", extendedChangeOrder.UnitFilter.Slug})
+	} else if changeorderDetails.UnitFilterID != nil {
+		view.Append([]string{"Unit Filter ID", changeorderDetails.UnitFilterID.String()})
+	}
 	if changeorderDetails.Description != "" {
 		view.Append([]string{"Description", changeorderDetails.Description})
 	}
@@ -196,6 +214,21 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	view.Render()
 }
 
+// changeorderParameters renders the values supplied for a parameterized invocation, in name order
+// so that the same set reads the same way twice.
+func changeorderParameters(parameters map[string]any) string {
+	names := make([]string, 0, len(parameters))
+	for name := range parameters {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	rendered := make([]string, 0, len(names))
+	for _, name := range names {
+		rendered = append(rendered, fmt.Sprintf("%s=%v", name, parameters[name]))
+	}
+	return strings.Join(rendered, ", ")
+}
+
 // changeorderSkippedUnits renders what the change order covers nothing of, by unit slug and
 // reason. The server stores the reason against the unit's id, since a slug can be renamed.
 // The generated client keys a uuid-keyed map by string, since JSON object keys are strings.
@@ -205,8 +238,8 @@ func changeorderSkippedUnits(skipped map[string]string, spaceID string) string {
 		name := unitID
 		// A skipped unit is always in the change order's own space -- they are the units the
 		// derivation walked.
-		if unit, err := apiGetUnitInSpace(unitID, spaceID, "UnitID,Slug"); err == nil && unit != nil {
-			name = unit.Slug
+		if unit, err := resolveUnit(unitID, spaceID, "UnitID,Slug"); err == nil && unit != nil {
+			name = unit.Unit.Slug
 		}
 		lines = append(lines, fmt.Sprintf("%s (%s)", name, reason))
 	}
@@ -220,89 +253,14 @@ func changeorderSkippedUnits(skipped map[string]string, spaceID string) string {
 func changeorderSpaceSlugs(spaceIDs []uuid.UUID) string {
 	slugs := make([]string, 0, len(spaceIDs))
 	for _, spaceID := range spaceIDs {
-		space, err := apiGetSpace(spaceID.String(), "SpaceID,Slug")
+		space, err := resolveSpace(spaceID.String(), "SpaceID,Slug")
 		if err != nil || space == nil {
 			slugs = append(slugs, spaceID.String())
 			continue
 		}
-		slugs = append(slugs, space.Slug)
+		slugs = append(slugs, space.Space.Slug)
 	}
 	// By name: the server answers in ID order, which is stable but says nothing.
 	sort.Strings(slugs)
 	return strings.Join(slugs, ", ")
-}
-
-func apiGetChangeOrder(changeorderID string, selectParam string) (*goclientnew.ChangeOrder, error) {
-	extendedChangeOrder, err := apiGetExtendedChangeOrder(changeorderID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedChangeOrder.ChangeOrder, nil
-}
-
-func apiGetExtendedChangeOrder(changeorderID string, selectParam string) (*goclientnew.ExtendedChangeOrder, error) {
-	newParams := &goclientnew.GetChangeOrderParams{}
-	include := "SpaceID,StartTagID,EndTagID,RestoreTagID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	changeorderRes, err := cubClientNew.GetChangeOrderWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(changeorderID), newParams)
-	if cubapi.IsAPIError(err, changeorderRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, changeorderRes)
-	}
-	return changeorderRes.JSON200, nil
-}
-
-func apiGetChangeOrderFromSlug(slug string, selectParam string) (*goclientnew.ChangeOrder, error) {
-	return apiGetChangeOrderFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetChangeOrderFromSlugWithSpace(slug string, selectParam string, spaceID string) (*goclientnew.ChangeOrder, error) {
-	return apiGetChangeOrderFromSlugInSpace(slug, spaceID, selectParam)
-}
-
-func apiGetChangeOrderFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ChangeOrder, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetChangeOrder(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	changeorders, err := apiListChangeOrders(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find changeorder by slug
-	for _, changeorder := range changeorders {
-		if changeorder.ChangeOrder != nil && changeorder.ChangeOrder.Slug == slug {
-			return changeorder.ChangeOrder, nil
-		}
-	}
-	return nil, fmt.Errorf("changeorder %s not found in space %s", slug, spaceID)
-}
-
-func apiGetExtendedChangeOrderFromSlug(slug string, selectParam string) (*goclientnew.ExtendedChangeOrder, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedChangeOrder(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	changeorders, err := apiListChangeOrders(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find changeorder by slug
-	for _, changeorder := range changeorders {
-		if changeorder.ChangeOrder != nil && changeorder.ChangeOrder.Slug == slug {
-			return changeorder, nil
-		}
-	}
-	return nil, fmt.Errorf("changeorder %s not found in space %s", slug, selectedSpaceID)
 }

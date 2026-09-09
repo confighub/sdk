@@ -174,15 +174,15 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	upstreamSpaceSlug := args[1]
 
 	// Resolve the upstream space.
-	upstreamSpace, err := apiGetSpaceFromSlug(upstreamSpaceSlug, "*")
+	upstreamSpace, err := resolveSpace(upstreamSpaceSlug, "*")
 	if err != nil {
 		return err
 	}
-	upstreamSpaceID := upstreamSpace.SpaceID
+	upstreamSpaceID := upstreamSpace.Space.SpaceID
 
 	// Step 1: clone the upstream space. WhereTrigger, TriggerFilterID, Permissions, and DeleteGates
 	// are copied from the upstream space by the clone (we pass an empty patch so nothing is overridden).
-	newSpace, err := cloneVariantSpace(variantName, upstreamSpace)
+	newSpace, err := cloneVariantSpace(variantName, upstreamSpace.Space)
 	if err != nil {
 		return err
 	}
@@ -197,13 +197,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	var targetID *uuid.UUID
 	var target *goclientnew.Target
 	if variantCreateArgs.target != "" {
-		target, err = parseEntityIdentifierSingleAsEntity[goclientnew.Target](
-			variantCreateArgs.target,
-			EntityTypeTarget,
-			"*",
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		target, err = resolveTargetCore(variantCreateArgs.target, defaultSpaceID(), "*")
 		if err != nil {
 			return err
 		}

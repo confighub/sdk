@@ -25,7 +25,7 @@ var unitListCmd = &cobra.Command{
 }
 
 func getUnitListHelp() string {
-	baseHelp := `List units you have access to in a space. The output includes slugs, data size, head revision, apply gates, and last change timestamp.
+	baseHelp := `List units you have access to in a space. The output includes slugs, data size, head revision, validation errors, and last change timestamp.
 
 Examples:
 ` + "```" + `
@@ -42,10 +42,10 @@ Examples:
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
 
   # List units with approval gates
-  cub unit list --space my-space --where "ApplyGates.require-approval/vet-approvedby = true"
+  cub unit list --space my-space --where "ValidationErrors.require-approval/vet-approvedby = true"
 
-  # List units with any apply gates
-  cub unit list --space my-space --where "LEN(ApplyGates) > 0"
+  # List units with any validation errors
+  cub unit list --space my-space --where "LEN(ValidationErrors) > 0"
 
   # List units that have been approved
   cub unit list --space my-space --where "LEN(ApprovedBy) > 0"
@@ -76,7 +76,7 @@ Available columns (prefixed with Unit.):
 
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
-  - Status: ApplyGates, LastChangeDescription, ApprovedBy
+  - Status: ValidationErrors, LastChangeDescription, ApprovedBy
   - Relationships: TargetID, ToolchainType
   - Revisions: LastReleasedRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>
@@ -102,7 +102,7 @@ Configuration state:
 Approval workflow:
 - Find units needing approval: --where 'LEN(ApprovedBy) = 0'
 - Find approved units: --where 'LEN(ApprovedBy) > 0'
-- Find units with apply gates: --where 'LEN(ApplyGates) > 0'
+- Find units with validation errors: --where 'LEN(ValidationErrors) > 0'
 
 Content filtering:
 - By resource type: --resource-type apps/v1/Deployment --where-data "spec.replicas > 1" (--resource-type is optional; omitting it searches all resource types)
@@ -129,8 +129,8 @@ var triggersPassed bool
 var viewSlug string
 
 // Default columns to display when --columns is not specified
-// var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ApplyGates", "LastChangeDescription"}
-var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UpgradeNeeded", "UnreleasedChanges", "Unit.ApplyGates", "Unit.LastChangeDescription"}
+// var defaultUnitColumns = []string{"Name", "Space", "Target", "Status", "LastAction", "DataBytes", "HeadRevisionNum", "HeadMutationNum", "ValidationErrors", "LastChangeDescription"}
+var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "Target.Slug", "UpgradeNeeded", "UnreleasedChanges", "Unit.ValidationErrors", "Unit.LastChangeDescription"}
 
 // unitListInclude is the Include parameter for unit list queries (the related
 // entities expanded into each ExtendedUnit). UnitEventID is a pseudo-field used
@@ -220,10 +220,7 @@ func unitListCmdRun(cmd *cobra.Command, args []string) error {
 	// may reside in a specific space that we need to resolve the slug against.
 	viewID := ""
 	if viewSlug != "" {
-		viewUUID, viewErr := parseEntityIdentifierSingle(viewSlug, EntityTypeView,
-			apiGetViewFromSlugInSpace,
-			func(v *goclientnew.View) string { return v.ViewID.String() },
-		)
+		viewUUID, viewErr := resolveViewID(viewSlug)
 		if viewErr != nil {
 			return viewErr
 		}

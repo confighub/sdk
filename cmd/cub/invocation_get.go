@@ -9,7 +9,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -35,11 +34,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(invocationGetCmd)
+	enableOptionalSpace(invocationGetCmd)
 	invocationCmd.AddCommand(invocationGetCmd)
 }
 
 func invocationGetCmdRun(cmd *cobra.Command, args []string) error {
-	invocationDetails, err := apiGetExtendedInvocationFromSlug(args[0], selectFields)
+	invocationDetails, err := resolveInvocation(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -140,75 +140,4 @@ func functionInvocationsSummary(functionInvocations *goclientnew.FunctionInvocat
 		names = append(names, function.FunctionName)
 	}
 	return strings.Join(names, ", ")
-}
-
-func apiGetInvocation(invocationID string, selectParam string) (*goclientnew.Invocation, error) {
-	extendedInvocation, err := apiGetExtendedInvocation(invocationID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedInvocation.Invocation, nil
-}
-
-func apiGetExtendedInvocation(invocationID string, selectParam string) (*goclientnew.ExtendedInvocation, error) {
-	newParams := &goclientnew.GetInvocationParams{}
-	include := "SpaceID,BridgeWorkerID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	invocationRes, err := cubClientNew.GetInvocationWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(invocationID), newParams)
-	if cubapi.IsAPIError(err, invocationRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, invocationRes)
-	}
-	return invocationRes.JSON200, nil
-}
-
-func apiGetInvocationFromSlug(slug string, selectParam string) (*goclientnew.Invocation, error) {
-	return apiGetInvocationFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetInvocationFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Invocation, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetInvocation(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	invocations, err := apiListInvocations(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find invocation by slug
-	for _, invocation := range invocations {
-		if invocation.Invocation != nil && invocation.Invocation.Slug == slug {
-			return invocation.Invocation, nil
-		}
-	}
-	return nil, fmt.Errorf("invocation %s not found in space %s", slug, spaceID)
-}
-
-func apiGetExtendedInvocationFromSlug(slug string, selectParam string) (*goclientnew.ExtendedInvocation, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedInvocation(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	invocations, err := apiListInvocations(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find invocation by slug
-	for _, invocation := range invocations {
-		if invocation.Invocation != nil && invocation.Invocation.Slug == slug {
-			return invocation, nil
-		}
-	}
-	return nil, fmt.Errorf("invocation %s not found in space %s", slug, selectedSpaceID)
 }

@@ -4,9 +4,6 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -32,11 +29,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(filterGetCmd)
+	enableOptionalSpace(filterGetCmd)
 	filterCmd.AddCommand(filterGetCmd)
 }
 
 func filterGetCmdRun(cmd *cobra.Command, args []string) error {
-	filterDetails, err := apiGetExtendedFilterFromSlug(args[0], selectFields, selectedSpaceID)
+	filterDetails, err := resolveFilter(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -95,75 +93,4 @@ func displayExtendedFilterDetails(extendedFilter *goclientnew.ExtendedFilter) {
 		view.Append([]string{"Hash", filterDetails.Hash})
 	}
 	view.Render()
-}
-
-func apiGetFilter(filterID string, selectParam string) (*goclientnew.Filter, error) {
-	extendedFilter, err := apiGetExtendedFilter(filterID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedFilter.Filter, nil
-}
-
-func apiGetExtendedFilter(filterID string, selectParam string) (*goclientnew.ExtendedFilter, error) {
-	newParams := &goclientnew.GetFilterParams{}
-	include := "SpaceID,FromSpaceID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	filterRes, err := cubClientNew.GetFilterWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(filterID), newParams)
-	if cubapi.IsAPIError(err, filterRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, filterRes)
-	}
-	return filterRes.JSON200, nil
-}
-
-func apiGetFilterFromSlug(slug string, selectParam string, spaceID string) (*goclientnew.Filter, error) {
-	return apiGetFilterFromSlugInSpace(slug, spaceID, selectParam)
-}
-
-func apiGetFilterFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Filter, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetFilter(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	filters, err := apiListFilters(spaceID, "Slug = '"+slug+"'", selectParam)
-	if err != nil {
-		return nil, err
-	}
-	// find filter by slug
-	for _, filter := range filters {
-		if filter.Filter != nil && filter.Filter.Slug == slug {
-			return filter.Filter, nil
-		}
-	}
-	return nil, fmt.Errorf("filter %s not found in space %s", slug, spaceID)
-}
-
-func apiGetExtendedFilterFromSlug(slug string, selectParam string, spaceID string) (*goclientnew.ExtendedFilter, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedFilter(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	filters, err := apiListFilters(spaceID, "Slug = '"+slug+"'", selectParam)
-	if err != nil {
-		return nil, err
-	}
-	// find filter by slug
-	for _, filter := range filters {
-		if filter.Filter != nil && filter.Filter.Slug == slug {
-			return filter, nil
-		}
-	}
-	return nil, fmt.Errorf("filter %s not found in space %s", slug, spaceID)
 }

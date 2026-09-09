@@ -171,7 +171,7 @@ func RegisterFunctionsAsCobraCommands() {
 					var changesetID string
 					var changesetUUID uuid.UUID
 					if functionChangesetSlug != "" {
-						changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
+						changesetUUID, err = resolveChangeSetID(functionChangesetSlug)
 						if err != nil {
 							return err
 						}
@@ -296,11 +296,11 @@ func RegisterFunctionsAsCobraCommands() {
 						}
 						// Wait one at a time
 						for _, respMsg := range *respMsgs {
-							unitDetails, err := apiGetUnitInSpace(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*") // get all fields for now
+							unitDetails, err := resolveUnit(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*") // get all fields for now
 							if err != nil {
 								return err
 							}
-							err = awaitTriggersRemoval(unitDetails)
+							err = awaitTriggersRemoval(unitDetails.Unit)
 							if err != nil {
 								return err
 							}

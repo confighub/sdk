@@ -704,10 +704,10 @@ func handleBulkUnitActionResponse(results *[]goclientnew.UnitActionResponse, act
 			successCount++
 			if !quiet {
 				// Fetch unit details to get the slug
-				unitDetails, err := apiGetUnitInSpace(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
+				unitDetails, err := resolveUnit(result.Action.UnitID.String(), result.Action.SpaceID.String(), "Slug")
 				unitSlug := result.Action.UnitID.String()
-				if err == nil && unitDetails != nil && unitDetails.Slug != "" {
-					unitSlug = unitDetails.Slug
+				if err == nil && unitDetails != nil && unitDetails.Unit.Slug != "" {
+					unitSlug = unitDetails.Unit.Slug
 				}
 				tprint("%s queued for %s (operation: %s)",
 					strings.Title(action), unitSlug, result.Action.QueuedOperationID)

@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
 )
@@ -38,7 +36,7 @@ func init() {
 }
 
 func spaceGetCmdRun(cmd *cobra.Command, args []string) error {
-	extendedSpace, err := apiGetExtendedSpaceFromSlug(args[0], selectFields)
+	extendedSpace, err := resolveSpaceSummary(args[0], selectFields)
 	if err != nil {
 		return err
 	}
@@ -133,78 +131,4 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})
 	view.Append([]string{"# Attributes", fmt.Sprintf("%d", extendedSpace.TotalAttributeCount)})
 	view.Render()
-}
-
-func apiGetExtendedSpace(spaceID string, selectParam string) (*goclientnew.ExtendedSpace, error) {
-	newParams := &goclientnew.GetSpaceParams{}
-	summary := true
-	newParams.Summary = &summary
-	// Include expanded TriggerFilter and Triggers for display
-	//include := "TriggerFilterID,TriggerIDs,AttributeFilterID,AttributeIDs"
-	include := "TriggerFilterID,TriggerIDs"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, spaceRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, spaceRes)
-	}
-	return spaceRes.JSON200, nil
-}
-
-func apiGetSpace(spaceID string, selectParam string) (*goclientnew.Space, error) {
-	newParams := &goclientnew.GetSpaceParams{}
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	spaceRes, err := cubClientNew.GetSpaceWithResponse(ctx, uuid.MustParse(spaceID), newParams)
-	if cubapi.IsAPIError(err, spaceRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, spaceRes)
-	}
-	return spaceRes.JSON200.Space, nil
-}
-
-func apiGetSpaceFromSlug(slug string, selectParam string) (*goclientnew.Space, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetSpace(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	spaces, err := apiListSpaces("Slug = '"+slug+"'", selectParam)
-	if err != nil {
-		return nil, err
-	}
-	for _, space := range spaces {
-		if space.Slug == slug {
-			return space, nil
-		}
-	}
-	return nil, fmt.Errorf("space %s not found", slug)
-}
-
-func apiGetExtendedSpaceFromSlug(slug string, selectParam string) (*goclientnew.ExtendedSpace, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedSpace(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	spaces, err := apiListSpaces("Slug = '"+slug+"'", selectParam)
-	if err != nil {
-		return nil, err
-	}
-	for _, space := range spaces {
-		if space.Slug == slug {
-			return apiGetExtendedSpace(space.SpaceID.String(), selectParam)
-		}
-	}
-	return nil, fmt.Errorf("space %s not found", slug)
 }

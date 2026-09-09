@@ -126,7 +126,7 @@ func k8sCollectCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	currentTarget, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "*")
+	currentTarget, err := resolveTarget(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}

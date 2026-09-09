@@ -80,7 +80,7 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --protect or --unprotect is required")
 	}
 
-	configUnit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID")
+	configUnit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
 	if err != nil {
 		return err
 	}
@@ -124,14 +124,14 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		})
 	}
 
-	res, err := cubClientNew.SetUnitProtectionWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, body)
+	res, err := cubClientNew.SetUnitProtectionWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	resp := res.JSON200
 	if !quiet {
-		fmt.Printf("Protection set on unit %s (%s)\n", args[0], configUnit.UnitID.String())
+		fmt.Printf("Protection set on unit %s (%s)\n", args[0], configUnit.Unit.UnitID.String())
 	}
 	if resp != nil && resp.MutationSources != nil {
 		displayJSON(resp.MutationSources)

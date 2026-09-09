@@ -38,9 +38,9 @@ func spaceOpenCmdRun(_ *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return openWebUI(cubapi.GetSpaceListURL(webUIServerURL()))
 	}
-	space, err := apiGetSpaceFromSlug(args[0], "SpaceID")
+	space, err := resolveSpace(args[0], "SpaceID")
 	if err != nil {
 		return err
 	}
-	return openWebUI(cubapi.GetSpaceDetailURL(webUIServerURL(), space.SpaceID.String()))
+	return openWebUI(cubapi.GetSpaceDetailURL(webUIServerURL(), space.Space.SpaceID.String()))
 }

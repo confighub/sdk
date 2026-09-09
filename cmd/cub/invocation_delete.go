@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -79,10 +78,6 @@ func checkInvocationDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -136,16 +131,16 @@ func invocationDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single invocation delete logic
-	invocationDetails, err := apiGetInvocationFromSlug(args[0], "*") // get all fields for now
+	invocationDetails, err := resolveInvocation(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteInvocationWithResponse(ctx, uuid.MustParse(selectedSpaceID), invocationDetails.InvocationID)
+	deleteRes, err := cubClientNew.DeleteInvocationWithResponse(ctx, invocationDetails.Invocation.SpaceID, invocationDetails.Invocation.InvocationID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("invocation", args[0], invocationDetails.InvocationID.String(), deleteRes)
+	displayDeleteResults("invocation", args[0], invocationDetails.Invocation.InvocationID.String(), deleteRes)
 	return nil
 }
 

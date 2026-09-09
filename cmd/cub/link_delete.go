@@ -9,7 +9,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -83,10 +82,6 @@ func checkLinkDeleteConflictingArgs(args []string) bool {
 		if filter != "" || where != "" || len(linkDeleteIdentifiers) > 0 {
 			failOnError(errors.New("--filter, --where, and --link flags can only be used in bulk mode (without positional arguments)"))
 		}
-	}
-
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
 	}
 
 	return isBulkDeleteMode
@@ -165,11 +160,11 @@ func awaitTriggersOnLinkFromUnits(fromUnits []linkFromUnit) {
 		tprintRaw("Awaiting triggers...")
 	}
 	for _, unit := range fromUnits {
-		unitDetails, err := apiGetUnitInSpace(unit.UnitID, unit.SpaceID, "*")
+		unitDetails, err := resolveUnit(unit.UnitID, unit.SpaceID, "*")
 		if err != nil {
 			continue
 		}
-		_ = awaitTriggersRemoval(unitDetails)
+		_ = awaitTriggersRemoval(unitDetails.Unit)
 	}
 }
 
@@ -203,26 +198,26 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("specify a link slug/id for single delete, or use --where/--link for bulk delete")
 	}
 
-	linkDetails, err := apiGetLinkFromSlug(args[0], "") // default select is fine
+	linkDetails, err := resolveLink(args[0], selectedSpaceID, "") // default select is fine
 	if err != nil {
 		return err
 	}
 
-	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), linkDetails.LinkID)
+	deleteRes, err := cubClientNew.DeleteLinkWithResponse(ctx, linkDetails.Link.SpaceID, linkDetails.Link.LinkID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
-	displayDeleteResults("link", args[0], linkDetails.LinkID.String(), deleteRes)
+	displayDeleteResults("link", args[0], linkDetails.Link.LinkID.String(), deleteRes)
 	if wait {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		fromUnitID := linkDetails.FromUnitID
-		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
+		fromUnitID := linkDetails.Link.FromUnitID
+		unitDetails, err := resolveUnit(fromUnitID.String(), linkDetails.Link.SpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}

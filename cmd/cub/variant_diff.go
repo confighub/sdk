@@ -189,15 +189,15 @@ func variantDiffCmdRun(cmd *cobra.Command, args []string) error {
 		toTag = args[2]
 	}
 
-	space, err := apiGetSpaceFromSlug(args[0], "SpaceID,Slug")
+	space, err := resolveSpace(args[0], "SpaceID,Slug")
 	if err != nil {
 		return err
 	}
 	// As "variant approve" and "variant promote" do: this command names its space
 	// positionally, so the selected space may be unset or "*". Point it at the space being
 	// compared, so that a bare Tag slug on either side resolves there.
-	selectedSpaceID = space.SpaceID.String()
-	selectedSpaceSlug = space.Slug
+	selectedSpaceID = space.Space.SpaceID.String()
+	selectedSpaceSlug = space.Space.Slug
 
 	fromRevision, err := parseVariantDiffRevision(fromTag)
 	if err != nil {
@@ -208,7 +208,7 @@ func variantDiffCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.Wrap(err, "invalid target tag")
 	}
 
-	return variantDiff(space, where,
+	return variantDiff(space.Space, where,
 		variantDiffSide{name: fromTag, revision: fromRevision},
 		variantDiffSide{name: toTag, revision: toRevision})
 }

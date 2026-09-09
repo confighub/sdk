@@ -756,11 +756,11 @@ func uploadNamespaceDesc(namespace string) string {
 // no annotation, or whose annotation cannot be read — all cases where there is
 // nothing to check against and the upload should simply proceed.
 func uploadRecordedSource(spaceSlug string) (externalSourceRecord, bool) {
-	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug,Annotations")
+	space, err := resolveSpace(spaceSlug, "SpaceID,Slug,Annotations")
 	if err != nil || space == nil {
 		return externalSourceRecord{}, false
 	}
-	return recordedSource(space.Annotations[externalSourceAnnotation])
+	return recordedSource(space.Space.Annotations[externalSourceAnnotation])
 }
 
 // recordedSource parses an external-source annotation value. Every record from
@@ -786,7 +786,7 @@ func recordExternalSource(spaceSlug string, records []externalSourceRecord) erro
 	if err != nil {
 		return err
 	}
-	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug")
+	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
 	if err != nil {
 		return err
 	}
@@ -796,7 +796,7 @@ func recordExternalSource(spaceSlug string, records []externalSourceRecord) erro
 	if err != nil {
 		return err
 	}
-	if _, err := patchSpace(space.SpaceID, patchData); err != nil {
+	if _, err := patchSpace(space.Space.SpaceID, patchData); err != nil {
 		return err
 	}
 	return nil

@@ -35,7 +35,7 @@ func init() {
 }
 
 func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
-	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	unit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -43,7 +43,7 @@ func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.UnitID.String(), selectFields)
+	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.Unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -232,29 +232,6 @@ func resolveBridgeWorkerName(workerID uuid.UUID, mutationSpaceSlug string) strin
 		workerSpace = workers[0].Space.Slug
 	}
 	return qualifySlug(workers[0].BridgeWorker.Slug, workerSpace, mutationSpaceSlug)
-}
-
-func apiGetMutation(mutationID string, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
-	newParams := &goclientnew.GetExtendedMutationParams{}
-	include := "SpaceID,RevisionID,MergeSourceID,LinkID,TriggerID,InvocationID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	muteRes, err := cubClientNew.GetExtendedMutationWithResponse(ctx,
-		uuid.MustParse(selectedSpaceID),
-		uuid.MustParse(unitID),
-		uuid.MustParse(mutationID), newParams)
-	if cubapi.IsAPIError(err, muteRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, muteRes)
-	}
-
-	mutation := muteRes.JSON200
-	if mutation.Mutation.SpaceID.String() != selectedSpaceID {
-		return nil, fmt.Errorf("SERVER DIDN'T CHECK: mutation %s not found", mutationID)
-	}
-	return mutation, nil
 }
 
 func apiGetMutationFromNumber(mutationNum int64, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {

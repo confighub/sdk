@@ -200,24 +200,24 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fromUnit, err := apiGetUnitFromSlugInSpace(args[1], selectedSpaceID, "*") // get all fields for now
+	fromUnit, err := resolveUnit(args[1], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	fromUnitID := fromUnit.UnitID
+	fromUnitID := fromUnit.Unit.UnitID
 	toSpaceID := selectedSpaceID
 	if len(args) == 4 {
-		toSpace, err := apiGetSpaceFromSlug(args[3], "*") // get all fields for now
+		toSpace, err := resolveSpace(args[3], "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		toSpaceID = toSpace.SpaceID.String()
+		toSpaceID = toSpace.Space.SpaceID.String()
 	}
-	toUnit, err := apiGetUnitFromSlugInSpace(args[2], toSpaceID, "*") // get all fields for now
+	toUnit, err := resolveUnit(args[2], toSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	toUnitID := toUnit.UnitID
+	toUnitID := toUnit.Unit.UnitID
 
 	newLink.FromUnitID = fromUnitID
 	newLink.ToUnitID = toUnitID
@@ -229,7 +229,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	// If --make-current is set, initialize revision numbers to current unit revisions
 	if linkMakeCurrent {
 		newLink.UpstreamLastMergedRevisionNum, newLink.DownstreamLastMergedRevisionNum =
-			makeCurrentPointers(fromUnit, toUnit)
+			makeCurrentPointers(fromUnit.Unit, toUnit.Unit)
 	}
 
 	// Create params with AllowExists if needed
@@ -249,11 +249,11 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
-		unitDetails, err := apiGetUnitInSpace(fromUnitID.String(), selectedSpaceID, "*") // get all fields for now
+		unitDetails, err := resolveUnit(fromUnitID.String(), selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}

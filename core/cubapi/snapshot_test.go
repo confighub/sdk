@@ -112,8 +112,8 @@ func TestUnitMetaState(t *testing.T) {
 // it comes back zero with nothing to indicate the value was never fetched.
 func TestSnapshotUnitSelectCoversUnitMeta(t *testing.T) {
 	for _, field := range []string{
-		"UnitID", "SpaceID", "SpaceSlug", "Slug", "TargetID", "Labels", "ApplyGates",
-		"ApplyWarnings", "HeadRevisionNum", "LastReleasedRevisionNum",
+		"UnitID", "SpaceID", "SpaceSlug", "Slug", "TargetID", "Labels", "ValidationErrors",
+		"ValidationWarnings", "HeadRevisionNum", "LastReleasedRevisionNum",
 		"UpstreamRevisionNum", "LastChangeDescription",
 	} {
 		if !strings.Contains(snapshotUnitSelect, field) {

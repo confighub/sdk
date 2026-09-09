@@ -110,7 +110,7 @@ Agent creation workflow:
 1. Prepare configuration files locally (YAML, HCL, properties, etc.)
 2. Choose appropriate unit slug (used for referencing the unit)
 3. Create unit and wait for triggers to complete validation
-4. Check for any validation issues or apply gates
+4. Check for any validation issues or validation errors
 
 Creation methods:
 ` + "```" + `
@@ -322,22 +322,22 @@ func runSingleUnitCreate(args []string) error {
 	// to bulk create.
 	var upstreamSpaceID, upstreamUnitID uuid.UUID
 	if unitCreateArgs.upstreamSpaceSlug != "" {
-		upstreamSpace, err := apiGetSpaceFromSlug(unitCreateArgs.upstreamSpaceSlug, "*") // get all fields for now
+		upstreamSpace, err := resolveSpace(unitCreateArgs.upstreamSpaceSlug, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		upstreamSpaceID = upstreamSpace.SpaceID
+		upstreamSpaceID = upstreamSpace.Space.SpaceID
 	}
 	if unitCreateArgs.upstreamUnitSlug != "" {
 		if unitCreateArgs.upstreamSpaceSlug == "" {
 			upstreamSpaceID = spaceID
 		}
-		upstreamUnit, err := apiGetUnitFromSlugInSpace(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
+		upstreamUnit, err := resolveUnit(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		upstreamUnitID = upstreamUnit.UnitID
-		newUnit = upstreamUnit
+		upstreamUnitID = upstreamUnit.Unit.UnitID
+		newUnit = upstreamUnit.Unit
 		newUnit.UnitID = uuid.Nil          // the server will set this
 		newUnit.LastChangeDescription = "" // set from the flag or stdin
 	}
@@ -407,12 +407,7 @@ func runSingleUnitCreate(args []string) error {
 			newUnit.TargetID = &uuid.Nil
 		} else {
 			// Use parseEntityIdentifierSingle to support cross-space target lookup
-			id, err := parseEntityIdentifierSingle[goclientnew.Target](
-				unitCreateArgs.targetSlug,
-				EntityTypeTarget,
-				apiGetTargetFromSlugInSpaceCore,
-				func(t *goclientnew.Target) string { return t.TargetID.String() },
-			)
+			id, err := resolveTargetID(unitCreateArgs.targetSlug)
 			if err != nil {
 				return err
 			}
@@ -423,7 +418,7 @@ func runSingleUnitCreate(args []string) error {
 		if unitCreateArgs.changesetSlug == "-" {
 			newUnit.ChangeSetID = &uuid.Nil
 		} else {
-			changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
+			changesetUUID, err := resolveChangeSetID(unitCreateArgs.changesetSlug)
 			if err != nil {
 				return err
 			}
@@ -487,8 +482,8 @@ func runSingleUnitCreate(args []string) error {
 				unitDetails.Slug, err)
 		}
 		// Re-read so what is displayed reflects the configuration that was just written.
-		if refreshed, refreshErr := apiGetUnitInSpace(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
-			unitDetails = refreshed
+		if refreshed, refreshErr := resolveUnit(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
+			unitDetails = refreshed.Unit
 		}
 	}
 
@@ -528,12 +523,7 @@ func createBulkCreatePatch() ([]byte, error) {
 				targetID = uuid.Nil
 			} else {
 				// Use parseEntityIdentifierSingle to support cross-space target lookup
-				id, err := parseEntityIdentifierSingle[goclientnew.Target](
-					unitCreateArgs.targetSlug,
-					EntityTypeTarget,
-					apiGetTargetFromSlugInSpaceCore,
-					func(t *goclientnew.Target) string { return t.TargetID.String() },
-				)
+				id, err := resolveTargetID(unitCreateArgs.targetSlug)
 				if err != nil {
 					// Can't return error from enhancer, so log it
 					fmt.Fprintf(os.Stderr, "Failed to get target: %v\n", err)
@@ -551,7 +541,7 @@ func createBulkCreatePatch() ([]byte, error) {
 
 		// Add changeset if specified
 		if unitCreateArgs.changesetSlug != "" {
-			changesetUUID, err := parseChangeSetSlug(unitCreateArgs.changesetSlug)
+			changesetUUID, err := resolveChangeSetID(unitCreateArgs.changesetSlug)
 			if err != nil {
 				failOnError(fmt.Errorf("failed to get changeset: %w", err))
 				return

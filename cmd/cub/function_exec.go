@@ -132,7 +132,7 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 	var changesetID string
 	var changesetUUID uuid.UUID
 	if functionChangesetSlug != "" && revisionIdentifier == "" {
-		changesetUUID, err = parseChangeSetSlug(functionChangesetSlug)
+		changesetUUID, err = resolveChangeSetID(functionChangesetSlug)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -245,11 +245,11 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		}
 		// Wait one at a time
 		for _, resp := range *resp {
-			unitDetails, err := apiGetUnitInSpace(resp.UnitID.String(), resp.SpaceID.String(), "*")
+			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")
 			if err != nil {
 				return err
 			}
-			err = awaitTriggersRemoval(unitDetails)
+			err = awaitTriggersRemoval(unitDetails.Unit)
 			if err != nil {
 				return err
 			}

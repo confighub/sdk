@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -133,12 +132,12 @@ func targetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single target delete logic
-	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "*") // get all fields for now
+	targetDetails, err := resolveTarget(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	deleteRes, err := cubClientNew.DeleteTargetWithResponse(ctx, uuid.MustParse(selectedSpaceID), targetDetails.Target.TargetID)
+	deleteRes, err := cubClientNew.DeleteTargetWithResponse(ctx, targetDetails.Target.SpaceID, targetDetails.Target.TargetID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

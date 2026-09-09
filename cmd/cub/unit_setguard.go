@@ -144,7 +144,7 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("at least one --guard or --remove-guard is required")
 	}
 
-	configUnit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID")
+	configUnit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
 	if err != nil {
 		return err
 	}
@@ -209,14 +209,14 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		body.ResourceGuards = append(body.ResourceGuards, guards)
 	}
 
-	res, err := cubClientNew.SetUnitGuardWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, body)
+	res, err := cubClientNew.SetUnitGuardWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	resp := res.JSON200
 	if !quiet {
-		fmt.Printf("Guards set on unit %s (%s)\n", args[0], configUnit.UnitID.String())
+		fmt.Printf("Guards set on unit %s (%s)\n", args[0], configUnit.Unit.UnitID.String())
 	}
 	if resp != nil && resp.PathAnnotations != nil {
 		displayJSON(resp.PathAnnotations)

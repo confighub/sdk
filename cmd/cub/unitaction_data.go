@@ -62,13 +62,13 @@ func resolveUnitAction(spaceID, unitID uuid.UUID, identifier string) (*goclientn
 }
 
 func runUnitActionBlob(section blobSection, unitSlugOrID, actionIdentifier string) error {
-	u, err := apiGetUnitFromSlug(unitSlugOrID, "*")
+	u, err := resolveUnit(unitSlugOrID, selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
 
 	spaceUUID := uuid.MustParse(selectedSpaceID)
-	action, err := resolveUnitAction(spaceUUID, u.UnitID, actionIdentifier)
+	action, err := resolveUnitAction(spaceUUID, u.Unit.UnitID, actionIdentifier)
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func runUnitActionBlob(section blobSection, unitSlugOrID, actionIdentifier strin
 	}
 
 	if raw == "" {
-		return fmt.Errorf("no %s found for unit action %d on unit %s", section, action.UnitActionNum, u.Slug)
+		return fmt.Errorf("no %s found for unit action %d on unit %s", section, action.UnitActionNum, u.Unit.Slug)
 	}
 
 	out := []byte(raw)

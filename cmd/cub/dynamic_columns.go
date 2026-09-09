@@ -369,13 +369,18 @@ func columnToHeader(provider *DynamicColumnProvider, col string) string {
 }
 
 var mapFields = map[string]bool{
-	"Labels":       true,
-	"Annotations":  true,
-	"Values":       true,
-	"ApplyGates":   true,
-	"DeleteGates":  true,
-	"DestroyGates": true,
-	"Tags":         true,
+	"Labels":             true,
+	"Annotations":        true,
+	"Values":             true,
+	"ValidationErrors":   true,
+	"ValidationWarnings": true,
+	// The deprecated names of the two above. The server still returns them, so a column
+	// naming one still renders.
+	"ApplyGates":    true,
+	"ApplyWarnings": true,
+	"DeleteGates":   true,
+	"DestroyGates":  true,
+	"Tags":          true,
 }
 
 func fieldIsMap(field string) bool {

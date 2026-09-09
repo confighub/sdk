@@ -64,7 +64,8 @@ func init() {
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
-	worker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
+	var worker *goclientnew.BridgeWorker
+	workerEnvelope, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		// assume worker not found and create a default worker on the fly
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
@@ -74,6 +75,8 @@ func workerRunCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
+	} else {
+		worker = workerEnvelope.BridgeWorker
 	}
 
 	// Priority: --executable flag > CONFIGHUB_WORKER_EXECUTABLE env > default path

@@ -216,7 +216,7 @@ func qualifiedName(resource *k8sResource) string {
 	return resource.Namespace + "/" + resource.Name
 }
 
-// sortedMapKeys renders the keys of a set-shaped map (ApplyGates and the like)
+// sortedMapKeys renders the keys of a set-shaped map (ValidationErrors and the like)
 // in a stable order.
 func sortedMapKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -295,7 +295,7 @@ func unitSection(resource *k8sResource, unit *k8sUnit) *k8sdescribe.Section {
 			appendField("Last Released Revision", fmt.Sprintf("%d", unit.unit.LastReleasedRevisionNum))
 		}
 		appendField("Unit Labels", labelsToString(unit.unit.Labels))
-		appendField("Apply Gates", strings.Join(sortedMapKeys(unit.unit.ApplyGates), ", "))
+		appendField("Validation Errors", strings.Join(sortedMapKeys(unit.unit.ValidationErrors), ", "))
 		appendField("Last Change", unit.unit.LastChangeDescription)
 	}
 	return section

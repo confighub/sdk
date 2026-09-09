@@ -7395,6 +7395,22 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
+		if params.ChangeOrder != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Subgroup != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "subgroup", runtime.ParamLocationQuery, *params.Subgroup); err != nil {
@@ -13149,6 +13165,22 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 		if params.ChangeSetId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_set_id", runtime.ParamLocationQuery, *params.ChangeSetId); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ChangeOrder != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

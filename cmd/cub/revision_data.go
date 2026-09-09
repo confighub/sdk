@@ -36,7 +36,7 @@ func init() {
 }
 
 func runRevisionData(cmd *cobra.Command, args []string) error {
-	unit, err := apiGetUnitFromSlug(args[0], "*")
+	unit, err := resolveUnit(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
@@ -44,16 +44,16 @@ func runRevisionData(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid revision number %q: %w", args[1], err)
 	}
-	rev, err := apiGetRevisionFromNumber(num, unit.UnitID.String(), "RevisionID,DataHash")
+	rev, err := apiGetRevisionFromNumber(num, unit.Unit.UnitID.String(), "RevisionID,DataHash")
 	if err != nil {
 		return err
 	}
-	data, err := fetchRevisionData(unit.SpaceID, unit.UnitID, rev.RevisionID)
+	data, err := fetchRevisionData(unit.Unit.SpaceID, unit.Unit.UnitID, rev.RevisionID)
 	if err != nil {
 		return err
 	}
 	if data == "" {
-		return fmt.Errorf("no config data for revision %d of unit %s", num, unit.Slug)
+		return fmt.Errorf("no config data for revision %d of unit %s", num, unit.Unit.Slug)
 	}
 
 	out := []byte(data)

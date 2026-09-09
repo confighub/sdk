@@ -149,10 +149,6 @@ func checkChangeOrderUpdateConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -250,12 +246,14 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single changeorder update requires exactly one argument: <slug or id>")
 	}
 
-	currentChangeOrder, err := apiGetChangeOrderFromSlug(args[0], "*") // get all fields for RMW
+	currentChangeOrderEnvelope, err := resolveChangeOrder(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentChangeOrder := currentChangeOrderEnvelope.ChangeOrder
+
+	spaceID := currentChangeOrder.SpaceID
 
 	if changeorderPatch {
 		// Single changeorder patch mode

@@ -168,11 +168,11 @@ func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.U
 	if secret == "" {
 		// Some server responses blank Secret on create; fetch via Get as
 		// `cub worker get-secret` does.
-		got, gerr := apiGetBridgeWorker(spaceID, worker.BridgeWorkerID, "*")
+		got, gerr := resolveWorker(worker.BridgeWorkerID.String(), spaceID.String(), "*")
 		if gerr != nil {
 			return uuid.Nil, "", fmt.Errorf("get worker secret after create: %w", gerr)
 		}
-		secret = got.Secret
+		secret = got.BridgeWorker.Secret
 	}
 	if secret == "" {
 		return uuid.Nil, "", fmt.Errorf("worker %q: server returned no Secret", slug)
@@ -334,11 +334,11 @@ func clusterWaitUnitTriggers(spaceID, unitID uuid.UUID) error {
 	deadline := time.Now().Add(30 * time.Second)
 	backoff := 1 * time.Second
 	for {
-		unit, err := apiGetUnitInSpace(unitID.String(), spaceID.String(), "ApplyGates")
+		unit, err := resolveUnit(unitID.String(), spaceID.String(), "ValidationErrors")
 		if err != nil {
 			return err
 		}
-		if _, pending := unit.ApplyGates["awaiting/triggers"]; !pending {
+		if _, pending := unit.Unit.ValidationErrors["awaiting/triggers"]; !pending {
 			return nil
 		}
 		if time.Now().After(deadline) {
@@ -389,7 +389,7 @@ func clusterPublishRelease(spaceID uuid.UUID) error {
 // Space whose target is already gone returns an empty list: with ON DELETE
 // RESTRICT the target could not have been deleted while anything referenced it.
 func clusterDependentSpaceSlugs(clusterSpaceID uuid.UUID) ([]string, error) {
-	target, err := apiGetTargetFromSlugInSpaceCore(clusterTargetSlug, clusterSpaceID.String(), "TargetID")
+	target, err := resolveTargetCore(clusterTargetSlug, clusterSpaceID.String(), "TargetID")
 	if err != nil || target == nil {
 		return nil, nil
 	}
@@ -410,7 +410,7 @@ func clusterDependentSpaceSlugs(clusterSpaceID uuid.UUID) ([]string, error) {
 // cascades deletion to units, targets, and workers within the space (subject
 // to delete gates).
 func clusterDeleteSpace(slug string, recursive bool) error {
-	space, err := apiGetSpaceFromSlug(slug, "SpaceID")
+	space, err := resolveSpace(slug, "SpaceID")
 	if err != nil {
 		return err
 	}
@@ -419,7 +419,7 @@ func clusterDeleteSpace(slug string, recursive bool) error {
 		t := "true"
 		params.Recursive = &t
 	}
-	res, err := cubClientNew.DeleteSpaceWithResponse(ctx, space.SpaceID, params)
+	res, err := cubClientNew.DeleteSpaceWithResponse(ctx, space.Space.SpaceID, params)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}

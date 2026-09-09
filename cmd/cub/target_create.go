@@ -84,11 +84,11 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		if flagPopulateModelFromStdin || flagFilename != "" {
 			return errors.New("only one of --from-target or --from-stdin/--filename may be specified")
 		}
-		ftSpace, err := apiGetSpaceFromSlug(fromTargetSpace, "*") // get all fields for now
+		ftSpace, err := resolveSpace(fromTargetSpace, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		ftTarget, err := apiGetTargetFromSlug(fromTarget, ftSpace.SpaceID.String(), "*") // get all fields for copy
+		ftTarget, err := resolveTarget(fromTarget, ftSpace.Space.SpaceID.String(), "*") // get all fields for copy
 		if err != nil {
 			return err
 		}
@@ -218,11 +218,11 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		newTarget.Parameters = args[1]
 	}
 	if len(args) == 3 {
-		worker, err := apiGetBridgeWorkerFromSlug(args[2], "*") // get all fields for now
+		worker, err := resolveWorker(args[2], selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		workerID := worker.BridgeWorkerID
+		workerID := worker.BridgeWorker.BridgeWorkerID
 		newTarget.BridgeWorkerID = workerID
 	}
 

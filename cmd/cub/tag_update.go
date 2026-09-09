@@ -88,10 +88,6 @@ func checkTagConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -173,12 +169,14 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single tag update requires exactly one argument: <slug or id>")
 	}
 
-	currentTag, err := apiGetTagFromSlug(args[0], "*") // get all fields for RMW
+	currentTagEnvelope, err := resolveTag(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentTag := currentTagEnvelope.Tag
+
+	spaceID := currentTag.SpaceID
 
 	if tagPatch {
 		// Single tag patch mode

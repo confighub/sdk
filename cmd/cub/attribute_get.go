@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -33,11 +31,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(attributeGetCmd)
+	enableOptionalSpace(attributeGetCmd)
 	attributeCmd.AddCommand(attributeGetCmd)
 }
 
 func attributeGetCmdRun(cmd *cobra.Command, args []string) error {
-	attrDetails, err := apiGetAttributeFromSlug(args[0], selectFields)
+	attrDetails, err := resolveAttribute(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -110,55 +109,4 @@ func displayAttributeDetails(attr *goclientnew.Attribute) {
 	view.Append([]string{"Description", attr.Description})
 	view.Append([]string{"Hash", attr.Hash})
 	view.Render()
-}
-
-func apiGetAttribute(attrID string, selectParam string) (*goclientnew.ExtendedAttribute, error) {
-	newParams := &goclientnew.GetAttributeParams{}
-	include := "SpaceID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	attrRes, err := cubClientNew.GetAttributeWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(attrID), newParams)
-	if cubapi.IsAPIError(err, attrRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, attrRes)
-	}
-	return attrRes.JSON200, nil
-}
-
-func apiGetAttributeFromSlug(slug string, selectParam string) (*goclientnew.ExtendedAttribute, error) {
-	return apiGetAttributeFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-// apiGetAttributeFromSlugInSpaceCore returns just the Attribute, for use with parseEntityIdentifiers
-func apiGetAttributeFromSlugInSpaceCore(slug string, spaceID string, selectParam string) (*goclientnew.Attribute, error) {
-	extendedAttr, err := apiGetAttributeFromSlugInSpace(slug, spaceID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	if extendedAttr.Attribute == nil {
-		return nil, fmt.Errorf("attribute data not found")
-	}
-	return extendedAttr.Attribute, nil
-}
-
-func apiGetAttributeFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedAttribute, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetAttribute(id.String(), selectParam)
-	}
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	attrs, err := apiListAttributes(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	for _, attr := range attrs {
-		if attr.Attribute != nil && attr.Attribute.Slug == slug {
-			return attr, nil
-		}
-	}
-	return nil, fmt.Errorf("attribute %s not found in space %s", slug, spaceID)
 }

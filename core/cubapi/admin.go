@@ -109,7 +109,7 @@ func stripNulls(v any) any {
 
 // EnsureSpace creates a Space or patches an existing one towards space.
 func EnsureSpace(ctx context.Context, c *Client, space goclientnew.Space) (*goclientnew.Space, error) {
-	existing, err := ResolveSpace(ctx, c, space.Slug)
+	existing, err := ResolveSpace(ctx, c, NewRef("", space.Slug), ResolveOpts{Select: "SpaceID,Slug"})
 	if err != nil {
 		res, err := c.API.CreateSpaceWithResponse(ctx, &goclientnew.CreateSpaceParams{AllowExists: allowExists()}, space)
 		if IsAPIError(err, res) {
@@ -121,7 +121,7 @@ func EnsureSpace(ctx context.Context, c *Client, space goclientnew.Space) (*gocl
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchSpaceWithBodyWithResponse(ctx, existing.SpaceID, &goclientnew.PatchSpaceParams{},
+	res, err := c.API.PatchSpaceWithBodyWithResponse(ctx, existing.Space.SpaceID, &goclientnew.PatchSpaceParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -131,7 +131,7 @@ func EnsureSpace(ctx context.Context, c *Client, space goclientnew.Space) (*gocl
 
 // EnsureFilter creates a Filter in filter.SpaceID or patches an existing one.
 func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*goclientnew.Filter, error) {
-	existing, err := ResolveFilter(ctx, c, filter.SpaceID, filter.Slug)
+	existing, err := ResolveFilter(ctx, c, NewRef("", filter.Slug), ResolveOpts{Space: filter.SpaceID, Select: "FilterID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateFilterWithResponse(ctx, filter.SpaceID, &goclientnew.CreateFilterParams{AllowExists: allowExists()}, filter)
 		if IsAPIError(err, res) {
@@ -143,7 +143,7 @@ func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*g
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchFilterWithBodyWithResponse(ctx, filter.SpaceID, existing.FilterID,
+	res, err := c.API.PatchFilterWithBodyWithResponse(ctx, filter.SpaceID, existing.Filter.FilterID,
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -153,7 +153,7 @@ func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*g
 
 // EnsureTrigger creates a Trigger in trigger.SpaceID or patches an existing one.
 func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) (*goclientnew.Trigger, error) {
-	existing, err := ResolveTrigger(ctx, c, trigger.SpaceID, trigger.Slug)
+	existing, err := ResolveTrigger(ctx, c, NewRef("", trigger.Slug), ResolveOpts{Space: trigger.SpaceID, Select: "TriggerID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateTriggerWithResponse(ctx, trigger.SpaceID, &goclientnew.CreateTriggerParams{AllowExists: allowExists()}, trigger)
 		if IsAPIError(err, res) {
@@ -165,7 +165,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchTriggerWithBodyWithResponse(ctx, trigger.SpaceID, existing.TriggerID,
+	res, err := c.API.PatchTriggerWithBodyWithResponse(ctx, trigger.SpaceID, existing.Trigger.TriggerID,
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -176,7 +176,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 // EnsureInvocation creates a stored Invocation in invocation.SpaceID or patches
 // an existing one.
 func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Invocation) (*goclientnew.Invocation, error) {
-	existing, err := ResolveInvocation(ctx, c, invocation.SpaceID, invocation.Slug)
+	existing, err := ResolveInvocation(ctx, c, NewRef("", invocation.Slug), ResolveOpts{Space: invocation.SpaceID, Select: "InvocationID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateInvocationWithResponse(ctx, invocation.SpaceID, &goclientnew.CreateInvocationParams{AllowExists: allowExists()}, invocation)
 		if IsAPIError(err, res) {
@@ -188,7 +188,7 @@ func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Inv
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchInvocationWithBodyWithResponse(ctx, invocation.SpaceID, existing.InvocationID,
+	res, err := c.API.PatchInvocationWithBodyWithResponse(ctx, invocation.SpaceID, existing.Invocation.InvocationID,
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -198,7 +198,7 @@ func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Inv
 
 // EnsureTarget creates a Target in target.SpaceID or patches an existing one.
 func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*goclientnew.Target, error) {
-	existing, err := ResolveTarget(ctx, c, target.SpaceID, target.Slug)
+	existing, err := ResolveTarget(ctx, c, NewRef("", target.Slug), ResolveOpts{Space: target.SpaceID, Select: "TargetID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateTargetWithResponse(ctx, target.SpaceID, &goclientnew.CreateTargetParams{AllowExists: allowExists()}, target)
 		if IsAPIError(err, res) {
@@ -210,7 +210,7 @@ func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*g
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchTargetWithBodyWithResponse(ctx, target.SpaceID, existing.TargetID, &goclientnew.PatchTargetParams{},
+	res, err := c.API.PatchTargetWithBodyWithResponse(ctx, target.SpaceID, existing.Target.TargetID, &goclientnew.PatchTargetParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -220,7 +220,7 @@ func EnsureTarget(ctx context.Context, c *Client, target goclientnew.Target) (*g
 
 // EnsureBridgeWorker creates a worker in worker.SpaceID or patches an existing one.
 func EnsureBridgeWorker(ctx context.Context, c *Client, worker goclientnew.BridgeWorker) (*goclientnew.BridgeWorker, error) {
-	existing, err := ResolveBridgeWorker(ctx, c, worker.SpaceID, worker.Slug)
+	existing, err := ResolveBridgeWorker(ctx, c, NewRef("", worker.Slug), ResolveOpts{Space: worker.SpaceID, Select: "BridgeWorkerID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateBridgeWorkerWithResponse(ctx, worker.SpaceID, &goclientnew.CreateBridgeWorkerParams{AllowExists: allowExists()}, worker)
 		if IsAPIError(err, res) {
@@ -232,7 +232,7 @@ func EnsureBridgeWorker(ctx context.Context, c *Client, worker goclientnew.Bridg
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, existing.BridgeWorkerID,
+	res, err := c.API.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, existing.BridgeWorker.BridgeWorkerID,
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -243,7 +243,7 @@ func EnsureBridgeWorker(ctx context.Context, c *Client, worker goclientnew.Bridg
 // EnsureAttribute creates an Attribute in attribute.SpaceID or patches an
 // existing one.
 func EnsureAttribute(ctx context.Context, c *Client, attribute goclientnew.Attribute) (*goclientnew.Attribute, error) {
-	existing, err := ResolveAttribute(ctx, c, attribute.SpaceID, attribute.Slug)
+	existing, err := ResolveAttribute(ctx, c, NewRef("", attribute.Slug), ResolveOpts{Space: attribute.SpaceID, Select: "AttributeID,Slug,SpaceID"})
 	if err != nil {
 		res, err := c.API.CreateAttributeWithResponse(ctx, attribute.SpaceID, &goclientnew.CreateAttributeParams{AllowExists: allowExists()}, attribute)
 		if IsAPIError(err, res) {
@@ -255,7 +255,7 @@ func EnsureAttribute(ctx context.Context, c *Client, attribute goclientnew.Attri
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchAttributeWithBodyWithResponse(ctx, attribute.SpaceID, existing.AttributeID,
+	res, err := c.API.PatchAttributeWithBodyWithResponse(ctx, attribute.SpaceID, existing.Attribute.AttributeID,
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)

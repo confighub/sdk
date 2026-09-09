@@ -59,7 +59,32 @@ func allowWildcardSpace(cmd *cobra.Command) bool {
 	if _, orgLevel := cmd.Annotations["OrgLevel"]; orgLevel {
 		return true
 	}
-	return false
+	return allowOmittedSpace(cmd)
+}
+
+// spaceOptionalAnnotation marks a command that names its operand by reference
+// and can therefore run without a space.
+const spaceOptionalAnnotation = "SpaceOptional"
+
+// enableOptionalSpace marks a command as able to run without a space.
+//
+// It is for the commands that take an entity reference and resolve it: a UUID
+// names an entity outright, and a "space/slug" carries its own space, so
+// demanding a space up front rejects references that need none. What is left --
+// a bare slug with no space in sight -- is searched for across the organization
+// and refused only if it matches in more than one space, which is the point at
+// which a space is genuinely required and the error can say so.
+func enableOptionalSpace(cmd *cobra.Command) {
+	if cmd.Annotations == nil {
+		cmd.Annotations = map[string]string{}
+	}
+	cmd.Annotations[spaceOptionalAnnotation] = ""
+}
+
+// allowOmittedSpace reports whether a command may run with no space resolved.
+func allowOmittedSpace(cmd *cobra.Command) bool {
+	_, ok := cmd.Annotations[spaceOptionalAnnotation]
+	return ok
 }
 
 // to be used by sub-commands that requires space ID
@@ -77,12 +102,12 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 			}
 			return fmt.Errorf("space wildcard * not permitted for command %s", cmd.Name())
 		}
-		space, err := apiGetSpaceFromSlug(spaceFlag, "*") // get all fields for now
+		space, err := resolveSpace(spaceFlag, "*") // get all fields for now
 		if err != nil {
 			return err
 		}
-		selectedSpaceID = space.SpaceID.String()
-		selectedSpaceSlug = space.Slug
+		selectedSpaceID = space.Space.SpaceID.String()
+		selectedSpaceSlug = space.Space.Slug
 		return nil
 	}
 	// Check if we have space information
@@ -94,9 +119,17 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	// by default. Honor it only for commands that support it (OrgLevel); otherwise
 	// the user must supply a specific space via --space.
 	if ctx.Settings.DefaultSpace == "" || ctx.Settings.DefaultSpace == "*" {
-		if allowWildcardSpace(cmd) {
+		if _, orgLevel := cmd.Annotations["OrgLevel"]; orgLevel {
 			selectedSpaceID = "*"
 			selectedSpaceSlug = "*"
+			return nil
+		}
+		if allowOmittedSpace(cmd) {
+			// No space to scope by. A reference that carries its own space, or
+			// that is a UUID, resolves anyway; a bare slug is searched for
+			// across the organization.
+			selectedSpaceID = ""
+			selectedSpaceSlug = ""
 			return nil
 		}
 		return fmt.Errorf("space is required. Set with --space option or set in context with the context sub-command")
@@ -104,13 +137,13 @@ func spacePreRunE(cmd *cobra.Command, args []string) error {
 	if selectedSpaceID == "" {
 		// Any message output here messes up json and jq output, output only for functions, config data only, etc.
 		// tprint("Space ID is not set. Fetching for space name %s", ctx.Settings.DefaultSpace)
-		space, err := apiGetSpaceFromSlug(ctx.Settings.DefaultSpace, "")
+		space, err := resolveSpace(ctx.Settings.DefaultSpace, "")
 		// Note: If the DefaultSpace has been deleted, this will fail.
 		if err != nil {
 			return fmt.Errorf("failed to resolve default space %s from context: %w", ctx.Settings.DefaultSpace, err)
 		}
-		selectedSpaceID = space.SpaceID.String()
-		selectedSpaceSlug = space.Slug
+		selectedSpaceID = space.Space.SpaceID.String()
+		selectedSpaceSlug = space.Space.Slug
 	}
 	return nil
 }

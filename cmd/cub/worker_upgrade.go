@@ -158,7 +158,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	if getCurrentResp == nil || len(*getCurrentResp) == 0 {
 		// Check if the unit exists to provide a better error message
-		_, unitErr := apiGetUnitFromSlug(unitSlug, "UnitID")
+		_, unitErr := resolveUnit(unitSlug, selectedSpaceID, "UnitID")
 		if unitErr != nil {
 			return fmt.Errorf("unit '%s' not found in space", unitSlug)
 		}
@@ -238,11 +238,11 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	// Wait for triggers if requested
 	if wait {
-		unitDetails, err := apiGetUnitInSpace(firstSetResp.UnitID.String(), firstSetResp.SpaceID.String(), "*")
+		unitDetails, err := resolveUnit(firstSetResp.UnitID.String(), firstSetResp.SpaceID.String(), "*")
 		if err != nil {
 			return fmt.Errorf("failed to get unit details: %w", err)
 		}
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}

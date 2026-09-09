@@ -63,6 +63,11 @@ where the change was released. What demote does do is advance the merge pointers
 follow this space's units onto the restored revisions, so that a later upgrade does not replay the
 change that was just taken out.
 
+A change order with UpdateType Invoke is undone the same way, since what a restore reads is the
+tags the change left and those are the same tags. The one difference is that nothing carried it:
+the change was made in place rather than merged from an upstream, so no link records it and none
+is advanced.
+
 Publishing is separate, as it is for promotion: "cub release publish" is what takes the restored
 revisions to a cluster.
 
@@ -98,7 +103,7 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantDemoteArgs.changeorderSlug == "" {
 		return errors.New("demote needs --change-order: what it undoes is one named change, and which units that is comes from the change order")
 	}
-	space, err := apiGetSpaceFromSlug(args[0], "*")
+	space, err := resolveSpace(args[0], "*")
 	if err != nil {
 		return err
 	}
@@ -107,14 +112,14 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 	// whatever the context defaults to -- possibly nothing. Point it at the space being demoted:
 	// the helpers that render mutations resolve units through it, and one of them parses it as a
 	// UUID.
-	selectedSpaceID = space.SpaceID.String()
-	selectedSpaceSlug = space.Slug
+	selectedSpaceID = space.Space.SpaceID.String()
+	selectedSpaceSlug = space.Space.Slug
 
 	// A change order resides in the space the change was made in, which is this space only when
 	// the source of the change is what is being undone. A variant's is upstream of it, and may be
 	// several hops upstream, so it is named the way every other entity in another space is:
 	// <space>/<slug>, or by UUID.
-	changeOrder, err := resolveChangeOrder(variantDemoteArgs.changeorderSlug)
+	changeOrder, err := changeOrderByRef(variantDemoteArgs.changeorderSlug)
 	if err != nil {
 		return err
 	}
@@ -125,28 +130,28 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 			changeOrder.Slug, changeOrder.SpaceID, changeOrder.Slug)
 	}
 
-	marked, alreadyUndone, err := demoteMarkedUnits(space.SpaceID, changeOrder)
+	marked, alreadyUndone, err := demoteMarkedUnits(space.Space.SpaceID, changeOrder)
 	if err != nil {
 		return err
 	}
 	if alreadyUndone > 0 && !jsonOutput && outputFormat == "" {
 		tprint("Leaving %d unit(s) of %s alone: change order %s has already been taken back out of them",
-			alreadyUndone, space.Slug, changeOrder.Slug)
+			alreadyUndone, space.Space.Slug, changeOrder.Slug)
 	}
 	if len(marked) == 0 {
 		if !jsonOutput && outputFormat == "" {
 			if alreadyUndone > 0 {
-				tprint("Nothing left to restore in %s", space.Slug)
+				tprint("Nothing left to restore in %s", space.Space.Slug)
 			} else {
 				tprint("Change order %s marks no unit of %s, so there is nothing to restore there",
-					changeOrder.Slug, space.Slug)
+					changeOrder.Slug, space.Space.Slug)
 			}
 		}
 		return nil
 	}
 	demoteReportDroppedRevisions(marked)
 
-	return demoteRestoreUnits(space.SpaceID, changeOrder, marked)
+	return demoteRestoreUnits(space.Space.SpaceID, changeOrder, marked)
 }
 
 // demotedUnit is one unit of the space being demoted, and what the change order left on it.

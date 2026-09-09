@@ -45,7 +45,7 @@ func init() {
 }
 
 func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
-	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	unit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -53,7 +53,7 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	rev, err := apiGetExtendedRevisionFromNumber(num, unit.UnitID.String(), selectFields)
+	rev, err := apiGetExtendedRevisionFromNumber(num, unit.Unit.UnitID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -138,11 +138,11 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 			view.Append([]string{"Data Size", fmt.Sprintf("%d", rev.DataSize)})
 		}
 
-		if len(rev.ApplyGates) != 0 {
-			view.Append([]string{"Apply Gates", applyGatesToString(rev.ApplyGates)})
+		if len(rev.ValidationErrors) != 0 {
+			view.Append([]string{"Validation Errors", validationErrorsToString(rev.ValidationErrors)})
 		}
-		if len(rev.ApplyWarnings) != 0 {
-			view.Append([]string{"Apply Warnings", applyGatesToString(rev.ApplyWarnings)})
+		if len(rev.ValidationWarnings) != 0 {
+			view.Append([]string{"Validation Warnings", validationErrorsToString(rev.ValidationWarnings)})
 		}
 		if len(rev.ApprovedBy) != 0 {
 			view.Append([]string{"Approved By", strings.Join(resolveUsernames(rev.ApprovedBy), ", ")})
@@ -214,14 +214,6 @@ func resolveUsernames(userIDs []goclientnew.UUID) []string {
 	}
 	sort.Strings(names)
 	return names
-}
-
-func apiGetRevision(revisionID string, unitID string, selectParam string) (*goclientnew.Revision, error) {
-	extendedRev, err := apiGetExtendedRevision(revisionID, unitID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedRev.Revision, nil
 }
 
 func apiGetExtendedRevision(revisionID string, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {

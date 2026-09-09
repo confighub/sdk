@@ -185,12 +185,12 @@ func runUnitBlame(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("name a unit to blame")
 	}
-	unit, err := apiGetUnitFromSlugInSpace(args[0], selectedSpaceID, "*")
+	unit, err := resolveUnit(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
 
-	fields, err := blameUnit(unit, unitBlameArgs.upstreamMax)
+	fields, err := blameUnit(unit.Unit, unitBlameArgs.upstreamMax)
 	if err != nil {
 		return err
 	}

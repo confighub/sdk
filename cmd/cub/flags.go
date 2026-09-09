@@ -298,9 +298,17 @@ func enableGetWaitFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&timeout, "timeout", DefaultCreationTimeoutDuration.String(), "creation timeout as a duration with units, such as 10s or 2m")
 }
 
+// validateSpaceFlag refuses the "*" space for an operation that has to name one
+// concrete space: a single create, which has to put the new entity somewhere.
+//
+// A single update or delete does not call this. Those resolve their operand
+// first and write through whatever space that entity turns out to be in, so a
+// wildcard or absent space means "look for it anywhere" rather than an error --
+// and a reference matching in more than one space is refused by the resolver,
+// which can say how many matched.
 func validateSpaceFlag(bulk bool) error {
 	if !bulk && selectedSpaceID == "*" {
-		return errors.New("--space must not be '*' when not performing bulk operations")
+		return errors.New("--space must not be '*' when creating a single entity")
 	}
 	return nil
 }

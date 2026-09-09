@@ -138,11 +138,11 @@ func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single space delete logic
-	spaceDetails, err := apiGetSpaceFromSlug(args[0], "*") // get all fields for now
+	spaceDetails, err := resolveSpace(args[0], "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	spaceID := spaceDetails.SpaceID
+	spaceID := spaceDetails.Space.SpaceID
 	params := &goclientnew.DeleteSpaceParams{}
 	if recursive {
 		recursiveParam := "true"

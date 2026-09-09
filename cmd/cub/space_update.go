@@ -131,10 +131,11 @@ func spaceUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func runSingleSpaceUpdate(args []string) error {
-	currentSpace, err := apiGetSpaceFromSlug(args[0], "*") // get all fields for RMW
+	currentSpaceEnvelope, err := resolveSpace(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
+	currentSpace := currentSpaceEnvelope.Space
 
 	currentSpaceID := currentSpace.SpaceID
 
@@ -158,12 +159,7 @@ func runSingleSpaceUpdate(args []string) error {
 		// Resolve ReleaseTargetID if provided
 		var releaseTargetUUID *uuid.UUID
 		if spaceUpdateArgs.releaseTarget != "" && spaceUpdateArgs.releaseTarget != "-" {
-			resolved, err := parseEntityIdentifierSingle[goclientnew.Target](
-				spaceUpdateArgs.releaseTarget,
-				EntityTypeTarget,
-				apiGetTargetFromSlugInSpaceCore,
-				func(t *goclientnew.Target) string { return t.TargetID.String() },
-			)
+			resolved, err := resolveTargetID(spaceUpdateArgs.releaseTarget)
 			if err != nil {
 				return err
 			}
@@ -267,12 +263,7 @@ func runSingleSpaceUpdate(args []string) error {
 	if spaceUpdateArgs.releaseTarget == "-" {
 		newBody.ReleaseTargetID = nil
 	} else if spaceUpdateArgs.releaseTarget != "" {
-		releaseTargetUUID, err := parseEntityIdentifierSingle[goclientnew.Target](
-			spaceUpdateArgs.releaseTarget,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		releaseTargetUUID, err := resolveTargetID(spaceUpdateArgs.releaseTarget)
 		if err != nil {
 			return err
 		}
@@ -350,12 +341,7 @@ func runBulkSpaceUpdate() error {
 	// Resolve ReleaseTargetID if provided
 	var releaseTargetUUID *uuid.UUID
 	if spaceUpdateArgs.releaseTarget != "" && spaceUpdateArgs.releaseTarget != "-" {
-		resolved, err := parseEntityIdentifierSingle[goclientnew.Target](
-			spaceUpdateArgs.releaseTarget,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		resolved, err := resolveTargetID(spaceUpdateArgs.releaseTarget)
 		if err != nil {
 			return err
 		}

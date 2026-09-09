@@ -64,11 +64,11 @@ func runUnitMutationSources(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return errors.New("name a unit, or pass --where to read many")
 	}
-	unit, err := apiGetUnitFromSlugInSpace(args[0], selectedSpaceID, "UnitID,SpaceID,Slug")
+	unit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID,Slug")
 	if err != nil {
 		return err
 	}
-	mutationSources, err := fetchUnitMutationSources(unit.SpaceID, unit.UnitID)
+	mutationSources, err := fetchUnitMutationSources(unit.Unit.SpaceID, unit.Unit.UnitID)
 	if err != nil {
 		return err
 	}

@@ -88,7 +88,7 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 		return entity, funcs, fmt.Errorf("cannot use --space '*' with --target, --worker, or --unit flags")
 	}
 	if targetSlug != "" {
-		targetDetails, err := apiGetTargetFromSlug(targetSlug, selectedSpaceID, "") // default select is fine
+		targetDetails, err := resolveTarget(targetSlug, selectedSpaceID, "") // default select is fine
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get target '%s': %w", targetSlug, err)
 		}
@@ -98,23 +98,23 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 		params.Id = &targetIDStr
 		entity = targetIDStr
 	} else if workerSlug != "" {
-		workerDetails, err := apiGetBridgeWorkerFromSlug(workerSlug, "") // default select is fine
+		workerDetails, err := resolveWorker(workerSlug, selectedSpaceID, "") // default select is fine
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get worker '%s': %w", workerSlug, err)
 		}
 		entityType := "worker"
 		params.Entity = &entityType
-		workerIDStr := workerDetails.BridgeWorkerID.String()
+		workerIDStr := workerDetails.BridgeWorker.BridgeWorkerID.String()
 		params.Id = &workerIDStr
 		entity = workerIDStr
 	} else if unitSlug != "" {
-		unitDetails, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields
+		unitDetails, err := resolveUnit(unitSlug, selectedSpaceID, "*") // get all fields
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
 		}
 		entityType := "unit"
 		params.Entity = &entityType
-		unitIDStr := unitDetails.UnitID.String()
+		unitIDStr := unitDetails.Unit.UnitID.String()
 		params.Id = &unitIDStr
 		entity = unitIDStr
 	}

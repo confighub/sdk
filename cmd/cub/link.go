@@ -109,15 +109,15 @@ func makeCurrentPointers(fromUnit, toUnit *goclientnew.Unit) (upstream, downstre
 // resolveMakeCurrentPointers fetches an existing link's two Units and returns the
 // pointers that would make it current.
 func resolveMakeCurrentPointers(link *goclientnew.Link) (upstream, downstream int64, err error) {
-	fromUnit, err := apiGetUnitInSpace(link.FromUnitID.String(), link.SpaceID.String(), "*")
+	fromUnit, err := resolveUnit(link.FromUnitID.String(), link.SpaceID.String(), "*")
 	if err != nil {
 		return 0, 0, err
 	}
-	toUnit, err := apiGetUnitInSpace(link.ToUnitID.String(), link.ToSpaceID.String(), "*")
+	toUnit, err := resolveUnit(link.ToUnitID.String(), link.ToSpaceID.String(), "*")
 	if err != nil {
 		return 0, 0, err
 	}
-	upstream, downstream = makeCurrentPointers(fromUnit, toUnit)
+	upstream, downstream = makeCurrentPointers(fromUnit.Unit, toUnit.Unit)
 	return upstream, downstream, nil
 }
 
@@ -183,7 +183,7 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 		link.DownstreamLastMergedRevisionNum = linkDownstreamLastMergedRevision
 	}
 	if linkTransformInvocation != "" {
-		id, err := parseInvocationSlug(linkTransformInvocation)
+		id, err := resolveInvocationID(linkTransformInvocation)
 		if err != nil {
 			return fmt.Errorf("--transform-invocation: %w", err)
 		}
@@ -255,7 +255,7 @@ func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
 		if linkTransformInvocation == "" {
 			link.TransformInvocationID = nil
 		} else {
-			id, err := parseInvocationSlug(linkTransformInvocation)
+			id, err := resolveInvocationID(linkTransformInvocation)
 			if err != nil {
 				return fmt.Errorf("--transform-invocation: %w", err)
 			}
@@ -328,7 +328,7 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		if cmd.Flags().Changed("transform-invocation") {
 			if linkTransformInvocation == "" {
 				patchMap["TransformInvocationID"] = nil
-			} else if id, err := parseInvocationSlug(linkTransformInvocation); err == nil {
+			} else if id, err := resolveInvocationID(linkTransformInvocation); err == nil {
 				patchMap["TransformInvocationID"] = id.String()
 			}
 		}

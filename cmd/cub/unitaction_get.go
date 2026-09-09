@@ -36,19 +36,19 @@ func unitActionGetRun(cmd *cobra.Command, args []string) error {
 	slug := args[0]
 	identifier := args[1]
 
-	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
+	u, err := resolveUnit(slug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
 	var action *goclientnew.UnitAction
 	if actionUUID, uuidErr := uuid.Parse(identifier); uuidErr == nil {
-		action, err = apiGetUnitAction(uuid.MustParse(selectedSpaceID), u.UnitID, actionUUID)
+		action, err = apiGetUnitAction(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, actionUUID)
 		if err != nil {
 			return err
 		}
 	} else if num, numErr := strconv.ParseInt(identifier, 10, 64); numErr == nil {
-		action, err = apiGetUnitActionFromNum(uuid.MustParse(selectedSpaceID), u.UnitID, num)
+		action, err = apiGetUnitActionFromNum(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, num)
 		if err != nil {
 			return err
 		}

@@ -30,11 +30,11 @@ import (
 // upload. A missing Space is not an error: it is the ordinary first-upload
 // case, so the lookup failure is reported as "no units" rather than propagated.
 func uploadSpaceHasUnits(spaceSlug string) bool {
-	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug")
+	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
 	if err != nil || space == nil {
 		return false
 	}
-	units, err := apiListUnits(space.SpaceID.String(), "", "UnitID,Slug")
+	units, err := apiListUnits(space.Space.SpaceID.String(), "", "UnitID,Slug")
 	if err != nil {
 		return false
 	}
@@ -226,11 +226,11 @@ func uploadScaffolding(spaceSlug string, plan *upload.Plan, a *variantUploadOpti
 // existingLinkPairs returns the from→to Unit slug pairs already linked in the
 // Space, so a re-upload re-asserts only the links that are genuinely missing.
 func existingLinkPairs(spaceSlug string) (map[string]bool, error) {
-	space, err := apiGetSpaceFromSlug(spaceSlug, "SpaceID,Slug")
+	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
 	if err != nil {
 		return nil, err
 	}
-	links, err := apiListLinks(space.SpaceID.String(), "", "", "")
+	links, err := apiListLinks(space.Space.SpaceID.String(), "", "", "")
 	if err != nil {
 		return nil, err
 	}

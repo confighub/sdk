@@ -10,7 +10,6 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -101,11 +100,13 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--filter, --where, or --worker can only be specified with --patch")
 	}
 
-	currentBridgeworker, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for RMW
+	currentBridgeworkerEnvelope, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
-	spaceID := uuid.MustParse(selectedSpaceID)
+
+	currentBridgeworker := currentBridgeworkerEnvelope.BridgeWorker
+	spaceID := currentBridgeworker.SpaceID
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingBridgeworker := currentBridgeworker
@@ -161,12 +162,13 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
-	currentWorker, err := apiGetBridgeWorkerFromSlug(args[0], "*")
+	currentWorkerEnvelope, err := resolveWorker(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
+	currentWorker := currentWorkerEnvelope.BridgeWorker
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentWorker.SpaceID
 
 	// Build patch data using consolidated function
 	patchJSON, err := BuildPatchDataWithPermissions(workerPatchEnhancer, workerUpdatePermissions)

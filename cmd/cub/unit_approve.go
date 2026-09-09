@@ -97,7 +97,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 	// Handle entity type-specific parsing
 	if entityType == "Tag" {
 		// Parse tag slug/ID and convert to UUID
-		tagUUID, err := parseTagSlug(identifier)
+		tagUUID, err := resolveTagID(identifier)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 		}
@@ -106,7 +106,7 @@ func parseApproveRevisionParameter(revision string) (*string, error) {
 
 	} else if entityType == "ChangeSet" {
 		// Parse changeset slug/ID and convert to UUID
-		changesetUUID, err := parseChangeSetSlug(identifier)
+		changesetUUID, err := resolveChangeSetID(identifier)
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
 		}
@@ -245,7 +245,7 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single unit approve logic
-	configUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	configUnit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
@@ -262,13 +262,13 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 		params.Revision = revisionParam
 	}
 
-	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, params)
+	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, params)
 	if cubapi.IsAPIError(err, approveRes) {
 		return cubapi.InterpretErrorGeneric(err, approveRes)
 	}
 
 	if !quiet {
-		fmt.Printf("Unit %s (%s) has been approved\n", args[0], configUnit.UnitID.String())
+		fmt.Printf("Unit %s (%s) has been approved\n", args[0], configUnit.Unit.UnitID.String())
 	}
 
 	// Wait for triggers to complete if --wait is specified
@@ -278,10 +278,11 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 			approvedUnit = approveRes.JSON200.Unit
 		} else {
 			// Fallback: re-fetch the unit
-			approvedUnit, err = apiGetUnitInSpace(configUnit.UnitID.String(), selectedSpaceID, "*")
+			resolved, err := resolveUnit(configUnit.Unit.UnitID.String(), selectedSpaceID, "*")
 			if err != nil {
 				return err
 			}
+			approvedUnit = resolved.Unit
 		}
 		tprint("Awaiting triggers...")
 		return awaitTriggersRemoval(approvedUnit)

@@ -489,8 +489,8 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 	return derefPtrs(res.JSON200), nil
 }
 
-// ListMarkedUnits returns the units a trigger has marked -- ApplyWarnings from an
-// advisory rule, ApplyGates from a blocking one -- for the given toolchain type,
+// ListMarkedUnits returns the units a trigger has marked -- ValidationWarnings from an
+// advisory rule, ValidationErrors from a blocking one -- for the given toolchain type,
 // deduplicated. Pass an empty toolchain for every toolchain.
 //
 // It takes two queries because a `where` expression is a flat conjunction: there
@@ -502,9 +502,9 @@ func ListMarkedUnits(ctx context.Context, c *Client, toolchain string) ([]*gocli
 	}
 	seen := map[goclientnew.UUID]bool{}
 	var marked []*goclientnew.ExtendedUnit
-	for _, cond := range []string{"LEN(ApplyWarnings) > 0", "LEN(ApplyGates) > 0"} {
+	for _, cond := range []string{"LEN(ValidationWarnings) > 0", "LEN(ValidationErrors) > 0"} {
 		units, err := ListUnits(ctx, c, base.And(cond),
-			ListOpts{Include: "SpaceID", Select: "UnitID,Slug,SpaceID,ApplyWarnings,ApplyGates"})
+			ListOpts{Include: "SpaceID", Select: "UnitID,Slug,SpaceID,ValidationWarnings,ValidationErrors"})
 		if err != nil {
 			return nil, err
 		}
@@ -545,113 +545,6 @@ func CountTriggers(ctx context.Context, c *Client, spaceID goclientnew.UUID) (in
 		return 0, err
 	}
 	return len(triggers), nil
-}
-
-// ResolveSpace looks up a single space by slug and returns its core record. It
-// errors if no space (or more than one) matches.
-func ResolveSpace(ctx context.Context, c *Client, slug string) (*goclientnew.Space, error) {
-	spaces, err := ListSpaces(ctx, c, NewWhere("").Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	matches := make([]*goclientnew.Space, 0, 1)
-	for _, es := range spaces {
-		if es.Space != nil && es.Space.Slug == slug {
-			matches = append(matches, es.Space)
-		}
-	}
-	switch len(matches) {
-	case 0:
-		return nil, fmt.Errorf("space %q not found", slug)
-	case 1:
-		return matches[0], nil
-	default:
-		return nil, fmt.Errorf("ambiguous: %d spaces named %q", len(matches), slug)
-	}
-}
-
-// ResolveFilter finds a single Filter by slug within a space.
-func ResolveFilter(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Filter, error) {
-	filters, err := ListFilters(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, ef := range filters {
-		if ef.Filter != nil && ef.Filter.Slug == slug {
-			return ef.Filter, nil
-		}
-	}
-	return nil, fmt.Errorf("filter %q not found in space %s", slug, spaceID.String())
-}
-
-// ResolveTrigger finds a single Trigger by slug within a space.
-func ResolveTrigger(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Trigger, error) {
-	triggers, err := ListTriggers(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, et := range triggers {
-		if et.Trigger != nil && et.Trigger.Slug == slug {
-			return et.Trigger, nil
-		}
-	}
-	return nil, fmt.Errorf("trigger %q not found in space %s", slug, spaceID.String())
-}
-
-// ResolveTarget finds a single Target by slug within a space.
-func ResolveTarget(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Target, error) {
-	targets, err := ListTargets(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, et := range targets {
-		if et.Target != nil && et.Target.Slug == slug {
-			return et.Target, nil
-		}
-	}
-	return nil, fmt.Errorf("target %q not found in space %s", slug, spaceID.String())
-}
-
-// ResolveBridgeWorker finds a single worker by slug within a space.
-func ResolveBridgeWorker(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.BridgeWorker, error) {
-	workers, err := ListBridgeWorkers(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, ew := range workers {
-		if ew.BridgeWorker != nil && ew.BridgeWorker.Slug == slug {
-			return ew.BridgeWorker, nil
-		}
-	}
-	return nil, fmt.Errorf("worker %q not found in space %s", slug, spaceID.String())
-}
-
-// ResolveAttribute finds a single Attribute by slug within a space.
-func ResolveAttribute(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Attribute, error) {
-	attributes, err := ListAttributes(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, ea := range attributes {
-		if ea.Attribute != nil && ea.Attribute.Slug == slug {
-			return ea.Attribute, nil
-		}
-	}
-	return nil, fmt.Errorf("attribute %q not found in space %s", slug, spaceID.String())
-}
-
-// ResolveInvocation finds a single stored Invocation by slug within a space.
-func ResolveInvocation(ctx context.Context, c *Client, spaceID goclientnew.UUID, slug string) (*goclientnew.Invocation, error) {
-	invs, err := ListInvocations(ctx, c, Where{}.SpaceID(spaceID).Slug(slug), ListOpts{})
-	if err != nil {
-		return nil, err
-	}
-	for _, ei := range invs {
-		if ei.Invocation != nil && ei.Invocation.Slug == slug {
-			return ei.Invocation, nil
-		}
-	}
-	return nil, fmt.Errorf("invocation %q not found in space %s", slug, spaceID.String())
 }
 
 // SpaceSlugByID returns a map from space UUID to slug for the whole organization,

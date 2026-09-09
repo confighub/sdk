@@ -162,11 +162,11 @@ func k8sSourceCmdRun(cmd *cobra.Command, args []string) error {
 	// The combined origin annotation carries the UnitID directly; the legacy
 	// discrete annotations do not, so fall back to a lookup by slug in that case.
 	if unitID == "" {
-		unit, unitErr := apiGetUnitFromSlugInSpace(unitSlug, spaceID, "UnitID")
+		unit, unitErr := resolveUnit(unitSlug, spaceID, "UnitID")
 		if unitErr != nil {
 			return fmt.Errorf("failed to get unit %s in space %s: %w", unitSlug, spaceID, unitErr)
 		}
-		unitID = unit.UnitID.String()
+		unitID = unit.Unit.UnitID.String()
 	}
 
 	// Build the unit URL

@@ -95,10 +95,6 @@ func checkChangeSetUpdateConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -188,12 +184,14 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single changeset update requires exactly one argument: <slug or id>")
 	}
 
-	currentChangeSet, err := apiGetChangeSetFromSlug(args[0], "*") // get all fields for RMW
+	currentChangeSetEnvelope, err := resolveChangeSet(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentChangeSet := currentChangeSetEnvelope.ChangeSet
+
+	spaceID := currentChangeSet.SpaceID
 
 	if changesetPatch {
 		// Single changeset patch mode

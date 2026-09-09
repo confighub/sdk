@@ -71,7 +71,7 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 		return false, nil
 	}
 
-	appsSpace, err := apiGetSpaceFromSlug(appsSpaceSlug, "SpaceID")
+	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
 		return false, fmt.Errorf("resolve argo-apps space %q from target annotation: %w", appsSpaceSlug, err)
 	}
@@ -80,7 +80,7 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 	// slug (also the Argo CD Application name). With --allow-exists, re-running
 	// against an existing deployment is a no-op rather than a conflict.
 	if allowExists {
-		if existing, _ := apiGetUnitFromSlugInSpace(variantSpace.Slug, appsSpace.SpaceID.String(), "UnitID"); existing != nil {
+		if existing, _ := resolveUnit(variantSpace.Slug, appsSpace.Space.SpaceID.String(), "UnitID"); existing != nil {
 			if !jsonOutput {
 				fmt.Fprintf(out, "Argo CD Application Unit %q already exists in apps space %q; skipping.\n", variantSpace.Slug, appsSpaceSlug)
 			}
@@ -105,7 +105,7 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 		fmt.Fprintf(out, "Creating Argo CD Application Unit %q in apps space %q...\n", variantSpace.Slug, appsSpaceSlug)
 	}
 	manifest := variantArgoAppManifest(variantSpace.Slug, repoURL)
-	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug, manifest)
+	unitID, err := clusterCreateK8sYAMLUnit(appsSpace.Space.SpaceID, targetID, variantSpace.Slug, variantSpace.Slug, manifest)
 	if err != nil {
 		return false, fmt.Errorf("create Argo Application unit: %w", err)
 	}
@@ -113,13 +113,13 @@ func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpac
 	// Republish the apps Space's Release so the root app-of-apps picks up the
 	// new Application on its next sync. Wait for the new Unit's triggers to
 	// settle first so the published bundle carries its post-trigger revision.
-	if err := clusterWaitUnitTriggers(appsSpace.SpaceID, unitID); err != nil {
+	if err := clusterWaitUnitTriggers(appsSpace.Space.SpaceID, unitID); err != nil {
 		return false, err
 	}
 	if !jsonOutput {
 		fmt.Fprintf(out, "Publishing apps space %q Release...\n", appsSpaceSlug)
 	}
-	if err := clusterPublishRelease(appsSpace.SpaceID); err != nil {
+	if err := clusterPublishRelease(appsSpace.Space.SpaceID); err != nil {
 		return false, err
 	}
 	if !jsonOutput {

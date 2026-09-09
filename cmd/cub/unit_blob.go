@@ -77,17 +77,17 @@ func unitBlobField(u *goclientnew.Unit, field string) (string, error) {
 // by slug and reads the blob from its own endpoint, so the metadata request carries only
 // what it needs to identify the Unit -- the blob is not a field to select any more.
 func runUnitBlob(unitSlugOrID, section, selectField string) error {
-	unit, err := apiGetUnitFromSlugInSpace(unitSlugOrID, selectedSpaceID, "UnitID,SpaceID,Slug")
+	unit, err := resolveUnit(unitSlugOrID, selectedSpaceID, "UnitID,SpaceID,Slug")
 	if err != nil {
 		return fmt.Errorf("failed to get unit: %w", err)
 	}
 
-	raw, err := unitBlobField(unit, selectField)
+	raw, err := unitBlobField(unit.Unit, selectField)
 	if err != nil {
 		return err
 	}
 	if raw == "" {
-		return fmt.Errorf("no %s found for unit: %s", section, unit.Slug)
+		return fmt.Errorf("no %s found for unit: %s", section, unit.Unit.Slug)
 	}
 
 	out := []byte(raw)

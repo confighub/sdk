@@ -89,7 +89,7 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 	// args[0] is a Space slug (a Space ID is also accepted); resolve it to the
 	// Space whose Units are bundled. The consuming Target is the Space's
 	// ReleaseTargetID, resolved server-side.
-	space, err := apiGetSpaceFromSlug(args[0], "SpaceID")
+	space, err := resolveSpace(args[0], "SpaceID")
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		body.TagID = &tagID
 	}
 
-	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.SpaceID, body)
+	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.Space.SpaceID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}

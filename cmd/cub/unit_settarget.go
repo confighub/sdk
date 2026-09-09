@@ -69,12 +69,7 @@ func createTargetPatch(targetSlug string) ([]byte, error) {
 		targetID = uuid.Nil
 	} else {
 		// Use parseEntityIdentifierSingle to support cross-space target lookup
-		id, err := parseEntityIdentifierSingle[goclientnew.Target](
-			targetSlug,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		id, err := resolveTargetID(targetSlug)
 		if err != nil {
 			return nil, err
 		}
@@ -94,7 +89,7 @@ func createTargetPatch(targetSlug string) ([]byte, error) {
 
 func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 	newParams := &goclientnew.PatchUnitParams{}
-	configUnit, err := apiGetUnitFromSlug(unitSlug, "*") // get all fields for RMW
+	configUnit, err := resolveUnit(unitSlug, selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
@@ -107,7 +102,7 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,
 		uuid.MustParse(selectedSpaceID),
-		configUnit.UnitID,
+		configUnit.Unit.UnitID,
 		newParams,
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),

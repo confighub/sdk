@@ -4,11 +4,7 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -32,11 +28,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(changesetGetCmd)
+	enableOptionalSpace(changesetGetCmd)
 	changesetCmd.AddCommand(changesetGetCmd)
 }
 
 func changesetGetCmdRun(cmd *cobra.Command, args []string) error {
-	changesetDetails, err := apiGetExtendedChangeSetFromSlug(args[0], selectFields)
+	changesetDetails, err := resolveChangeSet(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -91,79 +88,4 @@ func displayExtendedChangeSetDetails(extendedChangeSet *goclientnew.ExtendedChan
 	}
 
 	view.Render()
-}
-
-func apiGetChangeSet(changesetID string, selectParam string) (*goclientnew.ChangeSet, error) {
-	extendedChangeSet, err := apiGetExtendedChangeSet(changesetID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedChangeSet.ChangeSet, nil
-}
-
-func apiGetExtendedChangeSet(changesetID string, selectParam string) (*goclientnew.ExtendedChangeSet, error) {
-	newParams := &goclientnew.GetChangeSetParams{}
-	include := "SpaceID,StartTagID,EndTagID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	changesetRes, err := cubClientNew.GetChangeSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(changesetID), newParams)
-	if cubapi.IsAPIError(err, changesetRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, changesetRes)
-	}
-	return changesetRes.JSON200, nil
-}
-
-func apiGetChangeSetFromSlug(slug string, selectParam string) (*goclientnew.ChangeSet, error) {
-	return apiGetChangeSetFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetChangeSetFromSlugWithSpace(slug string, selectParam string, spaceID string) (*goclientnew.ChangeSet, error) {
-	return apiGetChangeSetFromSlugInSpace(slug, spaceID, selectParam)
-}
-
-func apiGetChangeSetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ChangeSet, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetChangeSet(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	changesets, err := apiListChangeSets(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find changeset by slug
-	for _, changeset := range changesets {
-		if changeset.ChangeSet != nil && changeset.ChangeSet.Slug == slug {
-			return changeset.ChangeSet, nil
-		}
-	}
-	return nil, fmt.Errorf("changeset %s not found in space %s", slug, spaceID)
-}
-
-func apiGetExtendedChangeSetFromSlug(slug string, selectParam string) (*goclientnew.ExtendedChangeSet, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedChangeSet(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	changesets, err := apiListChangeSets(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find changeset by slug
-	for _, changeset := range changesets {
-		if changeset.ChangeSet != nil && changeset.ChangeSet.Slug == slug {
-			return changeset, nil
-		}
-	}
-	return nil, fmt.Errorf("changeset %s not found in space %s", slug, selectedSpaceID)
 }

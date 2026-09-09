@@ -89,17 +89,17 @@ func unitActionListRun(cmd *cobra.Command, args []string) error {
 	}
 
 	slug := args[0]
-	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
+	u, err := resolveUnit(slug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	actions, err := apiListUnitActions(uuid.MustParse(selectedSpaceID), u.UnitID, where, filterID)
+	actions, err := apiListUnitActions(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, where, filterID)
 	if err != nil {
 		return err
 	}
 
-	unitActionUnitLookup = map[uuid.UUID]*goclientnew.Unit{u.UnitID: u}
+	unitActionUnitLookup = map[uuid.UUID]*goclientnew.Unit{u.Unit.UnitID: u.Unit}
 	unitActionUserLookup, err = fetchUsersForActions(actions)
 	if err != nil {
 		return err

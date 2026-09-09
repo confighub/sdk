@@ -234,11 +234,11 @@ func runSingleFilterCreate(args []string) error {
 		newBody.ResourceType = filterCreateArgs.resourceType
 	}
 	if filterCreateArgs.fromSpace != "" {
-		fromSpace, err := apiGetSpaceFromSlug(filterCreateArgs.fromSpace, "SpaceID")
+		fromSpace, err := resolveSpace(filterCreateArgs.fromSpace, "SpaceID")
 		if err != nil {
 			return err
 		}
-		newBody.FromSpaceID = &fromSpace.SpaceID
+		newBody.FromSpaceID = &fromSpace.Space.SpaceID
 	}
 
 	// Create params with AllowExists if needed
@@ -282,11 +282,11 @@ func runBulkFilterCreate() error {
 
 	var fromSpaceID uuid.UUID
 	if filterCreateArgs.fromSpace != "" {
-		fromSpace, err := apiGetSpaceFromSlug(filterCreateArgs.fromSpace, "SpaceID")
+		fromSpace, err := resolveSpace(filterCreateArgs.fromSpace, "SpaceID")
 		if err != nil {
 			return err
 		}
-		fromSpaceID = fromSpace.SpaceID
+		fromSpaceID = fromSpace.Space.SpaceID
 	}
 
 	enhancer := func(patchMap map[string]interface{}) {

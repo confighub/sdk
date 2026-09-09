@@ -136,22 +136,21 @@ func k8sRefreshCmdRun(_ *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to serialize the cleaned %s %s: %w", resourceType, name, err)
 	}
 
-	unit, err := apiGetUnitFromSlugInSpace(unitSlug, spaceID,
-		"UnitID,SpaceID,Slug,LastReleasedRevisionNum")
+	unit, err := resolveUnit(unitSlug, spaceID, "UnitID,SpaceID,Slug,LastReleasedRevisionNum")
 	if err != nil {
 		return fmt.Errorf("failed to get unit %s in space %s: %w", unitSlug, spaceID, err)
 	}
-	if unit.LastReleasedRevisionNum == 0 {
-		return fmt.Errorf("unit %s has never been released, so there is no revision to compare the cluster against", unit.Slug)
+	if unit.Unit.LastReleasedRevisionNum == 0 {
+		return fmt.Errorf("unit %s has never been released, so there is no revision to compare the cluster against", unit.Unit.Slug)
 	}
 
-	releasedRevision, err := apiGetRevisionFromNumberInSpace(unit.LastReleasedRevisionNum, unit.UnitID.String(), spaceID, "RevisionID")
+	releasedRevision, err := apiGetRevisionFromNumberInSpace(unit.Unit.LastReleasedRevisionNum, unit.Unit.UnitID.String(), spaceID, "RevisionID")
 	if err != nil {
-		return fmt.Errorf("failed to get revision %d of unit %s: %w", unit.LastReleasedRevisionNum, unit.Slug, err)
+		return fmt.Errorf("failed to get revision %d of unit %s: %w", unit.Unit.LastReleasedRevisionNum, unit.Unit.Slug, err)
 	}
-	releasedData, err := fetchRevisionData(unit.SpaceID, unit.UnitID, releasedRevision.RevisionID)
+	releasedData, err := fetchRevisionData(unit.Unit.SpaceID, unit.Unit.UnitID, releasedRevision.RevisionID)
 	if err != nil {
-		return fmt.Errorf("failed to read revision %d of unit %s: %w", unit.LastReleasedRevisionNum, unit.Slug, err)
+		return fmt.Errorf("failed to read revision %d of unit %s: %w", unit.Unit.LastReleasedRevisionNum, unit.Unit.Slug, err)
 	}
 
 	drift, err := computeClusterDrift(releasedData, string(liveData), resourceType, name)
@@ -161,12 +160,12 @@ func k8sRefreshCmdRun(_ *cobra.Command, args []string) error {
 	if len(drift) == 0 {
 		if !quiet {
 			tprint("%s %s matches revision %d of unit %s; nothing to refresh",
-				resourceType, name, unit.LastReleasedRevisionNum, unit.Slug)
+				resourceType, name, unit.Unit.LastReleasedRevisionNum, unit.Unit.Slug)
 		}
 		return nil
 	}
 
-	return applyClusterDrift(unit, spaceID, resourceType, name, drift)
+	return applyClusterDrift(unit.Unit, spaceID, resourceType, name, drift)
 }
 
 // computeClusterDrift diffs the released revision against the cleaned live resource and

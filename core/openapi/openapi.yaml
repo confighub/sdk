@@ -2420,7 +2420,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2471,7 +2471,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -2586,7 +2586,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2637,7 +2637,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -2747,7 +2747,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2798,7 +2798,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -2854,6 +2854,11 @@ paths:
                     type: string
                   nullable: true
                   type: array
+                InvocationID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -2863,8 +2868,17 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Parameters:
+                  description: ""
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 UpdateType:
@@ -2876,6 +2890,10 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -2979,7 +2997,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3030,7 +3048,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -3177,6 +3195,11 @@ paths:
                     type: string
                   nullable: true
                   type: array
+                InvocationID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -3186,8 +3209,17 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Parameters:
+                  description: ""
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 UpdateType:
@@ -3199,6 +3231,10 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -5151,6 +5187,20 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: ChangeOrder to promote, which must have UpdateType Invoke. What
+          runs then comes from the ChangeOrder rather than from the request body,
+          which may not carry functions, triggers or invocations of its own; that
+          is what holds every Space in scope to the same change. Only the Units the
+          ChangeOrder covers are reached, a Unit that has already taken it is passed
+          over, and every Unit reached is marked with the ChangeOrder's start and
+          end Tags -- both on the head, with no Revision made, where the invocation
+          changed nothing. Not valid when invoked on Revisions.
+        in: query
+        name: change_order
+        required: false
+        schema:
+          format: uuid
+          type: string
       - description: User-defined category for the Mutation. Must be alphanumeric,
           at most 64 characters. The prefix 'ConfigHub' is reserved.
         in: query
@@ -5202,7 +5252,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -8916,7 +8966,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9015,7 +9065,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9134,7 +9184,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9233,7 +9283,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9351,7 +9401,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9450,7 +9500,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -11666,7 +11716,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, Labels, OrganizationID, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UpdateType, UpdatedAt.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -11717,7 +11767,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -11955,7 +12005,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for ChangeOrder are EndTagID, OrganizationID, RestoreTagID, SpaceID, StartTagID.
+          Supported attributes for ChangeOrder are EndTagID, InvocationID, OrganizationID, RestoreTagID, SpaceID, StartTagID, UnitFilterID.
 
           The whole string must be query-encoded.
         in: query
@@ -12096,6 +12146,11 @@ paths:
                     type: string
                   nullable: true
                   type: array
+                InvocationID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
                 Labels:
                   additionalProperties:
                     nullable: true
@@ -12105,8 +12160,17 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                Parameters:
+                  description: ""
+                  nullable: true
+                  type: object
                 Slug:
                   description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                UnitFilterID:
+                  description: ""
+                  format: uuid
                   nullable: true
                   type: string
                 UpdateType:
@@ -12118,6 +12182,10 @@ paths:
                     concurrency control. The value read must be sent in calls to Update.
                   nullable: true
                   type: integer
+                WhereUnit:
+                  description: ""
+                  nullable: true
+                  type: string
               type: object
       responses:
         "200":
@@ -13681,6 +13749,20 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: ChangeOrder to promote, which must have UpdateType Invoke. What
+          runs then comes from the ChangeOrder rather than from the request body,
+          which may not carry functions, triggers or invocations of its own; that
+          is what holds every Space in scope to the same change. Only the Units the
+          ChangeOrder covers are reached, a Unit that has already taken it is passed
+          over, and every Unit reached is marked with the ChangeOrder's start and
+          end Tags -- both on the head, with no Revision made, where the invocation
+          changed nothing. Not valid when invoked on Revisions.
+        in: query
+        name: change_order
+        required: false
+        schema:
+          format: uuid
+          type: string
       - description: User-defined category for the Mutation. Must be alphanumeric,
           at most 64 characters. The prefix 'ConfigHub' is reserved.
         in: query
@@ -13732,7 +13814,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -15523,7 +15605,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
-          description: A Unit to be bundled has outstanding apply gates
+          description: A Unit to be bundled has outstanding validation errors
         "500":
           content:
             application/json:
@@ -17565,7 +17647,7 @@ paths:
 
             Triggers can be either validating (checking configuration validity without modifying it)
             or mutating (making changes to the configuration). They can be disabled, and validating
-            triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
+            triggers can be set to Warn mode to produce non-blocking ValidationWarnings instead of ValidationErrors.
         "400":
           content:
             application/json:
@@ -17951,7 +18033,7 @@ paths:
 
             Triggers can be either validating (checking configuration validity without modifying it)
             or mutating (making changes to the configuration). They can be disabled, and validating
-            triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
+            triggers can be set to Warn mode to produce non-blocking ValidationWarnings instead of ValidationErrors.
         "400":
           content:
             application/json:
@@ -18035,7 +18117,7 @@ paths:
 
             Triggers can be either validating (checking configuration validity without modifying it)
             or mutating (making changes to the configuration). They can be disabled, and validating
-            triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
+            triggers can be set to Warn mode to produce non-blocking ValidationWarnings instead of ValidationErrors.
         "400":
           content:
             application/json:
@@ -18128,7 +18210,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -20906,7 +20988,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -21005,7 +21087,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -21135,7 +21217,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -24980,7 +25062,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -25155,7 +25237,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -25384,7 +25466,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -25927,7 +26009,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26359,7 +26441,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26530,7 +26612,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26699,7 +26781,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27007,7 +27089,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27433,7 +27515,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -29819,12 +29901,21 @@ components:
             it propagates into, supplied by the client rather than derived from a
             query. Empty names a change without saying where it is headed, in which
             case the Spaces the ChangeOrder''s Links reach when its scope is derived
-            are recorded instead. ResolvedSpaceIDs and ReleasedSpaceIDs are measured
-            against it. Editing it re-derives what the ChangeOrder covers.'
+            are recorded instead; an Invoke ChangeOrder has no Links to fall back
+            on and requires a non-empty list. ResolvedSpaceIDs and ReleasedSpaceIDs
+            are measured against it. Editing it re-derives what the ChangeOrder covers.'
           items:
             $ref: '#/components/schemas/UUID'
           type: array
           x-go-type-skip-optional-pointer: true
+        InvocationID:
+          description: 'InvocationID is the Invocation an Invoke ChangeOrder runs.
+            Required for that UpdateType and refused for the others. Naming it here
+            is what makes every Space in scope receive the same update: the invoke
+            API takes what it runs from the ChangeOrder. Immutable.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         Labels:
           additionalProperties:
             maxLength: 128
@@ -29840,6 +29931,14 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+          x-go-type-skip-optional-pointer: true
+        Parameters:
+          additionalProperties: {}
+          description: Parameters supplies values for the declared Parameters of a
+            parameterized Invocation, keyed by parameter name, validated against the
+            declaration the way ParameterizedInvocations are on a direct call. One
+            set for the whole ChangeOrder, not one per Space. Immutable.
+          type: object
           x-go-type-skip-optional-pointer: true
         ReleasedRestoredSpaceIDs:
           description: 'ReleasedRestoredSpaceIDs is where the undoing has been released:
@@ -29864,7 +29963,10 @@ components:
         ResolvedSpaceIDs:
           description: 'ResolvedSpaceIDs is where the ChangeOrder has been fully propagated
             to: the Spaces in scope whose Links of its UpdateType have all merged
-            it, plus the Space it resides in. Derived when the ChangeOrder is read.'
+            it, plus the Space it resides in. For an Invoke ChangeOrder it is the
+            Spaces in scope where every Unit WhereUnit selects carries the end Tag,
+            and its own Space counts only if it is one of them. Derived when the ChangeOrder
+            is read.'
           items:
             $ref: '#/components/schemas/UUID'
           readOnly: true
@@ -29935,10 +30037,19 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        UnitFilterID:
+          description: UnitFilterID references a Filter (with From=Unit) narrowing
+            the same selection as WhereUnit, conjoined with it. Refused on the other
+            UpdateTypes. Immutable.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         UpdateType:
-          description: UpdateType is the Link UpdateType this ChangeOrder follows
-            when propagating. UpgradeUnit, the clone lineage, is the default; MergeUnits
-            is the other supported value.
+          description: 'UpdateType is how this ChangeOrder propagates. UpgradeUnit,
+            the clone lineage, is the default, and MergeUnits is the other Link type
+            it follows; both take the change from Revisions the source Unit already
+            has. Invoke is the third: the change is one Invocation run in each Space
+            in scope, and the ChangeOrder is created before any of it has happened.'
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -29955,6 +30066,13 @@ components:
           format: int64
           readOnly: false
           type: integer
+          x-go-type-skip-optional-pointer: true
+        WhereUnit:
+          description: WhereUnit narrows which Units of each Space in scope an Invoke
+            ChangeOrder covers, and is refused on the other UpdateTypes. Empty covers
+            every Unit. Unlike InScopeSpaceIDs it is asked again on every read, so
+            a Unit added to a Space afterwards counts against that Space. Immutable.
+          type: string
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
@@ -30248,6 +30366,8 @@ components:
           $ref: '#/components/schemas/Tag'
         Error:
           $ref: '#/components/schemas/ResponseError'
+        Invocation:
+          $ref: '#/components/schemas/Invocation'
         Organization:
           $ref: '#/components/schemas/Organization'
         RestoreTag:
@@ -30256,6 +30376,8 @@ components:
           $ref: '#/components/schemas/Space'
         StartTag:
           $ref: '#/components/schemas/Tag'
+        UnitFilter:
+          $ref: '#/components/schemas/Filter'
       type: object
     ExtendedChangeSet:
       properties:
@@ -30887,6 +31009,15 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         UpdateApplyGates:
+          deprecated: true
+          description: 'Deprecated: use UpdateValidationResults, which this means
+            the same thing as. Setting either has the same effect.'
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        UpdateValidationResults:
+          description: UpdateValidationResults indicates that the results of Trigger
+            execution should be used to update ValidationErrors and ValidationWarnings
+            on the affected Units. Requires Triggers to be specified.
           type: boolean
           x-go-type-skip-optional-pointer: true
         WhereResource:
@@ -32842,18 +32973,21 @@ components:
         ApplyGates:
           additionalProperties:
             type: boolean
-          description: A map of "<space slug>/<trigger slug>/<function name>" to true
-            of Triggers invoking validating functions that did not pass on the configuration
-            data at this Revision. These block Apply operations.
+          deprecated: true
+          description: 'Deprecated: use ValidationErrors, which this is a copy of.
+            Returned for compatibility with clients written before the field was renamed;
+            it cannot be set.'
+          readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
         ApplyWarnings:
           additionalProperties:
             type: boolean
-          description: A map of "<space slug>/<trigger slug>/<function name>" to true
-            of Triggers with Warn=true invoking validating functions that did not
-            pass on the configuration data at this Revision. These do not block Apply
-            operations.
+          deprecated: true
+          description: 'Deprecated: use ValidationWarnings, which this is a copy of.
+            Returned for compatibility with clients written before the field was renamed;
+            it cannot be set.'
+          readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
         ApprovedBy:
@@ -32990,6 +33124,23 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
+          x-go-type-skip-optional-pointer: true
+        ValidationErrors:
+          additionalProperties:
+            type: boolean
+          description: A map of "<space slug>/<trigger slug>/<function name>" to true
+            of Triggers invoking validating functions that did not pass on the configuration
+            data at this Revision. These block Release operations.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ValidationWarnings:
+          additionalProperties:
+            type: boolean
+          description: A map of "<space slug>/<trigger slug>/<function name>" to true
+            of Triggers with Warn=true invoking validating functions that did not
+            pass on the configuration data at this Revision. These do not block Release
+            operations.
+          type: object
           x-go-type-skip-optional-pointer: true
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
@@ -33760,7 +33911,7 @@ components:
 
         Triggers can be either validating (checking configuration validity without modifying it)
         or mutating (making changes to the configuration). They can be disabled, and validating
-        triggers can be set to Warn mode to produce non-blocking ApplyWarnings instead of ApplyGates.
+        triggers can be set to Warn mode to produce non-blocking ValidationWarnings instead of ValidationErrors.
       properties:
         Annotations:
           additionalProperties:
@@ -33961,8 +34112,8 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         Warn:
-          description: Warn indicates whether this trigger produces ApplyWarnings
-            instead of ApplyGates when its validating function fails. ApplyWarnings
+          description: Warn indicates whether this trigger produces ValidationWarnings
+            instead of ValidationErrors when its validating function fails. ValidationWarnings
             are non-blocking.
           example: "false"
           type: boolean
@@ -34020,18 +34171,20 @@ components:
         ApplyGates:
           additionalProperties:
             type: boolean
-          description: A map of "<space slug>/<trigger slug>/<function name>" to true
-            of Triggers invoking validating functions that did not pass on the latest
-            configuration data. These block Apply operations.
+          deprecated: true
+          description: 'Deprecated: use ValidationErrors, which this is a copy of.
+            Returned for compatibility with clients written before the field was renamed;
+            it cannot be set.'
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
         ApplyWarnings:
           additionalProperties:
             type: boolean
-          description: A map of "<space slug>/<trigger slug>/<function name>" to true
-            of Triggers with Warn=true invoking validating functions that did not
-            pass on the latest configuration data. These do not block Apply operations.
+          deprecated: true
+          description: 'Deprecated: use ValidationWarnings, which this is a copy of.
+            Returned for compatibility with clients written before the field was renamed;
+            it cannot be set.'
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
@@ -34271,11 +34424,29 @@ components:
           format: uuid
           readOnly: true
           type: string
+        ValidationErrors:
+          additionalProperties:
+            type: boolean
+          description: A map of "<space slug>/<trigger slug>/<function name>" to true
+            of Triggers invoking validating functions that did not pass on the latest
+            configuration data. These block Release operations.
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
         ValidationResults:
           additionalProperties:
             $ref: '#/components/schemas/ValidationResultList'
           description: A map from gate/warning name to the list of validation results
             that caused the gate or warning.
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ValidationWarnings:
+          additionalProperties:
+            type: boolean
+          description: A map of "<space slug>/<trigger slug>/<function name>" to true
+            of Triggers with Warn=true invoking validating functions that did not
+            pass on the latest configuration data. These do not block Release operations.
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true

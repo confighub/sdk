@@ -108,10 +108,7 @@ func k8sPreRunE(cmd *cobra.Command, args []string) error {
 // k8sTargetWhereClause resolves each "space-slug/target-slug" to its UUID and
 // renders them as a TargetID IN clause.
 func k8sTargetWhereClause() (string, error) {
-	targets, err := parseEntityIdentifiersAsEntities(k8sQueryTargets, EntityTypeTarget, "TargetID",
-		apiGetTargetFromSlugInSpaceCore,
-		func(t *goclientnew.Target) string { return t.TargetID.String() },
-	)
+	targets, err := resolveTargetsCore(k8sQueryTargets, "TargetID")
 	if err != nil {
 		return "", err
 	}
@@ -409,6 +406,6 @@ func k8sSpaceSlugs() (map[uuid.UUID]string, error) {
 }
 
 // k8sUnitSelectFields are the Unit fields the wide and detail views show.
-const k8sUnitSelectFields = "UnitID,SpaceID,Slug,DisplayName,TargetID,Labels,ApplyGates," +
+const k8sUnitSelectFields = "UnitID,SpaceID,Slug,DisplayName,TargetID,Labels,ValidationErrors," +
 	"HeadRevisionNum,LastReleasedRevisionNum,UpstreamRevisionNum," +
 	"LastChangeDescription,UpdatedAt"

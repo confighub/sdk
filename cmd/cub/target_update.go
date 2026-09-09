@@ -124,12 +124,12 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--filter, --where, or --target can only be specified with --patch")
 	}
 
-	currentTarget, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "*") // get all fields for RMW
+	currentTarget, err := resolveTarget(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentTarget.Target.SpaceID
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingTarget := currentTarget.Target
@@ -226,12 +226,12 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 }
 
 func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
-	currentTarget, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "*")
+	currentTarget, err := resolveTarget(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentTarget.Target.SpaceID
 
 	// Parse TriggerFilterID if provided
 	var triggerFilterUUID *uuid.UUID

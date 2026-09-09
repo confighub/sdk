@@ -80,8 +80,8 @@ func init() {
 	addStandardUpdateFlags(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
-	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ApplyWarnings instead of ApplyGates")
-	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ApplyGates (default, use with --patch for bulk)")
+	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ValidationWarnings instead of ValidationErrors")
+	triggerUpdateCmd.Flags().BoolVar(&unwarnTrigger, "unwarn", false, "Set trigger to produce ValidationErrors (default, use with --patch for bulk)")
 	addTriggerClearanceFlag(triggerUpdateCmd)
 	addTriggerGuardFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&protectTrigger, "protect", false, "record the paths this trigger's function writes as protected local overrides, so a later merge from upstream does not overwrite them; for a trigger that decides a value the unit then owns, such as a PostClone trigger customizing a variant")
@@ -149,10 +149,6 @@ func checkTriggerConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -194,12 +190,7 @@ func runBulkTriggerUpdate() error {
 	// Validate and resolve entity references early
 	var workerUUID *uuid.UUID
 	if workerSlug != "" {
-		workerID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}
@@ -208,7 +199,7 @@ func runBulkTriggerUpdate() error {
 
 	var invocationIDStr string
 	if invocationSlug != "" {
-		invocationID, err := parseInvocationSlug(invocationSlug)
+		invocationID, err := resolveInvocationID(invocationSlug)
 		if err != nil {
 			return err
 		}
@@ -334,24 +325,19 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	currentTrigger, err := apiGetTriggerFromSlug(args[0], "*") // get all fields for RMW
+	currentTrigger, err := resolveTrigger(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentTrigger.Trigger.SpaceID
 
 	if triggerPatch {
 		// Single trigger patch mode
 		// Handle error-prone operations before enhancer
 		var workerID *goclientnew.UUID
 		if workerSlug != "" {
-			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-				workerSlug,
-				EntityTypeBridgeWorker,
-				apiGetBridgeWorkerFromSlugInSpace,
-				func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-			)
+			workerUUID, err := resolveWorkerID(workerSlug)
 			if err != nil {
 				return err
 			}
@@ -361,7 +347,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 		var invocationID *uuid.UUID
 		if invocationSlug != "" {
-			id, err := parseInvocationSlug(invocationSlug)
+			id, err := resolveInvocationID(invocationSlug)
 			if err != nil {
 				return err
 			}
@@ -524,12 +510,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.Guards = &fullGuards
 	}
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerUUID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}
@@ -544,7 +525,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if invocationSlug != "" {
 		// Use invocation instead of function and arguments
-		invocationID, err := parseInvocationSlug(invocationSlug)
+		invocationID, err := resolveInvocationID(invocationSlug)
 		if err != nil {
 			return err
 		}
@@ -566,12 +547,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.WhereUnit = triggerWhereUnit
 	}
 	if triggerUnitFilter != "" {
-		filterUUID, err := parseEntityIdentifierSingle[goclientnew.Filter](
-			triggerUnitFilter,
-			EntityTypeFilter,
-			apiGetFilterFromSlugInSpace,
-			func(f *goclientnew.Filter) string { return f.FilterID.String() },
-		)
+		filterUUID, err := resolveFilterID(triggerUnitFilter)
 		if err != nil {
 			return err
 		}

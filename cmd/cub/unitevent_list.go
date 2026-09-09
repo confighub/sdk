@@ -82,17 +82,17 @@ func unitEventListRun(cmd *cobra.Command, args []string) error {
 	}
 
 	slug := args[0]
-	u, err := apiGetUnitFromSlug(slug, "*") // get all fields for now
+	u, err := resolveUnit(slug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	events, err := apiListUnitEvents(uuid.MustParse(selectedSpaceID), u.UnitID, where, filterID)
+	events, err := apiListUnitEvents(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, where, filterID)
 	if err != nil {
 		return err
 	}
 
-	unitEventUnitLookup = map[uuid.UUID]*goclientnew.Unit{u.UnitID: u}
+	unitEventUnitLookup = map[uuid.UUID]*goclientnew.Unit{u.Unit.UnitID: u.Unit}
 	displayListResults(events, getUnitEventSlug, displayUnitEventList)
 	return nil
 }

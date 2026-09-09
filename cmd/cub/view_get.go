@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -33,11 +31,12 @@ Examples:
 
 func init() {
 	addStandardGetFlags(viewGetCmd)
+	enableOptionalSpace(viewGetCmd)
 	viewCmd.AddCommand(viewGetCmd)
 }
 
 func viewGetCmdRun(cmd *cobra.Command, args []string) error {
-	viewDetails, err := apiGetExtendedViewFromSlug(args[0], selectFields)
+	viewDetails, err := resolveView(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -162,83 +161,4 @@ func displayExtendedViewDetails(extendedView *goclientnew.ExtendedView) {
 	}
 
 	view.Render()
-}
-
-func apiGetView(viewID string, selectParam string) (*goclientnew.View, error) {
-	extendedView, err := apiGetExtendedView(viewID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedView.View, nil
-}
-
-func apiGetExtendedView(viewID string, selectParam string) (*goclientnew.ExtendedView, error) {
-	newParams := &goclientnew.GetViewParams{}
-	include := "SpaceID,FilterID"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	viewRes, err := cubClientNew.GetViewWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(viewID), newParams)
-	if cubapi.IsAPIError(err, viewRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, viewRes)
-	}
-	return viewRes.JSON200, nil
-}
-
-func apiGetViewFromSlug(slug string, selectParam string) (*goclientnew.View, error) {
-	return apiGetViewFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetExtendedViewFromSlug(slug string, selectParam string) (*goclientnew.ExtendedView, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetExtendedView(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	views, err := apiListViews(selectedSpaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find view by slug
-	for _, view := range views {
-		if view.View != nil && view.View.Slug == slug {
-			return view, nil
-		}
-	}
-	return nil, fmt.Errorf("view %s not found in space %s", slug, selectedSpaceID)
-}
-
-func apiGetViewFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.View, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetView(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	views, err := apiListViews(spaceID, "Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find view by slug
-	for _, view := range views {
-		if view.View != nil && view.View.Slug == slug {
-			return view.View, nil
-		}
-	}
-
-	// Get space slug for error message
-	spaceSlug := spaceID
-	if spaceUUID, err := uuid.Parse(spaceID); err == nil {
-		if space, err := apiGetSpace(spaceUUID.String(), "Slug"); err == nil && space != nil {
-			spaceSlug = space.Slug
-		}
-	}
-	return nil, fmt.Errorf("view %s not found in space %s", slug, spaceSlug)
 }

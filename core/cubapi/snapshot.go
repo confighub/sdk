@@ -38,7 +38,7 @@ const snapshotUnitInclude = "SpaceID,TargetID"
 // snapshotUnitSelect are the unit fields [UnitMeta] carries. Naming them keeps a
 // fleet-wide list from serializing every column of every unit, which is most of
 // what a snapshot costs.
-const snapshotUnitSelect = "UnitID,SpaceID,SpaceSlug,Slug,TargetID,Labels,ApplyGates,ApplyWarnings," +
+const snapshotUnitSelect = "UnitID,SpaceID,SpaceSlug,Slug,TargetID,Labels,ValidationErrors,ValidationWarnings," +
 	"HeadRevisionNum,LastReleasedRevisionNum,UpstreamRevisionNum,LastChangeDescription"
 
 // resourceOrderBy makes the fetch reproducible. An unordered query comes back in
@@ -88,7 +88,7 @@ type UnitMeta struct {
 	LastChangeDescription   string            `json:"lastChangeDescription,omitempty"`
 }
 
-// Gated reports whether the unit has any ApplyGates attached.
+// Gated reports whether the unit has any ValidationErrors attached.
 func (u UnitMeta) Gated() bool { return u.GateCount > 0 }
 
 // Unreleased reports whether the unit's head revision has not been captured by a
@@ -336,8 +336,8 @@ func newUnitMeta(eu *goclientnew.ExtendedUnit) UnitMeta {
 		SpaceID:                 eu.Unit.SpaceID.String(),
 		SpaceSlug:               eu.Unit.SpaceSlug,
 		Labels:                  eu.Unit.Labels,
-		GateCount:               len(eu.Unit.ApplyGates),
-		WarningCount:            len(eu.Unit.ApplyWarnings),
+		GateCount:               len(eu.Unit.ValidationErrors),
+		WarningCount:            len(eu.Unit.ValidationWarnings),
 		HeadRevisionNum:         eu.Unit.HeadRevisionNum,
 		LastReleasedRevisionNum: eu.Unit.LastReleasedRevisionNum,
 		UpstreamRevisionNum:     eu.Unit.UpstreamRevisionNum,

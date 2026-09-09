@@ -123,7 +123,7 @@ func init() {
 // - Negative numbers (relative to HeadRevisionNum): -1, -2, -3
 func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
 	// Get unit data (we'll need it for most cases)
-	unit, err := apiGetUnitFromSlug(unitSlug, "*")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "*")
 	if err != nil {
 		return 0, fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 	}
@@ -131,9 +131,9 @@ func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
 	// Check for API field names
 	switch revSpec {
 	case "HeadRevisionNum":
-		return unit.HeadRevisionNum, nil
+		return unit.Unit.HeadRevisionNum, nil
 	case "LastReleasedRevisionNum":
-		return unit.LastReleasedRevisionNum, nil
+		return unit.Unit.LastReleasedRevisionNum, nil
 	}
 
 	// Try parsing as a number (could be positive absolute or negative relative)
@@ -144,7 +144,7 @@ func resolveRevisionNumber(unitSlug string, revSpec string) (int64, error) {
 
 	// Handle negative numbers (relative to HeadRevisionNum)
 	if num < 0 {
-		resolved := unit.HeadRevisionNum + num
+		resolved := unit.Unit.HeadRevisionNum + num
 		if resolved < 1 {
 			return 0, fmt.Errorf("revision delta %d results in revision %d which is out of range (must be >= 1)", num, resolved)
 		}
@@ -433,7 +433,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Get the first unit
-	unit, err := apiGetUnitFromSlug(unitSlug, "*")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "*")
 	if err != nil {
 		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 	}
@@ -441,22 +441,17 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	// Get the second unit if --with-unit is specified (cross-unit diff)
 	var toUnit *goclientnew.Unit
 	if unitDiffArgs.withUnit != "" {
-		toUnit, err = parseEntityIdentifierSingleAsEntity[goclientnew.Unit](
-			unitDiffArgs.withUnit,
-			"unit",
-			"*",
-			apiGetUnitFromSlugInSpace,
-			func(u *goclientnew.Unit) string { return u.UnitID.String() },
-		)
+		resolved, err := resolveUnit(unitDiffArgs.withUnit, defaultSpaceID(), "*")
 		if err != nil {
 			return fmt.Errorf("failed to get second unit %s: %w", unitDiffArgs.withUnit, err)
 		}
+		toUnit = resolved.Unit
 	} else {
-		toUnit = unit
+		toUnit = unit.Unit
 	}
 
 	// Resolve revision numbers using parseSelectedRevisionParameter
-	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, serverResolvedRevision, unit.HeadRevisionNum)
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, serverResolvedRevision, unit.Unit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}
@@ -467,7 +462,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Resolve to revision numbers for fetching data
-	revFromNum, err := resolveFormattedRevision(fromFormatted, fromIsUUID, unit)
+	revFromNum, err := resolveFormattedRevision(fromFormatted, fromIsUUID, unit.Unit)
 	if err != nil {
 		return err
 	}
@@ -486,7 +481,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	// Get revision data for both revisions. Each revision is looked up in its own unit's
 	// space: with --with-unit the second unit can live in another space, and looking its
 	// revision up in the first unit's space finds nothing.
-	revFromData, err := apiGetRevisionFromNumberInSpace(revFromNum, unit.UnitID.String(), unit.SpaceID.String(), "*")
+	revFromData, err := apiGetRevisionFromNumberInSpace(revFromNum, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), "*")
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d of %s: %v", revFromNum, unitSlug, err)
 	}
@@ -498,7 +493,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// A Revision's configuration is read from its data endpoint, not off the entity.
-	fromData, err := fetchRevisionData(unit.SpaceID, unit.UnitID, revFromData.RevisionID)
+	fromData, err := fetchRevisionData(unit.Unit.SpaceID, unit.Unit.UnitID, revFromData.RevisionID)
 	if err != nil {
 		return fmt.Errorf("failed to get revision %d data: %v", revFromNum, err)
 	}
@@ -522,7 +517,7 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		// Format file labels. Each side is named by its own unit's space, so a cross-space
 		// diff says where the second unit actually lives instead of prefixing it with the
 		// first one's space.
-		fromLabel := formatDiffLabel(unit.SpaceSlug, unitSlug, revFromNum)
+		fromLabel := formatDiffLabel(unit.Unit.SpaceSlug, unitSlug, revFromNum)
 		toLabel := formatDiffLabel(toUnit.SpaceSlug, toUnit.Slug, revToNum)
 
 		// Print diff in requested format

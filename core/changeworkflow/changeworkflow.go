@@ -26,8 +26,9 @@ type ChangeWorkflow struct {
 }
 
 type ChangeWorkflowSpec struct {
-	Stages []ChangeWorkflowStage    `json:"stages" yaml:"stages"`
-	Final  ChangeWorkflowFinalStage `json:"final" yaml:"final"`
+	CustomPrerequisites []ChangeWorkflowPrerequisite `json:"custom-prerequisites" yaml:"custom-prerequisites"`
+	Stages              []ChangeWorkflowStage        `json:"stages" yaml:"stages"`
+	Final               ChangeWorkflowFinalStage     `json:"final" yaml:"final"`
 }
 
 type ChangeWorkflowStage struct {
@@ -38,4 +39,9 @@ type ChangeWorkflowStage struct {
 
 type ChangeWorkflowFinalStage struct {
 	Prerequisites []string `json:"prerequisites,omitempty" yaml:"prerequisites,omitempty"`
+}
+
+type ChangeWorkflowPrerequisite struct {
+	Name       string `json:"name" yaml:"name"`
+	Expression string `json:"expression" yaml:"expression"`
 }

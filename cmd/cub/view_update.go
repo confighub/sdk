@@ -116,10 +116,6 @@ func checkViewConflictingArgs(args []string) bool {
 		failOnError(errors.New("--order-by-direction must be ASC or DESC"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -240,12 +236,14 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single view update requires exactly one argument: <slug or id>")
 	}
 
-	currentView, err := apiGetViewFromSlug(args[0], "*") // get all fields for RMW
+	currentViewEnvelope, err := resolveView(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentView := currentViewEnvelope.View
+
+	spaceID := currentView.SpaceID
 
 	if viewPatch {
 		// Single view patch mode
@@ -269,11 +267,11 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Handle view-specific field parsing that can fail
 		var filterID *uuid.UUID
 		if viewUpdateArgs.filter != "" {
-			filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID", selectedSpaceID)
+			filter, err := resolveFilter(viewUpdateArgs.filter, selectedSpaceID, "FilterID")
 			if err != nil {
 				return err
 			}
-			filterID = &filter.FilterID
+			filterID = &filter.Filter.FilterID
 		}
 
 		// Build patch data using BuildPatchData with view enhancer
@@ -353,11 +351,11 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Set view-specific fields from flags
 	if viewUpdateArgs.filter != "" {
-		filter, err := apiGetFilterFromSlug(viewUpdateArgs.filter, "FilterID", selectedSpaceID)
+		filter, err := resolveFilter(viewUpdateArgs.filter, selectedSpaceID, "FilterID")
 		if err != nil {
 			return err
 		}
-		fid := goclientnew.UUID(filter.FilterID)
+		fid := goclientnew.UUID(filter.Filter.FilterID)
 		currentView.FilterID = &fid
 	}
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -72,10 +71,6 @@ func checkAttributeDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -122,11 +117,11 @@ func attributeDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return runBulkAttributeDelete()
 	}
 
-	attrDetails, err := apiGetAttributeFromSlug(args[0], "*")
+	attrDetails, err := resolveAttribute(args[0], selectedSpaceID, "*")
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteAttributeWithResponse(ctx, uuid.MustParse(selectedSpaceID), attrDetails.Attribute.AttributeID)
+	deleteRes, err := cubClientNew.DeleteAttributeWithResponse(ctx, attrDetails.Attribute.SpaceID, attrDetails.Attribute.AttributeID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

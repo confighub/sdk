@@ -139,7 +139,7 @@ func init() {
 
 	// Single create specific flags
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; a stage selecting its Spaces some other way is written as a definition file")
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage ahead of it, so the first stage's are never evaluated")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage ahead of it, so the first stage's are never evaluated. A custom prerequisite is declared under spec.custom-prerequisites and gated on by name, which only a definition file can carry")
 	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.changeDescription, "change-desc", "", "change description recorded on the revision the definition is written as")
 
 	// Bulk create specific flags
@@ -352,6 +352,19 @@ func validateChangeWorkflow(definition *changeworkflow.ChangeWorkflow) error {
 		return errors.New("spec.stages is empty: a workflow with no stages has nowhere to promote a change to")
 	}
 
+	// A custom prerequisite is declared once and gated on by name, so its expression is
+	// compiled here rather than at the promotion it would hold up.
+	for _, custom := range definition.Spec.CustomPrerequisites {
+		expression, isExpression := changeworkflow.CELPrerequisiteExpression(custom.Expression)
+		if !isExpression {
+			return errors.Newf("custom prerequisite '%s' has no expression: it has to start with '%s'",
+				custom.Name, changeworkflow.CELPrerequisitePrefix)
+		}
+		if err := changeworkflow.ValidateCELPrerequisite(expression); err != nil {
+			return errors.Wrapf(err, "invalid custom prerequisite '%s'", custom.Name)
+		}
+	}
+
 	named := map[string]bool{}
 	for i := range definition.Spec.Stages {
 		stage := &definition.Spec.Stages[i]
@@ -370,20 +383,27 @@ func validateChangeWorkflow(definition *changeworkflow.ChangeWorkflow) error {
 		if _, err := stageWhereSpace(stage, ""); err != nil {
 			return err
 		}
-		if err := validateChangeWorkflowPrerequisites(stage.Prerequisites, fmt.Sprintf("stage '%s'", stage.Name)); err != nil {
+		if err := validateChangeWorkflowPrerequisites(stage.Prerequisites, definition.Spec.CustomPrerequisites,
+			fmt.Sprintf("stage '%s'", stage.Name)); err != nil {
 			return err
 		}
 	}
-	return validateChangeWorkflowPrerequisites(definition.Spec.Final.Prerequisites, "spec.final")
+	return validateChangeWorkflowPrerequisites(definition.Spec.Final.Prerequisites,
+		definition.Spec.CustomPrerequisites, "spec.final")
 }
 
-// validateChangeWorkflowPrerequisites refuses a gate promotion has no check for. The names are
-// the ones the promotion evaluates (checkVariantPrerequisites), so a definition accepted here
-// is one it can run.
-func validateChangeWorkflowPrerequisites(prerequisites []string, where string) error {
+// validateChangeWorkflowPrerequisites refuses a gate promotion has no check for. Every entry
+// is a name: one of the built-in gates, or one spec.custom-prerequisites declares. The names
+// are the ones the promotion evaluates (checkVariantPrerequisites), so a definition accepted
+// here is one it can run.
+func validateChangeWorkflowPrerequisites(prerequisites []string,
+	customPrerequisites []changeworkflow.ChangeWorkflowPrerequisite, where string) error {
 	for _, prerequisite := range prerequisites {
-		if !slices.Contains(knownPrerequisites, prerequisite) {
-			return errors.Newf("unrecognized prerequisite for %s: '%s'; the gates are: %s",
+		if slices.Contains(knownPrerequisites, prerequisite) {
+			continue
+		}
+		if getPrerequisiteDefinition(prerequisite, customPrerequisites) == nil {
+			return errors.Newf("unrecognized prerequisite for %s: '%s'; the gates are: %s, or the name of one declared in spec.custom-prerequisites",
 				where, prerequisite, strings.Join(knownPrerequisites, ", "))
 		}
 	}
@@ -465,8 +485,8 @@ func runSingleChangeWorkflowCreate(args []string) error {
 			unitDetails.Slug)
 	}
 	// Re-read so what is displayed reflects the definition that was just written.
-	if refreshed, refreshErr := apiGetUnitInSpace(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
-		unitDetails = refreshed
+	if refreshed, refreshErr := resolveUnit(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
+		unitDetails = refreshed.Unit
 	}
 
 	if wait {

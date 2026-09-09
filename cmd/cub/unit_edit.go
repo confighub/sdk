@@ -32,13 +32,13 @@ func init() {
 }
 
 func unitEditCmdRun(cmd *cobra.Command, args []string) error {
-	currentUnit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for RMW
+	currentUnit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := currentUnit.SpaceID
-	currentUnit.LastChangeDescription = "CLI edit"
+	spaceID := currentUnit.Unit.SpaceID
+	currentUnit.Unit.LastChangeDescription = "CLI edit"
 
 	params := &goclientnew.UpdateUnitParams{}
 	if changesetSlug != "" {
@@ -46,17 +46,17 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 			// Special value to remove the changeset (only valid in patch mode)
 			return errors.New("edit cannot remove a changeset")
 		}
-		changesetUUID, err := parseChangeSetSlug(changesetSlug)
+		changesetUUID, err := resolveChangeSetID(changesetSlug)
 		if err != nil {
 			return err
 		}
-		if currentUnit.ChangeSetID != nil && *currentUnit.ChangeSetID != changesetUUID {
-			return fmt.Errorf("specified ChangeSet %s does not match unit's current ChangeSet %s", changesetSlug, currentUnit.ChangeSetID.String())
+		if currentUnit.Unit.ChangeSetID != nil && *currentUnit.Unit.ChangeSetID != changesetUUID {
+			return fmt.Errorf("specified ChangeSet %s does not match unit's current ChangeSet %s", changesetSlug, currentUnit.Unit.ChangeSetID.String())
 		}
-		currentUnit.ChangeSetID = &changesetUUID
+		currentUnit.Unit.ChangeSetID = &changesetUUID
 		params.ChangeSetId = &changesetUUID
-	} else if currentUnit.ChangeSetID != nil {
-		return fmt.Errorf("unit is in ChangeSet %s; use --changeset", currentUnit.ChangeSetID.String())
+	} else if currentUnit.Unit.ChangeSetID != nil {
+		return fmt.Errorf("unit is in ChangeSet %s; use --changeset", currentUnit.Unit.ChangeSetID.String())
 	}
 
 	tmpFile, err := os.CreateTemp("", "*.yaml")
@@ -64,7 +64,7 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	defer os.Remove(tmpFile.Name())
-	currentData, err := fetchUnitData(currentUnit.SpaceID, currentUnit.UnitID)
+	currentData, err := fetchUnitData(currentUnit.Unit.SpaceID, currentUnit.Unit.UnitID)
 	if err != nil {
 		return err
 	}
@@ -104,23 +104,23 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	// Edit is a read+modify+write, so it is not considered an external merge source. The
 	// configuration is written through the data endpoint; the Unit itself is unchanged.
-	editParams, err := unitDataParams(currentUnit.LastChangeDescription, changeSetIDForDataWrite(currentUnit))
+	editParams, err := unitDataParams(currentUnit.Unit.LastChangeDescription, changeSetIDForDataWrite(currentUnit.Unit))
 	if err != nil {
 		return err
 	}
-	if _, err := putUnitData(spaceID, currentUnit.UnitID, string(updatedContent), editParams); err != nil {
+	if _, err := putUnitData(spaceID, currentUnit.Unit.UnitID, string(updatedContent), editParams); err != nil {
 		return err
 	}
-	unitDetails, err := apiGetUnitInSpace(currentUnit.UnitID.String(), spaceID.String(), "*")
+	unitDetails, err := resolveUnit(currentUnit.Unit.UnitID.String(), spaceID.String(), "*")
 	if err != nil {
 		return err
 	}
 	if wait {
-		err = awaitTriggersRemoval(unitDetails)
+		err = awaitTriggersRemoval(unitDetails.Unit)
 		if err != nil {
 			return err
 		}
 	}
-	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
+	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.Unit.UnitID.String(), displayExtendedUnitDetails)
 	return nil
 }

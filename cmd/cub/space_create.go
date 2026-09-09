@@ -206,12 +206,7 @@ func runSingleSpaceCreate(args []string) error {
 	// addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the
 	// selected/default Space, and a Target UUID is also accepted).
 	if spaceCreateArgs.releaseTarget != "" {
-		releaseTargetID, err := parseEntityIdentifierSingle[goclientnew.Target](
-			spaceCreateArgs.releaseTarget,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		releaseTargetID, err := resolveTargetID(spaceCreateArgs.releaseTarget)
 		if err != nil {
 			return err
 		}
@@ -265,12 +260,7 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 	// Resolve ReleaseTargetID if provided, addressed as <target-space>/<target-slug>.
 	var releaseTargetUUID *uuid.UUID
 	if spaceCreateArgs.releaseTarget != "" {
-		releaseTargetID, err := parseEntityIdentifierSingle[goclientnew.Target](
-			spaceCreateArgs.releaseTarget,
-			EntityTypeTarget,
-			apiGetTargetFromSlugInSpaceCore,
-			func(t *goclientnew.Target) string { return t.TargetID.String() },
-		)
+		releaseTargetID, err := resolveTargetID(spaceCreateArgs.releaseTarget)
 		if err != nil {
 			return nil, err
 		}

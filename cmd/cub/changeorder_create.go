@@ -71,6 +71,21 @@ Examples:
   # each unit's end revision; the change order marks with tags of its own.
   cub changeorder create --space my-space bump-base-image --end-tag my-space/release-42-end
 
+  # Create one that propagates by running an invocation rather than by following links. The
+  # change has not been made anywhere yet: "cub variant promote <space> --change-order" runs
+  # the invocation in each space in scope, and the change order's tags record where it has.
+  cub changeorder create --space my-space bump-api-image \
+    --update-type Invoke --invocation platform/set-api-image \
+    --in-scope-space staging,prod-use2,prod-usw2
+
+  # The same, over a parameterized invocation and only the units it should reach. The
+  # invocation is reusable -- it declares the tag as a parameter -- and the change order
+  # supplies the tag for this rollout, the same one in every space.
+  cub changeorder create --space my-space bump-api-image \
+    --update-type Invoke --invocation platform/set-api-image --param tag=:1.27.3 \
+    --where-unit "Labels.tier = 'frontend'" \
+    --in-scope-space staging,prod-use2,prod-usw2
+
   # Create a changeorder from JSON
   cub changeorder create --space my-space -o json my-changeorder --from-stdin < changeorder.json
 ` + "```" + `
@@ -113,6 +128,10 @@ var changeorderCreateArgs struct {
 	namePattern      string
 	changeWorkflow   string
 	component        string
+	invocation       string
+	params           []string
+	whereUnit        string
+	unitFilter       string
 }
 
 func init() {
@@ -124,7 +143,11 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.changeWorkflow, "change-workflow", "", "identifier (slug, space/slug, or UUID) to identify the Unit carrying a ChangeWorkflow definition to use when promoting the ChangeOrder")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
-	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "link update type to follow when propagating: UpgradeUnit (the clone lineage, the default) or MergeUnits")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "how the change order propagates: UpgradeUnit (the clone lineage, the default) or MergeUnits, which follow links and take the change from revisions the source unit already has, or Invoke, where the change is one invocation run in each space in scope and is made after the change order is created")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.invocation, "invocation", "", "invocation (slug, space/slug, or UUID) to run in each space in scope; required with --update-type Invoke and refused otherwise. Naming it on the change order is what holds every space to the same update -- the invoke API takes what it runs from here. Immutable once set")
+	changeorderCreateCmd.Flags().StringArrayVar(&changeorderCreateArgs.params, "param", []string{}, "value for one of the invocation's declared parameters, as name=value (can be repeated). One set for the whole change order, since a value that differed by space would make each variant a different change")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereUnit, "where-unit", "", "where expression selecting which units of each space in scope the change order covers; without one it covers every unit. Only for --update-type Invoke. Unlike the spaces, this is asked again on every read, so a unit added to a space afterwards counts as not having had the invocation run on it")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.unitFilter, "unit-filter", "", "filter entity (slug, space/slug, or UUID, with From=Unit) narrowing the same selection as --where-unit, conjoined with it. Only for --update-type Invoke")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.endTag, "end-tag", "", "tag (slug, space/slug, or UUID) marking the last revision of each unit to promote; without one, each unit's head revision is the end. The change order always creates its own start and end tags -- this one is read to find the boundary, recorded as AdoptedEndTagID, and never written to, since the change order also marks the units it carries no changes for")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.component, "component", "", "filter for Component of the Variants to be promoted, defaults to containing Space's Component.")
 
@@ -223,23 +246,20 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 // ChangeWorkflow definition. The definition does not say where the change
 // starts: the base is the Space the ChangeOrder is created in.
 func resolveChangeWorkflowUnit(identifier string) (*goclientnew.Unit, *changeworkflow.ChangeWorkflow, error) {
-	unit, err := parseEntityIdentifierSingleAsEntity(identifier, EntityTypeUnit, "UnitID,Slug,HeadRevisionNum",
-		apiGetUnitFromSlugInSpace,
-		func(u *goclientnew.Unit) string { return u.UnitID.String() },
-	)
+	unit, err := resolveUnit(identifier, defaultSpaceID(), "UnitID,Slug,HeadRevisionNum")
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to parse change-workflow")
 	}
 
 	// Read the Revision that will be pinned, not the Unit's data, so what is read
 	// here is exactly what every later promotion will be judged against.
-	changeWorkflow, err := getChangeWorkflowFromUnit(unit.UnitID.String(),
-		strconv.FormatInt(unit.HeadRevisionNum, 10))
+	changeWorkflow, err := getChangeWorkflowFromUnit(unit.Unit.UnitID.String(),
+		strconv.FormatInt(unit.Unit.HeadRevisionNum, 10))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	return unit, changeWorkflow, nil
+	return unit.Unit, changeWorkflow, nil
 }
 
 // changeOrderCreateComponent is the component the change belongs to: the one
@@ -351,8 +371,35 @@ func runSingleChangeOrderCreate(args []string) error {
 	if changeorderCreateArgs.updateType != "" {
 		newBody.UpdateType = changeorderCreateArgs.updateType
 	}
+	// What an Invoke change order runs, and over which units. The server refuses these on the
+	// two update types that follow links, and refuses an Invoke change order without an
+	// invocation, so nothing is checked twice here.
+	if changeorderCreateArgs.invocation != "" {
+		invocationID, err := resolveInvocationID(changeorderCreateArgs.invocation)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse invocation")
+		}
+		newBody.InvocationID = &invocationID
+	}
+	if len(changeorderCreateArgs.params) > 0 {
+		params, err := parseInvocationParamFlags(changeorderCreateArgs.params)
+		if err != nil {
+			return err
+		}
+		newBody.Parameters = params
+	}
+	if changeorderCreateArgs.whereUnit != "" {
+		newBody.WhereUnit = changeorderCreateArgs.whereUnit
+	}
+	if changeorderCreateArgs.unitFilter != "" {
+		unitFilterID, err := resolveFilterID(changeorderCreateArgs.unitFilter)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse unit-filter")
+		}
+		newBody.UnitFilterID = &unitFilterID
+	}
 	if changeorderCreateArgs.endTag != "" {
-		endTagID, err := parseTagSlug(changeorderCreateArgs.endTag)
+		endTagID, err := resolveTagID(changeorderCreateArgs.endTag)
 		if err != nil {
 			return errors.Wrap(err, "failed to parse end-tag")
 		}
@@ -422,11 +469,11 @@ func runSingleChangeOrderCreate(args []string) error {
 func resolveChangeOrderInScopeSpaces(identifiers []string) ([]uuid.UUID, error) {
 	spaceIDs := make([]uuid.UUID, 0, len(identifiers))
 	for _, identifier := range identifiers {
-		space, err := apiGetSpaceFromSlug(identifier, "SpaceID,Slug")
+		space, err := resolveSpace(identifier, "SpaceID,Slug")
 		if err != nil {
 			return nil, errors.Wrapf(err, "failed to resolve in-scope space %s", identifier)
 		}
-		spaceIDs = append(spaceIDs, space.SpaceID)
+		spaceIDs = append(spaceIDs, space.Space.SpaceID)
 	}
 	return spaceIDs, nil
 }

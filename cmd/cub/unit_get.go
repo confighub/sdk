@@ -11,7 +11,6 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +52,7 @@ Agent inspection workflow:
 Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
 - Revision tracking: HeadRevisionNum vs LastReleasedRevisionNum shows pending changes
-- Approval state: ApprovedBy list and ApplyGates status
+- Approval state: ApprovedBy list and ValidationErrors status
 - Configuration data: Actual YAML/HCL content via 'cub unit data'
 
 Important flags for agents:
@@ -81,6 +80,7 @@ Use the slug or UUID to identify the unit. Slugs are more human-readable and typ
 
 func init() {
 	addStandardGetFlags(unitGetCmd)
+	enableOptionalSpace(unitGetCmd)
 	enableDisplayMutationsFlag(unitGetCmd)
 	unitGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	_ = unitGetCmd.Flags().MarkDeprecated("data-only", "use 'cub unit data <unit>'")
@@ -90,7 +90,7 @@ func init() {
 }
 
 func unitGetCmdRun(cmd *cobra.Command, args []string) error {
-	unitDetails, err := apiGetExtendedUnitFromSlug(args[0], selectFields)
+	unitDetails, err := resolveUnit(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
 	}
@@ -135,9 +135,9 @@ func validationResultsSummary(results map[string][]goclientnew.ValidationResult)
 	return strings.Join(gates, ", ")
 }
 
-func applyGatesToString(applyGates map[string]bool) string {
-	gates := make([]string, 0, len(applyGates))
-	for gate, failed := range applyGates {
+func validationErrorsToString(validationErrors map[string]bool) string {
+	gates := make([]string, 0, len(validationErrors))
+	for gate, failed := range validationErrors {
 		if failed {
 			gates = append(gates, gate)
 		}
@@ -212,12 +212,12 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Upstream Revision Num", fmt.Sprintf("%d", unitDetails.Unit.UpstreamRevisionNum)})
 		}
 
-		if len(unitDetails.Unit.ApplyGates) != 0 {
-			view.Append([]string{"Apply Gates", applyGatesToString(unitDetails.Unit.ApplyGates)})
+		if len(unitDetails.Unit.ValidationErrors) != 0 {
+			view.Append([]string{"Validation Errors", validationErrorsToString(unitDetails.Unit.ValidationErrors)})
 		}
 
-		if len(unitDetails.Unit.ApplyWarnings) != 0 {
-			view.Append([]string{"Apply Warnings", applyGatesToString(unitDetails.Unit.ApplyWarnings)})
+		if len(unitDetails.Unit.ValidationWarnings) != 0 {
+			view.Append([]string{"Validation Warnings", validationErrorsToString(unitDetails.Unit.ValidationWarnings)})
 		}
 
 		if len(unitDetails.ApprovedBy) != 0 {
@@ -363,89 +363,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	displayExtendedUnitDetails(extendedUnit)
 }
 
-func apiGetUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
-	extendedUnit, err := apiGetExtendedUnitInSpace(unitID, spaceID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedUnit.Unit, nil
-}
-
-func apiGetExtendedUnitInSpace(unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
-	newParams := &goclientnew.GetUnitParams{}
-	include := unitGetInclude
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	unitRes, err := cubClientNew.GetUnitWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
-	if cubapi.IsAPIError(err, unitRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, unitRes)
-	}
-	return unitRes.JSON200, nil
-}
-
-func apiGetUnitFromSlug(slug string, selectParam string) (*goclientnew.Unit, error) {
-	return apiGetUnitFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetExtendedUnitFromSlug(slug string, selectParam string) (*goclientnew.ExtendedUnit, error) {
-	return apiGetExtendedUnitFromSlugInSpace(slug, selectedSpaceID, selectParam)
-}
-
-func apiGetUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.Unit, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		extendedUnit, err := apiGetExtendedUnitInSpace(id.String(), spaceID, selectParam)
-		if err != nil {
-			return nil, err
-		}
-		return extendedUnit.Unit, nil
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	units, err := apiListUnits(spaceID, "Slug = '"+slug+"'", selectParam)
-	if err != nil {
-		return nil, err
-	}
-	for _, unit := range units {
-		if unit.Slug == slug {
-			return unit, nil
-		}
-	}
-	return nil, fmt.Errorf("unit %s not found in space %s", slug, spaceID)
-}
-
 // unitGetInclude is what `cub unit get` expands, which is the list's set plus the two a single
 // Unit is worth the extra joins for: the Space the upstream is in, and the users who approved.
 // The list pays those per row and shows neither.
 const unitGetInclude = unitListInclude + ",UpstreamSpaceID,ApprovedBy"
-
-func apiGetExtendedUnitFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
-	_, err := uuid.Parse(slug)
-	var where string
-	if err == nil {
-		where = "UnitID='" + slug + "'"
-	} else {
-		where = "SpaceID='" + spaceID + "' AND Slug='" + slug + "'"
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	units, err := cubapi.ListUnits(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Select:  cubapi.SelectFields(selectValue),
-		Include: unitGetInclude,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(units) == 1 {
-		return units[0], nil
-	}
-	return nil, fmt.Errorf("unit %s not found in space %s", slug, spaceID)
-}

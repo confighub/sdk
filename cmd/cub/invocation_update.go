@@ -110,10 +110,6 @@ func checkInvocationConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -146,12 +142,7 @@ func runBulkInvocationUpdate() error {
 	// Validate and resolve worker early if specified
 	var workerUUID *uuid.UUID
 	if workerSlug != "" {
-		workerID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}
@@ -209,12 +200,14 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single invocation update requires: <slug or id> <toolchain type> <function> [arguments...]")
 	}
 
-	currentInvocation, err := apiGetInvocationFromSlug(args[0], "*") // get all fields for RMW
+	currentInvocationEnvelope, err := resolveInvocation(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
 
-	spaceID := uuid.MustParse(selectedSpaceID)
+	currentInvocation := currentInvocationEnvelope.Invocation
+
+	spaceID := currentInvocation.SpaceID
 
 	if invocationPatch {
 		// Single invocation patch mode
@@ -222,12 +215,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// Handle error-prone operations before enhancer
 		var workerID *goclientnew.UUID
 		if workerSlug != "" {
-			workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-				workerSlug,
-				EntityTypeBridgeWorker,
-				apiGetBridgeWorkerFromSlugInSpace,
-				func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-			)
+			workerUUID, err := resolveWorkerID(workerSlug)
 			if err != nil {
 				return err
 			}
@@ -299,12 +287,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentInvocation.SpaceID = spaceID
 	if workerSlug != "" {
-		workerUUID, err := parseEntityIdentifierSingle[goclientnew.BridgeWorker](
-			workerSlug,
-			EntityTypeBridgeWorker,
-			apiGetBridgeWorkerFromSlugInSpace,
-			func(w *goclientnew.BridgeWorker) string { return w.BridgeWorkerID.String() },
-		)
+		workerUUID, err := resolveWorkerID(workerSlug)
 		if err != nil {
 			return err
 		}

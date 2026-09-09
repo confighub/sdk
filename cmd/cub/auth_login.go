@@ -797,7 +797,7 @@ func setSpaceContext() error {
 		return nil
 	}
 
-	currentSpace, err := apiGetSpaceFromSlug(ctx.Settings.DefaultSpace, "")
+	currentSpace, err := resolveSpace(ctx.Settings.DefaultSpace, "")
 	if err != nil {
 		spaceList, err := apiListSpaces("", "")
 		if err != nil {
@@ -808,11 +808,11 @@ func setSpaceContext() error {
 		}
 		// Just pick the first one
 		tprint("Default space from context, %s not found in org. Using %s instead", ctx.Settings.DefaultSpace, spaceList[0].Slug)
-		currentSpace = spaceList[0]
+		currentSpace = &goclientnew.ExtendedSpace{Space: spaceList[0]}
 		// Update context. This will not be persisted until SaveConfig is called.
-		ctx.Settings.DefaultSpace = currentSpace.Slug
+		ctx.Settings.DefaultSpace = currentSpace.Space.Slug
 	}
-	selectedSpaceID = currentSpace.SpaceID.String()
-	selectedSpaceSlug = currentSpace.Slug
+	selectedSpaceID = currentSpace.Space.SpaceID.String()
+	selectedSpaceSlug = currentSpace.Space.Slug
 	return nil
 }

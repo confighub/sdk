@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -79,10 +78,6 @@ func checkChangeSetDeleteConflictingArgs(args []string) bool {
 		}
 	}
 
-	if err := validateSpaceFlag(isBulkDeleteMode); err != nil {
-		failOnError(err)
-	}
-
 	return isBulkDeleteMode
 }
 
@@ -136,16 +131,16 @@ func changesetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Single changeset delete logic
-	changesetDetails, err := apiGetChangeSetFromSlug(args[0], "*") // get all fields for now
+	changesetDetails, err := resolveChangeSet(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteChangeSetWithResponse(ctx, uuid.MustParse(selectedSpaceID), changesetDetails.ChangeSetID)
+	deleteRes, err := cubClientNew.DeleteChangeSetWithResponse(ctx, changesetDetails.ChangeSet.SpaceID, changesetDetails.ChangeSet.ChangeSetID)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
 
-	displayDeleteResults("changeset", args[0], changesetDetails.ChangeSetID.String(), deleteRes)
+	displayDeleteResults("changeset", args[0], changesetDetails.ChangeSet.ChangeSetID.String(), deleteRes)
 	return nil
 }
 

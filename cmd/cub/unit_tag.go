@@ -109,7 +109,7 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Parse the tag argument (supports space/tag format)
 	tagSlugOrID := args[0]
-	tagID, err := parseTagSlug(tagSlugOrID)
+	tagID, err := resolveTagID(tagSlugOrID)
 	if err != nil {
 		return fmt.Errorf("failed to parse tag: %w", err)
 	}

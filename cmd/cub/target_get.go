@@ -33,6 +33,7 @@ Examples:
 
 func init() {
 	addStandardGetFlags(targetGetCmd)
+	enableOptionalSpace(targetGetCmd)
 	enableGetWaitFlag(targetGetCmd)
 	targetCmd.AddCommand(targetGetCmd)
 }
@@ -42,7 +43,7 @@ func targetGetCmdRun(cmd *cobra.Command, args []string) error {
 		return targetGetWait(args[0])
 	}
 
-	targetDetails, err := apiGetTargetFromSlug(args[0], selectedSpaceID, "")
+	targetDetails, err := resolveTarget(args[0], selectedSpaceID, "")
 	if err != nil {
 		return err
 	}
@@ -65,7 +66,7 @@ func targetGetWait(slug string) error {
 	interval := 2 * time.Second
 
 	for {
-		targetDetails, err := apiGetTargetFromSlug(slug, selectedSpaceID, "")
+		targetDetails, err := resolveTarget(slug, selectedSpaceID, "")
 		if err == nil {
 			displayGetResults(targetDetails, displayTargetDetails)
 			return nil
@@ -150,67 +151,4 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 
 	view.Append([]string{"Organization ID", targetDetails.OrganizationID.String()})
 	view.Render()
-}
-
-func apiGetTarget(targetID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
-	newParams := &goclientnew.GetTargetParams{}
-	include := "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	targetRes, err := cubClientNew.GetTargetWithResponse(ctx, uuid.MustParse(selectedSpaceID), uuid.MustParse(targetID), newParams)
-	if cubapi.IsAPIError(err, targetRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, targetRes)
-	}
-	return targetRes.JSON200, nil
-}
-
-func apiGetTargetFromSlug(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
-	return apiGetTargetFromSlugInSpace(slug, spaceID, selectParam)
-}
-
-// apiGetTargetFromSlugInSpaceCore returns just the Target, for use with parseEntityIdentifiers
-func apiGetTargetFromSlugInSpaceCore(slug string, spaceID string, selectParam string) (*goclientnew.Target, error) {
-	extendedTarget, err := apiGetTargetFromSlugInSpace(slug, spaceID, selectParam)
-	if err != nil {
-		return nil, err
-	}
-	return extendedTarget.Target, nil
-}
-
-// apiGetTargetFromSlugInSpace resolves a Target by slug or by UUID.
-//
-// Both forms go through the org-level list endpoint. A UUID must not be resolved
-// via apiGetTarget: that path is scoped to the global selectedSpaceID rather than
-// to spaceID, and space create/update do not run spacePreRunE, so selectedSpaceID
-// is typically empty and uuid.MustParse panics on it. An empty spaceID is treated
-// as "search every Space", which is what callers holding only a UUID want: a UUID
-// already identifies a Target uniquely, and its Space need not be the selected one.
-func apiGetTargetFromSlugInSpace(slug string, spaceID string, selectParam string) (*goclientnew.ExtendedTarget, error) {
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	if spaceID == "" {
-		spaceID = "*"
-	}
-
-	whereField := "Slug"
-	if _, err := uuid.Parse(slug); err == nil {
-		whereField = "TargetID"
-	}
-
-	targets, err := apiListTargets(spaceID, whereField+" = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find target by slug
-	for _, target := range targets {
-		if target.Target.Slug == slug {
-			return target, nil
-		}
-	}
-	return nil, fmt.Errorf("target %s not found in space %s", slug, spaceID)
 }

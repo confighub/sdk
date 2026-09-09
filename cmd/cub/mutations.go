@@ -1102,13 +1102,13 @@ func displayMutationsFromFunctionResponse(resp *[]goclientnew.FunctionInvocation
 			}
 		} else {
 			// For non-dry-run, fetch the updated unit to get the latest MutationSources
-			unit, err := apiGetUnitInSpace(r.UnitID.String(), r.SpaceID.String(), "*")
+			unit, err := resolveUnit(r.UnitID.String(), r.SpaceID.String(), "*")
 			if err != nil {
 				tprintErr("Failed to get unit: %s", err.Error())
 				continue
 			}
-			lookupMutationsUnitID = unit.UnitID.String()
-			displayMutationsForUnit(unit, priorMutNum, newChangeDescription, priorRevision)
+			lookupMutationsUnitID = unit.Unit.UnitID.String()
+			displayMutationsForUnit(unit.Unit, priorMutNum, newChangeDescription, priorRevision)
 		}
 	}
 }
@@ -1171,12 +1171,12 @@ func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpda
 		case isDryRun:
 			displayMutationsForDryRun(r, info.HeadMutationNum, newChangeDescription)
 		default:
-			updatedUnit, err := apiGetUnitInSpace(unit.UnitID.String(), unit.SpaceID.String(), "*")
+			updatedUnit, err := resolveUnit(unit.UnitID.String(), unit.SpaceID.String(), "*")
 			if err != nil {
 				tprintErr("Failed to get unit: %s", err.Error())
 				continue
 			}
-			displayMutationsForUnit(updatedUnit, info.HeadMutationNum, newChangeDescription, priorRevision)
+			displayMutationsForUnit(updatedUnit.Unit, info.HeadMutationNum, newChangeDescription, priorRevision)
 		}
 	}
 }

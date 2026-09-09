@@ -60,10 +60,12 @@ const changeorderListInclude = "SpaceID,StartTagID,EndTagID"
 // a change order that has never been undone has none to expand.
 
 // changeorderBaseSelectFields are the fields always returned by change order list queries.
-// AbortedReason, InScopeSpaceIDs and RestoreTagID are among them because State is derived from all
-// three, and each is legitimately empty -- so the server has to re-read a change order whose select
-// left any of them out, rather than reading a missing value as a real one.
-var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason", "InScopeSpaceIDs", "RestoreTagID"}
+// AbortedReason, InScopeSpaceIDs, RestoreTagID, WhereUnit and UnitFilterID are among them because
+// State is derived from all of them, and each is legitimately empty -- so the server has to re-read
+// a change order whose select left any of them out, rather than reading a missing value as a real
+// one. WhereUnit and UnitFilterID are what an Invoke change order covers, which is what its
+// resolution is measured against.
+var changeorderBaseSelectFields = []string{"Slug", "ChangeOrderID", "SpaceID", "OrganizationID", "AbortedReason", "InScopeSpaceIDs", "RestoreTagID", "WhereUnit", "UnitFilterID"}
 
 // ChangeOrder-specific aliases
 var changeorderAliases = map[string]string{

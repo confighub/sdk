@@ -26,12 +26,12 @@ func init() {
 }
 
 func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
-	entity, err := apiGetBridgeWorkerFromSlug(args[0], "*") // get all fields for now
+	entity, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	funcsRes, err := cubClientNew.ListBridgeWorkerFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorkerID)
+	funcsRes, err := cubClientNew.ListBridgeWorkerFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorker.BridgeWorkerID)
 	if cubapi.IsAPIError(err, funcsRes) {
 		return cubapi.InterpretErrorGeneric(err, funcsRes)
 	}

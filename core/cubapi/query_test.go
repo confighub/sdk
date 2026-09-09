@@ -254,8 +254,8 @@ func TestListBridgeWorkersMutatorAndFilter(t *testing.T) {
 func TestResolveSpace(t *testing.T) {
 	var gotWhere string
 	c := stubServer(t, `[{"Space":{"Slug":"prod","SpaceID":"55555555-5555-5555-5555-555555555555"}}]`, &gotWhere)
-	sp, err := ResolveSpace(context.Background(), c, "prod")
-	if err != nil || sp.Slug != "prod" {
+	sp, err := ResolveSpace(context.Background(), c, ParseRef("prod"), ResolveOpts{})
+	if err != nil || sp.Space.Slug != "prod" {
 		t.Fatalf("ResolveSpace = %v, %v", sp, err)
 	}
 	if dec, _ := url.QueryUnescape(gotWhere); !strings.Contains(dec, "Slug = 'prod'") {
@@ -293,7 +293,7 @@ func TestListSpacesMutator(t *testing.T) {
 
 func TestResolveSpaceNotFound(t *testing.T) {
 	c := stubServer(t, `[]`, nil)
-	if _, err := ResolveSpace(context.Background(), c, "ghost"); err == nil {
+	if _, err := ResolveSpace(context.Background(), c, ParseRef("ghost"), ResolveOpts{}); err == nil {
 		t.Fatal("ResolveSpace(missing) = nil, want error")
 	}
 }

@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -88,6 +89,15 @@ change order is:
     record that the change is not coming; "cub variant demote" is what takes it back out of the
     spaces that did take it.
 
+A change order with UpdateType Invoke propagates differently and reads the same. Its change is one
+invocation, named on the change order and run here rather than merged from an upstream: nothing is
+cloned, no revision range is followed, and the space need not be a variant of anything. What it
+leaves behind is what an upgrade-borne promotion leaves behind -- the change order's tags on every
+unit it reached, both on the head where the invocation changed nothing -- so restoring, releasing
+and "where has this landed?" are the same afterwards. Its selection is its own WhereUnit and
+UnitFilterID rather than a where clause here, which is what holds every space to the same change,
+and it only runs in the spaces the change order is headed for.
+
 --target-stage promotes a whole stage rather than one space, and takes no positional space. A
 promotion is defined over a stage -- the spaces a change reaches together -- and naming one space
 is the narrower case. The stage's membership is not a label search of its own: --change-order
@@ -125,6 +135,9 @@ Examples:
 
   # Promote one named change, leaving later upstream changes behind
   cub variant promote web-prod --change-order release-42
+
+  # Promote a change that is an invocation rather than an upstream merge
+  cub variant promote web-prod --change-order platform/bump-api-image
 
   # Promote that change into every variant of a stage of its change workflow
   cub variant promote --change-order web-base/release-42 --target-stage staging
@@ -188,7 +201,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 // upstream off of) and why one carrying no workflow is refused rather than
 // guessed at.
 func variantPromoteStage() error {
-	changeOrder, err := resolveChangeOrder(variantPromoteArgs.changeorderSlug)
+	changeOrder, err := changeOrderByRef(variantPromoteArgs.changeorderSlug)
 	if err != nil {
 		return err
 	}
@@ -239,7 +252,7 @@ func variantPromoteStage() error {
 	// The gates belong to the Stage rather than to any one Variant of it, so they
 	// are evaluated once for the whole Stage. They run on a dry run too: a preview
 	// that ignored them would describe a promotion that cannot happen.
-	if err := validateStageEntryGates(currentStage, previousStage, changeOrder); err != nil {
+	if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.Spec.CustomPrerequisites, changeOrder); err != nil {
 		return err
 	}
 
@@ -262,20 +275,29 @@ func variantPromoteStage() error {
 	promoted := 0
 	var errs []error
 	for _, variant := range variants {
-		// The Space the change order resides in is the Space the change was
-		// authored in, so it already has the change: promoting it would ask it to
+		// The Space a link-following change order resides in is the Space the change
+		// was authored in, so it already has the change: promoting it would ask it to
 		// take what it originated. A first Stage whose selector covers the source
 		// Space is how it turns up here.
-		if variant.SpaceID == changeOrder.SpaceID {
+		//
+		// An Invoke change order's own Space is not like that. Nothing has been made
+		// anywhere until the invocation runs, so if the Space is in scope it is
+		// invoked like every other -- and if it is not, it is not in the stage.
+		if variant.SpaceID == changeOrder.SpaceID && changeOrder.UpdateType != updateTypeInvoke {
 			if !jsonOutput && outputFormat == "" {
 				tprint("Skipping %s, the space the change order was created in", variant.Slug)
 			}
 			continue
 		}
-		upstreamSpaceID, err := promoteUpstreamSpaceID(variant)
-		if err != nil {
-			errs = append(errs, err)
-			continue
+		// An invocation is run in place, so the Space need not be a clone of anything.
+		var upstreamSpaceID uuid.UUID
+		if changeOrder.UpdateType != updateTypeInvoke {
+			var err error
+			upstreamSpaceID, err = promoteUpstreamSpaceID(variant)
+			if err != nil {
+				errs = append(errs, err)
+				continue
+			}
 		}
 		// Point the selected space at the Variant being promoted, as the
 		// single-Space mode does: the helpers that render mutations resolve units
@@ -302,28 +324,32 @@ func variantPromoteStage() error {
 // out for itself which Stage that Space is in when a ChangeWorkflow governs the
 // change.
 func variantPromoteSpace(spaceSlug string) error {
-	downstreamSpace, err := apiGetSpaceFromSlug(spaceSlug, "*")
+	downstreamSpace, err := resolveSpace(spaceSlug, "*")
 	if err != nil {
 		return err
 	}
-	upstreamSpaceID, err := promoteUpstreamSpaceID(downstreamSpace)
-	if err != nil {
-		return err
-	}
+	// Not required yet. Everything a promotion over links does comes from the upstream space, but
+	// an Invoke change order's change comes from its invocation, and the space it runs in need not
+	// be a clone of anything. Which kind this is is the change order's answer, so the annotation is
+	// insisted on below, once there is one to ask.
+	upstreamSpaceID, upstreamErr := promoteUpstreamSpaceID(downstreamSpace.Space)
 
 	// Promote names its space positionally rather than through --space, so the selected
 	// space is whatever the context defaults to -- possibly nothing. Point it at the space
 	// being promoted: the helpers that render mutations resolve units through it, and one
 	// of them parses it as a UUID.
-	selectedSpaceID = downstreamSpace.SpaceID.String()
-	selectedSpaceSlug = downstreamSpace.Slug
+	selectedSpaceID = downstreamSpace.Space.SpaceID.String()
+	selectedSpaceSlug = downstreamSpace.Space.Slug
 
-	changeOrder, err := promoteChangeOrder(upstreamSpaceID)
+	changeOrder, err := promoteChangeOrder(upstreamSpaceID, upstreamErr == nil)
 	if err != nil {
 		return err
 	}
 	if err := checkChangeOrderIsPromotable(changeOrder); err != nil {
 		return err
+	}
+	if upstreamErr != nil && (changeOrder == nil || changeOrder.UpdateType != updateTypeInvoke) {
+		return upstreamErr
 	}
 
 	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
@@ -339,17 +365,17 @@ func variantPromoteSpace(spaceSlug string) error {
 		if !variantPromoteArgs.force {
 			// Refuse to promote until the previous stage is already running the change. The gate runs on a
 			// dry run too: a preview that ignored it would describe a promotion that cannot happen.
-			currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(downstreamSpace, changeWorkflow, changeOrder)
+			currentStage, previousStage, err := getCurrentAndPreviousWorkflowStages(downstreamSpace.Space, changeWorkflow, changeOrder)
 			if err != nil {
 				return err
 			}
-			if err := validateStageEntryGates(currentStage, previousStage, changeOrder); err != nil {
+			if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.Spec.CustomPrerequisites, changeOrder); err != nil {
 				return err
 			}
 		}
 	}
 
-	return promoteIntoSpace(downstreamSpace.SpaceID, upstreamSpaceID, changeOrder)
+	return promoteIntoSpace(downstreamSpace.Space.SpaceID, upstreamSpaceID, changeOrder)
 }
 
 // getChangeWorkflowForChangeOrder returns the ChangeWorkflow governing the ChangeOrder, or
@@ -376,6 +402,13 @@ func promoteIntoSpace(downstreamSpaceID, upstreamSpaceID uuid.UUID, changeOrder 
 	wait = !variantPromoteArgs.dryRun
 
 	if changeOrder != nil {
+		// An Invoke change order carries no revisions to merge and clones nothing: the change is
+		// its invocation, run here. What it leaves behind is what an upgrade-borne promotion
+		// leaves behind -- the change order's tags on the units it reached -- so everything
+		// after this point reads the same either way.
+		if changeOrder.UpdateType == updateTypeInvoke {
+			return promoteInvokeUnits(downstreamSpaceID, changeOrder)
+		}
 		// Clone before upgrading, which is the other way round from a plain promote. A unit the
 		// variant does not have yet is taken at the change order's start -- the state the change
 		// begins from -- and then upgraded through the change with everything else, so it ends up
@@ -454,14 +487,14 @@ var componentPredicate = regexp.MustCompile(`(?i)\bLabels\.` + labelComponent + 
 // confine them to, which is an error rather than Stages selecting every component's
 // Spaces at once.
 func spaceComponent(spaceID uuid.UUID) (string, error) {
-	space, err := apiGetSpace(spaceID.String(), "*")
+	space, err := resolveSpace(spaceID.String(), "*")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to fetch Space %s", spaceID)
 	}
-	component := space.Labels[labelComponent]
+	component := space.Space.Labels[labelComponent]
 	if component == "" {
 		return "", errors.Newf("Space '%s' has no %s label, so there is no component for a ChangeWorkflow's stages to select within",
-			space.Slug, labelComponent)
+			space.Space.Slug, labelComponent)
 	}
 	return component, nil
 }
@@ -736,6 +769,124 @@ func checkChangeOrderIsReleasedToVariant(changeOrder *goclientnew.ChangeOrder, v
 	return nil
 }
 
+// revisionNumsForTag is the Revision each Unit of the Space sits at under this Tag.
+func revisionNumsForTag(spaceID, tagID uuid.UUID) (map[uuid.UUID]int64, error) {
+	revisions, err := apiSearchListRevisions(
+		fmt.Sprintf("SpaceID = '%s' AND Tags ? '%s'", spaceID, tagID), "UnitID,RevisionNum", "")
+	if err != nil {
+		return nil, err
+	}
+	nums := make(map[uuid.UUID]int64, len(revisions))
+	for _, extended := range revisions {
+		if extended.Revision != nil {
+			nums[extended.Revision.UnitID] = extended.Revision.RevisionNum
+		}
+	}
+	return nums, nil
+}
+
+// releaseCarryingChangeOrder is the Release that first carried this ChangeOrder into
+// the Variant, or nil when none has.
+//
+// A Release records the Tag its bundled Revisions were selected by, so what a Release
+// holds is read through that Tag: it carries the change when every Unit the end Tag
+// marks is bundled at or past the Revision it marks. Matching the end Tag itself would
+// only find a Release published as "cub release publish --revision ChangeOrder:<slug>",
+// but a Space that published the change inside a wider Release carries it just as
+// truly. This is the tedious reading of that until a Release tracks its changes
+// explicitly.
+//
+// The earliest such Release is the answer rather than the newest, because the newest is
+// this change only by coincidence and stops being the answer as soon as anything else
+// is published -- which would take back a hop an earlier Release had already earned.
+func releaseCarryingChangeOrder(changeOrder *goclientnew.ChangeOrder,
+	variant *goclientnew.Space) (*goclientnew.Release, error) {
+	if changeOrder.EndTagID == uuid.Nil {
+		return nil, nil
+	}
+	endRevisions, err := revisionNumsForTag(variant.SpaceID, changeOrder.EndTagID)
+	if err != nil {
+		return nil, err
+	}
+	// Having taken the change is checked before this runs, so an empty set means nothing
+	// in the Space carries the end Tag at all -- the propagation gap for Units added
+	// downstream. Saying so beats both alternatives: the comparison below quantifies over
+	// these Units, so with none of them it holds vacuously and the Space's oldest Release
+	// would answer as the change's, and a nil Release would surface as an expression
+	// failing on a null rather than as the tag being missing.
+	if len(endRevisions) == 0 {
+		return nil, errors.Newf("Variant '%s' has taken change order '%s' but nothing in it carries the change order's end tag, so the Release carrying the change cannot be identified",
+			variant.Slug, changeOrder.Slug)
+	}
+
+	releases, err := apiListReleases(variant.SpaceID.String(), "Published = true", "*", "")
+	if err != nil {
+		return nil, err
+	}
+	published := make([]*goclientnew.Release, 0, len(releases))
+	for _, extended := range releases {
+		if extended.Release != nil && extended.Release.TagID != nil {
+			published = append(published, extended.Release)
+		}
+	}
+	// Ascending, so the first Release found to hold the change is the earliest that did
+	// and the ones after it need not be read at all.
+	slices.SortFunc(published, func(a, b *goclientnew.Release) int {
+		return cmp.Compare(a.ReleaseNum, b.ReleaseNum)
+	})
+	for _, release := range published {
+		bundled, err := revisionNumsForTag(variant.SpaceID, *release.TagID)
+		if err != nil {
+			return nil, err
+		}
+		carries := true
+		for unitID, endNum := range endRevisions {
+			// A Unit the Release does not bundle at all has not taken the change.
+			if num, ok := bundled[unitID]; !ok || num < endNum {
+				carries = false
+				break
+			}
+		}
+		if carries {
+			return release, nil
+		}
+	}
+	return nil, nil
+}
+
+// checkVariantSatisfiesExpression errors unless the author's own predicate holds
+// for this Variant. The Space, the ChangeOrder and the Release the Variant
+// published of it are what it is given, so the state of all three -- and the
+// Annotations anything outside ConfigHub has written on them -- is what a gate of
+// this kind can read.
+//
+// A Variant that has published no Release of the change is given none, so an
+// expression reading one fails rather than answering from a Release of some other
+// change.
+//
+// An expression that cannot be evaluated fails the gate rather than passing it:
+// the Variant has not been shown to satisfy the prerequisite, which is the same
+// position as failing it, and promoting on an unanswered gate is the one outcome
+// that cannot be walked back.
+func checkVariantSatisfiesExpression(
+	expression string,
+	changeOrder *goclientnew.ChangeOrder,
+	variant *goclientnew.Space,
+	release *goclientnew.Release,
+	stage, variantName string,
+) error {
+	satisfied, err := changeworkflow.EvaluateCELPrerequisite(expression, variant, changeOrder, release)
+	if err != nil {
+		return errors.Wrapf(err, "unable to promote to stage '%s', prerequisite for Variant '%s' could not be evaluated",
+			stage, variantName)
+	}
+	if !satisfied {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' does not satisfy prerequisite '%s%s'",
+			stage, variantName, changeworkflow.CELPrerequisitePrefix, expression)
+	}
+	return nil
+}
+
 // checkVariantPrerequisites errors unless the Variant satisfies every declared
 // prerequisite. A Stage's entry gates and final's are the same list of names, so
 // what each name checks is decided here rather than by each caller.
@@ -758,14 +909,42 @@ const (
 // to someone writing one.
 var knownPrerequisites = []string{prerequisiteReleased, prerequisiteHealthy}
 
+func getPrerequisiteDefinition(
+	name string,
+	customPrerequisiteDefinitions []changeworkflow.ChangeWorkflowPrerequisite,
+) *changeworkflow.ChangeWorkflowPrerequisite {
+	for _, definition := range customPrerequisiteDefinitions {
+		if definition.Name == name {
+			return &definition
+		}
+	}
+
+	return nil
+}
+
 func checkVariantPrerequisites(
 	prerequisites []string,
+	customPrerequisiteDefinitions []changeworkflow.ChangeWorkflowPrerequisite,
 	changeOrder *goclientnew.ChangeOrder,
 	variant *goclientnew.Space,
 	stage, variantName string,
 ) error {
 	if err := checkChangeOrderIsPromotedToVariant(changeOrder, variant, stage, variantName); err != nil {
 		return err
+	}
+
+	// Every expression in a Stage reads the same Release, so it is looked up once
+	// here rather than per gate -- and not at all when no gate is an expression,
+	// since a Stage that asks nothing of the Release should not have to have one.
+	var release *goclientnew.Release
+	if slices.ContainsFunc(prerequisites, func(prerequisite string) bool {
+		return getPrerequisiteDefinition(prerequisite, customPrerequisiteDefinitions) != nil
+	}) {
+		var err error
+		release, err = releaseCarryingChangeOrder(changeOrder, variant)
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, prerequisite := range prerequisites {
@@ -779,7 +958,17 @@ func checkVariantPrerequisites(
 				return err
 			}
 		default:
-			return errors.Newf("unrecognized prerequisite for Stage '%s': '%s'", stage, prerequisite)
+			prereqDefinition := getPrerequisiteDefinition(prerequisite, customPrerequisiteDefinitions)
+			if prereqDefinition == nil {
+				return errors.Newf("unrecognized prerequisite for Stage '%s': '%s'", stage, prerequisite)
+			}
+			expression, isExpression := changeworkflow.CELPrerequisiteExpression(prereqDefinition.Expression)
+			if !isExpression {
+				return errors.Newf("malformed expression on custom prerequisite '%s'", prerequisite)
+			}
+			if err := checkVariantSatisfiesExpression(expression, changeOrder, variant, release, stage, variantName); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -798,6 +987,7 @@ func checkVariantPrerequisites(
 func validateStageEntryGates(
 	currentStage *changeworkflow.ChangeWorkflowStage,
 	previousStage *changeworkflow.ChangeWorkflowStage,
+	customPrerequisites []changeworkflow.ChangeWorkflowPrerequisite,
 	changeOrder *goclientnew.ChangeOrder,
 ) error {
 	// No previous Stage means this is the workflow's first, so the change is
@@ -828,7 +1018,14 @@ func validateStageEntryGates(
 			variantName = variant.Slug
 		}
 
-		err = checkVariantPrerequisites(currentStage.Prerequisites, changeOrder, variant, currentStage.Name, variantName)
+		err = checkVariantPrerequisites(
+			currentStage.Prerequisites,
+			customPrerequisites,
+			changeOrder,
+			variant,
+			currentStage.Name,
+			variantName,
+		)
 		if err != nil {
 			return err
 		}
@@ -841,31 +1038,33 @@ func validateStageEntryGates(
 //
 // A ChangeOrder resides in the Space holding the changes to promote, so both the slug and the
 // entity behind it resolve there rather than in the variant being promoted, which is what the
-// selected space names by the time this runs.
-func promoteChangeOrder(upstreamSpaceID uuid.UUID) (*goclientnew.ChangeOrder, error) {
+// selected space names by the time this runs. haveUpstream says whether there is such a space:
+// an Invoke ChangeOrder can be promoted into a Space that is nobody's clone.
+func promoteChangeOrder(upstreamSpaceID uuid.UUID, haveUpstream bool) (*goclientnew.ChangeOrder, error) {
 	if variantPromoteArgs.changeorderSlug == "" {
 		return nil, nil
+	}
+	// A bare slug resolves in the upstream space, which is where a change to promote is
+	// authored. A space with no upstream has no such space to look in, which happens only for an
+	// Invoke change order -- the change is made in place rather than taken from anywhere -- so
+	// the slug resolves in the space being promoted instead.
+	if !haveUpstream {
+		return changeOrderByRef(variantPromoteArgs.changeorderSlug)
 	}
 	selectedForChangeOrder := selectedSpaceID
 	selectedSpaceID = upstreamSpaceID.String()
 	defer func() { selectedSpaceID = selectedForChangeOrder }()
-	return resolveChangeOrder(variantPromoteArgs.changeorderSlug)
+	return changeOrderByRef(variantPromoteArgs.changeorderSlug)
 }
 
-// resolveChangeOrder resolves a change order identifier -- a bare slug, space/slug
+// changeOrderByRef resolves a change order identifier -- a bare slug, space/slug
 // or UUID -- against whatever space is selected when it runs.
-func resolveChangeOrder(identifier string) (*goclientnew.ChangeOrder, error) {
-	changeOrder, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeOrder](
-		identifier,
-		EntityTypeChangeOrder,
-		"*",
-		apiGetChangeOrderFromSlugInSpace,
-		func(c *goclientnew.ChangeOrder) string { return c.ChangeOrderID.String() },
-	)
+func changeOrderByRef(identifier string) (*goclientnew.ChangeOrder, error) {
+	changeOrder, err := resolveChangeOrder(identifier, defaultSpaceID(), "*")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get change order: %w", err)
 	}
-	return changeOrder, nil
+	return changeOrder.ChangeOrder, nil
 }
 
 // checkChangeOrderIsPromotable refuses a change order that was aborted.
@@ -905,7 +1104,7 @@ func promoteUpstreamSpaceID(space *goclientnew.Space) (uuid.UUID, error) {
 func promotePatchEnhancer() (PatchEnhancer, *uuid.UUID, error) {
 	var changesetID *uuid.UUID
 	if variantPromoteArgs.changesetSlug != "" {
-		id, err := parseChangeSetSlug(variantPromoteArgs.changesetSlug)
+		id, err := resolveChangeSetID(variantPromoteArgs.changesetSlug)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get changeset: %w", err)
 		}
@@ -925,6 +1124,112 @@ func promotePatchEnhancer() (PatchEnhancer, *uuid.UUID, error) {
 // promoteUpgradeUnits upgrades every downstream unit whose upstream has advanced. With a change
 // order it upgrades those of them the change order covers, to where it ends rather than to the
 // upstream's head.
+// updateTypeInvoke is the ChangeOrder UpdateType whose change is an invocation run in each space
+// in scope, rather than a range of revisions followed downstream over links.
+const updateTypeInvoke = "Invoke"
+
+// promoteInvokeUnits promotes an Invoke change order into one space, by running its invocation
+// there.
+//
+// The server takes what to run from the change order, so the request carries no functions of its
+// own: that is what holds every space to the same change. It also decides which units the change
+// order covers and which have already taken it, so the selection here is the whole space -- the
+// same shape as an upgrade-borne promotion, where which units are covered is likewise the server's
+// answer given per unit.
+//
+// A unit passed over -- outside the change order's selection, or already carrying its end tag --
+// comes back in no response at all, so what is reported is what the invocation reached.
+func promoteInvokeUnits(downstreamSpaceID uuid.UUID, changeOrder *goclientnew.ChangeOrder) error {
+	// A space the change order is not headed for would have every one of its units passed over,
+	// and the promotion would report reaching nothing without saying why.
+	if !slices.Contains(changeOrder.InScopeSpaceIDs, goclientnew.UUID(downstreamSpaceID)) {
+		return errors.Newf("change order '%s' is not headed for this space, so there is nothing to promote into it; add the space to its InScopeSpaceIDs first",
+			changeOrder.Slug)
+	}
+
+	if !jsonOutput && outputFormat == "" {
+		tprint("Promoting change order %s by invocation...", changeOrder.Slug)
+	}
+
+	params := &goclientnew.InvokeFunctionsParams{}
+	changeOrderID := changeOrder.ChangeOrderID
+	params.ChangeOrder = &changeOrderID
+	if variantPromoteArgs.dryRun {
+		dryRunStr := "true"
+		params.DryRun = &dryRunStr
+	}
+	// The body is required but carries nothing: the change order supplies the invocation, and a
+	// request that named functions as well would be refused.
+	body := goclientnew.FunctionInvocationsRequest{}
+	if variantPromoteArgs.changeDescription != "" {
+		body.ChangeDescription = variantPromoteArgs.changeDescription
+	}
+
+	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, downstreamSpaceID, params, body)
+	if cubapi.IsAPIError(err, funcRes) {
+		return errors.Wrapf(cubapi.InterpretErrorGeneric(err, funcRes),
+			"failed to promote change order %s by invocation", changeOrder.Slug)
+	}
+	responses := funcRes.JSON200
+	if responses == nil {
+		responses = funcRes.JSON207
+	}
+	if responses == nil {
+		return errors.New("unexpected response from the function invoke API")
+	}
+	return reportInvokePromotion(responses, changeOrder)
+}
+
+// reportInvokePromotion says which units the invocation reached and fails on the ones it could not.
+//
+// A partial promotion is reported rather than swallowed, and is not a reason to stop: running it
+// again reaches the units it missed, since a unit that took the change carries the end tag and is
+// passed over the second time.
+func reportInvokePromotion(responses *[]goclientnew.FunctionInvocationsResponse,
+	changeOrder *goclientnew.ChangeOrder) error {
+	failed := 0
+	// -o json and the other machine-readable formats render the responses themselves.
+	showText := !jsonOutput && outputFormat == ""
+	ran := "Ran"
+	if variantPromoteArgs.dryRun {
+		ran = "Would run"
+	}
+	for i := range *responses {
+		response := &(*responses)[i]
+		if !response.Success {
+			failed++
+			if showText {
+				tprint("Failed to promote change order %s into unit %s", changeOrder.Slug, unitDisplayName(response))
+				if response.Error != nil {
+					displayResponseError(response.Error)
+				}
+			}
+			continue
+		}
+		if showText {
+			// Named one by one, so that a dry run says which units the change order would
+			// reach here rather than only how many -- and so that a unit the invocation left
+			// alone is told apart from one it changed, since both are marked either way.
+			changed := "unchanged"
+			if len(response.Mutators) > 0 {
+				changed = "changed"
+			}
+			tprint("%s change order %s on unit %s (%s)", ran, changeOrder.Slug, unitDisplayName(response), changed)
+		}
+	}
+	if showText {
+		if len(*responses) == 0 {
+			tprintRaw("No units the change order covers and has not already reached")
+		} else {
+			tprint("%s change order %s on %d unit(s)", ran, changeOrder.Slug, len(*responses)-failed)
+		}
+	}
+	if failed > 0 {
+		return errors.Newf("change order %s failed on %d of %d unit(s)", changeOrder.Slug, failed, len(*responses))
+	}
+	return nil
+}
+
 func promoteUpgradeUnits(downstreamSpaceID uuid.UUID, changeOrderID *uuid.UUID) error {
 	if !jsonOutput && outputFormat == "" {
 		if changeOrderID != nil {

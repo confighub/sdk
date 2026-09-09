@@ -22,7 +22,7 @@ var revisionListCmd = &cobra.Command{
 
 The default output identifies each revision and shows what change management put on it: its
 ChangeSet, the ChangeOrders it belongs to, and its Tags, with the change description last and
-truncated. -o wide adds the timestamp, the user, the apply gates, and the Releases the revision
+truncated. -o wide adds the timestamp, the user, the validation errors, and the Releases the revision
 has been bundled into, and shows the whole description. The ChangeOrders, Tags, and Releases
 columns are truncated in either layout, since each is a set; "cub revision get" and -o json show
 them in full.
@@ -32,7 +32,7 @@ Examples:
   # List all revisions for a unit
   cub revision list --space my-space my-ns
 
-  # Include the timestamp, user, and apply gates, with untruncated descriptions
+  # Include the timestamp, user, and validation errors, with untruncated descriptions
   cub revision list --space my-space -o wide my-ns
 
   # List the revisions a change order landed on, across every space it reached
@@ -68,7 +68,7 @@ Examples:
 // and what the columns below them render is the expanded entity -- which `include` asks for and
 // buildSelectList folds into the selection anyway. Naming the id maps here as well would ask the
 // server for ids the response already carries expanded.
-var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.Source", "ChangeSet.Slug", "Revision.Description", "Revision.CreatedAt", "User.Username", "Revision.ApplyGates"}
+var defaultRevisionColumns = []string{"Revision.RevisionNum", "Unit.Slug", "Revision.Source", "ChangeSet.Slug", "Revision.Description", "Revision.CreatedAt", "User.Username", "Revision.ValidationErrors"}
 
 // Revision-specific aliases
 var revisionAliases = map[string]string{
@@ -127,12 +127,12 @@ func revisionListCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Regular unit-specific revision listing
-	unit, err := apiGetUnitFromSlug(args[0], "*") // get all fields for now
+	unit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err
 	}
 
-	revisions, err := apiListRevisions(selectedSpaceID, unit.UnitID.String(), effectiveWhere, selectFields, filterID)
+	revisions, err := apiListRevisions(selectedSpaceID, unit.Unit.UnitID.String(), effectiveWhere, selectFields, filterID)
 	if err != nil {
 		return err
 	}
@@ -146,49 +146,31 @@ func buildRevisionWhereClause() (string, error) {
 
 	// Handle --tag flag
 	if revisionTagSlug != "" {
-		tag, err := parseEntityIdentifierSingleAsEntity[goclientnew.Tag](
-			revisionTagSlug,
-			EntityTypeTag,
-			"*", // selectParam to get all fields
-			apiGetTagFromSlugInSpace,
-			func(t *goclientnew.Tag) string { return t.TagID.String() },
-		)
+		tag, err := resolveTag(revisionTagSlug, defaultSpaceID(), "*")
 		if err != nil {
 			return "", fmt.Errorf("failed to parse tag '%s': %w", revisionTagSlug, err)
 		}
-		clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", tag.TagID.String()))
+		clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", tag.Tag.TagID.String()))
 	}
 
 	// Handle --change-order flag. A ChangeOrder names a change wherever it went, so this is the
 	// query that answers "where has it landed?" -- across every Space when --space is '*'.
 	if revisionChangeOrderSlug != "" {
-		changeOrder, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeOrder](
-			revisionChangeOrderSlug,
-			EntityTypeChangeOrder,
-			"*", // selectParam to get all fields
-			apiGetChangeOrderFromSlugInSpace,
-			func(co *goclientnew.ChangeOrder) string { return co.ChangeOrderID.String() },
-		)
+		changeOrder, err := resolveChangeOrder(revisionChangeOrderSlug, defaultSpaceID(), "*")
 		if err != nil {
 			return "", fmt.Errorf("failed to parse change order '%s': %w", revisionChangeOrderSlug, err)
 		}
-		clauses = append(clauses, fmt.Sprintf("ChangeOrders ? '%s'", changeOrder.ChangeOrderID.String()))
+		clauses = append(clauses, fmt.Sprintf("ChangeOrders ? '%s'", changeOrder.ChangeOrder.ChangeOrderID.String()))
 	}
 
 	// Handle --changeset-starttag flag
 	if revisionChangeSetStartTag != "" {
-		changeset, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeSet](
-			revisionChangeSetStartTag,
-			EntityTypeChangeSet,
-			"*", // selectParam to get all fields
-			apiGetChangeSetFromSlugInSpace,
-			func(cs *goclientnew.ChangeSet) string { return cs.ChangeSetID.String() },
-		)
+		changeset, err := resolveChangeSet(revisionChangeSetStartTag, defaultSpaceID(), "*")
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset start tag '%s': %w", revisionChangeSetStartTag, err)
 		}
-		if changeset.State != "New" {
-			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.StartTagID.String()))
+		if changeset.ChangeSet.State != "New" {
+			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.ChangeSet.StartTagID.String()))
 		} else {
 			return "", fmt.Errorf("changeset '%s' has not been added to any units yet", revisionChangeSetStartTag)
 		}
@@ -196,18 +178,12 @@ func buildRevisionWhereClause() (string, error) {
 
 	// Handle --changeset-endtag flag
 	if revisionChangeSetEndTag != "" {
-		changeset, err := parseEntityIdentifierSingleAsEntity[goclientnew.ChangeSet](
-			revisionChangeSetEndTag,
-			EntityTypeChangeSet,
-			"*", // selectParam to get all fields
-			apiGetChangeSetFromSlugInSpace,
-			func(cs *goclientnew.ChangeSet) string { return cs.ChangeSetID.String() },
-		)
+		changeset, err := resolveChangeSet(revisionChangeSetEndTag, defaultSpaceID(), "*")
 		if err != nil {
 			return "", fmt.Errorf("failed to parse changeset end tag '%s': %w", revisionChangeSetEndTag, err)
 		}
-		if changeset.State == "Closed" {
-			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.EndTagID.String()))
+		if changeset.ChangeSet.State == "Closed" {
+			clauses = append(clauses, fmt.Sprintf("Tags ? '%s'", changeset.ChangeSet.EndTagID.String()))
 		} else {
 			return "", fmt.Errorf("changeset '%s' is not closed", revisionChangeSetEndTag)
 		}
@@ -346,7 +322,7 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		}
 		header = append(header, "Source")
 		if wide {
-			header = append(header, "Apply-Gates")
+			header = append(header, "Validation-Errors")
 		}
 		header = append(header, "ChangeSet", "ChangeOrders", "Tags")
 		if wide {
@@ -357,13 +333,13 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 	}
 	for _, extendedRev := range extendedRevisions {
 		rev := extendedRev.Revision
-		applyGates := ""
-		if rev.ApplyGates != nil {
-			if len(rev.ApplyGates) > 1 {
-				applyGates = "Multiple"
+		validationErrors := ""
+		if rev.ValidationErrors != nil {
+			if len(rev.ValidationErrors) > 1 {
+				validationErrors = "Multiple"
 			} else {
-				for key := range rev.ApplyGates {
-					applyGates = key
+				for key := range rev.ValidationErrors {
+					validationErrors = key
 				}
 			}
 		}
@@ -400,7 +376,7 @@ func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
 		}
 		row = append(row, rev.Source)
 		if wide {
-			row = append(row, applyGates)
+			row = append(row, validationErrors)
 		}
 		row = append(row, changeSet, changeOrders, tags)
 		if wide {

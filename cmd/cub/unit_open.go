@@ -63,13 +63,13 @@ func unitOpenCmdRun(_ *cobra.Command, args []string) error {
 	if selectedSpaceID == "*" {
 		return errors.New("space is required to open a specific unit. Set with --space option or set in context with the context sub-command")
 	}
-	unit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID")
+	unit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
 	if err != nil {
 		return err
 	}
 	serverURL := webUIServerURL()
-	spaceID := unit.SpaceID.String()
-	unitID := unit.UnitID.String()
+	spaceID := unit.Unit.SpaceID.String()
+	unitID := unit.Unit.UnitID.String()
 	switch {
 	case unitOpenArgs.edit:
 		return openWebUI(cubapi.GetUnitEditURL(serverURL, spaceID, unitID))

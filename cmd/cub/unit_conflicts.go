@@ -122,12 +122,12 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		return listUnitConflicts(args[0])
 	}
 
-	configUnit, err := apiGetUnitFromSlug(args[0], "UnitID,SpaceID,HeadMutationNum,HeadRevisionNum")
+	configUnit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID,HeadMutationNum,HeadRevisionNum")
 	if err != nil {
 		return err
 	}
-	priorHeadMutationNum := configUnit.HeadMutationNum
-	priorRevision := fmt.Sprintf("%s/%d", args[0], configUnit.HeadRevisionNum)
+	priorHeadMutationNum := configUnit.Unit.HeadMutationNum
+	priorRevision := fmt.Sprintf("%s/%d", args[0], configUnit.Unit.HeadRevisionNum)
 
 	body := goclientnew.UnitConflictsRequest{Action: "Dismiss"}
 	if conflictsApply {
@@ -142,7 +142,7 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		}}
 	}
 
-	res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.UnitID, body)
+	res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
@@ -202,21 +202,21 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 }
 
 func listUnitConflicts(slug string) error {
-	configUnit, err := apiGetUnitFromSlug(slug, "UnitID,SpaceID,Conflicts")
+	configUnit, err := resolveUnit(slug, selectedSpaceID, "UnitID,SpaceID,Conflicts")
 	if err != nil {
 		return err
 	}
-	if configUnit.Conflicts == nil || len(*configUnit.Conflicts) == 0 {
+	if configUnit.Unit.Conflicts == nil || len(*configUnit.Unit.Conflicts) == 0 {
 		if !quiet {
 			fmt.Printf("No outstanding merge conflicts on unit %s\n", slug)
 		}
 		return nil
 	}
 	if jsonOutput {
-		displayJSON(*configUnit.Conflicts)
+		displayJSON(*configUnit.Unit.Conflicts)
 		return nil
 	}
-	displayConflicts(*configUnit.Conflicts)
+	displayConflicts(*configUnit.Unit.Conflicts)
 	return nil
 }
 

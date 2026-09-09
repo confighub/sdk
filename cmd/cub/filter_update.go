@@ -101,10 +101,6 @@ func checkFilterUpdateConflictingArgs(args []string) bool {
 		failOnError(fmt.Errorf("only one of --patch and --replace should be specified"))
 	}
 
-	if err := validateSpaceFlag(isBulkPatchMode); err != nil {
-		failOnError(err)
-	}
-
 	if err := validateStdinFlags(); err != nil {
 		failOnError(err)
 	}
@@ -146,11 +142,11 @@ func runBulkFilterUpdate() error {
 	// Validate and resolve fromSpace early if needed
 	var fromSpaceID uuid.UUID
 	if filterUpdateArgs.fromSpace != "" {
-		fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
+		fromSpace, err := resolveSpace(filterUpdateArgs.fromSpace, "SpaceID")
 		if err != nil {
 			return err
 		}
-		fromSpaceID = fromSpace.SpaceID
+		fromSpaceID = fromSpace.Space.SpaceID
 	}
 
 	// Create enhancer function for filter-specific fields
@@ -213,20 +209,22 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("single filter update requires: <slug or id> <from> [options...]")
 	}
 
-	currentFilter, err := apiGetFilterFromSlug(args[0], "*", selectedSpaceID) // get all fields for RMW
+	currentFilterEnvelope, err := resolveFilter(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
-	spaceID := uuid.MustParse(selectedSpaceID)
+
+	currentFilter := currentFilterEnvelope.Filter
+	spaceID := currentFilter.SpaceID
 
 	// Validate and resolve fromSpace early if needed
 	var fromSpaceID uuid.UUID
 	if filterUpdateArgs.fromSpace != "" {
-		fromSpace, err := apiGetSpaceFromSlug(filterUpdateArgs.fromSpace, "SpaceID")
+		fromSpace, err := resolveSpace(filterUpdateArgs.fromSpace, "SpaceID")
 		if err != nil {
 			return err
 		}
-		fromSpaceID = fromSpace.SpaceID
+		fromSpaceID = fromSpace.Space.SpaceID
 	}
 
 	if filterPatch {

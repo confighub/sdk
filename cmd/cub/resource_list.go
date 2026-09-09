@@ -128,10 +128,7 @@ func resourceListCmdRun(cmd *cobra.Command, args []string) error {
 	// the slug has to be resolved against.
 	viewID := ""
 	if resourceViewSlug != "" {
-		viewUUID, viewErr := parseEntityIdentifierSingle(resourceViewSlug, EntityTypeView,
-			apiGetViewFromSlugInSpace,
-			func(v *goclientnew.View) string { return v.ViewID.String() },
-		)
+		viewUUID, viewErr := resolveViewID(resourceViewSlug)
 		if viewErr != nil {
 			return viewErr
 		}
