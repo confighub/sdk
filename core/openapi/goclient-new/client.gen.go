@@ -7523,6 +7523,22 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereTrigger != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_trigger", runtime.ParamLocationQuery, *params.WhereTrigger); err != nil {
@@ -13306,6 +13322,22 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereTrigger != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_trigger", runtime.ParamLocationQuery, *params.WhereTrigger); err != nil {
@@ -16139,6 +16171,22 @@ func NewListUnitsRequest(server string, spaceId openapi_types.UUID, params *List
 		if params.WhereData != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data", runtime.ParamLocationQuery, *params.WhereData); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -21276,6 +21324,22 @@ func NewListAllUnitsRequest(server string, params *ListAllUnitsParams) (*http.Re
 
 		}
 
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereTrigger != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_trigger", runtime.ParamLocationQuery, *params.WhereTrigger); err != nil {
@@ -22554,6 +22618,22 @@ func NewSearchUnitDataRequest(server string, params *SearchUnitDataParams) (*htt
 
 		}
 
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.WhereTrigger != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_trigger", runtime.ParamLocationQuery, *params.WhereTrigger); err != nil {
@@ -22895,6 +22975,22 @@ func NewSearchUnitMutationSourcesRequest(server string, params *SearchUnitMutati
 		if params.WhereData != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data", runtime.ParamLocationQuery, *params.WhereData); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

@@ -5252,7 +5252,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -5314,13 +5314,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -8966,7 +8981,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9065,7 +9080,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9184,7 +9199,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9283,7 +9298,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -9401,7 +9416,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -9500,7 +9515,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -13814,7 +13829,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -13876,13 +13891,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -18210,7 +18240,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -18310,13 +18340,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -19987,7 +20032,10 @@ paths:
       - Unit
   /space/{space_id}/unit/{unit_id}/extended:
     get:
-      description: Get Unit details with expanded relationships
+      deprecated: true
+      description: 'Get Unit details with expanded relationships. Deprecated: use
+        GET /space/{space_id}/unit/{unit_id} with the include query parameter, which
+        returns the same expanded entities and is how every other entity is read.'
       operationId: GetUnitExtended
       parameters:
       - description: Unique identifier for a space_id
@@ -20988,7 +21036,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -21087,7 +21135,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -21217,7 +21265,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, OrganizationID, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationWarnings.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -25062,7 +25110,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -25237,7 +25285,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -25337,13 +25385,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -25466,7 +25529,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26009,7 +26072,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26441,7 +26504,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26612,7 +26675,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26781,7 +26844,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27089,7 +27152,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27189,13 +27252,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -27515,7 +27593,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27615,13 +27693,28 @@ paths:
           `NOT IN`. Boolean values support equality and inequality only. The `IN`
           and `NOT IN` operators accept a comma-separated list of values in parentheses,
           such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
-          '':arm64-latest'')`. The syntax `.|` requires the preceding path to exist;
-          otherwise the relation `!=` will always return true regardless what it is
-          compared with. String literals are quoted with single quotes, such as `''string''`.
-          Integer and boolean literals are also supported for attributes of those
-          types. The whole string must be query-encoded.'
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
         in: query
         name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
         required: false
         schema:
           type: string
@@ -33047,6 +33140,13 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        NeededPaths:
+          description: Attribute paths this Revision's configuration needs from upstream
+            Units via NeedsProvides Links.
+          items:
+            $ref: '#/components/schemas/AttributeValue'
+          type: array
+          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an Organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -33055,6 +33155,13 @@ components:
           x-go-type-skip-optional-pointer: true
         PathAnnotations:
           $ref: '#/components/schemas/PathAnnotationList'
+        ProvidedPaths:
+          description: Attribute paths this Revision's configuration provides to downstream
+            Units via NeedsProvides Links.
+          items:
+            $ref: '#/components/schemas/AttributeInfo'
+          type: array
+          x-go-type-skip-optional-pointer: true
         Releases:
           additionalProperties:
             type: string
@@ -33133,6 +33240,22 @@ components:
             data at this Revision. These block Release operations.
           type: object
           x-go-type-skip-optional-pointer: true
+        ValidationPassed:
+          additionalProperties:
+            type: boolean
+          description: A map of "<space slug>/<trigger slug>/<function name>" to true
+            of Triggers invoking validating functions that executed and passed on
+            the configuration data at this Revision. Disjoint from ValidationErrors
+            and ValidationWarnings.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ValidationResults:
+          additionalProperties:
+            $ref: '#/components/schemas/ValidationResultList'
+          description: A map from gate/warning name to the validation results that
+            caused it, for the configuration data at this Revision.
+          type: object
+          x-go-type-skip-optional-pointer: true
         ValidationWarnings:
           additionalProperties:
             type: boolean
@@ -33140,6 +33263,14 @@ components:
             of Triggers with Warn=true invoking validating functions that did not
             pass on the configuration data at this Revision. These do not block Release
             operations.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Values:
+          additionalProperties:
+            type: string
+          description: Map from "<trigger slug>/<attribute name>" to the first output
+            Value with that attribute name of the function invocation specified by
+            the Trigger, as of this Revision.
           type: object
           x-go-type-skip-optional-pointer: true
         Version:
@@ -34273,6 +34404,14 @@ components:
           format: int64
           readOnly: true
           type: integer
+          x-go-type-skip-optional-pointer: true
+        HeadRevisionID:
+          description: Unique identifier of the head Revision -- the same Revision
+            HeadRevisionNum numbers. Use include=HeadRevisionNum to expand it.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
           x-go-type-skip-optional-pointer: true
         HeadRevisionNum:
           description: Sequence number the head Revision.

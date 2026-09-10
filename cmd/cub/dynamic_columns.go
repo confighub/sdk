@@ -374,6 +374,7 @@ var mapFields = map[string]bool{
 	"Values":             true,
 	"ValidationErrors":   true,
 	"ValidationWarnings": true,
+	"ValidationPassed":   true,
 	// The deprecated names of the two above. The server still returns them, so a column
 	// naming one still renders.
 	"ApplyGates":    true,

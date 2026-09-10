@@ -144,6 +144,9 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		if len(rev.ValidationWarnings) != 0 {
 			view.Append([]string{"Validation Warnings", validationErrorsToString(rev.ValidationWarnings)})
 		}
+		if len(rev.ValidationPassed) != 0 {
+			view.Append([]string{"Validation Passed", validationErrorsToString(rev.ValidationPassed)})
+		}
 		if len(rev.ApprovedBy) != 0 {
 			view.Append([]string{"Approved By", strings.Join(resolveUsernames(rev.ApprovedBy), ", ")})
 		}
