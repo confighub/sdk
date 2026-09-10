@@ -20030,74 +20030,6 @@ paths:
       summary: Upload config data
       tags:
       - Unit
-  /space/{space_id}/unit/{unit_id}/extended:
-    get:
-      deprecated: true
-      description: 'Get Unit details with expanded relationships. Deprecated: use
-        GET /space/{space_id}/unit/{unit_id} with the include query parameter, which
-        returns the same expanded entities and is how every other entity is read.'
-      operationId: GetUnitExtended
-      parameters:
-      - description: Unique identifier for a space_id
-        in: path
-        name: space_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      - description: Unique identifier for a unit_id
-        in: path
-        name: unit_id
-        required: true
-        schema:
-          format: uuid
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UnitExtended'
-          description: OK
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit request is invalid (Bad Request).
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unauthorized access.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Forbidden access.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unit not found.
-        "500":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Something went wrong while processing Unit.
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unexpected error.
-      summary: Get Unit details with expanded relationships
-      tags:
-      - Unit
   /space/{space_id}/unit/{unit_id}/guard:
     post:
       description: 'Set or remove guards on the unit''s PathAnnotations. A guard names
@@ -29296,12 +29228,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DataType:
           description: 'DataType specifies the data type of the attribute value. Must
             be one of: string, int, bool.'
@@ -29711,12 +29637,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -29952,12 +29872,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -30202,12 +30116,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -30865,12 +30773,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -31410,12 +31312,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -31566,12 +31462,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -31831,12 +31721,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
@@ -32138,12 +32022,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -32542,12 +32420,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DataSize:
           format: int64
           readOnly: true
@@ -32704,12 +32576,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         Data:
           description: Configuration data of the resource, represented as JSON.
@@ -33112,12 +32978,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DataHash:
           description: The SHA256 hash of this revision's data, encoded as hexadecimal.
             It is also the ETag the data endpoint serves.
@@ -33384,12 +33244,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -33666,12 +33520,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -33794,12 +33642,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
@@ -34076,12 +33918,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -34348,12 +34184,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DataHash:
           description: The SHA256 hash of the configuration data, encoded as hexadecimal.
@@ -34898,12 +34728,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
-          x-go-type-skip-optional-pointer: true
         EntityType:
           description: The type of entity.
           readOnly: true
@@ -34992,29 +34816,6 @@ components:
           readOnly: false
           type: integer
           x-go-type-skip-optional-pointer: true
-      type: object
-    UnitExtended:
-      properties:
-        ApprovedByUsers:
-          items:
-            type: string
-          nullable: true
-          type: array
-          x-go-type-skip-optional-pointer: true
-        FromLinks:
-          items:
-            $ref: '#/components/schemas/Link'
-          nullable: true
-          type: array
-          x-go-type-skip-optional-pointer: true
-        ToLinks:
-          items:
-            $ref: '#/components/schemas/Link'
-          nullable: true
-          type: array
-          x-go-type-skip-optional-pointer: true
-        Unit:
-          $ref: '#/components/schemas/Unit'
       type: object
     UnitGuardRequest:
       properties:
@@ -35112,12 +34913,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DisplayName:
           description: Friendly name for the entity.
@@ -35273,12 +35068,6 @@ components:
           format: date-time
           readOnly: true
           type: string
-          x-go-type-skip-optional-pointer: true
-        CursorID:
-          description: An auto-incrementing sequence number used for pagination.
-          format: int64
-          readOnly: true
-          type: integer
           x-go-type-skip-optional-pointer: true
         DeleteGates:
           additionalProperties:

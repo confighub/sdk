@@ -215,9 +215,6 @@ type Attribute struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DataType DataType specifies the data type of the attribute value. Must be one of: string, int, bool.
 	DataType string `json:"DataType" yaml:"DataType"`
 
@@ -454,9 +451,6 @@ type BridgeWorker struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -585,9 +579,6 @@ type ChangeOrder struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -684,9 +675,6 @@ type ChangeSet struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1370,9 +1358,6 @@ type Filter struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -1686,9 +1671,6 @@ type Invocation struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -1764,9 +1746,6 @@ type Link struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1880,9 +1859,6 @@ type Mutation struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
@@ -2049,9 +2025,6 @@ type Organization struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2261,10 +2234,7 @@ type Release struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-	DataSize int64 `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
+	DataSize  int64     `json:"DataSize,omitempty" yaml:"DataSize,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2330,9 +2300,6 @@ type ReleasePublishRequest struct {
 type Resource struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// Data Configuration data of the resource, represented as JSON.
 	Data map[string]interface{} `json:"Data,omitempty" yaml:"Data,omitempty"`
@@ -2545,9 +2512,6 @@ type Revision struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DataHash The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
 
@@ -2682,9 +2646,6 @@ type Space struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -2863,9 +2824,6 @@ type Tag struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -2924,9 +2882,6 @@ type Target struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -3087,9 +3042,6 @@ type Trigger struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
@@ -3233,9 +3185,6 @@ type Unit struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DataHash The SHA256 hash of the configuration data, encoded as hexadecimal. It is also the ETag the data endpoint serves, so a caller that listed Units can ask for a body conditionally without fetching it first.
 	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
@@ -3533,9 +3482,6 @@ type UnitEvent struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
-
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	Message    string `json:"Message,omitempty" yaml:"Message,omitempty"`
@@ -3573,27 +3519,6 @@ type UnitEvent struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
-}
-
-// UnitExtended defines model for UnitExtended.
-type UnitExtended struct {
-	ApprovedByUsers []string `json:"ApprovedByUsers" yaml:"ApprovedByUsers"`
-	FromLinks       []Link   `json:"FromLinks" yaml:"FromLinks"`
-	ToLinks         []Link   `json:"ToLinks" yaml:"ToLinks"`
-
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
-	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
 // UnitGuardRequest defines model for UnitGuardRequest.
@@ -3657,9 +3582,6 @@ type UnitTagResponse struct {
 type User struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DisplayName Friendly name for the entity.
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
@@ -3736,9 +3658,6 @@ type View struct {
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// CursorID An auto-incrementing sequence number used for pagination.
-	CursorID int64 `json:"CursorID,omitempty" yaml:"CursorID,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`

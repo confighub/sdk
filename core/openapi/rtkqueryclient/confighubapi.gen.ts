@@ -1820,12 +1820,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
-      getUnitExtended: build.query<GetUnitExtendedApiResponse, GetUnitExtendedApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/extended`,
-        }),
-        providesTags: ['Unit'],
-      }),
       setUnitGuard: build.mutation<SetUnitGuardApiResponse, SetUnitGuardApiArg>({
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/guard`,
@@ -9573,13 +9567,6 @@ export type UploadUnitDataApiArg = {
   subgroup?: string;
   body: string;
 };
-export type GetUnitExtendedApiResponse = /** status 200 OK */ UnitExtendedRead;
-export type GetUnitExtendedApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-};
 export type SetUnitGuardApiResponse = /** status 200 OK */ UnitGuardResponse;
 export type SetUnitGuardApiArg = {
   /** Unique identifier for a space_id */
@@ -13523,8 +13510,6 @@ export type SpaceRead = {
   AttributeIDs?: Uuid[];
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -13785,8 +13770,6 @@ export type AttributeRead = {
   AttributeID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** DataType specifies the data type of the attribute value. Must be one of: string, int, bool. */
   DataType: string;
   /** An optional set of gates that, if any is present, will block deletion. */
@@ -13855,8 +13838,6 @@ export type OrganizationRead = {
   };
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14047,8 +14028,6 @@ export type BridgeWorkerRead = {
   Condition?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14276,8 +14255,6 @@ export type ChangeOrderRead = {
   ChangeOrderID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14376,8 +14353,6 @@ export type TagRead = {
   ChangeSetID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14479,8 +14454,6 @@ export type InvocationRead = {
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14558,8 +14531,6 @@ export type FilterRead = {
   };
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -14666,8 +14637,6 @@ export type ChangeSetRead = {
   ChangeSetID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -15108,8 +15077,6 @@ export type UnitRead = {
   Conflicts?: MutationConflictList;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** The SHA256 hash of the configuration data, encoded as hexadecimal. It is also the ETag the data endpoint serves, so a caller that listed Units can ask for a body conditionally without fetching it first. */
   DataHash?: string;
   /** The size of the configuration data in bytes. The configuration itself is not part of the Unit; read it from the data endpoint. */
@@ -15317,8 +15284,6 @@ export type LinkRead = {
   Clearance?: Clearance;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -15488,8 +15453,6 @@ export type ReleaseRead = {
   BundleBaseName?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   DataSize?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
@@ -15563,8 +15526,6 @@ export type Resource = {
 export type ResourceRead = {
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** Configuration data of the resource, represented as JSON. */
   Data?: object;
   /** The type of entity. */
@@ -15714,8 +15675,6 @@ export type TargetRead = {
   ConfigTypes?: TargetConfigType[];
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -15873,8 +15832,6 @@ export type ViewRead = {
   Columns?: Column[];
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -16021,8 +15978,6 @@ export type RevisionRead = {
   Conflicts?: MutationConflictList;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves. */
   DataHash?: string;
   /** The size of this revision's data in bytes. The data itself is not part of the Revision; read it from the data endpoint. */
@@ -16108,8 +16063,6 @@ export type User = {
 export type UserRead = {
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** Friendly name for the entity. */
   DisplayName?: string;
   /** The type of entity. */
@@ -16254,8 +16207,6 @@ export type TriggerRead = {
   Clearance?: Clearance;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -16535,8 +16486,6 @@ export type MutationRead = {
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** The type of entity. */
   EntityType?: string;
   FunctionInvocation?: FunctionInvocation;
@@ -16620,8 +16569,6 @@ export type UnitEventRead = {
   BridgeWorkerID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
-  /** An auto-incrementing sequence number used for pagination. */
-  CursorID?: number;
   /** The type of entity. */
   EntityType?: string;
   Message?: string;
@@ -16752,18 +16699,6 @@ export type UnitConflictsRequest = {
   DryRun?: boolean;
   /** Which outstanding conflicts to act on. Empty acts on all of them. */
   Select?: UnitConflictSelector[];
-};
-export type UnitExtended = {
-  ApprovedByUsers?: string[] | null;
-  FromLinks?: Link[] | null;
-  ToLinks?: Link[] | null;
-  Unit?: Unit;
-};
-export type UnitExtendedRead = {
-  ApprovedByUsers?: string[] | null;
-  FromLinks?: LinkRead[] | null;
-  ToLinks?: LinkRead[] | null;
-  Unit?: UnitRead;
 };
 export type UnitGuardResponse = {
   PathAnnotations?: PathAnnotationList;
@@ -17185,8 +17120,6 @@ export const {
   useDownloadUnitDataQuery,
   useLazyDownloadUnitDataQuery,
   useUploadUnitDataMutation,
-  useGetUnitExtendedQuery,
-  useLazyGetUnitExtendedQuery,
   useSetUnitGuardMutation,
   useListExtendedMutationsQuery,
   useLazyListExtendedMutationsQuery,

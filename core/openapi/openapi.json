@@ -22372,111 +22372,6 @@
         }
       }
     },
-    "/space/{space_id}/unit/{unit_id}/extended": {
-      "get": {
-        "tags": [
-          "Unit"
-        ],
-        "summary": "Get Unit details with expanded relationships",
-        "description": "Get Unit details with expanded relationships. Deprecated: use GET /space/{space_id}/unit/{unit_id} with the include query parameter, which returns the same expanded entities and is how every other entity is read.",
-        "operationId": "GetUnitExtended",
-        "parameters": [
-          {
-            "name": "space_id",
-            "in": "path",
-            "description": "Unique identifier for a space_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "unit_id",
-            "in": "path",
-            "description": "Unique identifier for a unit_id",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "Unexpected error.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UnitExtended"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Unit request is invalid (Bad Request).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized access.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden access.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Unit not found.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Something went wrong while processing Unit.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/StandardErrorResponse"
-                }
-              }
-            }
-          }
-        },
-        "deprecated": true
-      }
-    },
     "/space/{space_id}/unit/{unit_id}/guard": {
       "post": {
         "tags": [
@@ -31528,13 +31423,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DataType": {
             "type": "string",
             "description": "DataType specifies the data type of the attribute value. Must be one of: string, int, bool.",
@@ -31989,13 +31877,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -32255,13 +32136,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -32491,13 +32365,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
@@ -33398,13 +33265,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -34038,13 +33898,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -34212,13 +34065,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
@@ -34457,13 +34303,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "EntityType": {
@@ -34817,13 +34656,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
@@ -35271,13 +35103,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DataSize": {
             "type": "integer",
             "format": "int64",
@@ -35439,13 +35264,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "Data": {
@@ -35909,13 +35727,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DataHash": {
             "type": "string",
             "description": "The SHA256 hash of this revision's data, encoded as hexadecimal. It is also the ETag the data endpoint serves.",
@@ -36217,13 +36028,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -36456,13 +36260,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "DeleteGates": {
             "type": "object",
             "additionalProperties": {
@@ -36600,13 +36397,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
@@ -36855,13 +36645,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
@@ -37126,13 +36909,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DataHash": {
@@ -37716,13 +37492,6 @@
             "example": "2025-04-04T11:50:02.95102-07:00",
             "x-go-type-skip-optional-pointer": true
           },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "EntityType": {
             "type": "string",
             "description": "The type of entity.",
@@ -37828,38 +37597,6 @@
           }
         },
         "description": "UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks\nthe lifecycle of applying, destroying, or refreshing a Unit's configuration in the target\nlive system. The event captures the current status of the operation, any configuration\ndrift detected, and timing information about when the action started and completed.\nActions are atomic from ConfigHub's perspective but may involve multiple steps\nin the connected Bridge. The status and drift detection help track the health\nand consistency of the provisioned configuration compared to what is defined in the Unit."
-      },
-      "UnitExtended": {
-        "type": "object",
-        "properties": {
-          "ApprovedByUsers": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "nullable": true,
-            "x-go-type-skip-optional-pointer": true
-          },
-          "FromLinks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Link"
-            },
-            "nullable": true,
-            "x-go-type-skip-optional-pointer": true
-          },
-          "ToLinks": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Link"
-            },
-            "nullable": true,
-            "x-go-type-skip-optional-pointer": true
-          },
-          "Unit": {
-            "$ref": "#/components/schemas/Unit"
-          }
-        }
       },
       "UnitGuardRequest": {
         "type": "object",
@@ -37988,13 +37725,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DisplayName": {
@@ -38181,13 +37911,6 @@
             "format": "date-time",
             "readOnly": true,
             "example": "2025-04-04T11:50:02.95102-07:00",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "CursorID": {
-            "type": "integer",
-            "description": "An auto-incrementing sequence number used for pagination.",
-            "format": "int64",
-            "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
           "DeleteGates": {
