@@ -4,94 +4,97 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"slices"
 	"strings"
 
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/core/changeworkflow"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/confighub/sdk/core/worker/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
 )
 
-// A ChangeWorkflow definition is a document ConfigHub reads itself rather than delivers
-// anywhere, and it is held as Kubernetes/YAML. The server leaves a Kubernetes Unit to the
-// Provider defaulting every other Kubernetes Unit gets, so the create path below pins the
-// definition to ProviderNone itself to keep it out of its Space's Releases.
-const changeWorkflowToolchainType = string(workerapi.ToolchainKubernetesYAML)
-
-// changeWorkflowStageLabel is the Space label a Stage authored with --stage selects on. It is
-// the label "cub variant create --stage" sets, so a workflow whose stage names are the
-// variants' stages needs no selectors written out at all.
+// changeWorkflowStageLabel is the Space label a stage authored with --stage selects on. It is the
+// label "cub variant create --stage" sets, so a workflow whose stage names are the variants'
+// stages needs no selectors written out at all.
 const changeWorkflowStageLabel = "Stage"
 
 var changeworkflowCreateCmd = &cobra.Command{
-	Use:         "create [<slug> [<definition-file>]]",
-	Short:       "Create a new ChangeWorkflow Unit or bulk create ChangeWorkflow Units",
+	Use:         "create [<slug>]",
+	Short:       "Create a new change workflow or bulk create change workflows",
 	Long:        getChangeWorkflowCreateHelp(),
-	Args:        cobra.MaximumNArgs(2), // Allow 0 args for bulk mode
+	Args:        cobra.MaximumNArgs(1), // Allow 0 args for bulk mode
 	RunE:        changeworkflowCreateCmdRun,
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
 func getChangeWorkflowCreateHelp() string {
-	baseHelp := `Create a Unit holding a ChangeWorkflow definition, or bulk create ChangeWorkflow Units by
-cloning existing ones.
+	baseHelp := `Create a new change workflow, or bulk create change workflows by cloning existing ones.
 
 SINGLE CHANGEWORKFLOW CREATION:
 
-A ChangeWorkflow says how a change is promoted: the ordered stages it moves through, which
-Spaces each stage selects, and the gates that have to pass before it enters one. The definition
-is a YAML document, and this command creates the Kubernetes/YAML Unit that holds it, from a file
-or from flags.
+A ChangeWorkflow says how a change is promoted: the ordered stages it moves through, which Spaces
+each stage selects, and the gates that have to pass before it enters one. Give the stages with
+--stage, or write the whole workflow in a file and pass it with --filename.
 
-A stage selects its Spaces with a "whereSpace" expression over Space labels. It must not name
+A stage selects its Spaces with a "WhereSpace" expression over Space labels. It must not name
 Labels.Component: the component is the change order's own and is appended to every stage's
-selector, which is what lets one definition be cloned to give another component the same shape
-of rollout. A stage named with --stage selects "Labels.` + changeWorkflowStageLabel + ` = '<name>'", which is what
-"cub variant create --stage" labels a variant's Space with. A stage that selects its Spaces
-some other way is written as a definition file.
+selector, which is what lets one workflow be cloned to give another component the same shape of
+rollout. A stage named with --stage selects "Labels.` + changeWorkflowStageLabel + ` = '<name>'", which is what
+"cub variant create --stage" labels a variant's Space with. A stage that selects its Spaces some
+other way is written in a file.
 
 The gates a stage can declare are:
-  released   every Space of the stage ahead has published a Release carrying the change
-  healthy    every Space of the stage ahead reports it Synced, Succeeded and Healthy
+  Released   every Space of the stage ahead has published a Release carrying the change
+  Healthy    every Space of the stage ahead reports it Synced, Succeeded and Healthy
 
---prerequisites is one set of gates, given to every stage and to the final stage alike. A
-stage's gates are its entry gates: they are checked over the stage before it, so the first
-stage's are never evaluated. The final stage's are what the last stage must satisfy for the
-rollout to read as completed, which no promotion can gate because no hop is left. A rollout
-whose stages gate differently from one another is written as a definition file.
+--prerequisites is one set of gates, given to every stage and to the final stage alike. A stage's
+gates are its entry gates: they are checked over the stage before it, so the first stage's are
+never evaluated. The final stage's are what the last stage must satisfy for the rollout to read as
+completed, which no promotion can gate because no hop is left. A rollout whose stages gate
+differently from one another is written in a file, as is one declaring custom prerequisites.
 
 Single Examples:
 ` + "```" + `
-  # From a file, or from stdin with "-"
-  cub changeworkflow create --space workflows myapp-main-line workflow.yaml
-
   # From flags. Each --stage names one stage, given in the order a change is promoted through
   # them, and --prerequisites gates every one of them alike.
   cub changeworkflow create --space workflows myapp-main-line \
     --stage dev --stage staging --stage prod \
-    --prerequisites released,healthy
+    --prerequisites Released,Healthy
+
+  # From a file, or from stdin with --from-stdin
+  cub changeworkflow create --space workflows myapp-main-line --filename workflow.yaml
 
   # Then create a change order governed by it
   cub changeorder create --space myapp-base bump-base-image \
     --change-workflow workflows/myapp-main-line
 ` + "```" + `
 
+A workflow file holds the entity, so its fields are the ones "cub changeworkflow get --json"
+prints:
+` + "```" + `
+  Stages:
+    - Name: dev
+      WhereSpace: "Labels.Stage = 'dev'"
+    - Name: prod
+      WhereSpace: "Labels.Stage = 'prod'"
+      Prerequisites: [Released, Healthy, code-freeze]
+  Final:
+    Prerequisites: [Released, Healthy]
+  CustomPrerequisites:
+    - Name: code-freeze
+      Expression: "cel:Space.Annotations['code-freeze'] != 'true'"
+` + "```" + `
+
 BULK CHANGEWORKFLOW CREATION:
 
 When no positional arguments are provided, bulk create mode is activated. This mode clones
-existing ChangeWorkflow Units and creates multiple new ones with optional modifications. Only
-Units of the Kubernetes/YAML toolchain are selected, since that is what a definition is held as.
+existing change workflows and creates multiple new ones with optional modifications.
 
-A clone carries the definition as it stands, metadata.name included, so a clone still names the
-workflow it was cloned from. That name is what promotions and "cub changeorder get" report the
-workflow as; change it with "cub unit update" where it matters.
+Cloning is how a workflow shape is shared across components: a workflow names no component, so a
+clone governs whatever component's change orders name it.
 
 Bulk Create Examples:
 ` + "```" + `
@@ -106,10 +109,6 @@ Bulk Create Examples:
   # Clone with a name prefix, and label the clones
   cub changeworkflow create --changeworkflow myapp-main-line \
     --dest-space workflows --name-prefix canary- --label "Rollout=canary"
-
-  # Clone with modifications via JSON merge patch
-  echo '{"DisplayName": "Standard rollout"}' | cub changeworkflow create \
-    --changeworkflow myapp-main-line --dest-space workflows --name-prefix std- --from-stdin
 ` + "```" + `
 `
 
@@ -118,9 +117,8 @@ Bulk Create Examples:
 
 var changeworkflowCreateArgs struct {
 	// Single create specific flags
-	stages            []string
-	prerequisites     []string
-	changeDescription string
+	stages        []string
+	prerequisites []string
 	// Bulk create specific flags
 	changeworkflowSlugs []string
 	destSpaces          []string
@@ -133,22 +131,20 @@ var changeworkflowCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(changeworkflowCreateCmd)
-	enableWaitFlag(changeworkflowCreateCmd)
 	enableWhereFlag(changeworkflowCreateCmd)
 	enableFilterFlag(changeworkflowCreateCmd)
 
 	// Single create specific flags
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; a stage selecting its Spaces some other way is written as a definition file")
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage ahead of it, so the first stage's are never evaluated. A custom prerequisite is declared under spec.custom-prerequisites and gated on by name, which only a definition file can carry")
-	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.changeDescription, "change-desc", "", "change description recorded on the revision the definition is written as")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; a stage selecting its Spaces some other way is written in a file")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage ahead of it, so the first stage's are never evaluated. A custom prerequisite is declared under CustomPrerequisites and gated on by name, which only a file can carry")
 
 	// Bulk create specific flags
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.changeworkflowSlugs, "changeworkflow", []string{}, "target specific ChangeWorkflow Units by slug or UUID for bulk create (can be repeated or comma-separated)")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.changeworkflowSlugs, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk create (can be repeated or comma-separated)")
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
-	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Unit and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
+	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original ChangeWorkflow and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
 	changeworkflowCmd.AddCommand(changeworkflowCreateCmd)
@@ -184,8 +180,8 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--name-pattern requires --variant-labels to be set")
 		}
 
-		// A bulk create clones definitions that already exist, so there is nothing here for a
-		// definition of its own to be part of.
+		// A bulk create clones workflows that already exist, so there is nothing here for a
+		// workflow of its own to be part of.
 		if len(changeworkflowCreateArgs.stages) > 0 || len(changeworkflowCreateArgs.prerequisites) > 0 {
 			return false, errors.New("--stage and --prerequisites can only be used with single ChangeWorkflow creation")
 		}
@@ -200,24 +196,21 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 			)
 		}
 
-		// The two ways to say what the definition is. They answer the same question, so
-		// giving both leaves no way to tell which was meant, and giving neither creates a
-		// Unit no change order could be governed by.
-		fromFile := len(args) > 1
+		// The two ways to say what the workflow is. They answer the same question, so giving both
+		// leaves no way to tell which was meant, and giving neither creates a workflow with no
+		// stages, which no change order could be promoted under.
+		fromFile := flagPopulateModelFromStdin || flagFilename != ""
 		fromFlags := len(changeworkflowCreateArgs.stages) > 0 || len(changeworkflowCreateArgs.prerequisites) > 0
 
 		if fromFile && fromFlags {
-			return false, errors.New("a definition file and --stage/--prerequisites are mutually exclusive: the file is the definition")
+			return false, errors.New("--filename/--from-stdin and --stage/--prerequisites are mutually exclusive: the file is the workflow")
 		}
 		if !fromFile && !fromFlags {
-			return false, errors.New("a ChangeWorkflow definition is required: give a file (or \"-\" for stdin), or name the stages with --stage")
+			return false, errors.New("a ChangeWorkflow needs stages: name them with --stage, or give the whole workflow with --filename (or --from-stdin)")
 		}
 		// The gates are carried by the stages, so there have to be some.
 		if len(changeworkflowCreateArgs.prerequisites) > 0 && len(changeworkflowCreateArgs.stages) == 0 {
 			return false, errors.New("--prerequisites needs at least one --stage")
-		}
-		if fromFile && args[1] == "-" && flagPopulateModelFromStdin {
-			return false, errors.New("can't read both entity attributes and the ChangeWorkflow definition from stdin")
 		}
 	}
 
@@ -254,260 +247,96 @@ func changeworkflowCreateCmdRun(cmd *cobra.Command, args []string) error {
 	return runSingleChangeWorkflowCreate(args)
 }
 
-// changeWorkflowDefinition is the document the Unit will hold, along with where it came from
-// for the Unit's external source. Either the file the caller named or the one the flags
-// describe, and either way it is checked here, so a definition a promotion could not run is
-// refused at authoring time rather than at the first promotion that reads it.
-func changeWorkflowDefinition(args []string, slug string) (string, string, error) {
-	if len(args) > 1 {
-		content, err := fetchContent(args[1])
-		if err != nil {
-			return "", "", errors.Wrap(err, "failed to read the ChangeWorkflow definition")
-		}
-		definition := &changeworkflow.ChangeWorkflow{}
-		if err := yaml.Unmarshal(content, definition); err != nil {
-			return "", "", errors.Wrapf(err, "%s does not hold a ChangeWorkflow definition", args[1])
-		}
-		if err := validateChangeWorkflow(definition); err != nil {
-			return "", "", errors.Wrapf(err, "%s does not hold a usable ChangeWorkflow definition", args[1])
-		}
-		source := args[1]
-		if source == "-" {
-			source = "stdin"
-		}
-		// Stored as it was written. Round-tripping it through the struct would drop its
-		// comments, and a definition is a document someone maintains.
-		return string(content), source, nil
-	}
-
-	definition, err := changeWorkflowFromFlags(slug)
-	if err != nil {
-		return "", "", err
-	}
-	if err := validateChangeWorkflow(definition); err != nil {
-		return "", "", err
-	}
-	rendered, err := yaml.Marshal(definition)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to render the ChangeWorkflow definition")
-	}
-	return string(rendered), "", nil
-}
-
-// changeWorkflowFromFlags builds the definition --stage and --prerequisites describe.
-// metadata.name is the Unit's slug: the document names itself, and that name is what a
-// promotion reports the workflow as.
-func changeWorkflowFromFlags(slug string) (*changeworkflow.ChangeWorkflow, error) {
-	definition := &changeworkflow.ChangeWorkflow{}
-	definition.APIVersion = changeworkflow.APIVersion
-	definition.Kind = changeworkflow.Kind
-	definition.Name = slug
-
-	for _, name := range changeworkflowCreateArgs.stages {
+// changeWorkflowStagesFromFlags builds the stages --stage and --prerequisites describe, along with
+// the final stage's gates, which are the same set. Create and update both name their stages this
+// way, so what a stage name means is decided here rather than by each command.
+func changeWorkflowStagesFromFlags(stageNames, prerequisites []string) ([]goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowFinalStage, error) {
+	stages := make([]goclientnew.ChangeWorkflowStage, 0, len(stageNames))
+	for _, name := range stageNames {
 		stage, err := changeWorkflowStage(name)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		// Cloned so the stages do not go on sharing one slice with each other and with the
-		// final stage, which a later edit to any of them would write through.
-		stage.Prerequisites = slices.Clone(changeworkflowCreateArgs.prerequisites)
-		definition.Spec.Stages = append(definition.Spec.Stages, *stage)
+		// Cloned so the stages do not go on sharing one slice with each other and with the final
+		// stage, which a later edit to any of them would write through.
+		stage.Prerequisites = slices.Clone(prerequisites)
+		stages = append(stages, *stage)
 	}
-	definition.Spec.Final.Prerequisites = slices.Clone(changeworkflowCreateArgs.prerequisites)
-	return definition, nil
+	final := &goclientnew.ChangeWorkflowFinalStage{
+		Prerequisites: slices.Clone(prerequisites),
+	}
+	return stages, final, nil
 }
 
-// changeWorkflowStage builds the stage --stage names, which selects the Spaces labeled with
-// that name. A stage selecting its Spaces any other way is written as a definition file.
-func changeWorkflowStage(name string) (*changeworkflow.ChangeWorkflowStage, error) {
+// changeWorkflowStage builds the stage --stage names, which selects the Spaces labeled with that
+// name. A stage selecting its Spaces any other way is written in a file.
+func changeWorkflowStage(name string) (*goclientnew.ChangeWorkflowStage, error) {
 	name = strings.TrimSpace(name)
 	if name == "" {
 		return nil, errors.New("invalid --stage: a stage name is required")
 	}
-	// The name goes into an expression, so one carrying a quote would produce a selector that
-	// does not parse. Such a stage has to name its Spaces itself, in a definition file.
+	// The name goes into an expression, so one carrying a quote would produce a selector that does
+	// not parse. Such a stage has to name its Spaces itself, in a file.
 	if strings.Contains(name, "'") {
-		return nil, errors.Newf("stage '%s' has a quote in its name, so it needs a whereSpace of its own, which only a definition file can give it", name)
+		return nil, errors.Newf("stage '%s' has a quote in its name, so it needs a WhereSpace of its own, which only a file can give it", name)
 	}
-	return &changeworkflow.ChangeWorkflowStage{
+	return &goclientnew.ChangeWorkflowStage{
 		Name:       name,
 		WhereSpace: fmt.Sprintf("Labels.%s = '%s'", changeWorkflowStageLabel, name),
 	}, nil
 }
 
-// validateChangeWorkflow refuses a definition a promotion could not run. What it checks is
-// what promotion insists on: the stages it walks in order, the selectors it renders
-// (stageWhereSpace) and the gates it knows how to evaluate (checkVariantPrerequisites).
-func validateChangeWorkflow(definition *changeworkflow.ChangeWorkflow) error {
-	if definition.APIVersion != changeworkflow.APIVersion {
-		return errors.Newf("apiVersion is %q, expected %q", definition.APIVersion, changeworkflow.APIVersion)
-	}
-	if definition.Kind != changeworkflow.Kind {
-		return errors.Newf("kind is %q, expected %q", definition.Kind, changeworkflow.Kind)
-	}
-	if definition.Name == "" {
-		return errors.New("metadata.name is required: it is what a promotion reports the workflow as")
-	}
-	if len(definition.Spec.Stages) == 0 {
-		return errors.New("spec.stages is empty: a workflow with no stages has nowhere to promote a change to")
-	}
-
-	// A custom prerequisite is declared once and gated on by name, so its expression is
-	// compiled here rather than at the promotion it would hold up.
-	for _, custom := range definition.Spec.CustomPrerequisites {
-		expression, isExpression := changeworkflow.CELPrerequisiteExpression(custom.Expression)
-		if !isExpression {
-			return errors.Newf("custom prerequisite '%s' has no expression: it has to start with '%s'",
-				custom.Name, changeworkflow.CELPrerequisitePrefix)
-		}
-		if err := changeworkflow.ValidateCELPrerequisite(expression); err != nil {
-			return errors.Wrapf(err, "invalid custom prerequisite '%s'", custom.Name)
-		}
-	}
-
-	named := map[string]bool{}
-	for i := range definition.Spec.Stages {
-		stage := &definition.Spec.Stages[i]
-		if stage.Name == "" {
-			return errors.Newf("spec.stages[%d] has no name", i)
-		}
-		// --target-stage names a stage and a promotion reports the one it entered, so two
-		// stages answering to one name leave both ambiguous.
-		if named[stage.Name] {
-			return errors.Newf("spec.stages has more than one stage named '%s'", stage.Name)
-		}
-		named[stage.Name] = true
-		// A definition names no component -- the change order supplies it -- so the clause
-		// stageWhereSpace renders here is meaningless and discarded. It is asked anyway so
-		// that what a stage may not say, and how that is worded, lives in one place.
-		if _, err := stageWhereSpace(stage, ""); err != nil {
-			return err
-		}
-		if err := validateChangeWorkflowPrerequisites(stage.Prerequisites, definition.Spec.CustomPrerequisites,
-			fmt.Sprintf("stage '%s'", stage.Name)); err != nil {
-			return err
-		}
-	}
-	return validateChangeWorkflowPrerequisites(definition.Spec.Final.Prerequisites,
-		definition.Spec.CustomPrerequisites, "spec.final")
-}
-
-// validateChangeWorkflowPrerequisites refuses a gate promotion has no check for. Every entry
-// is a name: one of the built-in gates, or one spec.custom-prerequisites declares. The names
-// are the ones the promotion evaluates (checkVariantPrerequisites), so a definition accepted
-// here is one it can run.
-func validateChangeWorkflowPrerequisites(prerequisites []string,
-	customPrerequisites []changeworkflow.ChangeWorkflowPrerequisite, where string) error {
-	for _, prerequisite := range prerequisites {
-		if slices.Contains(knownPrerequisites, prerequisite) {
-			continue
-		}
-		if getPrerequisiteDefinition(prerequisite, customPrerequisites) == nil {
-			return errors.Newf("unrecognized prerequisite for %s: '%s'; the gates are: %s, or the name of one declared in spec.custom-prerequisites",
-				where, prerequisite, strings.Join(knownPrerequisites, ", "))
-		}
-	}
-	return nil
-}
-
 func runSingleChangeWorkflowCreate(args []string) error {
 	spaceID := uuid.MustParse(selectedSpaceID)
-	slug := makeSlug(args[0])
 
-	// The definition is settled before the Unit is created, so one nothing could promote
-	// under leaves no half-made Unit behind.
-	definition, source, err := changeWorkflowDefinition(args, slug)
-	if err != nil {
-		return err
-	}
-
-	newUnit := &goclientnew.Unit{}
+	newBody := &goclientnew.ChangeWorkflow{}
 	if flagPopulateModelFromStdin || flagFilename != "" {
-		if err := populateModelFromFlags(newUnit); err != nil {
+		if err := populateModelFromFlags(newBody); err != nil {
 			return err
 		}
 	}
-	if err := setAnnotations(&newUnit.Annotations); err != nil {
+	if err := setAnnotations(&newBody.Annotations); err != nil {
 		return err
 	}
-	if err := setLabels(&newUnit.Labels); err != nil {
+	if err := setLabels(&newBody.Labels); err != nil {
 		return err
 	}
-	if err := setDeleteGates(&newUnit.DeleteGates); err != nil {
+	if err := setDeleteGates(&newBody.DeleteGates); err != nil {
 		return err
-	}
-	if changeworkflowCreateArgs.changeDescription != "" {
-		newUnit.LastChangeDescription = changeworkflowCreateArgs.changeDescription
 	}
 
-	// Set after stdin so that what the command was told wins over what it was handed.
-	newUnit.SpaceID = spaceID
-	newUnit.Slug = slug
-	newUnit.ToolchainType = changeWorkflowToolchainType
-	// A definition is read by ConfigHub itself and never delivered to a Provider, so it is
-	// held to ProviderNone rather than left to the server's default for the toolchain, which
-	// only applies to a Unit that arrives without one. ProviderNone is also what keeps a
-	// definition out of its Space's Releases.
-	newUnit.ProviderType = string(api.ProviderNone)
-	if newUnit.DisplayName == "" {
-		newUnit.DisplayName = args[0]
+	if len(changeworkflowCreateArgs.stages) > 0 {
+		stages, final, err := changeWorkflowStagesFromFlags(
+			changeworkflowCreateArgs.stages, changeworkflowCreateArgs.prerequisites)
+		if err != nil {
+			return err
+		}
+		newBody.Stages = stages
+		newBody.Final = final
 	}
 
-	newParams := &goclientnew.CreateUnitParams{}
+	// Set after the file so that what the command was told wins over what it was handed.
+	newBody.SpaceID = spaceID
+	newBody.Slug = makeSlug(args[0])
+	if newBody.DisplayName == "" {
+		newBody.DisplayName = args[0]
+	}
+
+	params := &goclientnew.CreateChangeWorkflowParams{}
 	if allowExists {
 		allowExistsStr := "true"
-		newParams.AllowExists = &allowExistsStr
-	}
-	if source != "" {
-		newParams.MergeExternalSource = &source
+		params.AllowExists = &allowExistsStr
 	}
 
-	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
-	if cubapi.IsAPIError(err, unitRes) {
-		return cubapi.InterpretErrorGeneric(err, unitRes)
-	}
-	unitDetails, err := unitFromWrite(unitRes.JSON200)
-	if err != nil {
-		return err
+	changeWorkflowRes, err := cubClientNew.CreateChangeWorkflowWithResponse(ctx, spaceID, params, *newBody)
+	if cubapi.IsAPIError(err, changeWorkflowRes) {
+		return cubapi.InterpretErrorGeneric(err, changeWorkflowRes)
 	}
 
-	// Configuration is not part of a Unit, so the definition is a second call. The Unit is
-	// left in place if that fails, as in "cub unit create": it exists, somebody may already
-	// be looking at it, and deleting it would be a worse outcome than an empty Unit the
-	// caller can write to again.
-	dataParams, err := unitDataParamsFromCreate(newParams,
-		newUnit.LastChangeDescription, changeSetIDForDataWrite(newUnit))
-	if err != nil {
-		return err
-	}
-	if _, err := putUnitData(spaceID, unitDetails.UnitID, definition, dataParams); err != nil {
-		return errors.Wrapf(err, "unit %s was created, but the ChangeWorkflow definition could not be written",
-			unitDetails.Slug)
-	}
-	// Re-read so what is displayed reflects the definition that was just written.
-	if refreshed, refreshErr := resolveUnit(unitDetails.UnitID.String(), spaceID.String(), "*"); refreshErr == nil {
-		unitDetails = refreshed.Unit
-	}
-
-	if wait {
-		if err := awaitTriggersRemoval(unitDetails); err != nil {
-			return err
-		}
-	}
-	displayCreateResults(unitDetails, "changeworkflow", args[0], unitDetails.UnitID.String(), displayUnitDetails)
+	changeWorkflowDetails := changeWorkflowRes.JSON200
+	displayCreateResults(changeWorkflowDetails, "changeworkflow", args[0],
+		changeWorkflowDetails.ChangeWorkflowID.String(), displayChangeWorkflowDetails)
 	return nil
-}
-
-// addChangeWorkflowToolchainToWhereClause confines a bulk selection to Units of the toolchain a
-// definition is held as. A clause selecting by slug or label would otherwise reach Units of any
-// toolchain, and cloning one of those through this command would produce something no change
-// order could ever be governed by.
-func addChangeWorkflowToolchainToWhereClause(whereClause string) string {
-	toolchainConstraint := fmt.Sprintf("ToolchainType = '%s'", changeWorkflowToolchainType)
-	if whereClause != "" {
-		return fmt.Sprintf("%s AND %s", whereClause, toolchainConstraint)
-	}
-	return toolchainConstraint
 }
 
 func runBulkChangeWorkflowCreate() error {
@@ -520,7 +349,7 @@ func runBulkChangeWorkflowCreate() error {
 	// Build WHERE clause from changeworkflow identifiers or use provided where clause
 	var effectiveWhere string
 	if len(changeworkflowCreateArgs.changeworkflowSlugs) > 0 {
-		whereClause, err := buildWhereClauseFromUnits(changeworkflowCreateArgs.changeworkflowSlugs)
+		whereClause, err := buildWhereClauseFromChangeWorkflows(changeworkflowCreateArgs.changeworkflowSlugs)
 		if err != nil {
 			return err
 		}
@@ -531,27 +360,16 @@ func runBulkChangeWorkflowCreate() error {
 
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
-	effectiveWhere = addChangeWorkflowToolchainToWhereClause(effectiveWhere)
-
-	// Create enhancer function for changeworkflow-specific fields
-	enhancer := func(patchMap map[string]interface{}) {
-		// Held to ProviderNone whatever the Unit it was cloned from carried, for the same
-		// reason a single create is.
-		patchMap["ProviderType"] = string(api.ProviderNone)
-		if changeworkflowCreateArgs.changeDescription != "" {
-			patchMap["LastChangeDescription"] = changeworkflowCreateArgs.changeDescription
-		}
-	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchData(nil)
 	if err != nil {
 		return err
 	}
 
 	// Build bulk create parameters
-	include := "UnitEventID,SpaceID"
-	params := &goclientnew.BulkCreateUnitsParams{
+	include := "SpaceID"
+	params := &goclientnew.BulkCreateChangeWorkflowsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
@@ -608,10 +426,15 @@ func runBulkChangeWorkflowCreate() error {
 	}
 
 	// Call the bulk create API
-	responses, statusCode, err := bulkCreateUnits(params, patchJSON)
+	bulkRes, err := cubClientNew.BulkCreateChangeWorkflowsWithBodyWithResponse(
+		ctx,
+		params,
+		"application/merge-patch+json",
+		bytes.NewReader(patchJSON),
+	)
 	if err != nil {
 		return err
 	}
 
-	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+	return handleBulkChangeWorkflowCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create", effectiveWhere)
 }

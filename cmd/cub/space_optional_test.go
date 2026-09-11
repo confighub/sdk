@@ -15,7 +15,7 @@ import (
 // the entity outright, a "space/slug" carries its own space, and a bare slug is
 // searched for across the organization.
 var resolverBackedGets = []string{
-	"attribute get", "changeset get", "changeorder get", "filter get",
+	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
 	"unit get", "view get", "worker get",
 }
@@ -100,7 +100,8 @@ func TestEnableOptionalSpaceKeepsExistingAnnotations(t *testing.T) {
 // "*" for their bulk mode, and nothing downstream reads the selected space.
 var resolverBackedWrites = []string{
 	"attribute delete", "attribute update", "changeset delete", "changeset update",
-	"changeorder delete", "changeorder update", "filter delete", "filter update",
+	"changeorder delete", "changeorder update", "changeworkflow delete", "changeworkflow update",
+	"filter delete", "filter update",
 	"invocation delete", "invocation update", "link delete", "link update",
 	"tag delete", "tag update", "target delete", "target update",
 	"trigger delete", "trigger update", "unit delete", "unit update",

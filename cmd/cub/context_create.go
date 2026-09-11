@@ -46,7 +46,7 @@ var (
 
 func init() {
 	contextCreateCmd.Flags().StringVar(&createServer, "server", "", "API server URL")
-	contextCreateCmd.Flags().StringVar(&createOrganization, "organization", "", "WorkOS organization ID (optional)")
+	contextCreateCmd.Flags().StringVar(&createOrganization, "organization", "", "Identity provider organization ID (optional)")
 	contextCreateCmd.Flags().StringVar(&createSpace, "space", "", "Default space (optional)")
 	contextCreateCmd.Flags().BoolVar(&createUse, "use", false, "Also make the new context the current one")
 

@@ -383,6 +383,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedChangeSet |
 		goclientnew.ChangeOrder |
 		goclientnew.ExtendedChangeOrder |
+		goclientnew.ChangeWorkflow |
+		goclientnew.ExtendedChangeWorkflow |
 		goclientnew.Unit |
 		goclientnew.UnitEvent |
 		goclientnew.UnitAction |

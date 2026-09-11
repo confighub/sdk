@@ -89,7 +89,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
 
 // spaceBaseSelectFields are the fields always returned by space list queries,
 // regardless of the requested columns.
@@ -134,7 +134,7 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 
 // wideSpaceCountColumns are the count columns shown only with --output=wide.
 // #Units is always shown, so it isn't listed here.
-var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#ChangeOrders", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"}
+var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#ChangeOrders", "#ChangeWorkflows", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"}
 
 func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 	return []string{
@@ -142,6 +142,7 @@ func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 		fmt.Sprintf("%d", extendedSpace.TotalTagCount),
 		fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount),
 		fmt.Sprintf("%d", extendedSpace.TotalChangeOrderCount),
+		fmt.Sprintf("%d", extendedSpace.TotalChangeWorkflowCount),
 		fmt.Sprintf("%d", extendedSpace.TotalFilterCount),
 		fmt.Sprintf("%d", extendedSpace.TotalViewCount),
 		fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),

@@ -361,6 +361,25 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 	return derefPtrs(res.JSON200), nil
 }
 
+// ListChangeWorkflows returns change workflows across the organization matching where.
+func ListChangeWorkflows(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedChangeWorkflow, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllChangeWorkflowsParams{
+		Where:    ptrIf(where.String()),
+		Select:   ptrIf(opts.Select),
+		Include:  ptrIf(opts.Include),
+		Filter:   ptrIf(opts.Filter),
+		Contains: ptrIf(opts.Contains),
+	}
+	res, err := c.API.ListAllChangeWorkflowsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
 // ListTags returns tags across the organization matching where.
 func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTag, error) {
 	if err := where.Err(); err != nil {

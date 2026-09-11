@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -203,6 +204,11 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 			}
 		}
 
+		// Validation names positional arguments and converts their values in place, and the
+		// Arguments backing array belongs to the caller. An in-process caller may hand the same
+		// list to many concurrent invocations -- the server's where_data search does, one per
+		// Unit -- so writing into it would be those goroutines writing the same memory.
+		invocation.Arguments = slices.Clone(invocation.Arguments)
 		arguments, validationErr := ValidateAndBuildArguments(fh.GetResourceProvider(), &functionInvocation.FunctionContext, &invocation, &f.FunctionSignature)
 		if validationErr != nil {
 			invocationInfo += ": " + validationErr.Error()
@@ -495,6 +501,9 @@ func evaluateCEL(resourceProvider yamlkit.ResourceProvider, functionContext *api
 
 // ValidateAndBuildArguments validates function arguments and builds an in-order argument list.
 // It returns the validated arguments or an error if validation fails.
+//
+// It rewrites invocation.Arguments in place, naming positional arguments and replacing each value
+// with its evaluated and converted form, so the caller must own that slice's backing array.
 func ValidateAndBuildArguments(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, invocation *api.FunctionInvocation, f *api.FunctionSignature) ([]api.FunctionArgument, error) {
 	nargs := len(invocation.Arguments)
 	if nargs < f.RequiredParameters {

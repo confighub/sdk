@@ -105,6 +105,10 @@ func resolveChangeOrder(ref string, spaceID string, selectParam string) (*goclie
 	return cubapi.ResolveChangeOrder(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }
 
+func resolveChangeWorkflow(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedChangeWorkflow, error) {
+	return cubapi.ResolveChangeWorkflow(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
+}
+
 func resolveTag(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedTag, error) {
 	return cubapi.ResolveTag(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }
@@ -199,6 +203,14 @@ func resolveChangeOrderID(ref string) (uuid.UUID, error) {
 		return uuid.Nil, err
 	}
 	return changeOrder.ChangeOrder.ChangeOrderID, nil
+}
+
+func resolveChangeWorkflowID(ref string) (uuid.UUID, error) {
+	changeWorkflow, err := resolveChangeWorkflow(ref, defaultSpaceID(), idSelect("ChangeWorkflowID"))
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return changeWorkflow.ChangeWorkflow.ChangeWorkflowID, nil
 }
 
 func resolveUnitID(ref string) (uuid.UUID, error) {

@@ -223,19 +223,22 @@ func (r resolver[E]) notFound(ref Ref, spaceID goclientnew.UUID) error {
 // before resolution was shared, so that the slug and the UUID spelling of a
 // reference return the same envelope.
 const (
-	spaceGetInclude        = "TriggerFilterID,TriggerIDs"
-	unitGetInclude         = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID,UpstreamSpaceID,ApprovedBy"
-	targetGetInclude       = "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
-	triggerGetInclude      = "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
-	filterGetInclude       = "SpaceID,FromSpaceID"
-	invocationGetInclude   = "SpaceID,BridgeWorkerID"
-	changeSetGetInclude    = "SpaceID,StartTagID,EndTagID"
-	changeOrderGetInclude  = "SpaceID,StartTagID,EndTagID,RestoreTagID,InvocationID,UnitFilterID"
-	tagGetInclude          = "SpaceID,ChangeSetID"
-	viewGetInclude         = "SpaceID,FilterID"
-	attributeGetInclude    = "SpaceID"
-	linkGetInclude         = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
-	bridgeWorkerGetInclude = "SpaceID"
+	spaceGetInclude       = "TriggerFilterID,TriggerIDs"
+	unitGetInclude        = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID,UpstreamSpaceID,ApprovedBy"
+	targetGetInclude      = "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
+	triggerGetInclude     = "SpaceID,BridgeWorkerID,InvocationID,UnitFilterID"
+	filterGetInclude      = "SpaceID,FromSpaceID"
+	invocationGetInclude  = "SpaceID,BridgeWorkerID"
+	changeSetGetInclude   = "SpaceID,StartTagID,EndTagID"
+	changeOrderGetInclude = "SpaceID,StartTagID,EndTagID,RestoreTagID,InvocationID,UnitFilterID"
+	// A ChangeWorkflow references nothing but its Space: its stages select Spaces by expression
+	// rather than by id, and the component and base come from the ChangeOrder being promoted.
+	changeWorkflowGetInclude = "SpaceID"
+	tagGetInclude            = "SpaceID,ChangeSetID"
+	viewGetInclude           = "SpaceID,FilterID"
+	attributeGetInclude      = "SpaceID"
+	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
+	bridgeWorkerGetInclude   = "SpaceID"
 )
 
 // ResolveSpace looks up one space by slug or UUID. A space is not itself
@@ -405,6 +408,26 @@ func ResolveChangeOrder(ctx context.Context, c *Client, ref Ref, opts ResolveOpt
 				return goclientnew.UUID{}
 			}
 			return e.ChangeOrder.ChangeOrderID
+		},
+	}.resolve(ctx, c, ref, opts)
+}
+
+// ResolveChangeWorkflow looks up one change workflow by slug, space/slug, or UUID.
+func ResolveChangeWorkflow(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedChangeWorkflow, error) {
+	return resolver[goclientnew.ExtendedChangeWorkflow]{
+		entity: "change workflow", idField: "ChangeWorkflowID", include: changeWorkflowGetInclude,
+		list: ListChangeWorkflows,
+		slugOf: func(e *goclientnew.ExtendedChangeWorkflow) string {
+			if e.ChangeWorkflow == nil {
+				return ""
+			}
+			return e.ChangeWorkflow.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedChangeWorkflow) goclientnew.UUID {
+			if e.ChangeWorkflow == nil {
+				return goclientnew.UUID{}
+			}
+			return e.ChangeWorkflow.ChangeWorkflowID
 		},
 	}.resolve(ctx, c, ref, opts)
 }

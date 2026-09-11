@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/confighub/sdk/core/changeworkflow"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -69,8 +68,8 @@ func displayChangeOrderDetails(changeorderDetails *goclientnew.ChangeOrder) {
 // readings, and there is no workflow to read them from. The Stage is also empty while
 // the change has not finished the first one.
 func changeOrderRollout(changeOrder *goclientnew.ChangeOrder) (string, string) {
-	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
-	if err != nil || changeWorkflow == nil {
+	changeWorkflow := getChangeWorkflowForChangeOrder(changeOrder)
+	if changeWorkflow == nil {
 		return "", ""
 	}
 	nextStage, currentStage, err := getNextWorkflowStage(changeWorkflow, changeOrder)
@@ -81,8 +80,8 @@ func changeOrderRollout(changeOrder *goclientnew.ChangeOrder) (string, string) {
 	switch {
 	// No next Stage means every Stage has the change, so the workflow's last Stage is
 	// where it got to.
-	case nextStage == nil && len(changeWorkflow.Spec.Stages) > 0:
-		stage = changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1].Name
+	case nextStage == nil && len(changeWorkflow.Stages) > 0:
+		stage = changeWorkflow.Stages[len(changeWorkflow.Stages)-1].Name
 	case currentStage != nil:
 		stage = currentStage.Name
 	}
@@ -98,11 +97,11 @@ func changeOrderRollout(changeOrder *goclientnew.ChangeOrder) (string, string) {
 // Completion is a different reading from State: State never consults live status, and it
 // reduces over every Space in scope rather than over the last Stage, so the two
 // legitimately disagree in both directions.
-func changeOrderIsCompleted(changeWorkflow *changeworkflow.ChangeWorkflow, changeOrder *goclientnew.ChangeOrder) bool {
-	if len(changeWorkflow.Spec.Stages) == 0 {
+func changeOrderIsCompleted(changeWorkflow *goclientnew.ChangeWorkflowSpec, changeOrder *goclientnew.ChangeOrder) bool {
+	if len(changeWorkflow.Stages) == 0 {
 		return false
 	}
-	lastStage := &changeWorkflow.Spec.Stages[len(changeWorkflow.Spec.Stages)-1]
+	lastStage := &changeWorkflow.Stages[len(changeWorkflow.Stages)-1]
 
 	// A last Stage selecting nothing is not one the change has reached: the workflow
 	// says Spaces belong there, the same reading getNextWorkflowStage takes. Which
@@ -126,7 +125,7 @@ func changeOrderIsCompleted(changeWorkflow *changeworkflow.ChangeWorkflow, chang
 		// A prerequisite nothing knows how to check is an error to promotion and
 		// unsatisfied here: there is nothing to refuse at this point, so it holds the
 		// rollout open rather than passing it as completed.
-		if checkVariantPrerequisites(changeWorkflow.Spec.Final.Prerequisites, changeWorkflow.Spec.CustomPrerequisites, changeOrder, variant, lastStage.Name, variantName) != nil {
+		if checkVariantPrerequisites(changeWorkflowFinalPrerequisites(changeWorkflow.Final), changeWorkflow.CustomPrerequisites, changeOrder, variant, lastStage.Name, variantName) != nil {
 			return false
 		}
 	}

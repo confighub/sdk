@@ -22,9 +22,9 @@ var authSwitchCmd = &cobra.Command{
 The organization argument can be a partial match of:
 
 - Organization Display Name (e.g., "ConfigHub")
-- Organization Slug (e.g., "org_01jsqq70m483a3b1fk3zfs9z1a")
+- Organization Slug (e.g., "id3f6c2a1e-9b4d-4e7a-8c52-1d0f7e9a6b43")
 - Organization ID (ConfigHub UUID, e.g., "2af2356f-8587-4816-8619-77dfa85fb524")
-- External ID (WorkOS ID, e.g., "org_01JSQQ70M483A3B1FK3ZFS9Z1A")
+- External ID (the identity provider's UUID, e.g., "3f6c2a1e-9b4d-4e7a-8c52-1d0f7e9a6b43")
 
 Examples:
 `+"```"+`
@@ -32,7 +32,7 @@ Examples:
   cub auth switch "ConfigHub"
 
   # Switch to organization by slug
-  cub auth switch "org_01jsqq70m483a3b1fk3zfs9z1a"
+  cub auth switch "id3f6c2a1e-9b4d-4e7a-8c52-1d0f7e9a6b43"
 `+"```"+`
 `, ""),
 	Args: cobra.ExactArgs(1),

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"regexp"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/cockroachdb/errors"
@@ -20,7 +19,6 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"sigs.k8s.io/yaml"
 )
 
 var variantPromoteArgs struct {
@@ -208,10 +206,7 @@ func variantPromoteStage() error {
 	if err := checkChangeOrderIsPromotable(changeOrder); err != nil {
 		return err
 	}
-	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
-	if err != nil {
-		return err
-	}
+	changeWorkflow := getChangeWorkflowForChangeOrder(changeOrder)
 	if changeWorkflow == nil {
 		return errors.Newf("change order '%s' was created without a ChangeWorkflow, so it has no stages to promote through",
 			changeOrder.Slug)
@@ -222,9 +217,9 @@ func variantPromoteStage() error {
 	// legitimate repair of a Stage that landed partway.
 	if changeOrderIsCompleted(changeWorkflow, changeOrder) {
 		return errors.Newf("change order '%s' has completed ChangeWorkflow '%s', so there is nothing left to promote",
-			changeOrder.Slug, changeWorkflow.Name)
+			changeOrder.Slug, changeOrderWorkflowName(changeOrder))
 	}
-	var currentStage, previousStage *changeworkflow.ChangeWorkflowStage
+	var currentStage, previousStage *goclientnew.ChangeWorkflowStage
 	if variantPromoteArgs.targetStage != "" {
 		currentStage, previousStage, err = getWorkflowStageForName(changeWorkflow, variantPromoteArgs.targetStage)
 	} else {
@@ -239,7 +234,7 @@ func variantPromoteStage() error {
 	if currentStage == nil {
 		if !jsonOutput && outputFormat == "" {
 			tprint("Change order %s has reached every stage of ChangeWorkflow %s; nothing to promote",
-				changeOrder.Slug, changeWorkflow.Name)
+				changeOrder.Slug, changeOrderWorkflowName(changeOrder))
 		}
 		return nil
 	}
@@ -252,7 +247,7 @@ func variantPromoteStage() error {
 	// The gates belong to the Stage rather than to any one Variant of it, so they
 	// are evaluated once for the whole Stage. They run on a dry run too: a preview
 	// that ignored them would describe a promotion that cannot happen.
-	if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.Spec.CustomPrerequisites, changeOrder); err != nil {
+	if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.CustomPrerequisites, changeOrder); err != nil {
 		return err
 	}
 
@@ -352,14 +347,11 @@ func variantPromoteSpace(spaceSlug string) error {
 		return upstreamErr
 	}
 
-	changeWorkflow, err := getChangeWorkflowForChangeOrder(changeOrder)
-	if err != nil {
-		return err
-	}
+	changeWorkflow := getChangeWorkflowForChangeOrder(changeOrder)
 	if changeWorkflow != nil {
 		if changeOrderIsCompleted(changeWorkflow, changeOrder) {
 			return errors.Newf("change order '%s' has completed ChangeWorkflow '%s', so there is nothing left to promote",
-				changeOrder.Slug, changeWorkflow.Name)
+				changeOrder.Slug, changeOrderWorkflowName(changeOrder))
 		}
 
 		if !variantPromoteArgs.force {
@@ -369,7 +361,7 @@ func variantPromoteSpace(spaceSlug string) error {
 			if err != nil {
 				return err
 			}
-			if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.Spec.CustomPrerequisites, changeOrder); err != nil {
+			if err := validateStageEntryGates(currentStage, previousStage, changeWorkflow.CustomPrerequisites, changeOrder); err != nil {
 				return err
 			}
 		}
@@ -378,20 +370,29 @@ func variantPromoteSpace(spaceSlug string) error {
 	return promoteIntoSpace(downstreamSpace.Space.SpaceID, upstreamSpaceID, changeOrder)
 }
 
+// changeOrderWorkflowName names the ChangeWorkflow a change order is promoted under, for an error
+// message. The copy the change order carries has no name of its own -- it is the workflow's body,
+// not the row -- so this is the id the copy was taken from.
+func changeOrderWorkflowName(changeOrder *goclientnew.ChangeOrder) string {
+	if changeOrder == nil || changeOrder.ChangeWorkflowID == nil {
+		return "unknown"
+	}
+	return changeOrder.ChangeWorkflowID.String()
+}
+
 // getChangeWorkflowForChangeOrder returns the ChangeWorkflow governing the ChangeOrder, or
 // nil when nothing governs the promotion: no ChangeOrder was named, or the one
 // named was created without a workflow. A promotion of whatever the upstream has
 // reached is not part of a rollout, so there is no Stage sequence to place it in.
-func getChangeWorkflowForChangeOrder(changeOrder *goclientnew.ChangeOrder) (*changeworkflow.ChangeWorkflow, error) {
+//
+// The ChangeOrder carries the workflow rather than naming it, so nothing is fetched and nothing
+// can have moved since: the copy was taken when the workflow was associated, which is what holds
+// every promotion of one rollout to one set of rules.
+func getChangeWorkflowForChangeOrder(changeOrder *goclientnew.ChangeOrder) *goclientnew.ChangeWorkflowSpec {
 	if changeOrder == nil {
-		return nil, nil
+		return nil
 	}
-	changeWorkflowUnitID, ok := changeOrder.Annotations[changeWorkflowUnitIDAnnotation]
-	if !ok {
-		return nil, nil
-	}
-	return getChangeWorkflowFromUnit(changeWorkflowUnitID,
-		changeOrder.Annotations[changeWorkflowRevisionAnnotation])
+	return changeOrder.ChangeWorkflow
 }
 
 // promoteIntoSpace is the promotion itself, once the Space to promote into has
@@ -422,56 +423,6 @@ func promoteIntoSpace(downstreamSpaceID, upstreamSpaceID uuid.UUID, changeOrder 
 		return err
 	}
 	return promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID)
-}
-
-// getChangeWorkflowFromUnit parses the ChangeWorkflow definition the change
-// workflow annotations record: the pinned Revision of the named Unit, rather
-// than whatever that Unit holds now, so a workflow edited part way through a
-// rollout does not change the rules a ChangeOrder already started under.
-//
-// The Unit is reached by a list rather than a get because the annotation carries
-// only its ID, while every unit get is scoped to a Space, and the definition need
-// not live in either Space taking part in the promotion.
-func getChangeWorkflowFromUnit(changeWorkflowUnitID, changeWorkflowRevision string) (*changeworkflow.ChangeWorkflow, error) {
-	unitID, err := uuid.Parse(changeWorkflowUnitID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid %s annotation %q", changeWorkflowUnitIDAnnotation, changeWorkflowUnitID)
-	}
-
-	revisionNum, err := strconv.ParseInt(changeWorkflowRevision, 10, 64)
-	if err != nil {
-		return nil, errors.Wrapf(err, "invalid %s annotation %q", changeWorkflowRevisionAnnotation, changeWorkflowRevision)
-	}
-
-	units, err := apiListAllUnits(cubapi.Where{}.In("UnitID", []goclientnew.UUID{goclientnew.UUID(unitID)}),
-		"", "", "", "", false, "UnitID,SpaceID,Slug", "", "")
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch ChangeWorkflow unit %s", unitID)
-	}
-	if len(units) == 0 || units[0].Unit == nil {
-		return nil, errors.Errorf("ChangeWorkflow unit %s not found", unitID)
-	}
-	unit := units[0].Unit
-
-	revision, err := apiGetRevisionFromNumberInSpace(revisionNum, unit.UnitID.String(), unit.SpaceID.String(),
-		"RevisionID,RevisionNum")
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch revision %d of ChangeWorkflow unit %s", revisionNum, unit.Slug)
-	}
-
-	// A Revision's configuration is read from its data endpoint, not off the entity.
-	data, err := fetchRevisionData(unit.SpaceID, unit.UnitID, revision.RevisionID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch data of revision %d of unit %s", revisionNum, unit.Slug)
-	}
-
-	changeWorkflow := &changeworkflow.ChangeWorkflow{}
-	if err := yaml.Unmarshal([]byte(data), changeWorkflow); err != nil {
-		return nil, errors.Wrapf(err, "unit %s revision %d does not carry a ChangeWorkflow definition",
-			unit.Slug, revisionNum)
-	}
-
-	return changeWorkflow, nil
 }
 
 // componentPredicate matches any mention of the component label in a Stage's
@@ -525,7 +476,7 @@ func changeOrderComponent(changeOrder *goclientnew.ChangeOrder) (string, error) 
 // reports nothing. Refusing keeps that failure loud, and it is not hypothetical, a
 // definition written against the older format carrying the predicate and a clone of
 // one into another component being exactly how a Stage goes silently empty.
-func stageWhereSpace(stage *changeworkflow.ChangeWorkflowStage, component string) (string, error) {
+func stageWhereSpace(stage *goclientnew.ChangeWorkflowStage, component string) (string, error) {
 	if componentPredicate.MatchString(stage.WhereSpace) {
 		return "", errors.Newf("stage '%s' names Labels.%s in its whereSpace %q: the component is the change order's own and is appended to every stage's selector, so remove the predicate",
 			stage.Name, labelComponent, stage.WhereSpace)
@@ -551,7 +502,7 @@ func stageWhereSpace(stage *changeworkflow.ChangeWorkflowStage, component string
 // An empty list is no restriction: a ChangeOrder given none names a change
 // without saying where it is headed, which is not the same as saying every Stage
 // is empty.
-func stageSpaces(stage *changeworkflow.ChangeWorkflowStage, component string,
+func stageSpaces(stage *goclientnew.ChangeWorkflowStage, component string,
 	changeOrder *goclientnew.ChangeOrder, selectFields string) ([]*goclientnew.Space, error) {
 	whereSpace, err := stageWhereSpace(stage, component)
 	if err != nil {
@@ -582,18 +533,18 @@ func stageSpaces(stage *changeworkflow.ChangeWorkflowStage, component string,
 // ahead of it to gate on.
 func getCurrentAndPreviousWorkflowStages(
 	space *goclientnew.Space,
-	changeWorkflow *changeworkflow.ChangeWorkflow,
+	changeWorkflow *goclientnew.ChangeWorkflowSpec,
 	changeOrder *goclientnew.ChangeOrder,
-) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
-	var previous *changeworkflow.ChangeWorkflowStage
+) (*goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowStage, error) {
+	var previous *goclientnew.ChangeWorkflowStage
 
 	component, err := changeOrderComponent(changeOrder)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for i := range changeWorkflow.Spec.Stages {
-		current := &changeWorkflow.Spec.Stages[i]
+	for i := range changeWorkflow.Stages {
+		current := &changeWorkflow.Stages[i]
 
 		spaces, err := stageSpaces(current, component, changeOrder, "*")
 		if err != nil {
@@ -612,7 +563,7 @@ func getCurrentAndPreviousWorkflowStages(
 	}
 
 	return nil, nil, errors.Newf("Space '%s' is not in any Stage of ChangeWorkflow '%s'",
-		space.Slug, changeWorkflow.Name)
+		space.Slug, changeOrderWorkflowName(changeOrder))
 }
 
 // getNextWorkflowStage finds the Stage to advance the change to: the first one
@@ -631,18 +582,18 @@ func getCurrentAndPreviousWorkflowStages(
 // promotion naming what is missing -- which is the answer to "what is holding
 // this rollout up", rather than silently advancing past it.
 func getNextWorkflowStage(
-	changeWorkflow *changeworkflow.ChangeWorkflow,
+	changeWorkflow *goclientnew.ChangeWorkflowSpec,
 	changeOrder *goclientnew.ChangeOrder,
-) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
-	var previous *changeworkflow.ChangeWorkflowStage
+) (*goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowStage, error) {
+	var previous *goclientnew.ChangeWorkflowStage
 
 	component, err := changeOrderComponent(changeOrder)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	for i := range changeWorkflow.Spec.Stages {
-		current := &changeWorkflow.Spec.Stages[i]
+	for i := range changeWorkflow.Stages {
+		current := &changeWorkflow.Stages[i]
 
 		spaces, err := stageSpaces(current, component, changeOrder, "SpaceID")
 		if err != nil {
@@ -678,25 +629,25 @@ func getNextWorkflowStage(
 // a later Stage while an earlier one is unsatisfied is refused rather than
 // obeyed.
 func getWorkflowStageForName(
-	changeWorkflow *changeworkflow.ChangeWorkflow,
+	changeWorkflow *goclientnew.ChangeWorkflowSpec,
 	name string,
-) (*changeworkflow.ChangeWorkflowStage, *changeworkflow.ChangeWorkflowStage, error) {
-	var previous *changeworkflow.ChangeWorkflowStage
+) (*goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowStage, error) {
+	var previous *goclientnew.ChangeWorkflowStage
 
-	for i := range changeWorkflow.Spec.Stages {
-		current := &changeWorkflow.Spec.Stages[i]
+	for i := range changeWorkflow.Stages {
+		current := &changeWorkflow.Stages[i]
 		if current.Name == name {
 			return current, previous, nil
 		}
 		previous = current
 	}
 
-	names := make([]string, 0, len(changeWorkflow.Spec.Stages))
-	for _, stage := range changeWorkflow.Spec.Stages {
+	names := make([]string, 0, len(changeWorkflow.Stages))
+	for _, stage := range changeWorkflow.Stages {
 		names = append(names, stage.Name)
 	}
-	return nil, nil, errors.Newf("ChangeWorkflow '%s' has no stage '%s'; its stages are: %s",
-		changeWorkflow.Name, name, strings.Join(names, ", "))
+	return nil, nil, errors.Newf("the ChangeWorkflow has no stage '%s'; its stages are: %s",
+		name, strings.Join(names, ", "))
 }
 
 // checkVariantIsHealthy errors unless the Variant's reported live state says the
@@ -901,8 +852,8 @@ func checkVariantSatisfiesExpression(
 // promotion that evaluates it, below; authoring refuses anything else before a
 // definition is stored, so the two cannot come to name different sets.
 const (
-	prerequisiteReleased = "released"
-	prerequisiteHealthy  = "healthy"
+	prerequisiteReleased = "Released"
+	prerequisiteHealthy  = "Healthy"
 )
 
 // knownPrerequisites is what a definition may name, in the order they are offered
@@ -911,8 +862,8 @@ var knownPrerequisites = []string{prerequisiteReleased, prerequisiteHealthy}
 
 func getPrerequisiteDefinition(
 	name string,
-	customPrerequisiteDefinitions []changeworkflow.ChangeWorkflowPrerequisite,
-) *changeworkflow.ChangeWorkflowPrerequisite {
+	customPrerequisiteDefinitions []goclientnew.ChangeWorkflowPrerequisite,
+) *goclientnew.ChangeWorkflowPrerequisite {
 	for _, definition := range customPrerequisiteDefinitions {
 		if definition.Name == name {
 			return &definition
@@ -924,7 +875,7 @@ func getPrerequisiteDefinition(
 
 func checkVariantPrerequisites(
 	prerequisites []string,
-	customPrerequisiteDefinitions []changeworkflow.ChangeWorkflowPrerequisite,
+	customPrerequisiteDefinitions []goclientnew.ChangeWorkflowPrerequisite,
 	changeOrder *goclientnew.ChangeOrder,
 	variant *goclientnew.Space,
 	stage, variantName string,
@@ -985,9 +936,9 @@ func checkVariantPrerequisites(
 // prerequisites: a Stage cannot be entered from a Stage the change has not
 // reached. The prerequisites are checks on top of that.
 func validateStageEntryGates(
-	currentStage *changeworkflow.ChangeWorkflowStage,
-	previousStage *changeworkflow.ChangeWorkflowStage,
-	customPrerequisites []changeworkflow.ChangeWorkflowPrerequisite,
+	currentStage *goclientnew.ChangeWorkflowStage,
+	previousStage *goclientnew.ChangeWorkflowStage,
+	customPrerequisites []goclientnew.ChangeWorkflowPrerequisite,
 	changeOrder *goclientnew.ChangeOrder,
 ) error {
 	// No previous Stage means this is the workflow's first, so the change is

@@ -126,6 +126,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# Tags", fmt.Sprintf("%d", extendedSpace.TotalTagCount)})
 	view.Append([]string{"# ChangeSets", fmt.Sprintf("%d", extendedSpace.TotalChangeSetCount)})
 	view.Append([]string{"# ChangeOrders", fmt.Sprintf("%d", extendedSpace.TotalChangeOrderCount)})
+	view.Append([]string{"# ChangeWorkflows", fmt.Sprintf("%d", extendedSpace.TotalChangeWorkflowCount)})
 	view.Append([]string{"# Invocations", fmt.Sprintf("%d", extendedSpace.TotalInvocationCount)})
 	view.Append([]string{"# Targets", fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))})
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})

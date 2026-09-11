@@ -63,10 +63,10 @@ func readAll(t *testing.T, dir string) map[string]string {
 func TestWriteYAMLFromLayer_TarGzip(t *testing.T) {
 	dir := t.TempDir()
 	blob := tarGzip(t, map[string]string{
-		"backend.yaml":       sampleDeployment,
-		"rbac/role.yaml":     sampleService,
-		"README.md":          "not yaml",
-		"chart.tgz":          "binary-ish",
+		"backend.yaml":   sampleDeployment,
+		"rbac/role.yaml": sampleService,
+		"README.md":      "not yaml",
+		"chart.tgz":      "binary-ish",
 	})
 	desc := ocispec.Descriptor{MediaType: ocispec.MediaTypeImageLayerGzip}
 

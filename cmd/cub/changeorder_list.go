@@ -73,13 +73,13 @@ var changeorderAliases = map[string]string{
 	"ID":   "ChangeOrder.ChangeOrderID",
 }
 
-// ChangeOrder custom column dependencies. Both are computed rather than stored: the
-// annotation names the ChangeWorkflow governing the change order, and ResolvedSpaceIDs
+// ChangeOrder custom column dependencies. Both are computed rather than stored:
+// ChangeWorkflow is the copy of the workflow governing the change order, and ResolvedSpaceIDs
 // says which of its stages the change has reached. Completed reads ReleasedSpaceIDs on
-// top, for a workflow whose final.prerequisites name "released".
+// top, for a workflow whose Final prerequisites name "Released".
 var changeorderCustomColumnDependencies = map[string][]string{
-	"Stage":     {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs"},
-	"Completed": {"ChangeOrder.Annotations", "ChangeOrder.ResolvedSpaceIDs", "ChangeOrder.ReleasedSpaceIDs"},
+	"Stage":     {"ChangeOrder.ChangeWorkflow", "ChangeOrder.ResolvedSpaceIDs"},
+	"Completed": {"ChangeOrder.ChangeWorkflow", "ChangeOrder.ResolvedSpaceIDs", "ChangeOrder.ReleasedSpaceIDs"},
 }
 
 func init() {

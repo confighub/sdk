@@ -8,9 +8,6 @@ const (
 	AuthTypeJWT   = "JWT"
 )
 
-// See also https://pkg.go.dev/github.com/workos/workos-go/v4@v4.37.0/pkg/usermanagement
-// https://workos.com/docs/reference/user-management/authentication/code
-
 type AuthSession struct {
 	User           User   `json:"user"`
 	AccessToken    string `json:"access_token"`
@@ -22,8 +19,7 @@ type AuthSession struct {
 	BasicAuthPassword string `json:"basic_auth_password,omitempty"`
 }
 
-// This is not the same as the ConfigHub User API! It's the WorkOS API.
-// https://workos.com/docs/reference/user-management/user
+// This is not the ConfigHub User entity: it is the user as the server's login response describes it.
 
 type User struct {
 	ID                string            `json:"id"`
