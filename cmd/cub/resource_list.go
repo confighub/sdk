@@ -26,10 +26,10 @@ dot within a key is escaped as ~1 (for example Data.metadata.labels.app~1kuberne
 TargetID mirrors the containing unit's, so it selects resources by where they will be applied.
 Resources of units with no target have no TargetID.
 
-Attributes of the containing unit and space are addressed with a prefix -- Unit.Labels.App,
-Unit.Slug, Space.Labels.Environment -- and can be combined with resource and data predicates.
-Only the fields a filter names are fetched for those entities, so filtering on a unit label does
-not drag the unit's configuration data along.
+Attributes of the containing unit and space are addressed with a prefix -- Unit.Slug,
+Space.Labels.Component, Space.Labels.Environment -- and can be combined with resource and data
+predicates. Only the fields a filter names are fetched for those entities, so filtering on the
+unit's slug does not drag the unit's configuration data along.
 
 Data paths use the same syntax as --where-data on units, including array indexes (containers.0),
 wildcards (containers.*), associative matching (containers.?name=nginx), and split paths (.|).
@@ -51,8 +51,9 @@ Examples:
   # Find resources that are not bound to any target yet
   cub resource list --space "*" --where "TargetID IS NULL"
 
-  # Filter by a label on the containing unit or its space
-  cub resource list --space "*" --where "Unit.Labels.App = 'checkout'"
+  # Filter by the resource's own Kubernetes labels, or by its space's labels
+  cub resource list --space "*" --where "Data.metadata.labels.app = 'checkout'"
+  cub resource list --space "*" --where "Space.Labels.Component = 'checkout'"
   cub resource list --space "*" --where "Space.Labels.Environment = 'prod' AND ResourceType = 'v1/Service'"
 
   # Find Deployments running more than one replica

@@ -28,7 +28,9 @@ Example:
   "{\"KubeContext\":\"kind-space17005\",\"KubeNamespace\":\"default\",\"WaitTimeout\":\"2m0s\"}"
 `+"```"+`
 
-Targets typically are created by workers, but may also be created using cub target create.`, ""),
+The worker slug is optional. A Target needs no worker: a worker that should have access to
+the Target is granted it with --permission or "cub target update --permission" instead. When a
+worker is named, the Target's provider and toolchain are validated against what it supports.`, ""),
 	Args: cobra.RangeArgs(1, 3),
 	RunE: targetCreateCmdRun,
 }

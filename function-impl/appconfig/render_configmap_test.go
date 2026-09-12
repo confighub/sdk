@@ -128,6 +128,49 @@ func TestRenderConfigMap_PropertiesMutableStableName(t *testing.T) {
 	assert.NotEmpty(t, hash)
 }
 
+// Empty data renders nothing at all, rather than a ConfigMap with an empty data
+// field. A unit is emptied to withdraw what it held, so re-rendering has to
+// withdraw the ConfigMap too.
+func TestRenderConfigMap_EmptyRendersNothing(t *testing.T) {
+	for _, tc := range []struct {
+		name      string
+		toolchain workerapi.ToolchainType
+		converter configkit.ConfigConverter
+		provider  yamlkit.ResourceProvider
+		args      []api.FunctionArgument
+	}{
+		{
+			name:      "properties, immutable",
+			toolchain: workerapi.ToolchainAppConfigProperties,
+			converter: propkit.NewPropertiesResourceProvider(),
+			provider:  propkit.NewPropertiesResourceProvider(),
+			args:      []api.FunctionArgument{{ParameterName: "immutable", Value: true}},
+		},
+		{
+			name:      "env, key-value",
+			toolchain: workerapi.ToolchainAppConfigEnv,
+			converter: envkit.NewEnvResourceProvider(),
+			provider:  envkit.NewEnvResourceProvider(),
+			args: []api.FunctionArgument{
+				{ParameterName: "immutable", Value: false},
+				{ParameterName: "as-key-value", Value: true},
+			},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			parsed := parseNative(t, tc.converter, "")
+			fc := newFunctionContext(tc.toolchain, "empty-app", 1)
+
+			data, output, err := fnRenderConfigMap(tc.converter, tc.provider, fc, parsed, tc.args)
+			require.NoError(t, err)
+			assert.Equal(t, 0, len(data), "empty input is returned unchanged")
+
+			payload := output.(api.YAMLPayload)
+			assert.Empty(t, payload.Payload, "empty input must render no ConfigMap")
+		})
+	}
+}
+
 func TestRenderConfigMap_EnvAsKeyValue(t *testing.T) {
 	rp := envkit.NewEnvResourceProvider()
 	var converter configkit.ConfigConverter = rp

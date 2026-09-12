@@ -38228,7 +38228,6 @@
       "Target": {
         "required": [
           "Slug",
-          "BridgeWorkerID",
           "ToolchainType",
           "ProviderType"
         ],

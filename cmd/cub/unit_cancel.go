@@ -27,8 +27,8 @@ Examples:
   # Cancel operations for units in a specific space
   cub unit cancel --space my-space --where "Status = 'Progressing'"
 
-  # Cancel operations with multiple label conditions
-  cub unit cancel --space my-space --where "Labels.App = 'api' AND Labels.Tier = 'backend'"
+  # Cancel operations for one component's units in dev
+  cub unit cancel --space "*" --where "Space.Labels.Component = 'api' AND Space.Labels.Environment = 'dev'"
 
   # Cancel operations for specific units by slug
   cub unit cancel --unit my-unit,another-unit

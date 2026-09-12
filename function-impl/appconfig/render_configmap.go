@@ -79,6 +79,15 @@ func fnRenderConfigMap(
 	parsedData gaby.Container,
 	args []api.FunctionArgument,
 ) (gaby.Container, any, error) {
+	// Empty data renders nothing. A unit is emptied to withdraw the configuration
+	// it held, and a ConfigMap with no data is still a live object: rendering one
+	// would put it straight back into the downstream unit of the Upsert link that
+	// runs this, and an immutable name would take the hash of empty content, so it
+	// would arrive under a new name and leave the old ConfigMap behind.
+	if len(parsedData) == 0 {
+		return parsedData, api.YAMLPayload{Payload: ""}, nil
+	}
+
 	// Look up optional args by ParameterName since either may be omitted and
 	// callers may pass them in any order.
 	immutable := true

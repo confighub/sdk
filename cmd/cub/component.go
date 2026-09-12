@@ -21,6 +21,11 @@ const (
 	labelOwner     = "Owner"
 )
 
+// labelNamespace is the Space label recording the Kubernetes namespace a variant's
+// units are placed in: "cub variant create --namespace" sets it, and "cub variant
+// promote" applies it to the units it later clones into the space.
+const labelNamespace = "Namespace"
+
 // componentCmd is inherently cross-space — a component spans one space per
 // variant — so it does not use spacePreRunE. It only needs globalPreRun to
 // initialize the API client.

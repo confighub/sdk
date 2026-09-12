@@ -113,6 +113,9 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 		},
 	}
 
+	if target.BridgeWorkerID == uuid.Nil {
+		return fmt.Errorf("target %s has no worker; generate-kubecontext runs on the target's worker", targetSlug)
+	}
 	workerID := goclientnew.UUID(target.BridgeWorkerID)
 	whereClause := fmt.Sprintf("Slug = '%s'", unitSlug)
 	req := goclientnew.FunctionInvocationsRequest{

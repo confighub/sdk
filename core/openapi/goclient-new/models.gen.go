@@ -2989,7 +2989,7 @@ type Target struct {
 	BridgeHandle string `json:"BridgeHandle,omitempty" yaml:"BridgeHandle,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker associated with the Target.
-	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID" yaml:"BridgeWorkerID"`
+	BridgeWorkerID openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
 
 	// ConfigTypes ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples) supported by this Target.
 	ConfigTypes []TargetConfigType `json:"ConfigTypes,omitempty" yaml:"ConfigTypes,omitempty"`

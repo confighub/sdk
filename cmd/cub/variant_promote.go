@@ -47,7 +47,9 @@ with that upstream in three steps:
      With --change-order the selection is every unit that has an upstream, since the change
      order also marks the units it carries no changes for.
   2. Clone any units added to the upstream space since the variant was created or last
-     promoted, linking each clone to its upstream unit.
+     promoted, linking each clone to its upstream unit. When the variant space has a
+     Namespace label, which "cub variant create --namespace" sets, set-namespace places
+     the clones in that namespace.
   3. Copy the new units' non-UpgradeUnit links, retargeting a link to its downstream copy
      when it points at another unit in the upstream space. A link that already points into
      this variant is left alone rather than copied into it.
@@ -1376,8 +1378,53 @@ func promoteAddNewUnitsForChangeOrder(downstreamSpaceID, upstreamSpaceID uuid.UU
 	if err := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", ""); err != nil {
 		return err
 	}
+	if err := promoteSetNamespace(downstreamSpaceID, responses); err != nil {
+		return err
+	}
 
 	return promoteCopyLinks(downstreamSpaceID, upstreamSpaceID, toClone)
+}
+
+// promoteSetNamespace places the units a promotion just cloned in the variant's namespace.
+// "cub variant create --namespace" runs set-namespace over the space it creates and records
+// the namespace as the space's Namespace label. A unit cloned later arrives with the
+// upstream's namespace, typically the placeholder, so it gets the same function.
+func promoteSetNamespace(downstreamSpaceID uuid.UUID, responses *[]goclientnew.UnitCreateOrUpdateResponse) error {
+	if responses == nil {
+		return nil
+	}
+	space, err := resolveSpace(downstreamSpaceID.String(), "*")
+	if err != nil {
+		return err
+	}
+	namespace := space.Space.Labels[labelNamespace]
+	if namespace == "" {
+		return nil
+	}
+	ids := make([]string, 0, len(*responses))
+	for _, response := range *responses {
+		if response.Error == nil && response.Unit != nil {
+			ids = append(ids, "'"+response.Unit.UnitID.String()+"'")
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	args := []string{"function", "do", "--quiet", "--space", space.Space.Slug,
+		"--where", fmt.Sprintf("UnitID IN (%s)", strings.Join(ids, ", "))}
+	// The clones joined the promotion's changeset, and a change to a unit in an open
+	// changeset has to name it.
+	if variantPromoteArgs.changesetSlug != "" {
+		args = append(args, "--changeset", variantPromoteArgs.changesetSlug)
+	}
+	args = append(args, "set-namespace", namespace)
+	if err := runCub(args...); err != nil {
+		return err
+	}
+	if !jsonOutput && outputFormat == "" {
+		tprint("Set namespace %q on the %d added unit(s)", namespace, len(ids))
+	}
+	return nil
 }
 
 // unitIDInList renders a UnitID IN (...) clause for a set of units.
@@ -1438,6 +1485,9 @@ func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
 		return err
 	}
 	if err := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", ""); err != nil {
+		return err
+	}
+	if err := promoteSetNamespace(downstreamSpaceID, responses); err != nil {
 		return err
 	}
 

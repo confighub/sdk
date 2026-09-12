@@ -82,12 +82,11 @@ func runUnitBlob(unitSlugOrID, section, selectField string) error {
 		return fmt.Errorf("failed to get unit: %w", err)
 	}
 
+	// An empty document is an answer, not an error: every Unit starts empty, and emptying one
+	// is how a resource it held is withdrawn.
 	raw, err := unitBlobField(unit.Unit, selectField)
 	if err != nil {
 		return err
-	}
-	if raw == "" {
-		return fmt.Errorf("no %s found for unit: %s", section, unit.Unit.Slug)
 	}
 
 	out := []byte(raw)

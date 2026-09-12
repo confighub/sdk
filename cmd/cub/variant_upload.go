@@ -4,11 +4,9 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"strings"
 	"text/template"
 
@@ -32,10 +30,16 @@ type variantUploadOptions struct {
 	target       string
 	labels       []string
 	annotations  []string
+	spaceLabels  []string
 	changeDesc   string
 	allowExists  bool
 	prune        bool
 	dryRun       bool
+
+	// The old names of --unit-label and --unit-annotation, kept as deprecated aliases.
+	deprecatedLabels      []string
+	deprecatedAnnotations []string
+
 	// sourceDescription overrides sourceDesc with a name for where the
 	// configuration came from that the inputs cannot supply -- the chart a
 	// "helm template" was rendered from, when the input is only "-".
@@ -59,8 +63,8 @@ anything; it ingests what you give it.
 
 An oci:// input is pulled and its YAML extracted before ingestion. The bundle is a
 standard OCI image artifact (a tar or tar+gzip layer of YAML, as "cub release publish"
-and Flux produce, or individual file layers as "oras push" produces); registry
-credentials are reused from your Docker config.
+and Flux produce, or individual file layers as "oras push" produces). The pull is
+anonymous: local registry credentials are not used, so the bundle has to be public.
 
 Every input is recorded on the Space as a "confighub.com/external-source" annotation
 (a JSON array), together with the --granularity and --namespace the upload ran with,
@@ -97,9 +101,10 @@ reference; a cross-scope reference before a same-namespace one) and the broken e
 reported.
 
 The Space is created if missing and stamped with the well-known labels from --component,
---variant, --stage, --environment, --region, --layer, and --owner. --component and --variant are
-required. The Space slug comes from --space-pattern (a Go template over .Labels), or from
---space to set it explicitly.
+--variant, --stage, --environment, --region, --layer, and --owner, and any other labels given
+with --space-label. --component and --variant are required. The Space slug comes from
+--space-pattern (a Go template over .Labels), or from --space to set it explicitly.
+--unit-label and --unit-annotation set labels and annotations on every created Unit.
 
 Each created Unit records the input it came from — the oci:// ref, file, or directory
 as named on the command line — as its external source, so its change description reads
@@ -181,14 +186,31 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.granularity, "granularity", string(upload.Minimal), "how resources map to Units: minimal, per-resource, or per-file")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "ensure a Namespace resource with this name exists (unless \"default\")")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "target for the created Units, in <target-slug> or <space-slug>/<target-slug> form")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "label", nil, "label key=value to set on every created Unit (repeatable)")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.spaceLabels, "space-label", nil, "label key=value to set on the Space (repeatable); it may not name a label another flag sets, such as Component")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "unit-label", nil, "label key=value to set on every created Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "unit-annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedLabels, "label", nil, "label key=value to set on every created Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedAnnotations, "annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
+	_ = variantUploadCmd.Flags().MarkDeprecated("label", "use --unit-label")
+	_ = variantUploadCmd.Flags().MarkDeprecated("annotation", "use --unit-annotation")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each created Unit")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceDescription, "source-description", "", "name for where the configuration came from, recorded as each Unit's external source (defaults to the inputs as named on the command line); does not affect the Space's external-source annotation, which records the inputs themselves")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.allowExists, "allow-exists", false, "tolerate Spaces, Units, Invocations, and Links that already exist (retry a partial upload)")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.prune, "prune", false, "on a re-upload, empty Units in the Space that this input no longer produces")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, or empty, and exit without changing anything")
 	variantCmd.AddCommand(variantUploadCmd)
+}
+
+// variantUploadReservedLabels are the Space labels upload sets through a flag of its own, each
+// mapped to that flag, which --space-label may not name.
+var variantUploadReservedLabels = map[string]string{
+	"Component":   "--component",
+	"Variant":     "--variant",
+	"Stage":       "--stage",
+	"Environment": "--environment",
+	"Region":      "--region",
+	"Layer":       "--layer",
+	"Owner":       "--owner",
 }
 
 func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
@@ -204,9 +226,22 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--granularity must be %q, %q, or %q", upload.Minimal, upload.PerResource, upload.PerFile)
 	}
 
+	a.labels = append(a.labels, a.deprecatedLabels...)
+	a.annotations = append(a.annotations, a.deprecatedAnnotations...)
+	if err := checkSpaceLabelFlags(a.spaceLabels, variantUploadReservedLabels); err != nil {
+		return err
+	}
+
 	labels := map[string]string{
 		"Component": a.component,
 		"Variant":   a.variant,
+	}
+	for _, kv := range a.spaceLabels {
+		key, value, ok := strings.Cut(kv, "=")
+		if !ok {
+			return fmt.Errorf("--space-label must be key=value: %s", kv)
+		}
+		labels[key] = value
 	}
 	if a.stage != "" {
 		labels["Stage"] = a.stage
@@ -640,35 +675,39 @@ func renderSpacePattern(pattern string, labels map[string]string) (string, error
 	return strings.TrimSpace(b.String()), nil
 }
 
-// resolveUploadTarget resolves a --target ref by shelling out to cub, returning
-// the TargetID UUID (recorded as the Space's TargetID annotation), the target's
-// ProviderType (an OCI target is also set as the Space's release target), and
-// the fully qualified <space>/<slug> ref for passing to other cub commands.
+// resolveUploadTarget resolves a --target ref to the TargetID UUID (recorded as
+// the Space's TargetID annotation), the target's ProviderType (an OCI target is
+// also set as the Space's release target), and the fully qualified
+// <space>/<slug> ref for passing to other cub commands.
+//
+// A bare slug is scoped to the Space the upload writes to, which is what the
+// command's --space did when this shelled out to "cub target get". A qualified
+// ref or a UUID identifies the target on its own, so ParseRef handles both and
+// the scope is left empty for them.
 func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifiedRef string, err error) {
-	lookupSpace, slug := unitSpace, targetRef
-	if i := strings.IndexByte(targetRef, '/'); i >= 0 {
-		lookupSpace, slug = targetRef[:i], targetRef[i+1:]
+	spaceID := ""
+	if !strings.Contains(targetRef, "/") {
+		space, spaceErr := resolveSpace(unitSpace, "SpaceID,Slug")
+		if spaceErr != nil {
+			return "", "", "", spaceErr
+		}
+		spaceID = space.Space.SpaceID.String()
 	}
-	var stdout, stderr bytes.Buffer
-	c := exec.Command("cub", "target", "get", "--space", lookupSpace, "-o", "json", slug)
-	c.Stdout = &stdout
-	c.Stderr = &stderr
-	if err := c.Run(); err != nil {
+	target, err := resolveTarget(targetRef, spaceID, "*")
+	if err != nil {
 		return "", "", "", err
 	}
-	var extended struct {
-		Target struct {
-			TargetID     string `json:"TargetID"`
-			ProviderType string `json:"ProviderType"`
-		} `json:"Target"`
+	if target.Target == nil {
+		return "", "", "", fmt.Errorf("target %q not found", targetRef)
 	}
-	if err := json.Unmarshal(stdout.Bytes(), &extended); err != nil {
-		return "", "", "", err
+	// The Space comes back on the expansion, which is what names a target that a
+	// qualified ref or a UUID put in another Space.
+	spaceSlug := unitSpace
+	if target.Space != nil && target.Space.Slug != "" {
+		spaceSlug = target.Space.Slug
 	}
-	if extended.Target.TargetID == "" {
-		return "", "", "", fmt.Errorf("target %q has no TargetID", slug)
-	}
-	return extended.Target.TargetID, extended.Target.ProviderType, lookupSpace + "/" + slug, nil
+	return target.Target.TargetID.String(), target.Target.ProviderType,
+		spaceSlug + "/" + target.Target.Slug, nil
 }
 
 // externalSourceAnnotation is the well-known Space annotation recording the
@@ -798,42 +837,6 @@ func recordExternalSource(spaceSlug string, records []externalSourceRecord) erro
 	}
 	if _, err := patchSpace(space.Space.SpaceID, patchData); err != nil {
 		return err
-	}
-	return nil
-}
-
-// cubBinaryPath returns the binary that runCub should invoke: this same running
-// executable, wherever it lives and whatever it is called.
-//
-// It deliberately never consults $PATH for a binary named "cub". Resolving by
-// name means a locally built or renamed binary delegates half its work to some
-// other cub that happens to be installed — a `bin/cub-dev` doing its own space
-// creation but handing unit creation to last month's release. The resulting
-// version skew is invisible at the call site and surfaces as behaviour that
-// looks like the server's.
-//
-// The bare "cub" it returns when os.Executable fails is the sole exception, and
-// the only case where no self-reference is available at all: that call fails
-// only where the OS cannot report the running binary, and resolving through
-// $PATH there beats refusing to run. This function always returns something
-// runnable, so callers never have to decide what an unresolved binary means.
-func cubBinaryPath() string {
-	bin, err := os.Executable()
-	if err != nil || bin == "" {
-		return "cub"
-	}
-	return bin
-}
-
-// runCub executes the cub binary (this same CLI) as a subprocess, streaming its
-// output. Side effects go through cub so this command reuses its create/link
-// semantics without re-implementing them.
-func runCub(args ...string) error {
-	c := exec.Command(cubBinaryPath(), args...)
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	if err := c.Run(); err != nil {
-		return fmt.Errorf("cub %s: %w", strings.Join(args, " "), err)
 	}
 	return nil
 }

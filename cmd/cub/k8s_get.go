@@ -95,7 +95,7 @@ Filtering combines four independent scopes, all ANDed:
   <type> / <name> / --namespace  which resources
   --where                        any condition on the resource or the entities
                                  containing it, with a prefix: Unit.Slug,
-                                 Unit.Labels.App, Space.Labels.Environment,
+                                 Space.Labels.Component, Space.Labels.Environment,
                                  Target.Slug
   --where-resource               a condition on the resource's configuration,
                                  e.g. "spec.replicas > 1"

@@ -35572,7 +35572,6 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
-      - BridgeWorkerID
       - ToolchainType
       - ProviderType
       type: object
