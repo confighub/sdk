@@ -42,8 +42,10 @@ const (
 	clusterArgobotOCIRef = "oci://ghcr.io/confighub/configs/argobot"
 	// clusterArgobotNamespace is the namespace argobot's manifests deploy into.
 	clusterArgobotNamespace = "argobot"
-	// clusterArgobotUnitSlug is the per-file Unit slug for argobot's single
-	// manifest file (manifests/argobot.yaml → Unit "argobot").
+	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The bundle
+	// becomes one Unit per resource and a workload keeps its bare name, so the
+	// Deployment named argobot lands in a Unit named argobot, while its
+	// ServiceAccount, RBAC and Namespace take slugs of their own.
 	clusterArgobotUnitSlug = "argobot"
 	// clusterArgobotContainer is the container name in argobot's Deployment.
 	clusterArgobotContainer = "argobot"
@@ -162,17 +164,16 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
 
 	// 1. Ensure the shared base component exists, installed from argobot's
-	// published OCI config bundle. --granularity per-file keeps the single
-	// manifest file as one Unit ("argobot"); --allow-exists makes it a no-op
-	// when another cluster already installed the base. The pull is anonymous —
-	// local Docker credentials are never used (see ociAuthClient) — so a stale
-	// `docker login ghcr.io` can't turn into a hard 403 here.
+	// published OCI config bundle. Re-installing is a no-op: an upload is
+	// create-or-update, so a base another cluster already installed is matched
+	// against the bundle and left alone rather than conflicting with it. The
+	// pull is anonymous — local Docker credentials are never used (see
+	// ociAuthClient) — so a stale `docker login ghcr.io` can't turn into a hard
+	// 403 here.
 	fmt.Fprintf(out, "Installing argobot base component from %s...\n", o.ociRef)
 	if err := runCub("variant", "upload",
 		"--component", clusterArgobotComponent,
 		"--variant", clusterArgobotBaseVariant,
-		"--granularity", "per-file",
-		"--allow-exists",
 		o.ociRef); err != nil {
 		return fmt.Errorf("install argobot base component: %w", err)
 	}

@@ -31440,6 +31440,128 @@
         }
       }
     },
+    "/upload": {
+      "post": {
+        "tags": [
+          "Upload"
+        ],
+        "summary": "Upload a bundle of configuration",
+        "description": "Takes a bundle of rendered configuration files, splits it into resources, and makes a Space's Units, Links, and Invocations match it. Creates what is missing, 3-way merges what changed, and empties the Units of resources the bundle no longer contains, so uploading the same bundle again changes nothing. Every resource becomes its own Unit.",
+        "operationId": "Upload",
+        "parameters": [
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "Plan the upload and return the same response without writing anything.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResult"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Multi-Status: some Unit or Link writes failed, each carrying its own error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Upload request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Upload not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/user": {
       "get": {
         "tags": [
@@ -39042,7 +39164,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data\nof a single supported Toolchain Type (configuration format). This blob is typically a text document\nthat contains a collection of Kubernetes or infrastructure resources, or an application configuration\nfile. Applying / deploying or destroying the configuration happens as a single *transaction*\nfrom ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by\nthe underlying configuration / deployment tool. The resources must belong to a single\ninfrastructure provider and the actuation mechanism must be able to resolve references and\nordering dependencies among the resources within the document. For example, if one resource\nneeds to be fully provisioned to provide input to another resource, then the actuation code is\nresponsible for handling this. Revisions store historical copies of the configuration data.\nConfiguration data can be restored from prior Revisions. Units can also be cloned to create\nnew variants of a configuration."
+        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration."
       },
       "UnitAction": {
         "type": "object",
@@ -39580,6 +39702,437 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "Message": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadBrokenEdge": {
+        "type": "object",
+        "properties": {
+          "Cycle": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "From": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Kind": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "To": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadComponentRequest": {
+        "type": "object",
+        "properties": {
+          "CreateNamespace": {
+            "type": "boolean",
+            "description": "Synthesize the release Namespace if the bundle lacks it. Off by default.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Name": {
+            "type": "string",
+            "description": "The component name.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Namespace": {
+            "type": "string",
+            "description": "The release namespace. Required when the bundle has namespaced resources that name no namespace.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SlugPrefix": {
+            "type": "string",
+            "description": "Prepended to the slugs of new Units, so two releases can share one Space.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SourceName": {
+            "type": "string",
+            "description": "Ownership name within the component's Spaces. Default: Name.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Space": {
+            "type": "string",
+            "description": "Explicit Space slug, overriding SpacePattern.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceAnnotations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceDeleteGates": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Set on Spaces the upload creates.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceLabels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Merged over UploadRequest.SpaceLabels.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TargetID": {
+            "type": "string",
+            "description": "Applies to the component's Spaces. New Units are created on it, except AppConfig and record Units.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "UnitAnnotations": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitDeleteGates": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Set on Units the upload creates.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitDestroyGates": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "description": "Set on Units the upload creates.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitLabels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Set on every Unit the source writes.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadComponentResult": {
+        "type": "object",
+        "properties": {
+          "BrokenLinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadBrokenEdge"
+            },
+            "description": "Inferred links dropped to keep the link graph acyclic.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Name": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "NamespaceCollision": {
+            "$ref": "#/components/schemas/UploadNamespaceCollision"
+          },
+          "RecordUnitID": {
+            "type": "string",
+            "description": "The record Unit holding what was uploaded and from where. Absent on a dry run.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "SkippedSecrets": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Secret resources dropped from the bundle, as Kind/namespace/name. Secrets are never uploaded.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SourceName": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Spaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadSpaceResult"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnmatchedReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadUnmatchedReference"
+            },
+            "description": "References that resolved to no resource in the bundle.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadLinkResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Create or Unchanged.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "FromUnit": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LinkID": {
+            "type": "string",
+            "description": "Absent for a Link a dry run would create.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why the link was inferred, e.g. reference:v1/ConfigMap.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToUnit": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadNamespaceCollision": {
+        "type": "object",
+        "properties": {
+          "Namespace": {
+            "type": "string",
+            "description": "The release Namespace the bundle already carries.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadRequest": {
+        "type": "object",
+        "properties": {
+          "ChangeDescription": {
+            "type": "string",
+            "description": "Recorded on each Unit write.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeSetDescription": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeSetID": {
+            "type": "string",
+            "description": "An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "Components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadComponentRequest"
+            },
+            "description": "Placement of each component. Exactly one is supported.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Files": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadRequestFile"
+            },
+            "description": "The bundle's files. Paths must be relative and may not contain \"..\".",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Source": {
+            "$ref": "#/components/schemas/UploadSourceInfo"
+          },
+          "SpaceLabels": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpacePattern": {
+            "type": "string",
+            "description": "Slug pattern for created Spaces, over the Space's labels. Default {{.Labels.Component}}-{{.Labels.Variant}}.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadRequestFile": {
+        "type": "object",
+        "properties": {
+          "Content": {
+            "type": "string",
+            "description": "The file's contents.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Relative path within the bundle, e.g. backend.yaml.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadResult": {
+        "type": "object",
+        "properties": {
+          "Components": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadComponentResult"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DryRun": {
+            "type": "boolean",
+            "description": "True when nothing was written.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Plan": {
+            "type": "string",
+            "description": "Digest of the planned actions.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadSourceInfo": {
+        "type": "object",
+        "properties": {
+          "Client": {
+            "type": "string",
+            "description": "The client that uploaded: cub, installer, ui.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ClientVersion": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Digest": {
+            "type": "string",
+            "description": "The resolved digest, when the transport has one.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Ref": {
+            "type": "string",
+            "description": "Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0 or a local path.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadSpaceResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Create, Update, or Unchanged.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeSetID": {
+            "type": "string",
+            "description": "The ChangeSet the writes were recorded in. Absent on a dry run.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "Links": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadLinkResult"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Namespace": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "Absent for a Space a dry run would create.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadUnitResult"
+            },
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadUnitResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Create, Update, Unchanged, Empty, Revive, or Adopt.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Conflicts": {
+            "$ref": "#/components/schemas/MutationConflictList"
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "Mutations": {
+            "$ref": "#/components/schemas/MutationMap"
+          },
+          "Resource": {
+            "type": "string",
+            "description": "The resource identity this Unit is keyed by.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Role": {
+            "type": "string",
+            "description": "Resource, AppConfig, AppConfigRendered, or Record.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Slug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "Absent for a Unit a dry run would create.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          }
+        }
+      },
+      "UploadUnmatchedReference": {
+        "type": "object",
+        "properties": {
+          "FromUnit": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TargetName": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TargetType": {
             "type": "string",
             "x-go-type-skip-optional-pointer": true
           }

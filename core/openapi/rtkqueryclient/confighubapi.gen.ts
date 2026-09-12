@@ -32,6 +32,7 @@ export const addTagTypes = [
   'UnitAction',
   'UnitEvent',
   'View',
+  'Upload',
   'User',
 ] as const;
 const injectedRtkApi = api
@@ -2581,6 +2582,17 @@ const injectedRtkApi = api
           },
         }),
         providesTags: ['Unit'],
+      }),
+      upload: build.mutation<UploadApiResponse, UploadApiArg>({
+        query: (queryArg) => ({
+          url: `/upload`,
+          method: 'POST',
+          body: queryArg.uploadRequest,
+          params: {
+            dry_run: queryArg.dryRun,
+          },
+        }),
+        invalidatesTags: ['Upload'],
       }),
       listUsers: build.query<ListUsersApiResponse, ListUsersApiArg>({
         query: (queryArg) => ({
@@ -13569,6 +13581,14 @@ export type SearchUnitMutationSourcesApiArg = {
   /** View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit. */
   view?: string;
 };
+export type UploadApiResponse = /** status 200 OK */
+  | UploadResult
+  | /** status 207 Multi-Status: some Unit or Link writes failed, each carrying its own error */ UploadResult;
+export type UploadApiArg = {
+  /** Plan the upload and return the same response without writing anything. */
+  dryRun?: boolean;
+  uploadRequest: UploadRequest;
+};
 export type ListUsersApiResponse = /** status 200 OK */ UserRead[];
 export type ListUsersApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -17778,6 +17798,155 @@ export type UnitMutationSources = {
   /** Unique identifier of the Unit. */
   UnitID?: string;
 };
+export type UploadBrokenEdge = {
+  Cycle?: string[];
+  From?: string;
+  Kind?: string;
+  Reason?: string;
+  To?: string;
+};
+export type UploadNamespaceCollision = {
+  /** The release Namespace the bundle already carries. */
+  Namespace?: string;
+};
+export type UploadLinkResult = {
+  /** Create or Unchanged. */
+  Action?: string;
+  Error?: ResponseError;
+  FromUnit?: string;
+  /** Absent for a Link a dry run would create. */
+  LinkID?: string;
+  /** Why the link was inferred, e.g. reference:v1/ConfigMap. */
+  Reason?: string;
+  ToUnit?: string;
+};
+export type UploadUnitResult = {
+  /** Create, Update, Unchanged, Empty, Revive, or Adopt. */
+  Action?: string;
+  Conflicts?: MutationConflictList;
+  Error?: ResponseError;
+  Mutations?: MutationMap;
+  /** The resource identity this Unit is keyed by. */
+  Resource?: string;
+  /** Resource, AppConfig, AppConfigRendered, or Record. */
+  Role?: string;
+  Slug?: string;
+  /** Absent for a Unit a dry run would create. */
+  UnitID?: string;
+};
+export type UploadSpaceResult = {
+  /** Create, Update, or Unchanged. */
+  Action?: string;
+  /** The ChangeSet the writes were recorded in. Absent on a dry run. */
+  ChangeSetID?: string;
+  Links?: UploadLinkResult[];
+  Namespace?: string;
+  /** Absent for a Space a dry run would create. */
+  SpaceID?: string;
+  SpaceSlug?: string;
+  Units?: UploadUnitResult[];
+};
+export type UploadUnmatchedReference = {
+  FromUnit?: string;
+  TargetName?: string;
+  TargetType?: string;
+};
+export type UploadComponentResult = {
+  /** Inferred links dropped to keep the link graph acyclic. */
+  BrokenLinks?: UploadBrokenEdge[];
+  Name?: string;
+  NamespaceCollision?: UploadNamespaceCollision;
+  /** The record Unit holding what was uploaded and from where. Absent on a dry run. */
+  RecordUnitID?: string;
+  /** Secret resources dropped from the bundle, as Kind/namespace/name. Secrets are never uploaded. */
+  SkippedSecrets?: string[];
+  SourceName?: string;
+  Spaces?: UploadSpaceResult[];
+  /** References that resolved to no resource in the bundle. */
+  UnmatchedReferences?: UploadUnmatchedReference[];
+};
+export type UploadResult = {
+  Components?: UploadComponentResult[];
+  /** True when nothing was written. */
+  DryRun?: boolean;
+  /** Digest of the planned actions. */
+  Plan?: string;
+};
+export type UploadComponentRequest = {
+  /** Synthesize the release Namespace if the bundle lacks it. Off by default. */
+  CreateNamespace?: boolean;
+  /** The component name. */
+  Name?: string;
+  /** The release namespace. Required when the bundle has namespaced resources that name no namespace. */
+  Namespace?: string;
+  /** Prepended to the slugs of new Units, so two releases can share one Space. */
+  SlugPrefix?: string;
+  /** Ownership name within the component's Spaces. Default: Name. */
+  SourceName?: string;
+  /** Explicit Space slug, overriding SpacePattern. */
+  Space?: string;
+  SpaceAnnotations?: {
+    [key: string]: string;
+  };
+  /** Set on Spaces the upload creates. */
+  SpaceDeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Merged over UploadRequest.SpaceLabels. */
+  SpaceLabels?: {
+    [key: string]: string;
+  };
+  /** Applies to the component's Spaces. New Units are created on it, except AppConfig and record Units. */
+  TargetID?: string;
+  UnitAnnotations?: {
+    [key: string]: string;
+  };
+  /** Set on Units the upload creates. */
+  UnitDeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Set on Units the upload creates. */
+  UnitDestroyGates?: {
+    [key: string]: boolean;
+  };
+  /** Set on every Unit the source writes. */
+  UnitLabels?: {
+    [key: string]: string;
+  };
+};
+export type UploadRequestFile = {
+  /** The file's contents. */
+  Content?: string;
+  /** Relative path within the bundle, e.g. backend.yaml. */
+  Path?: string;
+};
+export type UploadSourceInfo = {
+  /** The client that uploaded: cub, installer, ui. */
+  Client?: string;
+  ClientVersion?: string;
+  /** The resolved digest, when the transport has one. */
+  Digest?: string;
+  /** Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0 or a local path. */
+  Ref?: string;
+};
+export type UploadRequest = {
+  /** Recorded on each Unit write. */
+  ChangeDescription?: string;
+  ChangeSetDescription?: string;
+  /** An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space. */
+  ChangeSetID?: string;
+  /** Placement of each component. Exactly one is supported. */
+  Components?: UploadComponentRequest[];
+  /** The bundle's files. Paths must be relative and may not contain "..". */
+  Files?: UploadRequestFile[];
+  Source?: UploadSourceInfo;
+  /** Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone. */
+  SpaceLabels?: {
+    [key: string]: string;
+  };
+  /** Slug pattern for created Spaces, over the Space's labels. Default {{.Labels.Component}}-{{.Labels.Variant}}. */
+  SpacePattern?: string;
+};
 export type UserKey = {
   CreatedAt?: string;
   Description?: string;
@@ -18080,6 +18249,7 @@ export const {
   useLazyListAllUnitEventsQuery,
   useSearchUnitMutationSourcesQuery,
   useLazySearchUnitMutationSourcesQuery,
+  useUploadMutation,
   useListUsersQuery,
   useLazyListUsersQuery,
   useGetUserQuery,

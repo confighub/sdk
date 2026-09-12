@@ -29254,6 +29254,86 @@ paths:
       summary: Get the mutation sources of many Units across spaces
       tags:
       - Unit
+  /upload:
+    post:
+      description: Takes a bundle of rendered configuration files, splits it into
+        resources, and makes a Space's Units, Links, and Invocations match it. Creates
+        what is missing, 3-way merges what changed, and empties the Units of resources
+        the bundle no longer contains, so uploading the same bundle again changes
+        nothing. Every resource becomes its own Unit.
+      operationId: Upload
+      parameters:
+      - description: Plan the upload and return the same response without writing
+          anything.
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResult'
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResult'
+          description: 'Multi-Status: some Unit or Link writes failed, each carrying
+            its own error'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Upload request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Upload not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Upload data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Upload.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Upload a bundle of configuration
+      tags:
+      - Upload
   /user:
     get:
       description: List Users
@@ -35861,19 +35941,20 @@ components:
       format: uuid
       type: string
     Unit:
-      description: |-
-        Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-        of a single supported Toolchain Type (configuration format). This blob is typically a text document
-        that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-        file. Applying / deploying or destroying the configuration happens as a single *transaction*
-        from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-        the underlying configuration / deployment tool. The resources must belong to a single
-        infrastructure provider and the actuation mechanism must be able to resolve references and
-        ordering dependencies among the resources within the document. For example, if one resource
-        needs to be fully provisioned to provide input to another resource, then the actuation code is
-        responsible for handling this. Revisions store historical copies of the configuration data.
-        Configuration data can be restored from prior Revisions. Units can also be cloned to create
-        new variants of a configuration.
+      description: Unit is the core unit of operation in ConfigHub. It contains a
+        blob of configuration Data of a single supported Config Type (configuration
+        format). This blob is typically a text document that contains a collection
+        of Kubernetes or infrastructure resources, or an application configuration
+        file. Applying / deploying or destroying the configuration happens as a single
+        *transaction* from ConfigHub's perspective. In reality, it is most often a
+        multi-step workflow performed by the underlying configuration / deployment
+        tool. The resources must belong to a single infrastructure provider and the
+        actuation mechanism must be able to resolve references and ordering dependencies
+        among the resources within the document. For example, if one resource needs
+        to be fully provisioned to provide input to another resource, then the actuation
+        code is responsible for handling this. Revisions store historical copies of
+        the configuration data. Configuration data can be restored from prior Revisions.
+        Units can also be cloned to create new variants of a configuration.
       properties:
         Annotations:
           additionalProperties:
@@ -36649,6 +36730,338 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         Message:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadBrokenEdge:
+      properties:
+        Cycle:
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        From:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Kind:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        To:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadComponentRequest:
+      properties:
+        CreateNamespace:
+          description: Synthesize the release Namespace if the bundle lacks it. Off
+            by default.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Name:
+          description: The component name.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Namespace:
+          description: The release namespace. Required when the bundle has namespaced
+            resources that name no namespace.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SlugPrefix:
+          description: Prepended to the slugs of new Units, so two releases can share
+            one Space.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SourceName:
+          description: 'Ownership name within the component''s Spaces. Default: Name.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Space:
+          description: Explicit Space slug, overriding SpacePattern.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceAnnotations:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SpaceDeleteGates:
+          additionalProperties:
+            type: boolean
+          description: Set on Spaces the upload creates.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SpaceLabels:
+          additionalProperties:
+            type: string
+          description: Merged over UploadRequest.SpaceLabels.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        TargetID:
+          description: Applies to the component's Spaces. New Units are created on
+            it, except AppConfig and record Units.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        UnitAnnotations:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-type-skip-optional-pointer: true
+        UnitDeleteGates:
+          additionalProperties:
+            type: boolean
+          description: Set on Units the upload creates.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        UnitDestroyGates:
+          additionalProperties:
+            type: boolean
+          description: Set on Units the upload creates.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        UnitLabels:
+          additionalProperties:
+            type: string
+          description: Set on every Unit the source writes.
+          type: object
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadComponentResult:
+      properties:
+        BrokenLinks:
+          description: Inferred links dropped to keep the link graph acyclic.
+          items:
+            $ref: '#/components/schemas/UploadBrokenEdge'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Name:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        NamespaceCollision:
+          $ref: '#/components/schemas/UploadNamespaceCollision'
+        RecordUnitID:
+          description: The record Unit holding what was uploaded and from where. Absent
+            on a dry run.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SkippedSecrets:
+          description: Secret resources dropped from the bundle, as Kind/namespace/name.
+            Secrets are never uploaded.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        SourceName:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Spaces:
+          items:
+            $ref: '#/components/schemas/UploadSpaceResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        UnmatchedReferences:
+          description: References that resolved to no resource in the bundle.
+          items:
+            $ref: '#/components/schemas/UploadUnmatchedReference'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadLinkResult:
+      properties:
+        Action:
+          description: Create or Unchanged.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        FromUnit:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LinkID:
+          description: Absent for a Link a dry run would create.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Reason:
+          description: Why the link was inferred, e.g. reference:v1/ConfigMap.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToUnit:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadNamespaceCollision:
+      properties:
+        Namespace:
+          description: The release Namespace the bundle already carries.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadRequest:
+      properties:
+        ChangeDescription:
+          description: Recorded on each Unit write.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeSetDescription:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: 'An existing ChangeSet to record the writes in. Default: one
+            new ChangeSet per Space.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Components:
+          description: Placement of each component. Exactly one is supported.
+          items:
+            $ref: '#/components/schemas/UploadComponentRequest'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Files:
+          description: The bundle's files. Paths must be relative and may not contain
+            "..".
+          items:
+            $ref: '#/components/schemas/UploadRequestFile'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Source:
+          $ref: '#/components/schemas/UploadSourceInfo'
+        SpaceLabels:
+          additionalProperties:
+            type: string
+          description: 'Labels applied to every Space, merge-patch: keys given are
+            set, keys omitted are left alone.'
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SpacePattern:
+          description: Slug pattern for created Spaces, over the Space's labels. Default
+            {{.Labels.Component}}-{{.Labels.Variant}}.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadRequestFile:
+      properties:
+        Content:
+          description: The file's contents.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: Relative path within the bundle, e.g. backend.yaml.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadResult:
+      properties:
+        Components:
+          items:
+            $ref: '#/components/schemas/UploadComponentResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        DryRun:
+          description: True when nothing was written.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Plan:
+          description: Digest of the planned actions.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadSourceInfo:
+      properties:
+        Client:
+          description: 'The client that uploaded: cub, installer, ui.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ClientVersion:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Digest:
+          description: The resolved digest, when the transport has one.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Ref:
+          description: Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0
+            or a local path.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadSpaceResult:
+      properties:
+        Action:
+          description: Create, Update, or Unchanged.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: The ChangeSet the writes were recorded in. Absent on a dry
+            run.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Links:
+          items:
+            $ref: '#/components/schemas/UploadLinkResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Namespace:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Absent for a Space a dry run would create.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Units:
+          items:
+            $ref: '#/components/schemas/UploadUnitResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UploadUnitResult:
+      properties:
+        Action:
+          description: Create, Update, Unchanged, Empty, Revive, or Adopt.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Mutations:
+          $ref: '#/components/schemas/MutationMap'
+        Resource:
+          description: The resource identity this Unit is keyed by.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Role:
+          description: Resource, AppConfig, AppConfigRendered, or Record.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Absent for a Unit a dry run would create.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+      type: object
+    UploadUnmatchedReference:
+      properties:
+        FromUnit:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TargetName:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TargetType:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object

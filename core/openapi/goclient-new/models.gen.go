@@ -180,18 +180,7 @@ type ApproveResponse struct {
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Message string         `json:"Message,omitempty" yaml:"Message,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
@@ -1041,18 +1030,7 @@ type ExtendedInvocation struct {
 type ExtendedLink struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// FromUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// FromUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	FromUnit *Unit `json:"FromUnit,omitempty" yaml:"FromUnit,omitempty"`
 
 	// Link Link connects two config Units in a dependency / producer-consumer relationship.
@@ -1070,18 +1048,7 @@ type ExtendedLink struct {
 	// ToSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	ToSpace *Space `json:"ToSpace,omitempty" yaml:"ToSpace,omitempty"`
 
-	// ToUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// ToUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	ToUnit *Unit `json:"ToUnit,omitempty" yaml:"ToUnit,omitempty"`
 
 	// TransformInvocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
@@ -1101,18 +1068,7 @@ type ExtendedMutation struct {
 	// Links must be created in the same Space as the From Unit.
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 
-	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// MergeSource Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	MergeSource *Unit `json:"MergeSource,omitempty" yaml:"MergeSource,omitempty"`
 
 	// Mutation Mutation is a single source of mutation for a Revision.
@@ -1138,18 +1094,7 @@ type ExtendedMutation struct {
 	// triggers can be set to Warn mode to produce non-blocking ValidationWarnings instead of ValidationErrors.
 	Trigger *Trigger `json:"Trigger,omitempty" yaml:"Trigger,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
@@ -1187,18 +1132,7 @@ type ExtendedResource struct {
 	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
 	// View Defines an entity view.
@@ -1225,18 +1159,7 @@ type ExtendedRevision struct {
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 	Tags  []Tag  `json:"Tags,omitempty" yaml:"Tags,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
 	// User a User in Confighub.
@@ -1411,35 +1334,13 @@ type ExtendedUnit struct {
 	// Target Target represents a deployment target in ConfigHub. It defines where configuration should be applied, including the toolchain type (e.g., Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
 	// UpstreamSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 	UpstreamSpace *Space `json:"UpstreamSpace,omitempty" yaml:"UpstreamSpace,omitempty"`
 
-	// UpstreamUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// UpstreamUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	UpstreamUnit *Unit `json:"UpstreamUnit,omitempty" yaml:"UpstreamUnit,omitempty"`
 
 	// View Defines an entity view.
@@ -3263,18 +3164,7 @@ type TriggerCreateOrUpdateResponse struct {
 // UUID defines model for UUID.
 type UUID = openapi_types.UUID
 
-// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-// the underlying configuration / deployment tool. The resources must belong to a single
-// infrastructure provider and the actuation mechanism must be able to resolve references and
-// ordering dependencies among the resources within the document. For example, if one resource
-// needs to be fully provisioned to provide input to another resource, then the actuation code is
-// responsible for handling this. Revisions store historical copies of the configuration data.
-// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-// new variants of a configuration.
+// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 type Unit struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -3517,18 +3407,7 @@ type UnitConflictsResponse struct {
 	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
@@ -3541,18 +3420,7 @@ type UnitCreateOrUpdateResponse struct {
 	Links           []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
 	MutationSources *ResourceMutationList        `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data
-	// of a single supported Toolchain Type (configuration format). This blob is typically a text document
-	// that contains a collection of Kubernetes or infrastructure resources, or an application configuration
-	// file. Applying / deploying or destroying the configuration happens as a single *transaction*
-	// from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by
-	// the underlying configuration / deployment tool. The resources must belong to a single
-	// infrastructure provider and the actuation mechanism must be able to resolve references and
-	// ordering dependencies among the resources within the document. For example, if one resource
-	// needs to be fully provisioned to provide input to another resource, then the actuation code is
-	// responsible for handling this. Revisions store historical copies of the configuration data.
-	// Configuration data can be restored from prior Revisions. Units can also be cloned to create
-	// new variants of a configuration.
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
@@ -3690,6 +3558,194 @@ type UnitTagRequest struct {
 type UnitTagResponse struct {
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Message string         `json:"Message,omitempty" yaml:"Message,omitempty"`
+}
+
+// UploadBrokenEdge defines model for UploadBrokenEdge.
+type UploadBrokenEdge struct {
+	Cycle  []string `json:"Cycle,omitempty" yaml:"Cycle,omitempty"`
+	From   string   `json:"From,omitempty" yaml:"From,omitempty"`
+	Kind   string   `json:"Kind,omitempty" yaml:"Kind,omitempty"`
+	Reason string   `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	To     string   `json:"To,omitempty" yaml:"To,omitempty"`
+}
+
+// UploadComponentRequest defines model for UploadComponentRequest.
+type UploadComponentRequest struct {
+	// CreateNamespace Synthesize the release Namespace if the bundle lacks it. Off by default.
+	CreateNamespace bool `json:"CreateNamespace,omitempty" yaml:"CreateNamespace,omitempty"`
+
+	// Name The component name.
+	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// Namespace The release namespace. Required when the bundle has namespaced resources that name no namespace.
+	Namespace string `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
+
+	// SlugPrefix Prepended to the slugs of new Units, so two releases can share one Space.
+	SlugPrefix string `json:"SlugPrefix,omitempty" yaml:"SlugPrefix,omitempty"`
+
+	// SourceName Ownership name within the component's Spaces. Default: Name.
+	SourceName string `json:"SourceName,omitempty" yaml:"SourceName,omitempty"`
+
+	// Space Explicit Space slug, overriding SpacePattern.
+	Space            string            `json:"Space,omitempty" yaml:"Space,omitempty"`
+	SpaceAnnotations map[string]string `json:"SpaceAnnotations,omitempty" yaml:"SpaceAnnotations,omitempty"`
+
+	// SpaceDeleteGates Set on Spaces the upload creates.
+	SpaceDeleteGates map[string]bool `json:"SpaceDeleteGates,omitempty" yaml:"SpaceDeleteGates,omitempty"`
+
+	// SpaceLabels Merged over UploadRequest.SpaceLabels.
+	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
+
+	// TargetID Applies to the component's Spaces. New Units are created on it, except AppConfig and record Units.
+	TargetID        *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
+	UnitAnnotations map[string]string   `json:"UnitAnnotations,omitempty" yaml:"UnitAnnotations,omitempty"`
+
+	// UnitDeleteGates Set on Units the upload creates.
+	UnitDeleteGates map[string]bool `json:"UnitDeleteGates,omitempty" yaml:"UnitDeleteGates,omitempty"`
+
+	// UnitDestroyGates Set on Units the upload creates.
+	UnitDestroyGates map[string]bool `json:"UnitDestroyGates,omitempty" yaml:"UnitDestroyGates,omitempty"`
+
+	// UnitLabels Set on every Unit the source writes.
+	UnitLabels map[string]string `json:"UnitLabels,omitempty" yaml:"UnitLabels,omitempty"`
+}
+
+// UploadComponentResult defines model for UploadComponentResult.
+type UploadComponentResult struct {
+	// BrokenLinks Inferred links dropped to keep the link graph acyclic.
+	BrokenLinks        []UploadBrokenEdge        `json:"BrokenLinks,omitempty" yaml:"BrokenLinks,omitempty"`
+	Name               string                    `json:"Name,omitempty" yaml:"Name,omitempty"`
+	NamespaceCollision *UploadNamespaceCollision `json:"NamespaceCollision,omitempty" yaml:"NamespaceCollision,omitempty"`
+
+	// RecordUnitID The record Unit holding what was uploaded and from where. Absent on a dry run.
+	RecordUnitID *openapi_types.UUID `json:"RecordUnitID,omitempty" yaml:"RecordUnitID,omitempty"`
+
+	// SkippedSecrets Secret resources dropped from the bundle, as Kind/namespace/name. Secrets are never uploaded.
+	SkippedSecrets []string            `json:"SkippedSecrets,omitempty" yaml:"SkippedSecrets,omitempty"`
+	SourceName     string              `json:"SourceName,omitempty" yaml:"SourceName,omitempty"`
+	Spaces         []UploadSpaceResult `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+
+	// UnmatchedReferences References that resolved to no resource in the bundle.
+	UnmatchedReferences []UploadUnmatchedReference `json:"UnmatchedReferences,omitempty" yaml:"UnmatchedReferences,omitempty"`
+}
+
+// UploadLinkResult defines model for UploadLinkResult.
+type UploadLinkResult struct {
+	// Action Create or Unchanged.
+	Action   string         `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error    *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	FromUnit string         `json:"FromUnit,omitempty" yaml:"FromUnit,omitempty"`
+
+	// LinkID Absent for a Link a dry run would create.
+	LinkID *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+
+	// Reason Why the link was inferred, e.g. reference:v1/ConfigMap.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	ToUnit string `json:"ToUnit,omitempty" yaml:"ToUnit,omitempty"`
+}
+
+// UploadNamespaceCollision defines model for UploadNamespaceCollision.
+type UploadNamespaceCollision struct {
+	// Namespace The release Namespace the bundle already carries.
+	Namespace string `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
+}
+
+// UploadRequest defines model for UploadRequest.
+type UploadRequest struct {
+	// ChangeDescription Recorded on each Unit write.
+	ChangeDescription    string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+	ChangeSetDescription string `json:"ChangeSetDescription,omitempty" yaml:"ChangeSetDescription,omitempty"`
+
+	// ChangeSetID An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// Components Placement of each component. Exactly one is supported.
+	Components []UploadComponentRequest `json:"Components,omitempty" yaml:"Components,omitempty"`
+
+	// Files The bundle's files. Paths must be relative and may not contain "..".
+	Files  []UploadRequestFile `json:"Files,omitempty" yaml:"Files,omitempty"`
+	Source *UploadSourceInfo   `json:"Source,omitempty" yaml:"Source,omitempty"`
+
+	// SpaceLabels Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone.
+	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
+
+	// SpacePattern Slug pattern for created Spaces, over the Space's labels. Default {{.Labels.Component}}-{{.Labels.Variant}}.
+	SpacePattern string `json:"SpacePattern,omitempty" yaml:"SpacePattern,omitempty"`
+}
+
+// UploadRequestFile defines model for UploadRequestFile.
+type UploadRequestFile struct {
+	// Content The file's contents.
+	Content string `json:"Content,omitempty" yaml:"Content,omitempty"`
+
+	// Path Relative path within the bundle, e.g. backend.yaml.
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+}
+
+// UploadResult defines model for UploadResult.
+type UploadResult struct {
+	Components []UploadComponentResult `json:"Components,omitempty" yaml:"Components,omitempty"`
+
+	// DryRun True when nothing was written.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
+	// Plan Digest of the planned actions.
+	Plan string `json:"Plan,omitempty" yaml:"Plan,omitempty"`
+}
+
+// UploadSourceInfo defines model for UploadSourceInfo.
+type UploadSourceInfo struct {
+	// Client The client that uploaded: cub, installer, ui.
+	Client        string `json:"Client,omitempty" yaml:"Client,omitempty"`
+	ClientVersion string `json:"ClientVersion,omitempty" yaml:"ClientVersion,omitempty"`
+
+	// Digest The resolved digest, when the transport has one.
+	Digest string `json:"Digest,omitempty" yaml:"Digest,omitempty"`
+
+	// Ref Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0 or a local path.
+	Ref string `json:"Ref,omitempty" yaml:"Ref,omitempty"`
+}
+
+// UploadSpaceResult defines model for UploadSpaceResult.
+type UploadSpaceResult struct {
+	// Action Create, Update, or Unchanged.
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// ChangeSetID The ChangeSet the writes were recorded in. Absent on a dry run.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	Links       []UploadLinkResult  `json:"Links,omitempty" yaml:"Links,omitempty"`
+	Namespace   string              `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
+
+	// SpaceID Absent for a Space a dry run would create.
+	SpaceID   *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	Units     []UploadUnitResult  `json:"Units,omitempty" yaml:"Units,omitempty"`
+}
+
+// UploadUnitResult defines model for UploadUnitResult.
+type UploadUnitResult struct {
+	// Action Create, Update, Unchanged, Empty, Revive, or Adopt.
+	Action    string                `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Error     *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Mutations *MutationMap          `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
+
+	// Resource The resource identity this Unit is keyed by.
+	Resource string `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Role Resource, AppConfig, AppConfigRendered, or Record.
+	Role string `json:"Role,omitempty" yaml:"Role,omitempty"`
+	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// UnitID Absent for a Unit a dry run would create.
+	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// UploadUnmatchedReference defines model for UploadUnmatchedReference.
+type UploadUnmatchedReference struct {
+	FromUnit   string `json:"FromUnit,omitempty" yaml:"FromUnit,omitempty"`
+	TargetName string `json:"TargetName,omitempty" yaml:"TargetName,omitempty"`
+	TargetType string `json:"TargetType,omitempty" yaml:"TargetType,omitempty"`
 }
 
 // User a User in Confighub.
@@ -14590,6 +14646,12 @@ type SearchUnitMutationSourcesParams struct {
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
+// UploadParams defines parameters for Upload.
+type UploadParams struct {
+	// DryRun Plan the upload and return the same response without writing anything.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
 // ListUsersParams defines parameters for ListUsers.
 type ListUsersParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -15355,6 +15417,9 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONRequestBody BulkCreateUnitsAppl
 
 // BulkTagUnitsJSONRequestBody defines body for BulkTagUnits for application/json ContentType.
 type BulkTagUnitsJSONRequestBody = UnitTagRequest
+
+// UploadJSONRequestBody defines body for Upload for application/json ContentType.
+type UploadJSONRequestBody = UploadRequest
 
 // CreateUserKeyJSONRequestBody defines body for CreateUserKey for application/json ContentType.
 type CreateUserKeyJSONRequestBody = CreateUserKeyRequest

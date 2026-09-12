@@ -847,6 +847,11 @@ type ClientInterface interface {
 	// SearchUnitMutationSources request
 	SearchUnitMutationSources(ctx context.Context, params *SearchUnitMutationSourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// UploadWithBody request with any body
+	UploadWithBody(ctx context.Context, params *UploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Upload(ctx context.Context, params *UploadParams, body UploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListUsers request
 	ListUsers(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4207,6 +4212,30 @@ func (c *Client) ListAllUnitEvents(ctx context.Context, params *ListAllUnitEvent
 
 func (c *Client) SearchUnitMutationSources(ctx context.Context, params *SearchUnitMutationSourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchUnitMutationSourcesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UploadWithBody(ctx context.Context, params *UploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Upload(ctx context.Context, params *UploadParams, body UploadJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUploadRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -24186,6 +24215,68 @@ func NewSearchUnitMutationSourcesRequest(server string, params *SearchUnitMutati
 	return req, nil
 }
 
+// NewUploadRequest calls the generic Upload builder with application/json body
+func NewUploadRequest(server string, params *UploadParams, body UploadJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUploadRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewUploadRequestWithBody generates requests for Upload with any type of body
+func NewUploadRequestWithBody(server string, params *UploadParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/upload")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListUsersRequest generates requests for ListUsers
 func NewListUsersRequest(server string, params *ListUsersParams) (*http.Request, error) {
 	var err error
@@ -25745,6 +25836,11 @@ type ClientWithResponsesInterface interface {
 
 	// SearchUnitMutationSourcesWithResponse request
 	SearchUnitMutationSourcesWithResponse(ctx context.Context, params *SearchUnitMutationSourcesParams, reqEditors ...RequestEditorFn) (*SearchUnitMutationSourcesResponse, error)
+
+	// UploadWithBodyWithResponse request with any body
+	UploadWithBodyWithResponse(ctx context.Context, params *UploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadResponse, error)
+
+	UploadWithResponse(ctx context.Context, params *UploadParams, body UploadJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadResponse, error)
 
 	// ListUsersWithResponse request
 	ListUsersWithResponse(ctx context.Context, params *ListUsersParams, reqEditors ...RequestEditorFn) (*ListUsersResponse, error)
@@ -31511,6 +31607,36 @@ func (r SearchUnitMutationSourcesResponse) StatusCode() int {
 	return 0
 }
 
+type UploadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UploadResult
+	JSON207      *UploadResult
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UploadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UploadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListUsersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -34193,6 +34319,23 @@ func (c *ClientWithResponses) SearchUnitMutationSourcesWithResponse(ctx context.
 		return nil, err
 	}
 	return ParseSearchUnitMutationSourcesResponse(rsp)
+}
+
+// UploadWithBodyWithResponse request with arbitrary body returning *UploadResponse
+func (c *ClientWithResponses) UploadWithBodyWithResponse(ctx context.Context, params *UploadParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadResponse, error) {
+	rsp, err := c.UploadWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadResponse(rsp)
+}
+
+func (c *ClientWithResponses) UploadWithResponse(ctx context.Context, params *UploadParams, body UploadJSONRequestBody, reqEditors ...RequestEditorFn) (*UploadResponse, error) {
+	rsp, err := c.Upload(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUploadResponse(rsp)
 }
 
 // ListUsersWithResponse request returning *ListUsersResponse
@@ -49053,6 +49196,88 @@ func ParseSearchUnitMutationSourcesResponse(rsp *http.Response) (*SearchUnitMuta
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUploadResponse parses an HTTP response from a UploadWithResponse call
+func ParseUploadResponse(rsp *http.Response) (*UploadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UploadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UploadResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest UploadResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

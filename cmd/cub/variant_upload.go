@@ -4,49 +4,44 @@
 package main
 
 import (
-	"encoding/json"
+	"bufio"
 	"fmt"
+	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
-	"github.com/confighub/sdk/cmd/cub/upload"
-	"github.com/confighub/sdk/core/worker/api"
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 type variantUploadOptions struct {
-	component    string
-	variant      string
-	stage        string
-	environment  string
-	region       string
-	layer        string
-	owner        string
-	spacePattern string
-	space        string
-	granularity  string
-	namespace    string
-	target       string
-	labels       []string
-	annotations  []string
-	spaceLabels  []string
-	changeDesc   string
-	allowExists  bool
-	prune        bool
-	dryRun       bool
+	component       string
+	variant         string
+	stage           string
+	environment     string
+	region          string
+	layer           string
+	owner           string
+	spacePattern    string
+	space           string
+	sourceName      string
+	namespace       string
+	createNamespace bool
+	target          string
+	labels          []string
+	annotations     []string
+	spaceLabels     []string
+	changeDesc      string
+	dryRun          bool
+	yes             bool
 
 	// The old names of --unit-label and --unit-annotation, kept as deprecated aliases.
 	deprecatedLabels      []string
 	deprecatedAnnotations []string
-
-	// sourceDescription overrides sourceDesc with a name for where the
-	// configuration came from that the inputs cannot supply -- the chart a
-	// "helm template" was rendered from, when the input is only "-".
-	sourceDescription string
-	// sourceDesc is not a flag: it is sourceDescription, or the inputs as given
-	// on the command line, stamped on each created Unit as its external source.
-	sourceDesc string
 }
 
 var variantUploadArgs variantUploadOptions
@@ -66,107 +61,92 @@ standard OCI image artifact (a tar or tar+gzip layer of YAML, as "cub release pu
 and Flux produce, or individual file layers as "oras push" produces). The pull is
 anonymous: local registry credentials are not used, so the bundle has to be public.
 
-Every input is recorded on the Space as a "confighub.com/external-source" annotation
-(a JSON array), together with the --granularity and --namespace the upload ran with,
-so the plan can be reproduced from the Space alone. For an oci:// input the resolved
-digest is recorded too, making the exact bundle installed auditable.
+The server does the work: it splits the bundle into resources and makes the Space's
+Units, Links, and Invocations match it. Every resource becomes its own Unit, named
+after the resource rather than the file it came from — a workload keeps its bare name
+("backend"), and everything else takes its kind as a suffix ("backend-service").
 
-An upload into a Space recorded with a different --granularity or --namespace is
-refused. Granularity decides the Unit slugs, so changing it would replace that
-Space's Units rather than update them; namespace decides the synthesized Namespace
-resource and what AppConfig placeholders carry, so changing it would rewrite those
-resources. Both have to be repeated on a re-upload — --granularity has a default,
-so omitting it is itself a change. Re-run with the recorded values, or use --space
-to upload elsewhere.
+Uploading is create-or-update, always. The first upload and every later one go through
+the same path, so there is no separate "re-upload" mode and nothing to remember between
+runs:
 
-Resources become Units in one of three granularities (--granularity):
-  minimal       one Unit for everything, with CRDs split into their own Unit and each
-                AppConfig file split into its own Unit set (the default).
-  per-resource  one Unit per resource.
-  per-file      one Unit per source file, named from the file's stem — so the input's
-                file layout defines the Unit set (matches how "cub helm" groups a
-                chart's template files). Useful with an oci:// bundle of named files.
+  create      the resource is new, so a Unit is created for it.
+  update      the source changed since it last wrote that Unit, so the new content is
+              3-way merged into it. Changes made in ConfigHub since — a set- function,
+              a hand edit, a needs/provides binding — survive, and anything the merge
+              had to withhold is reported as a conflict.
+  unchanged   the source has not changed, so nothing is written.
+  empty       the resource is gone from the bundle, so the Unit's data is emptied.
+  revive      an emptied resource is back, so the whole resource is applied to the
+              same Unit.
+  adopt       a Unit that already held exactly this resource is taken over, keeping
+              its UnitID, its slug, and its history.
 
-In minimal mode the resources in the combined Unit are ordered by install priority
-(Namespaces, RBAC, config, then workloads) and by their references to one another. A
-Namespace resource is synthesized if --namespace is given and none is present. AppConfig
-ConfigMaps (carrying installer.confighub.com annotations) are expanded into an AppConfig
-data Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. Rendered
-Secrets are never uploaded — apply them out-of-band.
+Nothing is ever deleted. A resource the bundle no longer contains empties its Unit
+instead, so the Unit keeps its identity, its links, and its history, and the next
+Release withdraws the object from the cluster. Emptying is what "--yes" confirms:
+without it, an upload whose plan empties Units asks first.
 
-Links between Units are inferred from references, label selectors, and custom-resource →
-CRD relationships. Because ConfigHub does not break dependency cycles, any cycle found in
-the ordering or the links is broken here — the weakest edge is dropped (a selector before a
-reference; a cross-scope reference before a same-namespace one) and the broken edge is
-reported.
+Ownership is a label. Every Unit, Link, and Invocation an upload writes is labeled
+with its source name (--source-name, defaulting to --component), and a Unit belonging
+to another source, or to no source, is never written or emptied — so one Space can
+hold several sources and hand-written Units side by side.
+
+Rendered Secrets are never uploaded — apply them out-of-band. AppConfig ConfigMaps
+(carrying installer.confighub.com annotations) are expanded into an AppConfig data
+Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link.
+
+Links between Units are inferred from references, label selectors, and custom-resource
+→ CRD relationships. Because ConfigHub does not break dependency cycles, any cycle in
+the inferred links is broken — the weakest edge is dropped (a selector before a
+reference; a cross-scope reference before a same-namespace one) — and reported.
 
 The Space is created if missing and stamped with the well-known labels from --component,
---variant, --stage, --environment, --region, --layer, and --owner, and any other labels given
-with --space-label. --component and --variant are required. The Space slug comes from
---space-pattern (a Go template over .Labels), or from --space to set it explicitly.
---unit-label and --unit-annotation set labels and annotations on every created Unit.
+--variant, --stage, --environment, --region, --layer, and --owner, and any other labels
+given with --space-label. --component and --variant are required. The Space slug comes
+from --space-pattern (a Go template over .Labels), or from --space to set it explicitly.
+--unit-label and --unit-annotation set labels and annotations on every written Unit.
 
-Each created Unit records the input it came from — the oci:// ref, file, or directory
-as named on the command line — as its external source, so its change description reads
-"from oci://ghcr.io/org/bundle". Use --change-desc to prefix your own description.
+--namespace is the release namespace, as in "helm template -n": where namespaced
+resources that name no namespace, and cluster-scoped resources, belong. It has no
+default. Charts write the namespace into places set-namespace cannot reach — ConfigMap
+data, flags, annotations, webhook references — so render with the real namespace rather
+than substituting one afterwards. --create-namespace synthesizes the Namespace resource
+when the bundle lacks it; it is off by default, because a bare Namespace has none of the
+pod-security labels, NetworkPolicy, ResourceQuota, or LimitRange that make a namespace
+usable, and the platform normally provisions those together.
 
-Where the inputs do not name the source, --source-description does. A chart rendered
-into this command arrives on stdin, which records as "stdin"; passing the chart and its
-version instead makes the Unit's history say what produced the configuration. It is the
-external-source identity, so a re-upload has to repeat it to merge against the first one
-rather than start a new source. The Space's external-source annotation is unaffected: it
-records the inputs themselves, which is what makes the upload reproducible.
+The writes are recorded in a ChangeSet, so an entire upload can be rolled back with the
+"cub unit update --restore Before:ChangeSet:<slug>" command printed at the end.
 
-Re-uploading:
-Running this command again against a Space it already populated is a re-upload, not a
-second create. Each Unit is merged rather than replaced: the new content is 3-way merged
-against the last upload, so changes made in ConfigHub after the first upload — a set-
-function, a hand edit, a needs/provides binding — survive, while everything the source
-actually changed lands. Resources new to the input become new Units. A re-upload whose
-input has not changed does nothing.
-
-The updates are recorded in a ChangeSet, so an entire re-upload can be rolled back with
-the "cub unit update --restore Before:ChangeSet:<slug>" command printed at the end.
-
-Units in the Space that the input no longer produces are left alone and reported. Pass
---prune to empty them instead: that merges empty content, withdrawing only the resources
-this source contributed and leaving post-upload additions in place, so their deployed
-resources are removed by the next apply. Units guarded by a DestroyGate refuse. Nothing is
-ever deleted — the Unit record, its target binding, and its metadata survive.
-
-Use --dry-run to see what would be created, updated, or emptied, including the per-field
-merge as the server would resolve it, without changing anything.
+Use --dry-run to see what would be created, updated, emptied, revived, or adopted
+without changing anything.
 
 Examples:
 `+"```"+`
-  # Minimal upload of a kustomize build into a derived Space slug "web-base".
+  # Upload a kustomize build into a derived Space slug "web-base".
   kustomize build overlays/base | cub variant upload --component web --variant base -
 
-  # One Unit per resource, into an explicit Space, bound to a target.
+  # Into an explicit Space, bound to a target.
   cub variant upload --component web --variant prod --space web-prod \
-    --granularity per-resource --target web-prod/cluster ./rendered/
+    --target web-prod/cluster ./rendered/
 
-  # Helm output, ensuring a namespace and a regional label. Without
-  # --source-description the Units would record their source as "stdin".
-  helm template myapp ./chart | cub variant upload --component myapp --variant prod \
-    --environment Prod --region us-east1 --namespace myapp \
-    --source-description "helm template myapp ./chart (myapp-1.4.2)" -
+  # Helm output, rendered with the real namespace and uploaded into it.
+  helm template myapp ./chart -n myapp | cub variant upload \
+    --component myapp --variant prod --environment Prod --namespace myapp -
 
-  # Seed a base from a published OCI manifest bundle, one Unit per bundled file.
-  cub variant upload --component cubbychat --variant base --granularity per-file \
+  # Seed a base from a published OCI manifest bundle.
+  cub variant upload --component cubbychat --variant base \
     oci://ghcr.io/confighub/configs/cubbychat
 
-  # Re-upload: same command, newer bundle. Changed Units are merged, preserving
-  # edits made in ConfigHub since the first upload.
-  cub variant upload --component cubbychat --variant base --granularity per-file \
+  # Upload a newer bundle. Changed Units are merged, preserving edits made in
+  # ConfigHub since; resources the bundle dropped have their Units emptied.
+  cub variant upload --component cubbychat --variant base --yes \
     oci://ghcr.io/confighub/configs/cubbychat:v2
 
-  # Preview that re-upload first, including the per-field merge.
+  # Preview that upload first.
   cub variant upload --dry-run --component cubbychat --variant base \
-    --granularity per-file oci://ghcr.io/confighub/configs/cubbychat:v2
-
-  # Re-upload and withdraw the resources the new render no longer contains.
-  cub variant upload --prune --component web --variant base ./rendered/
+    oci://ghcr.io/confighub/configs/cubbychat:v2
 `+"```"+`
 `, ""),
 	Args: cobra.MinimumNArgs(1),
@@ -183,21 +163,20 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.owner, "owner", "", "value for the well-known \"Owner\" Space label (e.g. Engineering)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.spacePattern, "space-pattern", "template:{{.Labels.Component}}-{{.Labels.Variant}}", "Go template (prefix 'template:') for the Space slug, evaluated over .Labels")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.space, "space", "", "explicit Space slug; overrides --space-pattern")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.granularity, "granularity", string(upload.Minimal), "how resources map to Units: minimal, per-resource, or per-file")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "ensure a Namespace resource with this name exists (unless \"default\")")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceName, "source-name", "", "ownership name for the Units, Links, and Invocations this upload writes; defaults to --component")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "the release namespace: where namespaced resources that name no namespace, and cluster-scoped resources, belong")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.createNamespace, "create-namespace", false, "synthesize the release Namespace resource if the bundle does not contain it")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.target, "target", "", "target for the created Units, in <target-slug> or <space-slug>/<target-slug> form")
 	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.spaceLabels, "space-label", nil, "label key=value to set on the Space (repeatable); it may not name a label another flag sets, such as Component")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "unit-label", nil, "label key=value to set on every created Unit (repeatable)")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "unit-annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedLabels, "label", nil, "label key=value to set on every created Unit (repeatable)")
-	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedAnnotations, "annotation", nil, "annotation key=value to set on every created Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.labels, "unit-label", nil, "label key=value to set on every written Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.annotations, "unit-annotation", nil, "annotation key=value to set on every written Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedLabels, "label", nil, "label key=value to set on every written Unit (repeatable)")
+	variantUploadCmd.Flags().StringSliceVar(&variantUploadArgs.deprecatedAnnotations, "annotation", nil, "annotation key=value to set on every written Unit (repeatable)")
 	_ = variantUploadCmd.Flags().MarkDeprecated("label", "use --unit-label")
 	_ = variantUploadCmd.Flags().MarkDeprecated("annotation", "use --unit-annotation")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each created Unit")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceDescription, "source-description", "", "name for where the configuration came from, recorded as each Unit's external source (defaults to the inputs as named on the command line); does not affect the Space's external-source annotation, which records the inputs themselves")
-	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.allowExists, "allow-exists", false, "tolerate Spaces, Units, Invocations, and Links that already exist (retry a partial upload)")
-	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.prune, "prune", false, "on a re-upload, empty Units in the Space that this input no longer produces")
-	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, or empty, and exit without changing anything")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each written Unit")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, empty, revive, or adopt, and exit without changing anything")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.yes, "yes", false, "do not ask for confirmation when the upload would empty Units")
 	variantCmd.AddCommand(variantUploadCmd)
 }
 
@@ -221,10 +200,6 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	if a.variant == "" {
 		return fmt.Errorf("--variant is required")
 	}
-	gran := upload.Granularity(a.granularity)
-	if gran != upload.Minimal && gran != upload.PerResource && gran != upload.PerFile {
-		return fmt.Errorf("--granularity must be %q, %q, or %q", upload.Minimal, upload.PerResource, upload.PerFile)
-	}
 
 	a.labels = append(a.labels, a.deprecatedLabels...)
 	a.annotations = append(a.annotations, a.deprecatedAnnotations...)
@@ -243,181 +218,102 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		labels[key] = value
 	}
-	if a.stage != "" {
-		labels["Stage"] = a.stage
-	}
-	if a.environment != "" {
-		labels["Environment"] = a.environment
-	}
-	if a.region != "" {
-		labels["Region"] = a.region
-	}
-	if a.layer != "" {
-		labels["Layer"] = a.layer
-	}
-	if a.owner != "" {
-		labels["Owner"] = a.owner
+	for flag, value := range map[string]string{
+		"Stage": a.stage, "Environment": a.environment, "Region": a.region,
+		"Layer": a.layer, "Owner": a.owner,
+	} {
+		if value != "" {
+			labels[flag] = value
+		}
 	}
 
-	spaceSlug := a.space
-	if spaceSlug == "" {
-		s, err := renderSpacePattern(a.spacePattern, labels)
-		if err != nil {
-			return err
-		}
-		spaceSlug = s
+	component := goclientnew.UploadComponentRequest{
+		Name:            a.component,
+		SourceName:      a.sourceName,
+		Namespace:       a.namespace,
+		CreateNamespace: a.createNamespace,
+		Space:           a.space,
 	}
-	spaceSlug = makeSlug(spaceSlug)
-	if spaceSlug == "" {
-		return fmt.Errorf("computed Space slug is empty; set --space")
-	}
-
-	// Describe the inputs as the user named them, before oci:// refs are resolved
-	// to temp directories and Unit bodies are staged in temp files. Each Unit is
-	// created with this as its external source, so its change description reads
-	// "from oci://ghcr.io/org/bundle" rather than the temp path cub handed itself.
-	// --source-description replaces it where the inputs do not name the source:
-	// a rendered chart arrives on stdin, which records as "stdin".
-	a.sourceDesc = uploadSourceIdentity(a.sourceDescription, args)
-
-	// Resolve any oci:// inputs to local directories of extracted manifests, so
-	// the rest of the pipeline treats them like any other input path, and record
-	// every input — oci:// or not — for the Space's confighub.com/external-source
-	// annotation written below.
-	parseInputs := make([]string, len(args))
-	sources := make([]externalSourceRecord, 0, len(args))
-	for i, in := range args {
-		record := externalSourceRecord{
-			Ref:         uploadSourceRef(in),
-			Granularity: string(gran),
-			Namespace:   a.namespace,
-		}
-		if !isOCIRef(in) {
-			parseInputs[i] = in
-			sources = append(sources, record)
-			continue
-		}
-		dir, err := os.MkdirTemp("", "cub-oci-*")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(dir)
-		digest, err := pullOCIManifests(ctx, in, dir)
-		if err != nil {
-			return err
-		}
-		tprint("Pulled %s (%s)", in, digest)
-		parseInputs[i] = dir
-		record.Digest = digest
-		sources = append(sources, record)
-	}
-
-	resources, err := upload.Parse(parseInputs)
-	if err != nil {
+	var err error
+	if component.UnitLabels, err = keyValueMap(a.labels, "--unit-label"); err != nil {
 		return err
 	}
-	if len(resources) == 0 {
-		return fmt.Errorf("no Kubernetes resources found in the input")
-	}
-
-	plan, err := upload.BuildPlan(resources, gran, a.component, a.namespace)
-	if err != nil {
+	if component.UnitAnnotations, err = keyValueMap(a.annotations, "--unit-annotation"); err != nil {
 		return err
 	}
 
-	// Refuse an option change before anything is created, including under
-	// --dry-run, where the plan it would print is meaningless.
-	if err := checkUploadOptions(spaceSlug, gran, a.namespace); err != nil {
-		return err
-	}
-
-	if a.dryRun {
-		return reportUploadDryRun(spaceSlug, plan, a)
-	}
-
-	// Whether this is a re-upload has to be settled before the Space is created
-	// below, since that create is what would otherwise make an absent Space look
-	// like an existing one.
-	reUpload := uploadSpaceHasUnits(spaceSlug)
-
-	// Create and stamp the Space.
-	if err := runCub("space", "create", "--allow-exists", "--quiet", spaceSlug); err != nil {
-		return err
-	}
-	spaceMeta := []string{"space", "update", "--patch", "--quiet"}
-	for k, v := range labels {
-		spaceMeta = append(spaceMeta, "--label", k+"="+v)
-	}
+	// The target is resolved here because a bare slug is scoped to the Space this
+	// upload writes to, which the client is the one that knows how to name.
 	if a.target != "" {
-		if id, providerType, qualifiedRef, err := resolveUploadTarget(spaceSlug, a.target); err == nil && id != "" {
-			spaceMeta = append(spaceMeta, "--annotation", "TargetID="+id)
-			// For an OCI target, also set the Space's ReleaseTargetID: releases are
-			// published per Space ("cub release publish <space>") and publish requires it.
-			// Pass the qualified ref rather than the UUID: space update resolves a bare
-			// Target ID against the selected space, which may not be set here.
-			if providerType == string(api.ProviderOCI) {
-				spaceMeta = append(spaceMeta, "--release-target", qualifiedRef)
+		spaceSlug := a.space
+		if spaceSlug == "" {
+			if spaceSlug, err = renderSpacePattern(a.spacePattern, labels); err != nil {
+				return err
 			}
+			spaceSlug = makeSlug(spaceSlug)
 		}
-	}
-	spaceMeta = append(spaceMeta, spaceSlug)
-	if err := runCub(spaceMeta...); err != nil {
-		return err
-	}
-
-	// Record the source(s) on the Space so a later re-upload can reproduce the
-	// plan. Component/variant/etc. are already Space labels and the target is the
-	// Space's TargetID annotation, so the record carries only the source ref, the
-	// resolved digest (oci:// only), and the options that govern how bytes map to
-	// Units (--granularity, --namespace). Those two are why this is written for
-	// every input and not just oci://: re-uploading a Space at a different
-	// granularity produces an entirely different Unit set, so the value the first
-	// upload used has to be recoverable from the Space itself.
-	if err := recordExternalSource(spaceSlug, sources); err != nil {
-		return err
+		id, _, _, resolveErr := resolveUploadTarget(spaceSlug, a.target)
+		if resolveErr != nil {
+			return resolveErr
+		}
+		targetID, parseErr := uuid.Parse(id)
+		if parseErr != nil {
+			return fmt.Errorf("target %q resolved to an unparseable ID %q: %w", a.target, id, parseErr)
+		}
+		component.TargetID = &targetID
 	}
 
-	// A Space that already holds Units is a re-upload: its Units may carry
-	// post-upload edits, so they are merged rather than recreated.
-	if reUpload {
-		if err := variantUploadReconcile(spaceSlug, plan, a); err != nil {
+	files, digest, usedStdin, err := collectUploadFiles(args)
+	if err != nil {
+		return err
+	}
+	if len(files) == 0 {
+		return fmt.Errorf("no configuration files found in the input")
+	}
+
+	req := goclientnew.UploadRequest{
+		Files:             files,
+		Components:        []goclientnew.UploadComponentRequest{component},
+		SpaceLabels:       labels,
+		SpacePattern:      strings.TrimPrefix(a.spacePattern, "template:"),
+		ChangeDescription: a.changeDesc,
+		Source: &goclientnew.UploadSourceInfo{
+			Ref:           uploadSourceDescription(args),
+			Digest:        digest,
+			Client:        "cub",
+			ClientVersion: Version,
+		},
+	}
+
+	// Emptying a Unit withdraws what it deployed, so an upload that would empty
+	// anything is confirmed first. The plan comes from a dry run, which is the
+	// same code path the apply takes, so what is confirmed is what happens.
+	if !a.dryRun && !a.yes {
+		preview, previewErr := cubapi.Upload(ctx, cubClient, req, true)
+		if previewErr != nil {
+			return previewErr
+		}
+		if err := confirmUploadEmpties(preview, usedStdin); err != nil {
 			return err
 		}
-		reportUploadPlan(plan)
-		return nil
 	}
 
-	// Create Units in plan order.
-	for _, u := range plan.Units {
-		switch u.Kind {
-		case upload.UnitAppConfig:
-			if err := uploadAppConfigUnit(spaceSlug, u, a); err != nil {
-				return err
-			}
-		default:
-			targeted := u.Kind == upload.UnitNormal || u.Kind == upload.UnitCRD
-			if err := createPlainUnit(spaceSlug, u, a, targeted); err != nil {
-				return err
-			}
-		}
-	}
-
-	if err := createInferredLinks(spaceSlug, plan, a.allowExists, nil); err != nil {
+	result, err := cubapi.Upload(ctx, cubClient, req, a.dryRun)
+	if err != nil {
 		return err
 	}
-
-	reportUploadPlan(plan)
+	reportUploadResult(result)
 	return nil
 }
 
-// maxUploadSourceDescription bounds the source string stamped on every Unit so a
-// long input list can't push the resulting change description past the server's
-// LastChangeDescription limit.
+// maxUploadSourceDescription bounds the source string recorded for the upload so
+// a long input list can't push the resulting change description past the
+// server's LastChangeDescription limit.
 const maxUploadSourceDescription = 512
 
 // uploadSourceRef renders one input the way the user named it — an oci:// ref or
-// a path rather than the temp directory it is extracted or staged into, "stdin"
-// for "-" (matching what "unit create" records for stdin input).
+// a path rather than the temp directory it is extracted into, "stdin" for "-"
+// (matching what "unit create" records for stdin input).
 func uploadSourceRef(input string) string {
 	if input == "-" {
 		return "stdin"
@@ -425,8 +321,8 @@ func uploadSourceRef(input string) string {
 	return input
 }
 
-// uploadSourceDescription renders the upload's inputs the way the user named them,
-// joined into the single string stamped on each Unit as its external source.
+// uploadSourceDescription renders the upload's inputs the way the user named
+// them, joined into the single string recorded as the upload's source.
 func uploadSourceDescription(inputs []string) string {
 	parts := make([]string, 0, len(inputs))
 	for _, in := range inputs {
@@ -435,233 +331,226 @@ func uploadSourceDescription(inputs []string) string {
 	return truncateWithEllipsis(strings.Join(parts, ", "), maxUploadSourceDescription)
 }
 
-// uploadSourceIdentity picks the external source stamped on every Unit: what
-// --source-description said, or the inputs as named on the command line. Both are
-// bounded the same way, because both end up in the same LastChangeDescription.
-func uploadSourceIdentity(override string, inputs []string) string {
-	if override != "" {
-		return truncateWithEllipsis(override, maxUploadSourceDescription)
+// collectUploadFiles reads every input into memory as bundle files. The server
+// splits them into resources, so the client only has to name each file the way
+// the bundle's author did. It also reports the resolved digest of an oci:// input
+// and whether stdin was consumed.
+func collectUploadFiles(inputs []string) (files []goclientnew.UploadRequestFile, digest string, usedStdin bool, err error) {
+	add := func(path, content string) {
+		files = append(files, goclientnew.UploadRequestFile{Path: path, Content: content})
 	}
-	return uploadSourceDescription(inputs)
-}
 
-// createPlainUnit writes the Unit body to a temp file and runs cub unit create.
-func createPlainUnit(spaceSlug string, u upload.Unit, a *variantUploadOptions, targeted bool) error {
-	tmp, err := os.CreateTemp("", "cub-upload-*.yaml")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.WriteString(u.Content); err != nil {
-		tmp.Close()
-		return err
-	}
-	tmp.Close()
+	for _, in := range inputs {
+		switch {
+		case in == "-":
+			data, readErr := io.ReadAll(os.Stdin)
+			if readErr != nil {
+				return nil, "", usedStdin, fmt.Errorf("read stdin: %w", readErr)
+			}
+			usedStdin = true
+			add("stdin.yaml", string(data))
 
-	cubArgs := []string{"unit", "create"}
-	if a.allowExists {
-		cubArgs = append(cubArgs, "--allow-exists")
-	}
-	cubArgs = append(cubArgs, "--space", spaceSlug, "--toolchain", u.Toolchain)
-	if targeted && a.target != "" {
-		cubArgs = append(cubArgs, "--target", a.target)
-	}
-	if a.changeDesc != "" {
-		cubArgs = append(cubArgs, "--change-desc", a.changeDesc)
-	}
-	// Otherwise "unit create" defaults the external source to the temp file below.
-	if a.sourceDesc != "" {
-		cubArgs = append(cubArgs, "--merge-external-source", a.sourceDesc)
-	}
-	for _, l := range a.labels {
-		cubArgs = append(cubArgs, "--label", l)
-	}
-	for _, an := range a.annotations {
-		cubArgs = append(cubArgs, "--annotation", an)
-	}
-	cubArgs = append(cubArgs, u.Slug, tmp.Name())
-	return runCub(cubArgs...)
-}
+		case isOCIRef(in):
+			dir, tmpErr := os.MkdirTemp("", "cub-oci-*")
+			if tmpErr != nil {
+				return nil, "", usedStdin, tmpErr
+			}
+			defer os.RemoveAll(dir)
+			resolved, pullErr := pullOCIManifests(ctx, in, dir)
+			if pullErr != nil {
+				return nil, "", usedStdin, pullErr
+			}
+			tprint("Pulled %s (%s)", in, resolved)
+			digest = resolved
+			if walkErr := walkUploadDir(dir, add); walkErr != nil {
+				return nil, "", usedStdin, walkErr
+			}
 
-// uploadAppConfigUnit materializes the AppConfig data Unit, the render-configmap
-// Invocation, the placeholder Unit, and the Upsert link that renders the
-// ConfigMap into the placeholder. Mirrors the installer's AppConfig expansion.
-//
-// The steps are separate functions because a re-upload needs them individually:
-// the reconcile engine owns the data Unit (step 2), so it can 3-way merge it,
-// while the surrounding scaffolding is re-asserted with --allow-exists. See
-// uploadScaffolding in variant_upload_reconcile.go.
-func uploadAppConfigUnit(spaceSlug string, u upload.Unit, a *variantUploadOptions) error {
-	ac := u.AppConfig
-	if err := createAppConfigInvocation(spaceSlug, ac, a.allowExists); err != nil {
-		return err
-	}
-	if err := createAppConfigDataUnit(spaceSlug, u, a); err != nil {
-		return err
-	}
-	if err := createAppConfigPlaceholder(spaceSlug, ac, a, a.allowExists); err != nil {
-		return err
-	}
-	if err := linkAppConfigPlaceholder(spaceSlug, ac, a.allowExists); err != nil {
-		return err
-	}
-	return setPlaceholderNamespace(spaceSlug, ac, a)
-}
-
-// createAppConfigInvocation creates the render-configmap Invocation that turns
-// the AppConfig data Unit into a rendered ConfigMap.
-func createAppConfigInvocation(spaceSlug string, ac *upload.AppConfigManifest, allowExists bool) error {
-	invArgs := []string{"invocation", "create"}
-	if allowExists {
-		invArgs = append(invArgs, "--allow-exists")
-	}
-	invArgs = append(invArgs, "--space", spaceSlug, ac.InvocationSlug(), ac.Toolchain, "--", "render-configmap")
-	invArgs = append(invArgs, ac.RenderConfigMapArgs()...)
-	return runCub(invArgs...)
-}
-
-// createAppConfigDataUnit creates the AppConfig data Unit (no target — it is a
-// pure data source, rendered into the placeholder by the Upsert link).
-func createAppConfigDataUnit(spaceSlug string, u upload.Unit, a *variantUploadOptions) error {
-	ac := u.AppConfig
-	tmp, err := os.CreateTemp("", "cub-appconfig-*")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.WriteString(u.Content); err != nil {
-		tmp.Close()
-		return err
-	}
-	tmp.Close()
-
-	dataArgs := []string{"unit", "create"}
-	if a.allowExists {
-		dataArgs = append(dataArgs, "--allow-exists")
-	}
-	dataArgs = append(dataArgs, "--space", spaceSlug, "--toolchain", ac.Toolchain)
-	if a.sourceDesc != "" {
-		dataArgs = append(dataArgs, "--merge-external-source", a.sourceDesc)
-	}
-	for _, l := range a.labels {
-		dataArgs = append(dataArgs, "--label", l)
-	}
-	for _, an := range a.annotations {
-		dataArgs = append(dataArgs, "--annotation", an)
-	}
-	dataArgs = append(dataArgs, ac.UnitSlug(), tmp.Name())
-	return runCub(dataArgs...)
-}
-
-// createAppConfigPlaceholder creates the empty Kubernetes/YAML Unit the Upsert
-// link renders the ConfigMap into. It is the Unit that carries the target.
-func createAppConfigPlaceholder(spaceSlug string, ac *upload.AppConfigManifest, a *variantUploadOptions, allowExists bool) error {
-	phArgs := []string{"unit", "create"}
-	if allowExists {
-		phArgs = append(phArgs, "--allow-exists")
-	}
-	phArgs = append(phArgs, "--space", spaceSlug, "--toolchain", "Kubernetes/YAML")
-	if a.target != "" {
-		phArgs = append(phArgs, "--target", a.target)
-	}
-	for _, l := range a.labels {
-		phArgs = append(phArgs, "--label", l)
-	}
-	for _, an := range a.annotations {
-		phArgs = append(phArgs, "--annotation", an)
-	}
-	phArgs = append(phArgs, ac.PlaceholderSlug())
-	return runCub(phArgs...)
-}
-
-// linkAppConfigPlaceholder creates the Upsert link placeholder -> AppConfig
-// data Unit, transformed through the render-configmap Invocation.
-func linkAppConfigPlaceholder(spaceSlug string, ac *upload.AppConfigManifest, allowExists bool) error {
-	linkArgs := []string{"link", "create"}
-	if allowExists {
-		linkArgs = append(linkArgs, "--allow-exists")
-	}
-	linkArgs = append(linkArgs, "--wait", "--quiet", "--space", spaceSlug,
-		"--update-type", "Upsert", "--auto-update",
-		"--transform-invocation", spaceSlug+"/"+ac.InvocationSlug(),
-		"-", ac.PlaceholderSlug(), ac.UnitSlug())
-	return runCub(linkArgs...)
-}
-
-// setPlaceholderNamespace stamps the real namespace onto the placeholder so it
-// applies correctly.
-func setPlaceholderNamespace(spaceSlug string, ac *upload.AppConfigManifest, a *variantUploadOptions) error {
-	if a.namespace == "" {
-		return nil
-	}
-	return runCub("function", "do", "--quiet", "--space", spaceSlug,
-		"--toolchain", "Kubernetes/YAML", "--unit", ac.PlaceholderSlug(),
-		"set-namespace", a.namespace)
-}
-
-// createInferredLinks creates the Unit→Unit links inferred from the bundle's
-// references, label selectors, and CRD relationships.
-//
-// skip holds link pairs (see linkPairKey) that already exist and must not be
-// re-created. It is nil on a first upload, where nothing exists yet, and
-// populated on a re-upload: the inferred links are created with an
-// auto-generated slug, so --allow-exists — which only tolerates a slug
-// collision — does not cover re-asserting a link whose from→to pair is already
-// there, and the server rejects it as a duplicate value.
-func createInferredLinks(spaceSlug string, plan *upload.Plan, allowExists bool, skip map[string]bool) error {
-	for _, l := range plan.Links {
-		if skip[linkPairKey(l.FromUnit, l.ToUnit)] {
-			continue
+		default:
+			info, statErr := os.Stat(in)
+			if statErr != nil {
+				return nil, "", usedStdin, statErr
+			}
+			if info.IsDir() {
+				if walkErr := walkUploadDir(in, add); walkErr != nil {
+					return nil, "", usedStdin, walkErr
+				}
+				continue
+			}
+			data, readErr := os.ReadFile(in)
+			if readErr != nil {
+				return nil, "", usedStdin, readErr
+			}
+			// The bundle names its own files, so a path that escapes the bundle,
+			// or names an absolute location, is not sent.
+			add(filepath.Base(in), string(data))
 		}
-		linkArgs := []string{"link", "create"}
-		if allowExists {
-			linkArgs = append(linkArgs, "--allow-exists")
-		}
-		linkArgs = append(linkArgs, "--quiet", "--space", spaceSlug, "-", l.FromUnit, l.ToUnit)
-		if err := runCub(linkArgs...); err != nil {
+	}
+	return files, digest, usedStdin, nil
+}
+
+// walkUploadDir adds every YAML file under dir, named relative to dir so the
+// paths read as the bundle's own layout rather than as wherever it was unpacked.
+func walkUploadDir(dir string, add func(path, content string)) error {
+	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
 			return err
 		}
-		tprint("Linked %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
-	}
-	return nil
+		if d.IsDir() || !isUploadYAMLFile(path) {
+			return nil
+		}
+		data, readErr := os.ReadFile(path)
+		if readErr != nil {
+			return readErr
+		}
+		rel, relErr := filepath.Rel(dir, path)
+		if relErr != nil {
+			rel = filepath.Base(path)
+		}
+		add(filepath.ToSlash(rel), string(data))
+		return nil
+	})
 }
 
-// linkPairKey identifies a link by the Unit slugs it connects, which is the
-// identity the server enforces as unique.
-func linkPairKey(fromUnit, toUnit string) string {
-	return fromUnit + " -> " + toUnit
+func isUploadYAMLFile(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".yaml" || ext == ".yml"
 }
 
-// reportUploadPlan prints the broken-edge reports, skipped Secrets, and
-// unmatched references after the upload completes.
-func reportUploadPlan(plan *upload.Plan) {
-	for _, b := range plan.BrokenOrdering {
-		tprint("broke %s ordering edge %s -> %s to resolve cycle: %s",
-			b.Kind, b.From, b.To, strings.Join(b.Cycle, " -> "))
+// keyValueMap parses repeated key=value flags into a map.
+func keyValueMap(values []string, flag string) (map[string]string, error) {
+	if len(values) == 0 {
+		return nil, nil
 	}
-	for _, b := range plan.BrokenLinks {
-		tprint("broke %s link %s -> %s to resolve cycle: %s",
-			b.Kind, b.From, b.To, strings.Join(b.Cycle, " -> "))
+	out := make(map[string]string, len(values))
+	for _, kv := range values {
+		key, value, ok := strings.Cut(kv, "=")
+		if !ok {
+			return nil, fmt.Errorf("%s must be key=value: %s", flag, kv)
+		}
+		out[key] = value
 	}
-	if len(plan.SkippedSecrets) > 0 {
-		tprint("")
-		tprint("Note: %d Secret(s) were NOT uploaded. Apply them out-of-band:", len(plan.SkippedSecrets))
-		for _, s := range plan.SkippedSecrets {
-			tprint("  - %s %q", s.Type, s.ScopedName)
+	return out, nil
+}
+
+// confirmUploadEmpties asks before an upload withdraws anything. The Units are
+// emptied rather than deleted, but their resources leave the cluster on the next
+// Release, which is the part worth confirming.
+func confirmUploadEmpties(preview *goclientnew.UploadResult, usedStdin bool) error {
+	var emptied []string
+	for _, c := range preview.Components {
+		for _, s := range c.Spaces {
+			for _, u := range s.Units {
+				if u.Action == "Empty" {
+					emptied = append(emptied, u.Slug)
+				}
+			}
 		}
 	}
-	if len(plan.Unmatched) > 0 {
-		tprint("")
-		tprint("Note: the following references didn't resolve to any uploaded Unit (expected when the")
-		tprint("target lives in the cluster, e.g. a Secret created out-of-band):")
-		for _, u := range plan.Unmatched {
-			tprint("  - %s -> %s %q", u.FromUnit, u.TargetType, u.TargetName)
+	if len(emptied) == 0 {
+		return nil
+	}
+
+	tprint("This upload empties %d Unit(s) whose resources are no longer in the bundle:", len(emptied))
+	for _, slug := range emptied {
+		tprint("  - %s", slug)
+	}
+	tprint("Their resources are withdrawn from the cluster by the next Release. Nothing is deleted.")
+
+	// The bundle arrived on stdin, so there is no console left to ask on.
+	if usedStdin {
+		return fmt.Errorf("refusing to empty %d Unit(s): the bundle was read from stdin, so there is no input left to confirm on; pass --yes", len(emptied))
+	}
+	tprint("")
+	fmt.Print("Continue? [y/N]: ")
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("read confirmation: %w", err)
+	}
+	switch strings.ToLower(strings.TrimSpace(answer)) {
+	case "y", "yes":
+		return nil
+	default:
+		return fmt.Errorf("cancelled")
+	}
+}
+
+// reportUploadResult prints what the upload did, or would do.
+func reportUploadResult(result *goclientnew.UploadResult) {
+	if result.DryRun {
+		tprint("Dry run: nothing was written.")
+	}
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			tprint("Space %s (%s)", s.SpaceSlug, s.Action)
+			unchanged := 0
+			for _, u := range s.Units {
+				if u.Error != nil {
+					tprint("  %-9s %s: %s", "FAILED", u.Slug, errString(u.Error))
+					continue
+				}
+				if u.Action == "Unchanged" {
+					unchanged++
+					continue
+				}
+				tprint("  %-9s %s", u.Action, u.Slug)
+			}
+			if unchanged > 0 {
+				tprint("  %-9s %d Unit(s)", "Unchanged", unchanged)
+			}
+			for _, l := range s.Links {
+				if l.Error != nil {
+					tprint("  link FAILED %s -> %s: %s", l.FromUnit, l.ToUnit, errString(l.Error))
+					continue
+				}
+				if l.Action == "Create" {
+					tprint("  linked    %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
+				}
+			}
+		}
+
+		for _, b := range c.BrokenLinks {
+			tprint("broke %s link %s -> %s to resolve cycle: %s",
+				b.Kind, b.From, b.To, strings.Join(b.Cycle, " -> "))
+		}
+		if len(c.SkippedSecrets) > 0 {
+			tprint("")
+			tprint("Note: %d Secret(s) were NOT uploaded. Apply them out-of-band:", len(c.SkippedSecrets))
+			for _, s := range c.SkippedSecrets {
+				tprint("  - %s", s)
+			}
+		}
+		if c.NamespaceCollision != nil {
+			tprint("")
+			tprint("Note: --create-namespace was given, but the bundle already carries Namespace %q,",
+				c.NamespaceCollision.Namespace)
+			tprint("so none was synthesized. The bundle's own Namespace is the one uploaded.")
+		}
+		if len(c.UnmatchedReferences) > 0 {
+			tprint("")
+			tprint("Note: the following references didn't resolve to any uploaded Unit (expected when the")
+			tprint("target lives in the cluster, e.g. a Secret created out-of-band):")
+			for _, u := range c.UnmatchedReferences {
+				tprint("  - %s -> %s %q", u.FromUnit, u.TargetType, u.TargetName)
+			}
 		}
 	}
+}
+
+// errString renders a per-item error from the API response.
+func errString(e *goclientnew.ResponseError) string {
+	if e == nil {
+		return ""
+	}
+	if e.Message != "" {
+		return e.Message
+	}
+	return "unknown error"
 }
 
 // renderSpacePattern evaluates a --space-pattern (optionally prefixed "template:")
-// over the well-known Space labels.
+// over the well-known Space labels. The server renders the pattern itself; this
+// is used only to scope a bare --target slug to the Space being written.
 func renderSpacePattern(pattern string, labels map[string]string) (string, error) {
 	pattern = strings.TrimPrefix(pattern, "template:")
 	t, err := template.New("space").Parse(pattern)
@@ -675,15 +564,12 @@ func renderSpacePattern(pattern string, labels map[string]string) (string, error
 	return strings.TrimSpace(b.String()), nil
 }
 
-// resolveUploadTarget resolves a --target ref to the TargetID UUID (recorded as
-// the Space's TargetID annotation), the target's ProviderType (an OCI target is
-// also set as the Space's release target), and the fully qualified
-// <space>/<slug> ref for passing to other cub commands.
+// resolveUploadTarget resolves a --target ref to the TargetID UUID, the target's
+// ProviderType, and the fully qualified <space>/<slug> ref.
 //
-// A bare slug is scoped to the Space the upload writes to, which is what the
-// command's --space did when this shelled out to "cub target get". A qualified
-// ref or a UUID identifies the target on its own, so ParseRef handles both and
-// the scope is left empty for them.
+// A bare slug is scoped to the Space the upload writes to. A qualified ref or a
+// UUID identifies the target on its own, so ParseRef handles both and the scope
+// is left empty for them.
 func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifiedRef string, err error) {
 	spaceID := ""
 	if !strings.Contains(targetRef, "/") {
@@ -708,135 +594,4 @@ func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifi
 	}
 	return target.Target.TargetID.String(), target.Target.ProviderType,
 		spaceSlug + "/" + target.Target.Slug, nil
-}
-
-// externalSourceAnnotation is the well-known Space annotation recording the
-// source(s) the Space was uploaded from, as a JSON array of externalSourceRecord.
-// It lets a later "variant upload" reproduce the plan from the Space alone.
-const externalSourceAnnotation = "confighub.com/external-source"
-
-// externalSourceRecord captures one input and the options that govern how its
-// bytes map to Units. Component/variant/etc. live in the Space labels and the
-// target in the Space's TargetID annotation, so they are not repeated here.
-//
-// Written for every input, not only oci:// ones. A digest exists only for an
-// oci:// ref, but Granularity and Namespace decide the shape of the Unit set for
-// any input at all — re-uploading at a different granularity yields an entirely
-// different set of Units — so what the first upload used has to be recoverable
-// whether it came from a registry, a directory, or stdin.
-type externalSourceRecord struct {
-	Ref         string `json:"ref"`
-	Digest      string `json:"digest,omitempty"`
-	Granularity string `json:"granularity"`
-	Namespace   string `json:"namespace,omitempty"`
-}
-
-// checkUploadOptions refuses an upload whose --granularity or --namespace
-// disagrees with what the Space was uploaded with. Both decide the shape of the
-// result rather than merely how it is presented, and neither disagreement is
-// something a re-upload can reconcile — it would rewrite the Space instead.
-//
-// A Space with no record — new, or seeded before the annotation was written for
-// every input — is left alone rather than guessed at.
-func checkUploadOptions(spaceSlug string, gran upload.Granularity, namespace string) error {
-	recorded, found := uploadRecordedSource(spaceSlug)
-	if !found {
-		return nil
-	}
-	// Granularity decides the Unit slugs. minimal collapses a bundle into one Unit
-	// named for the component, per-file names a Unit after each source file's stem,
-	// per-resource one per resource. A re-upload matches existing Units by slug, so
-	// arriving with a different granularity does not update the Space: every
-	// recorded Unit reads as absent from the input and every new one as an
-	// addition, replacing the Space's contents and offering to prune what was there.
-	//
-	// Guarded only when recorded, so a hand-written annotation that omits it still
-	// uploads.
-	if recorded.Granularity != "" && recorded.Granularity != string(gran) {
-		return fmt.Errorf(
-			"Space %q was uploaded with --granularity %s, but this upload specifies %s.\n"+
-				"Granularity determines the Unit slugs, so re-uploading at a different one would\n"+
-				"replace the Space's Units rather than update them.\n"+
-				"Re-run with --granularity %s, or use --space to upload into a different Space.",
-			spaceSlug, recorded.Granularity, gran, recorded.Granularity)
-	}
-	// Namespace decides whether a Namespace resource is synthesized and which
-	// namespace the AppConfig placeholders are stamped with. Unlike granularity it
-	// changes content rather than Unit identity, so a re-upload would appear to
-	// succeed while rewriting or dropping those resources. An empty value is
-	// meaningful here — it means the upload ran without --namespace — so this
-	// compares directly rather than treating empty as "unrecorded".
-	if recorded.Namespace != namespace {
-		rerun := "without --namespace"
-		if recorded.Namespace != "" {
-			rerun = "with --namespace " + recorded.Namespace
-		}
-		return fmt.Errorf(
-			"Space %q was uploaded with %s, but this upload specifies %s.\n"+
-				"--namespace decides whether a Namespace resource is synthesized and which namespace\n"+
-				"AppConfig placeholders carry, so changing it rewrites those resources.\n"+
-				"Re-run %s, or use --space to upload into a different Space.",
-			spaceSlug, uploadNamespaceDesc(recorded.Namespace), uploadNamespaceDesc(namespace), rerun)
-	}
-	return nil
-}
-
-// uploadNamespaceDesc renders a --namespace value for an error message, naming
-// its absence rather than printing an empty string.
-func uploadNamespaceDesc(namespace string) string {
-	if namespace == "" {
-		return "no --namespace"
-	}
-	return "--namespace " + namespace
-}
-
-// uploadRecordedSource returns the external-source record on the Space and
-// whether one was found. Not found covers a Space that does not exist, carries
-// no annotation, or whose annotation cannot be read — all cases where there is
-// nothing to check against and the upload should simply proceed.
-func uploadRecordedSource(spaceSlug string) (externalSourceRecord, bool) {
-	space, err := resolveSpace(spaceSlug, "SpaceID,Slug,Annotations")
-	if err != nil || space == nil {
-		return externalSourceRecord{}, false
-	}
-	return recordedSource(space.Space.Annotations[externalSourceAnnotation])
-}
-
-// recordedSource parses an external-source annotation value. Every record from
-// one upload carries the same granularity and namespace, so the first stands for
-// the Space.
-func recordedSource(annotation string) (externalSourceRecord, bool) {
-	if annotation == "" {
-		return externalSourceRecord{}, false
-	}
-	var records []externalSourceRecord
-	if err := json.Unmarshal([]byte(annotation), &records); err != nil || len(records) == 0 {
-		return externalSourceRecord{}, false
-	}
-	return records[0], true
-}
-
-// recordExternalSource stamps the external-source annotation on the Space via a
-// direct merge-patch. The "space update --annotation" flag comma-splits its value
-// (CSV parsing), which would corrupt the JSON, so this bypasses it. Merge-patch
-// merges into the existing annotation map, preserving TargetID and any others.
-func recordExternalSource(spaceSlug string, records []externalSourceRecord) error {
-	encoded, err := json.Marshal(records)
-	if err != nil {
-		return err
-	}
-	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
-	if err != nil {
-		return err
-	}
-	patchData, err := json.Marshal(map[string]map[string]string{
-		"Annotations": {externalSourceAnnotation: string(encoded)},
-	})
-	if err != nil {
-		return err
-	}
-	if _, err := patchSpace(space.Space.SpaceID, patchData); err != nil {
-		return err
-	}
-	return nil
 }

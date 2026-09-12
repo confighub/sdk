@@ -28,6 +28,7 @@ import (
 	"sync"
 	"sync/atomic"
 
+	"github.com/confighub/sdk/core/constants"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/sethvargo/go-envconfig"
 )
@@ -35,12 +36,9 @@ import (
 // DefaultUserAgent is sent when [ClientOptions.UserAgent] is empty.
 const DefaultUserAgent = "cub-sdk"
 
-// ServerVersionHeader is the response header the ConfigHub server stamps its own
-// version onto, on every /api response. A client that reads it learns the server
-// version from a call it was already making, rather than spending a round trip on
-// /api/info. The value is what /api/info reports in Version: a release version such
-// as "v0.2.34", or "v0.2-dev" for a build from a working tree.
-const ServerVersionHeader = "ConfigHub-Version"
+// ServerVersionHeader is [constants.ServerVersionHeader], re-exported here for
+// clients that already read it from this package.
+const ServerVersionHeader = constants.ServerVersionHeader
 
 // ClientOptions configures client construction. ServerURL is required; the rest
 // are optional. Provide either Token (bearer) or Session (which additionally
