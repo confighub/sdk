@@ -14,6 +14,7 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -52,7 +53,8 @@ var variantUploadCmd = &cobra.Command{
 	Long: getCommandHelp(`Upload already-rendered Kubernetes manifests into a ConfigHub Space.
 
 The input is a stream of rendered resources — from the installer, "kustomize build",
-or "helm template" — supplied as files, directories (walked for .yaml/.yml), "-" for
+or "helm template" — supplied as files, directories (walked for .yaml, .yml, .json,
+.env, .properties, .toml, and .ini), "-" for
 stdin, or an "oci://" reference to a manifest bundle. This command does not render
 anything; it ingests what you give it.
 
@@ -94,7 +96,11 @@ hold several sources and hand-written Units side by side.
 
 Rendered Secrets are never uploaded — apply them out-of-band. AppConfig ConfigMaps
 (carrying installer.confighub.com annotations) are expanded into an AppConfig data
-Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link.
+Unit, a render-configmap Invocation, a placeholder Unit, and an Upsert link. A file
+holding application configuration rather than Kubernetes resources — a .properties,
+.env, .toml, or .ini file, or YAML or JSON with no apiVersion and kind — becomes one
+untargeted AppConfig Unit, named by its configHub.configName or else by its path
+(config/app.properties becomes config-app). A YAML file mixing the two is refused.
 
 Links between Units are inferred from references, label selectors, and custom-resource
 → CRD relationships. Because ConfigHub does not break dependency cycles, any cycle in
@@ -103,7 +109,8 @@ reference; a cross-scope reference before a same-namespace one) — and reported
 
 The Space is created if missing and stamped with the well-known labels from --component,
 --variant, --stage, --environment, --region, --layer, and --owner, and any other labels
-given with --space-label. --component and --variant are required. The Space slug comes
+given with --space-label. --component is required; --variant defaults to "base", since
+an upload normally seeds the base that variants are created from. The Space slug comes
 from --space-pattern (a Go template over .Labels), or from --space to set it explicitly.
 --unit-label and --unit-annotation set labels and annotations on every written Unit.
 
@@ -155,7 +162,7 @@ Examples:
 
 func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.component, "component", "", "value for the well-known \"Component\" Space label (required)")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.variant, "variant", "", "value for the well-known \"Variant\" Space label (required)")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.variant, "variant", "base", "value for the well-known \"Variant\" Space label")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.stage, "stage", "", "value for the well-known \"Stage\" Space label (e.g. Canary)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.environment, "environment", "", "value for the well-known \"Environment\" Space label (e.g. Prod)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.region, "region", "", "value for the well-known \"Region\" Space label (e.g. us-east1)")
@@ -198,7 +205,7 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("--component is required")
 	}
 	if a.variant == "" {
-		return fmt.Errorf("--variant is required")
+		return fmt.Errorf("--variant must not be empty")
 	}
 
 	a.labels = append(a.labels, a.deprecatedLabels...)
@@ -303,6 +310,9 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	reportUploadResult(result)
+	if !a.dryRun {
+		reportUploadRevert(result)
+	}
 	return nil
 }
 
@@ -389,14 +399,14 @@ func collectUploadFiles(inputs []string) (files []goclientnew.UploadRequestFile,
 	return files, digest, usedStdin, nil
 }
 
-// walkUploadDir adds every YAML file under dir, named relative to dir so the
+// walkUploadDir adds every configuration file under dir, named relative to dir so the
 // paths read as the bundle's own layout rather than as wherever it was unpacked.
 func walkUploadDir(dir string, add func(path, content string)) error {
 	return filepath.WalkDir(dir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || !isUploadYAMLFile(path) {
+		if d.IsDir() || !isUploadFile(path) {
 			return nil
 		}
 		data, readErr := os.ReadFile(path)
@@ -412,9 +422,21 @@ func walkUploadDir(dir string, add func(path, content string)) error {
 	})
 }
 
-func isUploadYAMLFile(path string) bool {
+// isUploadFile reports whether a file is one the server classifies: YAML or JSON,
+// or an AppConfig format's extension. Text is the exception, as it is on the
+// server: ".txt" is too common in a directory to send every such file. Anything
+// else in a directory is skipped rather than sent.
+func isUploadFile(path string) bool {
 	ext := strings.ToLower(filepath.Ext(path))
-	return ext == ".yaml" || ext == ".yml"
+	if ext == ".yml" {
+		return true
+	}
+	for toolchain, toolchainExt := range workerapi.AppConfigFileExtensions {
+		if ext == toolchainExt && toolchain != workerapi.ToolchainAppConfigText {
+			return true
+		}
+	}
+	return false
 }
 
 // keyValueMap parses repeated key=value flags into a map.
@@ -533,6 +555,28 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 			for _, u := range c.UnmatchedReferences {
 				tprint("  - %s -> %s %q", u.FromUnit, u.TargetType, u.TargetName)
 			}
+		}
+	}
+}
+
+// reportUploadRevert prints how to roll back what an upload wrote to each Space:
+// restoring the source's Units to before the upload's ChangeSet, which empties
+// the Units it created and reverts the rest. A Space the upload did not write to
+// has no ChangeSet.
+func reportUploadRevert(result *goclientnew.UploadResult) {
+	for _, c := range result.Components {
+		for _, s := range c.Spaces {
+			if s.ChangeSetID == nil {
+				continue
+			}
+			ref := s.ChangeSetID.String()
+			if cs, err := cubapi.ResolveChangeSet(ctx, cubClient, cubapi.RefFromID(*s.ChangeSetID), cubapi.ResolveOpts{}); err == nil && cs.ChangeSet != nil {
+				ref = cs.ChangeSet.Slug
+			}
+			tprint("")
+			tprint("Revert this upload of %s with:", s.SpaceSlug)
+			tprint("  cub unit update --patch --space %s --restore Before:ChangeSet:%s --where \"Labels.UploadSource = '%s'\"",
+				s.SpaceSlug, ref, c.SourceName)
 		}
 	}
 }

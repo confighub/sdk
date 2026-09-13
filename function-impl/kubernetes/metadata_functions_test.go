@@ -332,7 +332,7 @@ spec:
 `,
 		},
 		{
-			name: "Explicit old-namespace argument is used for DNS rewrite even when metadata.namespace differs",
+			name: "Explicit old-namespace argument is used for DNS rewrite when metadata.namespace is unset",
 			input: `
 apiVersion: apps/v1
 kind: Deployment
@@ -1068,4 +1068,100 @@ spec:
 	assert.Equal(t, 1, strings.Count(got, "namespace: new-ns"),
 		"cluster-scoped-types did not exclude the composite resource:\n%s", got)
 	assert.Contains(t, got, "kind: XCluster")
+}
+
+// With old-namespace, set-namespace moves only the release namespace: a component's resources and
+// references in another namespace stay put, resources with no namespace get the new one, and
+// cluster-scoped resources get none.
+func TestK8sFnSetNamespace_OldNamespaceScopesTheChange(t *testing.T) {
+	input := `
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: web
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: web
+spec:
+  template:
+    spec:
+      containers:
+        - name: main
+          image: nginx
+          env:
+            - name: DB
+              value: postgres.web.svc.cluster.local
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: confighubplaceholder
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: web-auth-reader
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: web
+    namespace: web
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: web-scraper
+subjects:
+  - kind: ServiceAccount
+    name: prometheus
+    namespace: monitoring
+  - kind: ServiceAccount
+    name: web
+    namespace: web
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: web-reader
+`
+	parsed, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+	out, _, err := k8sFnSetNamespace(testResourceProvider, nil, parsed, []api.FunctionArgument{
+		{ParameterName: "namespace-name", Value: "web-prod"},
+		{ParameterName: "old-namespace", Value: "web"},
+	})
+	require.NoError(t, err)
+	docs := out
+
+	get := func(i int, path string) any {
+		t.Helper()
+		return docs[i].Path(path).Data()
+	}
+	assert.Equal(t, "web-prod", get(0, "metadata.name"), "the old namespace's Namespace is renamed")
+	assert.Equal(t, "monitoring", get(1, "metadata.name"), "another Namespace keeps its name")
+	assert.Equal(t, "web-prod", get(2, "metadata.namespace"))
+	assert.Equal(t, "postgres.web-prod.svc.cluster.local", get(2, "spec.template.spec.containers.0.env.0.value"))
+	assert.Equal(t, "web-prod", get(3, "metadata.namespace"), "a resource with no namespace gets the new one")
+	assert.Equal(t, "web-prod", get(4, "metadata.namespace"),
+		"a resource in the placeholder namespace, such as a rendered ConfigMap, gets the new one")
+	assert.Equal(t, "kube-system", get(5, "metadata.namespace"), "a resource in another namespace stays")
+	assert.Equal(t, "web-prod", get(5, "subjects.0.namespace"), "a reference to the old namespace follows it")
+	assert.Equal(t, "monitoring", get(6, "subjects.0.namespace"), "a reference to another namespace stays")
+	assert.Equal(t, "web-prod", get(6, "subjects.1.namespace"))
+	assert.Nil(t, docs[6].Path("metadata.namespace").Data(), "a cluster-scoped resource gets no namespace")
+	assert.Nil(t, docs[7].Path("metadata.namespace").Data(), "a cluster-scoped resource gets no namespace")
 }

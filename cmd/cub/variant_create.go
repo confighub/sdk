@@ -247,6 +247,8 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	// The base is typically uploaded with the confighubplaceholder namespace;
 	// set-namespace renames the v1/Namespace resource and stamps metadata.namespace
 	// on every namespaced resource, so each variant lands in its own namespace.
+	// When the upstream space records its namespace, only that namespace moves, so a
+	// component's resources in other namespaces, such as kube-system, stay put.
 	if variantCreateArgs.namespace != "" {
 		setNamespace := []string{"function", "do", "--quiet", "--space", newSpace.Slug}
 		// The clones joined the changeset, and a change to a unit in an open changeset has to
@@ -254,7 +256,10 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		if changesetID != nil {
 			setNamespace = append(setNamespace, "--changeset", changesetID.String())
 		}
-		setNamespace = append(setNamespace, "set-namespace", variantCreateArgs.namespace)
+		setNamespace = append(setNamespace, "--", "set-namespace", variantCreateArgs.namespace)
+		if upstreamNamespace := upstreamSpace.Space.Labels[labelNamespace]; upstreamNamespace != "" {
+			setNamespace = append(setNamespace, "--old-namespace="+upstreamNamespace)
+		}
 		if err := runCub(setNamespace...); err != nil {
 			return err
 		}

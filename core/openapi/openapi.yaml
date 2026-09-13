@@ -29270,6 +29270,15 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: 'Comma-separated parts of the result to return in addition to
+          the actions: Mutations for what each Unit write changed, or on a dry run
+          would change. It costs something to return, and on a dry run it runs the
+          merges a plan otherwise skips, so it is returned only when named.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -36760,6 +36769,13 @@ components:
             by default.
           type: boolean
           x-go-type-skip-optional-pointer: true
+        DependsOn:
+          description: Names of the components this one depends on, recorded in the
+            Space's DependsOn annotation. Requires a Variant Space label.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
         Name:
           description: The component name.
           type: string
@@ -37029,13 +37045,13 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         Mutations:
-          $ref: '#/components/schemas/MutationMap'
+          $ref: '#/components/schemas/ResourceMutationList'
         Resource:
           description: The resource identity this Unit is keyed by.
           type: string
           x-go-type-skip-optional-pointer: true
         Role:
-          description: Resource, AppConfig, AppConfigRendered, or Record.
+          description: Resource, AppConfig, or AppConfigRendered.
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:

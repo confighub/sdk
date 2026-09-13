@@ -181,8 +181,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	// 2. Per-cluster downstream variant, cloned from the base and bound to this
 	// cluster's OCI target (which also becomes the variant Space's release
 	// target). No --namespace: argobot's manifests already place resources in
-	// the argobot and argocd namespaces, and set-namespace is space-wide (it
-	// would wrongly move the argocd-namespace RBAC).
+	// the argobot and argocd namespaces, and run in them on every cluster.
 	//
 	// Because the OCI target carries the confighub.com/argo-apps-space
 	// annotation, this also auto-creates argobot's child Argo Application Unit

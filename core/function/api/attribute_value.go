@@ -99,6 +99,11 @@ const (
 // an attribute name is a name, and property keys are where the qualifiers belong.
 const PropertyKeyResourceType = "ResourceType"
 
+// PropertyKeyNamespace is the needs/provides property naming a resource's namespace: offered on
+// the name of a resource whose references can name its namespace, and required by a reference
+// that names one, so two same-named resources in different namespaces are not confused.
+const PropertyKeyNamespace = "Namespace"
+
 // PropertyValueSeparator joins the alternatives a needed property will accept. A reference
 // field that can point at several kinds -- an HPA's scaleTargetRef naming any workload
 // controller, a RoleBinding's roleRef naming a Role or a ClusterRole -- requires one of them,

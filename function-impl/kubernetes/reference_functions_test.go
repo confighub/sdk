@@ -178,3 +178,66 @@ spec:
 	assert.Equal(t, map[string]string{"ResourceType": "v1/Namespace"}, values[0].Details.BoundProvidedProperties,
 		"what the bound value offered lives only in the stored record")
 }
+
+// A ClusterRoleBinding's subject names its ServiceAccount's namespace beside its name. The
+// reference requires that namespace, and a ServiceAccount's name offers its own, so matching can
+// tell two same-named ServiceAccounts apart and a cluster-scoped binding can match at all. A
+// placeholder namespace requires nothing, and a subject that is not a ServiceAccount has none.
+func TestSubjectReferencesRequireTheirServiceAccountsNamespace(t *testing.T) {
+	const bundle = `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: worker-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+  - kind: ServiceAccount
+    name: worker
+    namespace: workers
+  - kind: ServiceAccount
+    name: undecided
+    namespace: confighubplaceholder
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: workers
+`
+	invoke := func(fn string) api.AttributeValueList {
+		t.Helper()
+		resp, err := testFunctionHandler.InvokeCore(context.Background(), &api.FunctionInvocationRequest{
+			ConfigData:          bundle,
+			FunctionInvocations: []api.FunctionInvocation{{FunctionName: fn}},
+		})
+		require.NoError(t, err)
+		require.True(t, resp.Success, "%s should succeed; errors: %v", fn, resp.ErrorMessages)
+		var values api.AttributeValueList
+		require.NoError(t, json.Unmarshal(resp.Outputs[api.OutputTypeAttributeValueList], &values))
+		return values
+	}
+
+	required := map[string]map[string]string{}
+	for _, v := range invoke("get-references") {
+		if v.ResourceType == "rbac.authorization.k8s.io/v1/ClusterRoleBinding" && v.Details != nil {
+			required[string(v.Path)] = v.Details.NeededRequired
+		}
+	}
+	require.Contains(t, required, "subjects.0.name")
+	assert.Equal(t, "v1/ServiceAccount", required["subjects.0.name"][api.PropertyKeyResourceType])
+	assert.Equal(t, "workers", required["subjects.0.name"][api.PropertyKeyNamespace])
+	require.Contains(t, required, "subjects.1.name")
+	assert.NotContains(t, required["subjects.1.name"], api.PropertyKeyNamespace,
+		"a placeholder namespace is not decided yet and requires nothing")
+
+	var offered map[string]string
+	for _, v := range invoke("get-provided") {
+		if v.ResourceType == "v1/ServiceAccount" && v.Path == "metadata.name" && v.Details != nil {
+			offered = v.Details.ProvidedProperties
+		}
+	}
+	require.NotNil(t, offered, "a ServiceAccount should provide its name")
+	assert.Equal(t, "workers", offered[api.PropertyKeyNamespace])
+}

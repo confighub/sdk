@@ -470,3 +470,57 @@ resourceTypes:
 	locations[0] = "mutated"
 	assert.NotEqual(t, "mutated", compiled.SchemaLocationsFor(workerapi.ToolchainKubernetesYAML)[0])
 }
+
+// A reference that names its target's scope carries where it does into the declared references
+// the toolchain registers them from.
+func TestCompileSpecsCarriesTargetScopeToReferences(t *testing.T) {
+	compiled, err := CompileSpecSets(SpecSet{
+		ToolchainType: testToolchain,
+		ResourceTypes: []ResourceTypeSpec{{
+			Type: api.ResourceType("rbac.authorization.k8s.io/v1/ClusterRoleBinding"),
+			Declaration: Declaration{Attributes: map[api.AttributeName][]AttributePath{
+				"resource-name": {
+					{Path: "subjects.*.name", Target: "v1/ServiceAccount", TargetScope: "namespace"},
+					{Path: "roleRef.name", Target: "rbac.authorization.k8s.io/v1/ClusterRole"},
+				},
+			}},
+		}},
+	})
+	require.NoError(t, err)
+	refs := compiled.ReferencePaths(testToolchain)
+	require.Len(t, refs, 2)
+	byPath := map[string]DeclaredReference{}
+	for _, ref := range refs {
+		byPath[ref.Path] = ref
+	}
+	assert.Equal(t, "namespace", byPath["subjects.*.name"].TargetScope)
+	assert.Empty(t, byPath["roleRef.name"].TargetScope)
+}
+
+func TestCompileSpecsRejectsTargetScopeWithoutTarget(t *testing.T) {
+	_, err := CompileSpecSets(SpecSet{
+		ToolchainType: testToolchain,
+		ResourceTypes: []ResourceTypeSpec{{
+			Type: api.ResourceType("example.com/v1/Widget"),
+			Declaration: Declaration{Attributes: map[api.AttributeName][]AttributePath{
+				"resource-name": {{Path: "spec.ref.name", TargetScope: "namespace"}},
+			}},
+		}},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "targetScope without target")
+}
+
+func TestCompileSpecsRejectsWildcardTargetScope(t *testing.T) {
+	_, err := CompileSpecSets(SpecSet{
+		ToolchainType: testToolchain,
+		ResourceTypes: []ResourceTypeSpec{{
+			Type: api.ResourceType("example.com/v1/Widget"),
+			Declaration: Declaration{Attributes: map[api.AttributeName][]AttributePath{
+				"resource-name": {{Path: "spec.ref.name", Target: "v1/ServiceAccount", TargetScope: "*.namespace"}},
+			}},
+		}},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not a single field")
+}

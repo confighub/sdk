@@ -103,6 +103,19 @@ type AttributePath struct {
 	// Like Default it is per path and not per attribute, for the same reason: a type's
 	// reference paths point at different types, so the descriptor cannot hold it.
 	Target api.ResourceType `json:"target,omitempty"`
+
+	// TargetScope is where a reference names the scope its target is in, for a reference that
+	// can name a target in another scope than its own. In Kubernetes the scope is a namespace:
+	// a ClusterRoleBinding's subject names a ServiceAccount in the namespace beside it, as
+	// subjects[*].namespace. It is a path relative to the object holding the reference field
+	// -- the reference's own path without its last segment -- so a subject's is "namespace".
+	// Without it a reference names a target in the referring resource's own scope, which a
+	// resource with no scope of its own does not have.
+	//
+	// The toolchain compiles it to a requirement on the reference, read from that field, and a
+	// matching property on the target's name, which is what lets matching tell two same-named
+	// targets in different scopes apart.
+	TargetScope string `json:"targetScope,omitempty"`
 }
 
 // ShapeEmbed places a shape at a path within a type or another shape. Shape is the shape's
@@ -381,6 +394,17 @@ func (c *CompiledSpecs) addDeclaration(
 			c.attributes[key] = make(map[api.AttributeName][]AttributePath)
 		}
 		for _, attributePath := range paths {
+			if attributePath.TargetScope != "" {
+				if attributePath.Target == "" {
+					return fmt.Errorf("attribute %q path %q declares targetScope without target; "+
+						"only a reference names a target whose scope it can say", attributeName, attributePath.Path)
+				}
+				if strings.Contains(attributePath.TargetScope, "*") {
+					return fmt.Errorf("attribute %q path %q declares targetScope %q, which is not a single field; "+
+						"it is relative to the object holding the reference, so it names one field of that object",
+						attributeName, attributePath.Path, attributePath.TargetScope)
+				}
+			}
 			attributePath.Path = JoinRelativePath(prefix, attributePath.Path)
 			c.attributes[key][attributeName] = append(c.attributes[key][attributeName], attributePath)
 		}
@@ -573,6 +597,10 @@ type DeclaredReference struct {
 	AttributeName api.AttributeName
 	Path          string
 	Target        api.ResourceType
+	// TargetScope is AttributePath.TargetScope: where, relative to the object holding the
+	// reference, the reference names its target's scope. Empty for a reference within the
+	// referring resource's own scope.
+	TargetScope string
 }
 
 // ReferencePaths returns every declared attribute path carrying a Target, sorted by resource
@@ -596,6 +624,7 @@ func (c *CompiledSpecs) ReferencePaths(toolchainType workerapi.ToolchainType) []
 					AttributeName: attributeName,
 					Path:          declared.Path,
 					Target:        declared.Target,
+					TargetScope:   declared.TargetScope,
 				})
 			}
 		}

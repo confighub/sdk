@@ -69,6 +69,12 @@
 #                    metadata.name, which is the namespace rather than a reference to one; both
 #                    are registered in function-impl/kubernetes.
 #
+#                    A reference that names its target's namespace beside its name -- a binding's
+#                    subject, a webhook's service -- declares where with `targetScope:`, a
+#                    field of the object holding the reference. Matching then requires a target in
+#                    that namespace, rather than in the referring resource's own, which a
+#                    cluster-scoped referrer does not have.
+#
 #                    A `|` prefix on a leaf segment (`service.|namespace`) gates upsert: the
 #                    parent chain up to that segment must already exist for the path to resolve,
 #                    but the leaf is created if missing. That keeps set-namespace from inventing
@@ -586,7 +592,7 @@ resourceTypes:
         - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
       resource-name:
         - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
-        - {path: webhooks.*.clientConfig.service.name, target: v1/Service}
+        - {path: webhooks.*.clientConfig.service.name, target: v1/Service, targetScope: namespace}
 
   - type: admissionregistration.k8s.io/v1/ValidatingWebhookConfiguration
     scope: Cluster
@@ -598,7 +604,7 @@ resourceTypes:
         - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
       resource-name:
         - {path: "webhooks.*.clientConfig.service.|namespace", target: v1/Namespace}
-        - {path: webhooks.*.clientConfig.service.name, target: v1/Service}
+        - {path: webhooks.*.clientConfig.service.name, target: v1/Service, targetScope: namespace}
 
   # ---------------------------------------------------------------------------------------
   # CRDs
@@ -820,7 +826,7 @@ resourceTypes:
       resource-name:
         - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
-        - {path: subjects.*.name, target: v1/ServiceAccount}
+        - {path: subjects.*.name, target: v1/ServiceAccount, targetScope: namespace}
       immutable:
         - {path: roleRef}
 
@@ -835,7 +841,7 @@ resourceTypes:
         - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/Role}
-        - {path: subjects.*.name, target: v1/ServiceAccount}
+        - {path: subjects.*.name, target: v1/ServiceAccount, targetScope: namespace}
       immutable:
         - {path: roleRef}
 
@@ -1483,7 +1489,7 @@ resourceTypes:
         - {path: "spec.service.|namespace", target: v1/Namespace}
       resource-name:
         - {path: "spec.service.|namespace", target: v1/Namespace}
-        - {path: spec.service.name, target: v1/Service}
+        - {path: spec.service.name, target: v1/Service, targetScope: namespace}
 
   - type: autoscaling/v2/HorizontalPodAutoscaler
     scope: Namespaced

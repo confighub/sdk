@@ -3574,6 +3574,9 @@ type UploadComponentRequest struct {
 	// CreateNamespace Synthesize the release Namespace if the bundle lacks it. Off by default.
 	CreateNamespace bool `json:"CreateNamespace,omitempty" yaml:"CreateNamespace,omitempty"`
 
+	// DependsOn Names of the components this one depends on, recorded in the Space's DependsOn annotation. Requires a Variant Space label.
+	DependsOn []string `json:"DependsOn,omitempty" yaml:"DependsOn,omitempty"`
+
 	// Name The component name.
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
 
@@ -3725,12 +3728,12 @@ type UploadUnitResult struct {
 	Action    string                `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 	Error     *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Mutations *MutationMap          `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
+	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
 	// Resource The resource identity this Unit is keyed by.
 	Resource string `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
-	// Role Resource, AppConfig, AppConfigRendered, or Record.
+	// Role Resource, AppConfig, or AppConfigRendered.
 	Role string `json:"Role,omitempty" yaml:"Role,omitempty"`
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
@@ -14647,6 +14650,9 @@ type SearchUnitMutationSourcesParams struct {
 type UploadParams struct {
 	// DryRun Plan the upload and return the same response without writing anything.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. It costs something to return, and on a dry run it runs the merges a plan otherwise skips, so it is returned only when named.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // ListUsersParams defines parameters for ListUsers.

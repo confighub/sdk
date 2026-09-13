@@ -83,6 +83,7 @@ Other functional areas include:
 - `helm`
 - `k8s`
 - `variant`
+- `api`, for a request to an API endpoint no other command exposes
 
 `cub --help` will list all of the supported entities/areas.
 

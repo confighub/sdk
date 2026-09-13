@@ -82,7 +82,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 		{
 			ParameterName: "old-namespace",
 			Required:      false,
-			Description:   "Old namespace to look for in pod-spec command/args/env Service DNS names. If empty, each resource's existing metadata.namespace is used.",
+			Description:   "Namespace to move. When given, only resources in this namespace, in none, or in the placeholder namespace, the v1/Namespace of this name, and references to these change; resources and references in other namespaces are left alone. When empty, every namespace changes, and each resource's existing metadata.namespace is the one looked for in pod-spec command/args/env Service DNS names.",
 			DataType:      api.DataTypeString,
 		},
 		{
@@ -101,7 +101,7 @@ func registerMetadataFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResour
 			Mutating:              true,
 			Hermetic:              true,
 			Idempotent:            true,
-			Description:           "Set the namespace on every namespaced resource, the name on v1/Namespace resources, and Service DNS references in pod-spec command/args/env values",
+			Description:           "Set the namespace on every namespaced resource, the name on v1/Namespace resources, and Service DNS references in pod-spec command/args/env values; with old-namespace, only what is in or refers to that namespace",
 			FunctionType:          api.FunctionTypeCustom,
 			AttributeName:         AttributeNameNamespaceNameReference,
 			AffectedResourceTypes: setNamespaceResourceTypes,
@@ -425,12 +425,16 @@ const dnsSvcSuffixPattern = `(\.svc(?:[.:/]|$))`
 // k8sFnSetNamespace is the implementation of `set-namespace`. In order:
 //  1. Snapshot each resource's existing metadata.namespace (used as the
 //     fall-back "old namespace" for the DNS pass below).
-//  2. Run UpdateStringPaths over every path registered under
+//  2. Update every path registered under
 //     AttributeNameNamespaceNameReference — this renames v1/Namespace, upserts
 //     metadata.namespace on every namespace-scoped resource, sets
 //     subjects[*].namespace on ServiceAccount RBAC subjects, and rewrites the
 //     handful of cross-resource Service-namespace references (webhook configs,
-//     APIService, FluxCD Kustomization/HelmRelease).
+//     APIService, FluxCD Kustomization/HelmRelease). With an explicit
+//     `old-namespace`, a value is changed only if it is that namespace, unset,
+//     or the placeholder, which stands for a namespace not yet decided (as in
+//     the ConfigMap render-configmap produces), so a component's resources in
+//     other namespaces, such as a RoleBinding in kube-system, stay where they are.
 //  3. For each resource that has containers, rewrite Service DNS names of the
 //     form `<service>.<oldns>.svc[.cluster.local]` (and the headless
 //     `hostname.subdomain.<oldns>.svc[...]` form) embedded in container
@@ -486,7 +490,14 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 	if len(extraClusterScoped) > 0 {
 		resourceTypeToPaths = overlayClusterScopedExceptions(resourceTypeToPaths, extraClusterScoped)
 	}
-	if err := yamlkit.UpdateStringPaths(parsedData, resourceTypeToPaths, []any{}, rp, newNamespace, true, options); err != nil {
+	updater := func(current string) string {
+		if explicitOldNamespace != "" && current != "" && current != explicitOldNamespace &&
+			!yamlkit.IsStringPlaceHolderValue(current) {
+			return current
+		}
+		return newNamespace
+	}
+	if err := yamlkit.UpdateStringPathsFunction(parsedData, resourceTypeToPaths, []any{}, rp, updater, true, options); err != nil {
 		return parsedData, nil, err
 	}
 
@@ -499,7 +510,12 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 		if oldNS == "" || oldNS == newNamespace {
 			return output, nil
 		}
-		return output, rewriteContainerDNS(doc, resourceInfo.ResourceType, oldNS, newNamespace)
+		errs := rewriteContainerDNS(doc, resourceInfo.ResourceType, oldNS, newNamespace)
+		// A resource still in the placeholder namespace names its Services there too.
+		if oldNS != oldNamespaces[index] && yamlkit.IsStringPlaceHolderValue(oldNamespaces[index]) {
+			errs = append(errs, rewriteContainerDNS(doc, resourceInfo.ResourceType, oldNamespaces[index], newNamespace)...)
+		}
+		return output, errs
 	})
 	if err != nil {
 		dnsErrs = append(dnsErrs, err)

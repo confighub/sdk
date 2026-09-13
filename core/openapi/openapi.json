@@ -31457,6 +31457,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. It costs something to return, and on a dry run it runs the merges a plan otherwise skips, so it is returned only when named.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -39743,6 +39752,14 @@
             "description": "Synthesize the release Namespace if the bundle lacks it. Off by default.",
             "x-go-type-skip-optional-pointer": true
           },
+          "DependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Names of the components this one depends on, recorded in the Space's DependsOn annotation. Requires a Variant Space label.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "Name": {
             "type": "string",
             "description": "The component name.",
@@ -40091,7 +40108,7 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "Mutations": {
-            "$ref": "#/components/schemas/MutationMap"
+            "$ref": "#/components/schemas/ResourceMutationList"
           },
           "Resource": {
             "type": "string",
@@ -40100,7 +40117,7 @@
           },
           "Role": {
             "type": "string",
-            "description": "Resource, AppConfig, AppConfigRendered, or Record.",
+            "description": "Resource, AppConfig, or AppConfigRendered.",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {

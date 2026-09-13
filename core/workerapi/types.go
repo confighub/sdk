@@ -3,6 +3,8 @@
 
 package workerapi
 
+import "strings"
+
 type ToolchainType string
 
 // ToolchainType corresponds to the toolchain and configuration format+syntax
@@ -47,4 +49,32 @@ var AppConfigToolchains = map[ToolchainType]bool{
 // IsAppConfigToolchain reports whether the toolchain is an AppConfig format.
 func IsAppConfigToolchain(toolchain ToolchainType) bool {
 	return AppConfigToolchains[toolchain]
+}
+
+// AppConfigFileExtensions maps each AppConfig toolchain to the extension its files carry.
+// It is the one place the correspondence lives: render-configmap names the ConfigMap key it
+// renders a file into with it, and upload classifies a bundle's files by it, so a file that
+// is rendered out and uploaded back is read as the format it was written as.
+var AppConfigFileExtensions = map[ToolchainType]string{
+	ToolchainAppConfigProperties: ".properties",
+	ToolchainAppConfigYAML:       ".yaml",
+	ToolchainAppConfigTOML:       ".toml",
+	ToolchainAppConfigINI:        ".ini",
+	ToolchainAppConfigJSON:       ".json",
+	ToolchainAppConfigEnv:        ".env",
+	ToolchainAppConfigText:       ".txt",
+}
+
+// FileExtensionForToolchain returns the file extension, with its leading dot, for a
+// toolchain's files. A toolchain AppConfigFileExtensions does not list gets its format
+// name, lowercased, and one with no format name gets ".config".
+func FileExtensionForToolchain(toolchain ToolchainType) string {
+	if ext, ok := AppConfigFileExtensions[toolchain]; ok {
+		return ext
+	}
+	configFormat := strings.ToLower(strings.TrimPrefix(string(toolchain), "AppConfig/"))
+	if configFormat == "" {
+		return ".config"
+	}
+	return "." + configFormat
 }

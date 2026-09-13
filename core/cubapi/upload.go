@@ -24,10 +24,17 @@ import (
 // error) is returned as a result rather than an error, because the writes that
 // did land are real and the caller has to be able to report them; check each
 // UploadUnitResult's Error. Only a request that wrote nothing at all is an error.
-func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRun bool) (*goclientnew.UploadResult, error) {
+//
+// The with mutators run after dryRun is applied, for the rest of the parameters:
+// [WithUploadMutations] asks for what each Unit write changed.
+func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRun bool,
+	with ...func(*goclientnew.UploadParams)) (*goclientnew.UploadResult, error) {
 	params := &goclientnew.UploadParams{}
 	if dryRun {
 		params.DryRun = &dryRun
+	}
+	for _, fn := range with {
+		fn(params)
 	}
 
 	res, err := c.API.UploadWithResponse(ctx, params, req)
@@ -44,4 +51,12 @@ func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRu
 		return nil, errors.New("cubapi: upload returned no result")
 	}
 	return result, nil
+}
+
+// WithUploadMutations asks an upload for each Unit write's Mutations: what it changed, or
+// on a dry run what it would change. A dry run that asks runs the merges it would
+// otherwise skip, so it costs more than a plan of actions alone.
+func WithUploadMutations(params *goclientnew.UploadParams) {
+	include := "Mutations"
+	params.Include = &include
 }

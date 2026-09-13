@@ -163,7 +163,7 @@ func fnRenderConfigMap(
 			return parsedData, nil, fmt.Errorf("render-configmap: %w", err)
 		}
 	} else {
-		fileExtension := getFileExtensionForToolchain(toolchain)
+		fileExtension := workerapi.FileExtensionForToolchain(toolchain)
 		dataName := configName
 		if filepath.Ext(configName) == "" {
 			dataName += fileExtension
@@ -325,15 +325,4 @@ func truncateString(s string, n int) string {
 		return s
 	}
 	return string([]rune(s)[:n])
-}
-
-func getFileExtensionForToolchain(toolchain workerapi.ToolchainType) string {
-	configFormat := strings.ToLower(strings.TrimPrefix(string(toolchain), "AppConfig/"))
-	if configFormat == "" {
-		return ".config"
-	}
-	if configFormat == "text" {
-		return ".txt"
-	}
-	return "." + configFormat
 }

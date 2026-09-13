@@ -428,3 +428,25 @@ func TestEnsureOriginOnData_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, result)
 }
+
+func TestIsKRM(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		data string
+		want bool
+	}{
+		{name: "a resource", data: "apiVersion: v1\nkind: Service\nmetadata:\n  name: web\n", want: true},
+		{name: "application configuration", data: "server:\n  port: 8080\n", want: false},
+		{name: "no kind", data: "apiVersion: v1\nmetadata:\n  name: web\n", want: false},
+		{name: "an empty kind", data: "apiVersion: v1\nkind: \"\"\n", want: false},
+		{name: "a kind that is not a string", data: "apiVersion: v1\nkind: 3\n", want: false},
+		{name: "a scalar", data: "just a string\n", want: false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			docs, err := gaby.ParseAll([]byte(tt.data))
+			assert.NoError(t, err)
+			assert.Len(t, docs, 1)
+			assert.Equal(t, tt.want, IsKRM(docs[0]))
+		})
+	}
+}

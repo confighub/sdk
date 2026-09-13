@@ -2590,6 +2590,7 @@ const injectedRtkApi = api
           body: queryArg.uploadRequest,
           params: {
             dry_run: queryArg.dryRun,
+            include: queryArg.include,
           },
         }),
         invalidatesTags: ['Upload'],
@@ -13587,6 +13588,8 @@ export type UploadApiResponse = /** status 200 OK */
 export type UploadApiArg = {
   /** Plan the upload and return the same response without writing anything. */
   dryRun?: boolean;
+  /** Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. It costs something to return, and on a dry run it runs the merges a plan otherwise skips, so it is returned only when named. */
+  include?: string;
   uploadRequest: UploadRequest;
 };
 export type ListUsersApiResponse = /** status 200 OK */ UserRead[];
@@ -17825,10 +17828,10 @@ export type UploadUnitResult = {
   Action?: string;
   Conflicts?: MutationConflictList;
   Error?: ResponseError;
-  Mutations?: MutationMap;
+  Mutations?: ResourceMutationList;
   /** The resource identity this Unit is keyed by. */
   Resource?: string;
-  /** Resource, AppConfig, AppConfigRendered, or Record. */
+  /** Resource, AppConfig, or AppConfigRendered. */
   Role?: string;
   Slug?: string;
   /** Absent for a Unit a dry run would create. */
@@ -17873,6 +17876,8 @@ export type UploadResult = {
 export type UploadComponentRequest = {
   /** Synthesize the release Namespace if the bundle lacks it. Off by default. */
   CreateNamespace?: boolean;
+  /** Names of the components this one depends on, recorded in the Space's DependsOn annotation. Requires a Variant Space label. */
+  DependsOn?: string[];
   /** The component name. */
   Name?: string;
   /** The release namespace. Required when the bundle has namespaced resources that name no namespace. */

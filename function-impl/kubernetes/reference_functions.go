@@ -33,6 +33,9 @@ type referenceSpec struct {
 	attributeName api.AttributeName
 	path          api.UnresolvedPath
 	target        api.ResourceType
+	// targetScope is where, relative to the object holding the reference, it names its
+	// target's namespace. Empty for a reference within the referrer's own namespace.
+	targetScope string
 }
 
 // initReferenceFunctions registers the needs and provides for every reference the
@@ -42,6 +45,9 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 	// targets is the set of every referenced resource type. Each provides its own
 	// metadata.name so that a resource of that type can satisfy a reference to it.
 	targets := map[api.ResourceType]struct{}{}
+	// namespacedTargets are the types some reference names by namespace as well as by name.
+	// Their names provide their namespace, which is what that reference's requirement matches.
+	namespacedTargets := map[api.ResourceType]struct{}{}
 
 	// Every declaring type and every target provides its own metadata.name. Registering
 	// provides for a declaring type that is never itself a target (e.g. IngressRoute) is
@@ -53,11 +59,15 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 			targets[reference.ResourceType] = struct{}{}
 		}
 		targets[reference.Target] = struct{}{}
+		if reference.TargetScope != "" {
+			namespacedTargets[reference.Target] = struct{}{}
+		}
 		needs = append(needs, referenceSpec{
 			referrer:      reference.ResourceType,
 			attributeName: reference.AttributeName,
 			path:          api.UnresolvedPath(reference.Path),
 			target:        reference.Target,
+			targetScope:   reference.TargetScope,
 		})
 	}
 
@@ -74,10 +84,14 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 	sort.Slice(sortedTargets, func(i, j int) bool { return sortedTargets[i] < sortedTargets[j] })
 	for _, target := range sortedTargets {
 		// Attach the ConfigMap enricher for ConfigMap resource types.
-		var enricher yamlkit.AttributeEnricher
+		var enrichers []yamlkit.AttributeEnricher
 		if target == "v1/ConfigMap" {
-			enricher = configMapEnricher
+			enrichers = append(enrichers, configMapEnricher)
 		}
+		if _, named := namespacedTargets[target]; named {
+			enrichers = append(enrichers, providedNamespaceEnricher(target))
+		}
+		enricher := chainEnrichers(enrichers...)
 		pathInfos := api.PathToVisitorInfoType{
 			api.UnresolvedPath("metadata.name"): {
 				Path:          api.UnresolvedPath("metadata.name"),
@@ -108,10 +122,14 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 	})
 	for _, spec := range needs {
 		// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
-		var enricher yamlkit.AttributeEnricher
+		var enrichers []yamlkit.AttributeEnricher
 		if spec.target == "v1/ConfigMap" {
-			enricher = configMapEnricher
+			enrichers = append(enrichers, configMapEnricher)
 		}
+		if spec.targetScope != "" {
+			enrichers = append(enrichers, neededNamespaceEnricher(spec.targetScope))
+		}
+		enricher := chainEnrichers(enrichers...)
 		pathInfos := api.PathToVisitorInfoType{
 			spec.path: {
 				Path:          spec.path,
@@ -127,6 +145,80 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 				NeededRequired: map[string]string{"ResourceType": string(spec.target)},
 			},
 		}, true, false)
+	}
+}
+
+// chainEnrichers runs each enricher in turn, or returns nil when there are none, so a path with
+// nothing to enrich registers no enricher at all.
+func chainEnrichers(enrichers ...yamlkit.AttributeEnricher) yamlkit.AttributeEnricher {
+	switch len(enrichers) {
+	case 0:
+		return nil
+	case 1:
+		return enrichers[0]
+	}
+	return func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+		for _, enrich := range enrichers {
+			if err := enrich(doc, attr, isProvided); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+// neededNamespaceEnricher requires the namespace a reference names for its target, read from
+// the field the spec's targetScope names beside the reference: a ClusterRoleBinding subject's
+// subjects[*].namespace for its subjects[*].name. A placeholder, or no namespace at all, requires
+// nothing, as for a ConfigMap reference: a placeholder is a namespace not yet decided, and the
+// target's placeholder namespace provides none to match it.
+func neededNamespaceEnricher(targetScope string) yamlkit.AttributeEnricher {
+	return func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+		if isProvided || doc == nil {
+			return nil
+		}
+		path := string(attr.Path)
+		dot := strings.LastIndex(path, ".")
+		if dot < 0 {
+			return nil
+		}
+		namespacePath := api.ResolvedPath(path[:dot+1] + targetScope)
+		namespace, found, _ := yamlkit.YamlSafePathGetValue[string](doc, namespacePath, true)
+		if !found || namespace == "" || yamlkit.IsStringPlaceHolderValue(namespace) {
+			return nil
+		}
+		if attr.Details == nil {
+			attr.Details = &api.AttributeDetails{}
+		}
+		if attr.Details.NeededRequired == nil {
+			attr.Details.NeededRequired = make(map[string]string)
+		}
+		attr.Details.NeededRequired[api.PropertyKeyNamespace] = namespace
+		return nil
+	}
+}
+
+// providedNamespaceEnricher offers a target's namespace on its name, for a type some reference
+// names by namespace as well as by name, so that reference's Namespace requirement has
+// something to match. A placeholder offers nothing, matching what a reference in the placeholder
+// requires.
+func providedNamespaceEnricher(target api.ResourceType) yamlkit.AttributeEnricher {
+	return func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+		if !isProvided || doc == nil || attr.ResourceType != target {
+			return nil
+		}
+		namespace, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true)
+		if !found || namespace == "" || yamlkit.IsStringPlaceHolderValue(namespace) {
+			return nil
+		}
+		if attr.Details == nil {
+			attr.Details = &api.AttributeDetails{}
+		}
+		if attr.Details.ProvidedProperties == nil {
+			attr.Details.ProvidedProperties = make(map[string]string)
+		}
+		attr.Details.ProvidedProperties[api.PropertyKeyNamespace] = namespace
+		return nil
 	}
 }
 
@@ -162,7 +254,7 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 		}
 		// Extract Namespace
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
-			attr.Details.ProvidedProperties["Namespace"] = v
+			attr.Details.ProvidedProperties[api.PropertyKeyNamespace] = v
 		}
 		// Extract data keys for subPath matching
 		dataDoc, found, _ := yamlkit.YamlSafePathGetDoc(doc, "data", true)
@@ -181,7 +273,7 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 		}
 		// Extract Namespace (only require matching when non-placeholder)
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {
-			attr.Details.NeededRequired["Namespace"] = v
+			attr.Details.NeededRequired[api.PropertyKeyNamespace] = v
 		}
 		// Detect envFrom references — these require key/value format
 		if strings.Contains(string(attr.Path), "envFrom") || strings.Contains(string(attr.Path), "configMapRef") {

@@ -1378,7 +1378,7 @@ func promoteAddNewUnitsForChangeOrder(downstreamSpaceID, upstreamSpaceID uuid.UU
 	if err := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", ""); err != nil {
 		return err
 	}
-	if err := promoteSetNamespace(downstreamSpaceID, responses); err != nil {
+	if err := promoteSetNamespace(downstreamSpaceID, upstreamSpaceID, responses); err != nil {
 		return err
 	}
 
@@ -1388,8 +1388,10 @@ func promoteAddNewUnitsForChangeOrder(downstreamSpaceID, upstreamSpaceID uuid.UU
 // promoteSetNamespace places the units a promotion just cloned in the variant's namespace.
 // "cub variant create --namespace" runs set-namespace over the space it creates and records
 // the namespace as the space's Namespace label. A unit cloned later arrives with the
-// upstream's namespace, typically the placeholder, so it gets the same function.
-func promoteSetNamespace(downstreamSpaceID uuid.UUID, responses *[]goclientnew.UnitCreateOrUpdateResponse) error {
+// upstream's namespace, typically the placeholder, so it gets the same function. When the
+// upstream space records its namespace too, only that namespace moves, leaving the unit's
+// resources in other namespaces where they are.
+func promoteSetNamespace(downstreamSpaceID, upstreamSpaceID uuid.UUID, responses *[]goclientnew.UnitCreateOrUpdateResponse) error {
 	if responses == nil {
 		return nil
 	}
@@ -1417,7 +1419,14 @@ func promoteSetNamespace(downstreamSpaceID uuid.UUID, responses *[]goclientnew.U
 	if variantPromoteArgs.changesetSlug != "" {
 		args = append(args, "--changeset", variantPromoteArgs.changesetSlug)
 	}
-	args = append(args, "set-namespace", namespace)
+	args = append(args, "--", "set-namespace", namespace)
+	upstreamSpace, err := resolveSpace(upstreamSpaceID.String(), "*")
+	if err != nil {
+		return err
+	}
+	if upstreamNamespace := upstreamSpace.Space.Labels[labelNamespace]; upstreamNamespace != "" {
+		args = append(args, "--old-namespace="+upstreamNamespace)
+	}
 	if err := runCub(args...); err != nil {
 		return err
 	}
@@ -1487,7 +1496,7 @@ func promoteAddNewUnits(downstreamSpaceID, upstreamSpaceID uuid.UUID) error {
 	if err := handleBulkCreateOrUpdateResponse(responses, statusCode, "create", ""); err != nil {
 		return err
 	}
-	if err := promoteSetNamespace(downstreamSpaceID, responses); err != nil {
+	if err := promoteSetNamespace(downstreamSpaceID, upstreamSpaceID, responses); err != nil {
 		return err
 	}
 

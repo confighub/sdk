@@ -163,6 +163,18 @@ func (*K8sResourceProviderType) ResourceTypeGetter(doc *gaby.YamlDoc) (api.Resou
 	return api.ResourceType(apiVersion + "/" + kind), nil
 }
 
+// IsKRM reports whether a parsed YAML document is a Kubernetes resource: a mapping with
+// non-empty string apiVersion and kind fields at the top level. A document that holds only
+// comments, a scalar, or application configuration is not.
+func IsKRM(doc *gaby.YamlDoc) bool {
+	apiVersion, ok := doc.Path("apiVersion").Data().(string)
+	if !ok || apiVersion == "" {
+		return false
+	}
+	kind, ok := doc.Path("kind").Data().(string)
+	return ok && kind != ""
+}
+
 // ResourceNameGetter extracts the namespace and name from the Kubernetes resource in the
 // provided parsed YAML document and resturns an api.ResourceName string of the form
 // <namespace>/<name>, including in the cases of a namespace-scoped or cluster-scoped resource
