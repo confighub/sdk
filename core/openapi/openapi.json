@@ -39793,7 +39793,7 @@
           },
           "TargetID": {
             "type": "string",
-            "description": "Applies to the component's Spaces. New Units are created on it, except AppConfig and record Units.",
+            "description": "Applies to the component's Spaces. New Units are created on it, except AppConfig Units.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
@@ -39847,12 +39847,6 @@
           },
           "NamespaceCollision": {
             "$ref": "#/components/schemas/UploadNamespaceCollision"
-          },
-          "RecordUnitID": {
-            "type": "string",
-            "description": "The record Unit holding what was uploaded and from where. Absent on a dry run.",
-            "format": "uuid",
-            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "SkippedSecrets": {
             "type": "array",

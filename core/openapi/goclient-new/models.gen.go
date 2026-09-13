@@ -3596,7 +3596,7 @@ type UploadComponentRequest struct {
 	// SpaceLabels Merged over UploadRequest.SpaceLabels.
 	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
 
-	// TargetID Applies to the component's Spaces. New Units are created on it, except AppConfig and record Units.
+	// TargetID Applies to the component's Spaces. New Units are created on it, except AppConfig Units.
 	TargetID        *openapi_types.UUID `json:"TargetID,omitempty" yaml:"TargetID,omitempty"`
 	UnitAnnotations map[string]string   `json:"UnitAnnotations,omitempty" yaml:"UnitAnnotations,omitempty"`
 
@@ -3616,9 +3616,6 @@ type UploadComponentResult struct {
 	BrokenLinks        []UploadBrokenEdge        `json:"BrokenLinks,omitempty" yaml:"BrokenLinks,omitempty"`
 	Name               string                    `json:"Name,omitempty" yaml:"Name,omitempty"`
 	NamespaceCollision *UploadNamespaceCollision `json:"NamespaceCollision,omitempty" yaml:"NamespaceCollision,omitempty"`
-
-	// RecordUnitID The record Unit holding what was uploaded and from where. Absent on a dry run.
-	RecordUnitID *openapi_types.UUID `json:"RecordUnitID,omitempty" yaml:"RecordUnitID,omitempty"`
 
 	// SkippedSecrets Secret resources dropped from the bundle, as Kind/namespace/name. Secrets are never uploaded.
 	SkippedSecrets []string            `json:"SkippedSecrets,omitempty" yaml:"SkippedSecrets,omitempty"`
