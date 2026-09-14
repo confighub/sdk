@@ -169,7 +169,7 @@
             }
           },
           "409": {
-            "description": "Space data conflict. Data has changed since last read.",
+            "description": "Space is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -840,7 +840,7 @@
             }
           },
           "409": {
-            "description": "Attribute data conflict. Data has changed since last read.",
+            "description": "Attribute is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1624,7 +1624,7 @@
             }
           },
           "409": {
-            "description": "BridgeWorker data conflict. Data has changed since last read.",
+            "description": "BridgeWorker is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2422,7 +2422,7 @@
             }
           },
           "409": {
-            "description": "ChangeOrder data conflict. Data has changed since last read.",
+            "description": "ChangeOrder is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3276,7 +3276,7 @@
             }
           },
           "409": {
-            "description": "ChangeSet data conflict. Data has changed since last read.",
+            "description": "ChangeSet is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4022,7 +4022,7 @@
             }
           },
           "409": {
-            "description": "ChangeWorkflow data conflict. Data has changed since last read.",
+            "description": "ChangeWorkflow is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4804,7 +4804,7 @@
             }
           },
           "409": {
-            "description": "Filter data conflict. Data has changed since last read.",
+            "description": "Filter is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6072,7 +6072,7 @@
             }
           },
           "409": {
-            "description": "Invocation data conflict. Data has changed since last read.",
+            "description": "Invocation is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -6866,7 +6866,7 @@
             }
           },
           "409": {
-            "description": "Link data conflict. Data has changed since last read.",
+            "description": "Link is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8154,7 +8154,7 @@
             }
           },
           "409": {
-            "description": "OAuthClient data conflict. Data has changed since last read.",
+            "description": "OAuthClient is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8601,7 +8601,7 @@
             }
           },
           "409": {
-            "description": "Organization data conflict. Data has changed since last read.",
+            "description": "Organization is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -9181,7 +9181,7 @@
             }
           },
           "409": {
-            "description": "OrganizationMember data conflict. Data has changed since last read.",
+            "description": "OrganizationMember is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10503,7 +10503,7 @@
             }
           },
           "409": {
-            "description": "Space data conflict. Data has changed since last read.",
+            "description": "Space is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -11330,7 +11330,7 @@
             }
           },
           "409": {
-            "description": "Attribute data conflict. Data has changed since last read.",
+            "description": "Attribute is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -12156,7 +12156,7 @@
             }
           },
           "409": {
-            "description": "BridgeWorker data conflict. Data has changed since last read.",
+            "description": "BridgeWorker is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -13244,7 +13244,7 @@
             }
           },
           "409": {
-            "description": "ChangeOrder data conflict. Data has changed since last read.",
+            "description": "ChangeOrder is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14096,7 +14096,7 @@
             }
           },
           "409": {
-            "description": "ChangeSet data conflict. Data has changed since last read.",
+            "description": "ChangeSet is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14894,7 +14894,7 @@
             }
           },
           "409": {
-            "description": "ChangeWorkflow data conflict. Data has changed since last read.",
+            "description": "ChangeWorkflow is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15728,7 +15728,7 @@
             }
           },
           "409": {
-            "description": "Filter data conflict. Data has changed since last read.",
+            "description": "Filter is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17027,7 +17027,7 @@
             }
           },
           "409": {
-            "description": "Invocation data conflict. Data has changed since last read.",
+            "description": "Invocation is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17849,7 +17849,7 @@
             }
           },
           "409": {
-            "description": "Link data conflict. Data has changed since last read.",
+            "description": "Link is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -18784,7 +18784,7 @@
             }
           },
           "409": {
-            "description": "Release data conflict. Data has changed since last read.",
+            "description": "Release is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -19796,7 +19796,7 @@
             }
           },
           "409": {
-            "description": "Tag data conflict. Data has changed since last read.",
+            "description": "Tag is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -20589,7 +20589,7 @@
             }
           },
           "409": {
-            "description": "Target data conflict. Data has changed since last read.",
+            "description": "Target is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21478,7 +21478,7 @@
             }
           },
           "409": {
-            "description": "Trigger data conflict. Data has changed since last read.",
+            "description": "Trigger is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -22505,7 +22505,7 @@
             }
           },
           "409": {
-            "description": "Unit data conflict. Data has changed since last read.",
+            "description": "Unit is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -26484,7 +26484,7 @@
             }
           },
           "409": {
-            "description": "View data conflict. Data has changed since last read.",
+            "description": "View is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27082,7 +27082,7 @@
             }
           },
           "409": {
-            "description": "Tag data conflict. Data has changed since last read.",
+            "description": "Tag is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -27818,7 +27818,7 @@
             }
           },
           "409": {
-            "description": "Target data conflict. Data has changed since last read.",
+            "description": "Target is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -28389,7 +28389,7 @@
             }
           },
           "409": {
-            "description": "Trigger data conflict. Data has changed since last read.",
+            "description": "Trigger is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -29317,7 +29317,7 @@
             }
           },
           "409": {
-            "description": "Unit data conflict. Data has changed since last read.",
+            "description": "Unit is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -31446,7 +31446,7 @@
           "Upload"
         ],
         "summary": "Upload a bundle of configuration",
-        "description": "Takes a bundle of rendered configuration files, splits it into resources, and makes a Space's Units, Links, and Invocations match it. Creates what is missing, 3-way merges what changed, and empties the Units of resources the bundle no longer contains, so uploading the same bundle again changes nothing. Every resource becomes its own Unit.",
+        "description": "Takes a bundle of rendered configuration files, or pulls one from an OCI registry, splits it into resources, and makes a Space's Units, Links, and Invocations match it. Creates what is missing, 3-way merges what changed, and empties the Units of resources the bundle no longer contains, so uploading the same bundle again changes nothing. Every resource becomes its own Unit.",
         "operationId": "Upload",
         "parameters": [
           {
@@ -31558,8 +31558,28 @@
               }
             }
           },
+          "422": {
+            "description": "The bundle could not be pulled from Source.Ref",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Upload.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Pulling the bundle from Source.Ref took too long",
             "content": {
               "application/json": {
                 "schema": {
@@ -32075,7 +32095,7 @@
             }
           },
           "409": {
-            "description": "User data conflict. Data has changed since last read.",
+            "description": "User is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -32231,7 +32251,7 @@
             }
           },
           "409": {
-            "description": "View data conflict. Data has changed since last read.",
+            "description": "View is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -39894,6 +39914,29 @@
           }
         }
       },
+      "UploadDuplicate": {
+        "type": "object",
+        "properties": {
+          "Others": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadUnitRef"
+            },
+            "description": "The other Units that define the resource.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Resource": {
+            "type": "string",
+            "description": "The resource identity, as in UploadUnitResult.Resource.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Slug": {
+            "type": "string",
+            "description": "The slug of this upload's Unit for the resource.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "UploadLinkResult": {
         "type": "object",
         "properties": {
@@ -39936,6 +39979,21 @@
           }
         }
       },
+      "UploadRegistryCredentials": {
+        "type": "object",
+        "properties": {
+          "Password": {
+            "type": "string",
+            "description": "The password, or an access token for registries that issue them.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Username": {
+            "type": "string",
+            "description": "The registry username.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "UploadRequest": {
         "type": "object",
         "properties": {
@@ -39967,7 +40025,7 @@
             "items": {
               "$ref": "#/components/schemas/UploadRequestFile"
             },
-            "description": "The bundle's files. Paths must be relative and may not contain \"..\".",
+            "description": "The bundle's files. Paths must be relative and may not contain \"..\". Exactly one of Files and Source.Pull is given.",
             "x-go-type-skip-optional-pointer": true
           },
           "Source": {
@@ -40022,6 +40080,11 @@
             "type": "string",
             "description": "Digest of the planned actions.",
             "x-go-type-skip-optional-pointer": true
+          },
+          "SourceDigest": {
+            "type": "string",
+            "description": "The digest of the manifest the server pulled, when Source.Pull was set. Send it as Source.Digest to upload exactly the bundle a dry run read.",
+            "x-go-type-skip-optional-pointer": true
           }
         }
       },
@@ -40037,9 +40100,17 @@
             "type": "string",
             "x-go-type-skip-optional-pointer": true
           },
+          "Credentials": {
+            "$ref": "#/components/schemas/UploadRegistryCredentials"
+          },
           "Digest": {
             "type": "string",
             "description": "The resolved digest, when the transport has one.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Pull": {
+            "type": "boolean",
+            "description": "Fetch the bundle from Ref, an oci:// reference, instead of taking Files. With Digest set, that manifest is fetched rather than whatever Ref's tag names now.",
             "x-go-type-skip-optional-pointer": true
           },
           "Ref": {
@@ -40062,6 +40133,14 @@
             "description": "The ChangeSet the writes were recorded in. Absent on a dry run.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "Duplicates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UploadDuplicate"
+            },
+            "description": "Resources this upload writes that other Units deployed to the same Target also define: the Space's other Units, and when the Space has a Target, Units elsewhere on that Target.",
+            "x-go-type-skip-optional-pointer": true
           },
           "Links": {
             "type": "array",
@@ -40089,6 +40168,31 @@
             "items": {
               "$ref": "#/components/schemas/UploadUnitResult"
             },
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UploadUnitRef": {
+        "type": "object",
+        "properties": {
+          "SpaceID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitSlug": {
+            "type": "string",
             "x-go-type-skip-optional-pointer": true
           }
         }

@@ -13,6 +13,7 @@ import (
 	"text/template"
 
 	"github.com/confighub/sdk/core/cubapi"
+	"github.com/confighub/sdk/core/ocibundle"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
@@ -39,6 +40,7 @@ type variantUploadOptions struct {
 	changeDesc      string
 	dryRun          bool
 	yes             bool
+	clientPull      bool
 
 	// The old names of --unit-label and --unit-annotation, kept as deprecated aliases.
 	deprecatedLabels      []string
@@ -58,10 +60,13 @@ or "helm template" — supplied as files, directories (walked for .yaml, .yml, .
 stdin, or an "oci://" reference to a manifest bundle. This command does not render
 anything; it ingests what you give it.
 
-An oci:// input is pulled and its YAML extracted before ingestion. The bundle is a
-standard OCI image artifact (a tar or tar+gzip layer of YAML, as "cub release publish"
-and Flux produce, or individual file layers as "oras push" produces). The pull is
-anonymous: local registry credentials are not used, so the bundle has to be public.
+An oci:// input is pulled by the server, which records the digest it read on the Space.
+The bundle is a standard OCI image artifact (a tar or tar+gzip layer of configuration
+files, as "cub release publish" and Flux produce, or individual file layers as "oras
+push" produces). The pull is anonymous, so the bundle has to be public. An oci:// input
+pulled by the server must be the only input. With --client-pull, cub pulls it instead,
+for a registry this machine can reach and the server cannot, such as one on a private
+network; it can then be combined with other inputs.
 
 The server does the work: it splits the bundle into resources and makes the Space's
 Units, Links, and Invocations match it. Every resource becomes its own Unit, named
@@ -151,6 +156,10 @@ Examples:
   cub variant upload --component cubbychat --variant base --yes \
     oci://ghcr.io/confighub/configs/cubbychat:v2
 
+  # Pull from a registry only this machine can reach.
+  cub variant upload --client-pull --component web --variant base \
+    oci://registry.internal:5000/configs/web:1.2.0
+
   # Preview that upload first.
   cub variant upload --dry-run --component cubbychat --variant base \
     oci://ghcr.io/confighub/configs/cubbychat:v2
@@ -184,6 +193,7 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each written Unit")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, empty, revive, or adopt, and exit without changing anything")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.yes, "yes", false, "do not ask for confirmation when the upload would empty Units")
+	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.clientPull, "client-pull", false, "pull oci:// inputs on this machine rather than having the server pull them, for a registry the server cannot reach")
 	variantCmd.AddCommand(variantUploadCmd)
 }
 
@@ -270,26 +280,35 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		component.TargetID = &targetID
 	}
 
-	files, digest, usedStdin, err := collectUploadFiles(args)
-	if err != nil {
-		return err
-	}
-	if len(files) == 0 {
-		return fmt.Errorf("no configuration files found in the input")
-	}
-
 	req := goclientnew.UploadRequest{
-		Files:             files,
 		Components:        []goclientnew.UploadComponentRequest{component},
 		SpaceLabels:       labels,
 		SpacePattern:      strings.TrimPrefix(a.spacePattern, "template:"),
 		ChangeDescription: a.changeDesc,
 		Source: &goclientnew.UploadSourceInfo{
 			Ref:           uploadSourceDescription(args),
-			Digest:        digest,
 			Client:        "cub",
 			ClientVersion: Version,
 		},
+	}
+	serverPull, err := uploadServerPull(args, a.clientPull)
+	if err != nil {
+		return err
+	}
+	usedStdin := false
+	if serverPull {
+		req.Source.Pull = true
+	} else {
+		files, digest, stdin, collectErr := collectUploadFiles(args)
+		if collectErr != nil {
+			return collectErr
+		}
+		if len(files) == 0 {
+			return fmt.Errorf("no configuration files found in the input")
+		}
+		req.Files = files
+		req.Source.Digest = digest
+		usedStdin = stdin
 	}
 
 	// Emptying a Unit withdraws what it deployed, so an upload that would empty
@@ -303,17 +322,48 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		if err := confirmUploadEmpties(preview, usedStdin); err != nil {
 			return err
 		}
+		// The upload writes the bundle that was confirmed, even if the tag has
+		// moved since the preview pulled it.
+		if serverPull {
+			req.Source.Digest = preview.SourceDigest
+		}
 	}
 
 	result, err := cubapi.Upload(ctx, cubClient, req, a.dryRun)
 	if err != nil {
 		return err
 	}
+	if serverPull && result.SourceDigest != "" {
+		tprint("Pulled %s (%s)", req.Source.Ref, result.SourceDigest)
+	}
 	reportUploadResult(result)
 	if !a.dryRun {
 		reportUploadRevert(result)
 	}
 	return nil
+}
+
+// uploadServerPull reports whether the server pulls the upload's input: an
+// oci:// input does unless clientPull is set. The server takes either one
+// reference or files, so a reference it pulls cannot be combined with other inputs.
+func uploadServerPull(inputs []string, clientPull bool) (bool, error) {
+	if clientPull {
+		return false, nil
+	}
+	hasRef := false
+	for _, in := range inputs {
+		if ocibundle.IsRef(in) {
+			hasRef = true
+		}
+	}
+	if !hasRef {
+		return false, nil
+	}
+	if len(inputs) > 1 {
+		return false, fmt.Errorf("an oci:// input is pulled by the server and must be the only input; " +
+			"pass --client-pull to pull it on this machine and combine it with other inputs")
+	}
+	return true, nil
 }
 
 // maxUploadSourceDescription bounds the source string recorded for the upload so
@@ -360,20 +410,23 @@ func collectUploadFiles(inputs []string) (files []goclientnew.UploadRequestFile,
 			usedStdin = true
 			add("stdin.yaml", string(data))
 
-		case isOCIRef(in):
-			dir, tmpErr := os.MkdirTemp("", "cub-oci-*")
-			if tmpErr != nil {
-				return nil, "", usedStdin, tmpErr
-			}
-			defer os.RemoveAll(dir)
-			resolved, pullErr := pullOCIManifests(ctx, in, dir)
+		case ocibundle.IsRef(in):
+			// Local registry credentials are deliberately not used: ghcr.io denies
+			// (403) a request presenting an expired or revoked credential even for a
+			// public package, so an expired local login would break, differently on
+			// every machine, pulls that work with no credentials.
+			bundle, pullErr := ocibundle.Pull(ctx, in, "", ocibundle.Options{
+				UserAgent:         "cub/" + Version,
+				PlainHTTPLoopback: true,
+				Include:           isUploadFile,
+			})
 			if pullErr != nil {
 				return nil, "", usedStdin, pullErr
 			}
-			tprint("Pulled %s (%s)", in, resolved)
-			digest = resolved
-			if walkErr := walkUploadDir(dir, add); walkErr != nil {
-				return nil, "", usedStdin, walkErr
+			tprint("Pulled %s (%s)", in, bundle.Digest)
+			digest = bundle.Digest
+			for _, f := range bundle.Files {
+				add(f.Path, string(f.Content))
 			}
 
 		default:
@@ -527,6 +580,18 @@ func reportUploadResult(result *goclientnew.UploadResult) {
 				}
 				if l.Action == "Create" {
 					tprint("  linked    %s -> %s (%s)", l.FromUnit, l.ToUnit, l.Reason)
+				}
+			}
+			if len(s.Duplicates) > 0 {
+				tprint("")
+				tprint("Warning: these resources are also defined by other Units deployed to the same place,")
+				tprint("which would fight over them. Decide which component owns each one:")
+				for _, d := range s.Duplicates {
+					others := make([]string, 0, len(d.Others))
+					for _, o := range d.Others {
+						others = append(others, o.SpaceSlug+"/"+o.UnitSlug)
+					}
+					tprint("  - %s (%s): also %s", d.Slug, d.Resource, strings.Join(others, ", "))
 				}
 			}
 		}

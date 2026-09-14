@@ -3629,6 +3629,18 @@ type UploadComponentResult struct {
 	UnmatchedReferences []UploadUnmatchedReference `json:"UnmatchedReferences,omitempty" yaml:"UnmatchedReferences,omitempty"`
 }
 
+// UploadDuplicate defines model for UploadDuplicate.
+type UploadDuplicate struct {
+	// Others The other Units that define the resource.
+	Others []UploadUnitRef `json:"Others,omitempty" yaml:"Others,omitempty"`
+
+	// Resource The resource identity, as in UploadUnitResult.Resource.
+	Resource string `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Slug The slug of this upload's Unit for the resource.
+	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+}
+
 // UploadLinkResult defines model for UploadLinkResult.
 type UploadLinkResult struct {
 	// Action Create or Unchanged.
@@ -3650,6 +3662,15 @@ type UploadNamespaceCollision struct {
 	Namespace string `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
 }
 
+// UploadRegistryCredentials defines model for UploadRegistryCredentials.
+type UploadRegistryCredentials struct {
+	// Password The password, or an access token for registries that issue them.
+	Password string `json:"Password,omitempty" yaml:"Password,omitempty"`
+
+	// Username The registry username.
+	Username string `json:"Username,omitempty" yaml:"Username,omitempty"`
+}
+
 // UploadRequest defines model for UploadRequest.
 type UploadRequest struct {
 	// ChangeDescription Recorded on each Unit write.
@@ -3662,7 +3683,7 @@ type UploadRequest struct {
 	// Components Placement of each component. Exactly one is supported.
 	Components []UploadComponentRequest `json:"Components,omitempty" yaml:"Components,omitempty"`
 
-	// Files The bundle's files. Paths must be relative and may not contain "..".
+	// Files The bundle's files. Paths must be relative and may not contain "..". Exactly one of Files and Source.Pull is given.
 	Files  []UploadRequestFile `json:"Files,omitempty" yaml:"Files,omitempty"`
 	Source *UploadSourceInfo   `json:"Source,omitempty" yaml:"Source,omitempty"`
 
@@ -3691,16 +3712,23 @@ type UploadResult struct {
 
 	// Plan Digest of the planned actions.
 	Plan string `json:"Plan,omitempty" yaml:"Plan,omitempty"`
+
+	// SourceDigest The digest of the manifest the server pulled, when Source.Pull was set. Send it as Source.Digest to upload exactly the bundle a dry run read.
+	SourceDigest string `json:"SourceDigest,omitempty" yaml:"SourceDigest,omitempty"`
 }
 
 // UploadSourceInfo defines model for UploadSourceInfo.
 type UploadSourceInfo struct {
 	// Client The client that uploaded: cub, installer, ui.
-	Client        string `json:"Client,omitempty" yaml:"Client,omitempty"`
-	ClientVersion string `json:"ClientVersion,omitempty" yaml:"ClientVersion,omitempty"`
+	Client        string                     `json:"Client,omitempty" yaml:"Client,omitempty"`
+	ClientVersion string                     `json:"ClientVersion,omitempty" yaml:"ClientVersion,omitempty"`
+	Credentials   *UploadRegistryCredentials `json:"Credentials,omitempty" yaml:"Credentials,omitempty"`
 
 	// Digest The resolved digest, when the transport has one.
 	Digest string `json:"Digest,omitempty" yaml:"Digest,omitempty"`
+
+	// Pull Fetch the bundle from Ref, an oci:// reference, instead of taking Files. With Digest set, that manifest is fetched rather than whatever Ref's tag names now.
+	Pull bool `json:"Pull,omitempty" yaml:"Pull,omitempty"`
 
 	// Ref Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0 or a local path.
 	Ref string `json:"Ref,omitempty" yaml:"Ref,omitempty"`
@@ -3713,13 +3741,24 @@ type UploadSpaceResult struct {
 
 	// ChangeSetID The ChangeSet the writes were recorded in. Absent on a dry run.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
-	Links       []UploadLinkResult  `json:"Links,omitempty" yaml:"Links,omitempty"`
-	Namespace   string              `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
+
+	// Duplicates Resources this upload writes that other Units deployed to the same Target also define: the Space's other Units, and when the Space has a Target, Units elsewhere on that Target.
+	Duplicates []UploadDuplicate  `json:"Duplicates,omitempty" yaml:"Duplicates,omitempty"`
+	Links      []UploadLinkResult `json:"Links,omitempty" yaml:"Links,omitempty"`
+	Namespace  string             `json:"Namespace,omitempty" yaml:"Namespace,omitempty"`
 
 	// SpaceID Absent for a Space a dry run would create.
 	SpaceID   *openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 	Units     []UploadUnitResult  `json:"Units,omitempty" yaml:"Units,omitempty"`
+}
+
+// UploadUnitRef defines model for UploadUnitRef.
+type UploadUnitRef struct {
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	UnitID    openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitSlug  string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
 }
 
 // UploadUnitResult defines model for UploadUnitResult.

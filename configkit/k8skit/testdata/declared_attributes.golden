@@ -911,7 +911,7 @@ attribute	rbac.authorization.k8s.io/v1/ClusterRole	resource-name	rules.*.resourc
 attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	immutable	roleRef	
 attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	namespace-name-reference	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
 attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/ClusterRole
-attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	subjects.*.name		v1/ServiceAccount
+attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	subjects.*?kind=ServiceAccount.name		v1/ServiceAccount
 attribute	rbac.authorization.k8s.io/v1/ClusterRoleBinding	resource-name	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
 attribute	rbac.authorization.k8s.io/v1/Role	resource-name	rules.*.resourceNames.*		v1/ConfigMap
 attribute	rbac.authorization.k8s.io/v1/Role	resource-name	rules.*.resourceNames.*		v1/Secret
@@ -919,7 +919,7 @@ attribute	rbac.authorization.k8s.io/v1/RoleBinding	immutable	roleRef
 attribute	rbac.authorization.k8s.io/v1/RoleBinding	namespace-name-reference	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
 attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/ClusterRole
 attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	roleRef.name		rbac.authorization.k8s.io/v1/Role
-attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	subjects.*.name		v1/ServiceAccount
+attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	subjects.*?kind=ServiceAccount.name		v1/ServiceAccount
 attribute	rbac.authorization.k8s.io/v1/RoleBinding	resource-name	subjects.*?kind=ServiceAccount.|namespace		v1/Namespace
 attribute	rds.services.k8s.aws/v1alpha1/DBCluster	resource-name	spec.dbClusterParameterGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBClusterParameterGroup
 attribute	rds.services.k8s.aws/v1alpha1/DBCluster	resource-name	spec.dbSubnetGroupRef.from.name		rds.services.k8s.aws/v1alpha1/DBSubnetGroup

@@ -109,3 +109,36 @@ func TestUploadSourceDescriptionTruncates(t *testing.T) {
 		t.Errorf("truncated description %q should end in an ellipsis", got)
 	}
 }
+
+func TestUploadServerPull(t *testing.T) {
+	tests := []struct {
+		name       string
+		inputs     []string
+		clientPull bool
+		want       bool
+		wantErr    string
+	}{
+		{name: "files are sent", inputs: []string{"a.yaml", "dir"}},
+		{name: "a reference is pulled by the server", inputs: []string{"oci://ghcr.io/confighub/configs/cubbychat"}, want: true},
+		{name: "--client-pull pulls it here", inputs: []string{"oci://ghcr.io/confighub/configs/cubbychat"}, clientPull: true},
+		{name: "--client-pull combines it with files", inputs: []string{"oci://ghcr.io/x/y", "a.yaml"}, clientPull: true},
+		{name: "a server pull cannot be combined", inputs: []string{"oci://ghcr.io/x/y", "a.yaml"}, wantErr: "must be the only input"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := uploadServerPull(tt.inputs, tt.clientPull)
+			if tt.wantErr != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("err = %v, want %q", err, tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != tt.want {
+				t.Errorf("uploadServerPull = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

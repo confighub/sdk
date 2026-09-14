@@ -12,7 +12,7 @@ OUTPUT
     "DataType": "string",
     "Details": {
       "NeededRequired": {
-        "ResourceType": "apps/v1/Deployment,apps/v1/ReplicaSet,apps/v1/StatefulSet,v1/ReplicationController"
+        "ResourceType": "apps/v1/Deployment"
       },
       "IsNeeded": true
     },

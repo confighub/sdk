@@ -199,6 +199,12 @@ subjects:
   - kind: ServiceAccount
     name: undecided
     namespace: confighubplaceholder
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: alice
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: system:masters
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -231,6 +237,8 @@ metadata:
 	require.Contains(t, required, "subjects.1.name")
 	assert.NotContains(t, required["subjects.1.name"], api.PropertyKeyNamespace,
 		"a placeholder namespace is not decided yet and requires nothing")
+	assert.NotContains(t, required, "subjects.2.name", "a User subject is not a reference to a ServiceAccount")
+	assert.NotContains(t, required, "subjects.3.name", "a Group subject is not a reference to a ServiceAccount")
 
 	var offered map[string]string
 	for _, v := range invoke("get-provided") {
@@ -240,4 +248,58 @@ metadata:
 	}
 	require.NotNil(t, offered, "a ServiceAccount should provide its name")
 	assert.Equal(t, "workers", offered[api.PropertyKeyNamespace])
+}
+
+// A roleRef names a Role or a ClusterRole, and says which beside the name, so its reference
+// requires that one type. A kind that is neither leaves both acceptable.
+func TestRoleRefReferencesRequireTheKindTheyName(t *testing.T) {
+	const bundle = `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: to-role
+  namespace: web
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: reader
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: to-cluster-role
+  namespace: web
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: reader
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: to-unknown
+  namespace: web
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Something
+  name: reader
+`
+	resp, err := testFunctionHandler.InvokeCore(context.Background(), &api.FunctionInvocationRequest{
+		ConfigData:          bundle,
+		FunctionInvocations: []api.FunctionInvocation{{FunctionName: "get-references"}},
+	})
+	require.NoError(t, err)
+	require.True(t, resp.Success, "get-references should succeed; errors: %v", resp.ErrorMessages)
+	var values api.AttributeValueList
+	require.NoError(t, json.Unmarshal(resp.Outputs[api.OutputTypeAttributeValueList], &values))
+
+	required := map[string]string{}
+	for _, v := range values {
+		if v.Path == "roleRef.name" && v.Details != nil {
+			required[string(v.ResourceName)] = v.Details.NeededRequired[api.PropertyKeyResourceType]
+		}
+	}
+	assert.Equal(t, "rbac.authorization.k8s.io/v1/Role", required["web/to-role"])
+	assert.Equal(t, "rbac.authorization.k8s.io/v1/ClusterRole", required["web/to-cluster-role"])
+	assert.ElementsMatch(t, []string{"rbac.authorization.k8s.io/v1/ClusterRole", "rbac.authorization.k8s.io/v1/Role"},
+		api.PropertyValueAlternatives(required["web/to-unknown"]))
 }

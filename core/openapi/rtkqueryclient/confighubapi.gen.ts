@@ -17812,6 +17812,20 @@ export type UploadNamespaceCollision = {
   /** The release Namespace the bundle already carries. */
   Namespace?: string;
 };
+export type UploadUnitRef = {
+  SpaceID?: string;
+  SpaceSlug?: string;
+  UnitID?: string;
+  UnitSlug?: string;
+};
+export type UploadDuplicate = {
+  /** The other Units that define the resource. */
+  Others?: UploadUnitRef[];
+  /** The resource identity, as in UploadUnitResult.Resource. */
+  Resource?: string;
+  /** The slug of this upload's Unit for the resource. */
+  Slug?: string;
+};
 export type UploadLinkResult = {
   /** Create or Unchanged. */
   Action?: string;
@@ -17842,6 +17856,8 @@ export type UploadSpaceResult = {
   Action?: string;
   /** The ChangeSet the writes were recorded in. Absent on a dry run. */
   ChangeSetID?: string;
+  /** Resources this upload writes that other Units deployed to the same Target also define: the Space's other Units, and when the Space has a Target, Units elsewhere on that Target. */
+  Duplicates?: UploadDuplicate[];
   Links?: UploadLinkResult[];
   Namespace?: string;
   /** Absent for a Space a dry run would create. */
@@ -17872,6 +17888,8 @@ export type UploadResult = {
   DryRun?: boolean;
   /** Digest of the planned actions. */
   Plan?: string;
+  /** The digest of the manifest the server pulled, when Source.Pull was set. Send it as Source.Digest to upload exactly the bundle a dry run read. */
+  SourceDigest?: string;
 };
 export type UploadComponentRequest = {
   /** Synthesize the release Namespace if the bundle lacks it. Off by default. */
@@ -17923,12 +17941,21 @@ export type UploadRequestFile = {
   /** Relative path within the bundle, e.g. backend.yaml. */
   Path?: string;
 };
+export type UploadRegistryCredentials = {
+  /** The password, or an access token for registries that issue them. */
+  Password?: string;
+  /** The registry username. */
+  Username?: string;
+};
 export type UploadSourceInfo = {
   /** The client that uploaded: cub, installer, ui. */
   Client?: string;
   ClientVersion?: string;
+  Credentials?: UploadRegistryCredentials;
   /** The resolved digest, when the transport has one. */
   Digest?: string;
+  /** Fetch the bundle from Ref, an oci:// reference, instead of taking Files. With Digest set, that manifest is fetched rather than whatever Ref's tag names now. */
+  Pull?: boolean;
   /** Where the bundle came from, e.g. oci://ghcr.io/confighub/configs/cubbychat:1.4.0 or a local path. */
   Ref?: string;
 };
@@ -17940,7 +17967,7 @@ export type UploadRequest = {
   ChangeSetID?: string;
   /** Placement of each component. Exactly one is supported. */
   Components?: UploadComponentRequest[];
-  /** The bundle's files. Paths must be relative and may not contain "..". */
+  /** The bundle's files. Paths must be relative and may not contain "..". Exactly one of Files and Source.Pull is given. */
   Files?: UploadRequestFile[];
   Source?: UploadSourceInfo;
   /** Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone. */

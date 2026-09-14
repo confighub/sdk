@@ -120,16 +120,46 @@ func initReferenceFunctions(rp *k8skit.K8sResourceProviderType) {
 		}
 		return needs[i].target < needs[j].target
 	})
+	// A path declared with several targets is registered once per target, and each registration
+	// replaces the path's enricher, so the enricher is built from all of them together.
+	type needKey struct {
+		referrer      api.ResourceType
+		attributeName api.AttributeName
+		path          api.UnresolvedPath
+	}
+	needsByPath := map[needKey][]referenceSpec{}
 	for _, spec := range needs {
-		// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
+		key := needKey{spec.referrer, spec.attributeName, spec.path}
+		needsByPath[key] = append(needsByPath[key], spec)
+	}
+	enricherByPath := map[needKey]yamlkit.AttributeEnricher{}
+	for key, specs := range needsByPath {
 		var enrichers []yamlkit.AttributeEnricher
-		if spec.target == "v1/ConfigMap" {
+		var targetTypes []api.ResourceType
+		configMap, targetScope := false, ""
+		for _, spec := range specs {
+			targetTypes = append(targetTypes, spec.target)
+			// Attach the ConfigMap enricher for needed paths that reference ConfigMaps.
+			if spec.target == "v1/ConfigMap" {
+				configMap = true
+			}
+			if spec.targetScope != "" {
+				targetScope = spec.targetScope
+			}
+		}
+		if configMap {
 			enrichers = append(enrichers, configMapEnricher)
 		}
-		if spec.targetScope != "" {
-			enrichers = append(enrichers, neededNamespaceEnricher(spec.targetScope))
+		if targetScope != "" {
+			enrichers = append(enrichers, neededNamespaceEnricher(targetScope))
 		}
-		enricher := chainEnrichers(enrichers...)
+		if len(targetTypes) > 1 {
+			enrichers = append(enrichers, neededKindEnricher(targetTypes))
+		}
+		enricherByPath[key] = chainEnrichers(enrichers...)
+	}
+	for _, spec := range needs {
+		enricher := enricherByPath[needKey{spec.referrer, spec.attributeName, spec.path}]
 		pathInfos := api.PathToVisitorInfoType{
 			spec.path: {
 				Path:          spec.path,
@@ -194,6 +224,45 @@ func neededNamespaceEnricher(targetScope string) yamlkit.AttributeEnricher {
 			attr.Details.NeededRequired = make(map[string]string)
 		}
 		attr.Details.NeededRequired[api.PropertyKeyNamespace] = namespace
+		return nil
+	}
+}
+
+// neededKindEnricher narrows a reference that can name several types to the one whose kind the
+// object holding the reference names beside it: a RoleBinding's roleRef.kind says whether
+// roleRef.name is a Role or a ClusterRole, and an autoscaler's scaleTargetRef.kind which workload
+// it scales. Without it the reference is satisfied by a resource of any of its types with that
+// name, so a binding to a Role also matches a same-named ClusterRole. A kind that is not one of
+// the types, or no kind at all, leaves every type acceptable.
+func neededKindEnricher(targetTypes []api.ResourceType) yamlkit.AttributeEnricher {
+	return func(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided bool) error {
+		if isProvided || doc == nil {
+			return nil
+		}
+		path := string(attr.Path)
+		dot := strings.LastIndex(path, ".")
+		if dot < 0 {
+			return nil
+		}
+		kind, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(path[:dot+1]+"kind"), true)
+		if !found || kind == "" {
+			return nil
+		}
+		for _, targetType := range targetTypes {
+			// A resource type ends with its kind: rbac.authorization.k8s.io/v1/Role.
+			typeString := string(targetType)
+			if !strings.EqualFold(typeString[strings.LastIndex(typeString, "/")+1:], kind) {
+				continue
+			}
+			if attr.Details == nil {
+				attr.Details = &api.AttributeDetails{}
+			}
+			if attr.Details.NeededRequired == nil {
+				attr.Details.NeededRequired = make(map[string]string)
+			}
+			attr.Details.NeededRequired[api.PropertyKeyResourceType] = string(targetType)
+			return nil
+		}
 		return nil
 	}
 }

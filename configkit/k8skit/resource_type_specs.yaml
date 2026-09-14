@@ -826,7 +826,7 @@ resourceTypes:
       resource-name:
         - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
-        - {path: subjects.*.name, target: v1/ServiceAccount, targetScope: namespace}
+        - {path: "subjects.*?kind=ServiceAccount.name", target: v1/ServiceAccount, targetScope: namespace}
       immutable:
         - {path: roleRef}
 
@@ -841,7 +841,7 @@ resourceTypes:
         - {path: "subjects.*?kind=ServiceAccount.|namespace", target: v1/Namespace}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/ClusterRole}
         - {path: roleRef.name, target: rbac.authorization.k8s.io/v1/Role}
-        - {path: subjects.*.name, target: v1/ServiceAccount, targetScope: namespace}
+        - {path: "subjects.*?kind=ServiceAccount.name", target: v1/ServiceAccount, targetScope: namespace}
       immutable:
         - {path: roleRef}
 
