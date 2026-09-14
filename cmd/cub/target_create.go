@@ -49,8 +49,8 @@ var liveStateTypes []string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
-	targetCreateCmd.Flags().StringSliceVarP(&providerTypes, "provider", "p", []string{}, "The type of provider for the target (can be repeated for multiple ConfigTypes).\nDefault is Kubernetes.\n\t(e.g., Kubernetes)")
-	targetCreateCmd.Flags().StringSliceVarP(&toolchainTypes, "toolchain", "t", []string{}, "The type of toolchain for the target (can be repeated for multiple ConfigTypes).\nDefault is Kubernetes/YAML.\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
+	targetCreateCmd.Flags().StringSliceVarP(&providerTypes, "provider", "p", []string{}, "The type of provider for the target (can be repeated for multiple ConfigTypes).\nDefault is OCI when no worker is named, Kubernetes when one is.\n\t(e.g., OCI, Kubernetes)")
+	targetCreateCmd.Flags().StringSliceVarP(&toolchainTypes, "toolchain", "t", []string{}, "The type of toolchain for the target (can be repeated for multiple ConfigTypes).\nDefault is Any for an OCI target, Kubernetes/YAML otherwise.\n\t(e.g., Any, Kubernetes/YAML, ConfigHub/YAML)")
 	targetCreateCmd.Flags().StringSliceVar(&liveStateTypes, "livestate-type", []string{}, "The toolchain type for live state of the target's provider type (can be repeated for multiple ConfigTypes).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
@@ -106,13 +106,21 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	// set toolchainType and providerType if not copying from another target or stdin
 	hasDefaults := fromTarget != "" || fromTargetSpace != "" || flagPopulateModelFromStdin || flagFilename != ""
 
+	// A Target that names no worker is a pull destination, so it defaults to the OCI
+	// transport. A Target that names one keeps the Kubernetes default: the worker's
+	// SupportedConfigTypes validate the Target, and an OCI default would fail against
+	// every Kubernetes worker that exists today.
+	hasWorker := len(args) == 3
+
 	// If set, flags override other data. First element sets the top-level fields,
 	// additional elements populate ConfigTypes.
 	// Resolve the provider first so the toolchain default can depend on it.
 	if len(providerTypes) > 0 {
 		newTarget.ProviderType = providerTypes[0]
+	} else if !hasDefaults && hasWorker {
+		newTarget.ProviderType = string(api.ProviderKubernetes)
 	} else if !hasDefaults {
-		newTarget.ProviderType = "Kubernetes"
+		newTarget.ProviderType = string(api.ProviderOCI)
 	}
 	if len(toolchainTypes) > 0 {
 		newTarget.ToolchainType = toolchainTypes[0]
