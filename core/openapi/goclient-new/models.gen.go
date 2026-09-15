@@ -600,7 +600,8 @@ type ChangeOrder struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
-	Parameters map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Parameters         map[string]interface{}         `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	PromotionOverrides []ChangeOrderPromotionOverride `json:"PromotionOverrides,omitempty" yaml:"PromotionOverrides,omitempty"`
 
 	// ReleasedRestoredSpaceIDs ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read.
 	ReleasedRestoredSpaceIDs []UUID `json:"ReleasedRestoredSpaceIDs,omitempty" yaml:"ReleasedRestoredSpaceIDs,omitempty"`
@@ -656,6 +657,15 @@ type ChangeOrderCreateOrUpdateResponse struct {
 	// ChangeOrder Defines a change's identity as it moves between Spaces.
 	ChangeOrder *ChangeOrder   `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
 	Error       *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
+// ChangeOrderPromotionOverride defines model for ChangeOrderPromotionOverride.
+type ChangeOrderPromotionOverride struct {
+	FailedGates  []string           `json:"FailedGates,omitempty" yaml:"FailedGates,omitempty"`
+	OverriddenAt time.Time          `json:"OverriddenAt,omitempty" yaml:"OverriddenAt,omitempty"`
+	Reason       string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Stage        string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+	UserID       openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 }
 
 // ChangeSet Defines an entity changeset.
@@ -2168,6 +2178,140 @@ type PathVisitorInfo struct {
 
 // Permissions defines model for Permissions.
 type Permissions map[string]Subjects
+
+// PromoteGateResult defines model for PromoteGateResult.
+type PromoteGateResult struct {
+	// Message Why the gate does not hold.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Prerequisite Promoted, Released, Healthy, or a custom prerequisite's name.
+	Prerequisite string             `json:"Prerequisite,omitempty" yaml:"Prerequisite,omitempty"`
+	Satisfied    bool               `json:"Satisfied,omitempty" yaml:"Satisfied,omitempty"`
+	SpaceID      openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug    string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+}
+
+// PromoteLinkResult defines model for PromoteLinkResult.
+type PromoteLinkResult struct {
+	// Action Create, Unchanged, Skip, or Orphaned.
+	Action       string         `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error        *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	FromUnitSlug string         `json:"FromUnitSlug,omitempty" yaml:"FromUnitSlug,omitempty"`
+
+	// LinkID Absent for a Link a dry run would create.
+	LinkID         *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+	Reason         string              `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Slug           string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+	ToSpaceSlug    string              `json:"ToSpaceSlug,omitempty" yaml:"ToSpaceSlug,omitempty"`
+	ToUnitSlug     string              `json:"ToUnitSlug,omitempty" yaml:"ToUnitSlug,omitempty"`
+	UpstreamLinkID *openapi_types.UUID `json:"UpstreamLinkID,omitempty" yaml:"UpstreamLinkID,omitempty"`
+}
+
+// PromoteRequest defines model for PromoteRequest.
+type PromoteRequest struct {
+	// ChangeDescription Recorded on each Unit write.
+	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+
+	// ChangeOrderID The ChangeOrder to promote. Without one, everything each upstream has reached is promoted. With one, only its range is, into the Spaces it is headed for.
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// ChangeSetID An existing open ChangeSet to record every write in.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// ExpectedPlan The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412.
+	ExpectedPlan string `json:"ExpectedPlan,omitempty" yaml:"ExpectedPlan,omitempty"`
+
+	// Force Promote even though the Stage's entry gates do not hold. Requires ForceReason, and Edit permission on the ChangeOrder, where the override is recorded.
+	Force bool `json:"Force,omitempty" yaml:"Force,omitempty"`
+
+	// ForceReason Why the gates were overridden. Required with Force.
+	ForceReason string `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
+
+	// SpaceFilterID A Filter over Spaces selecting the Spaces to promote. Intersected with the other selectors.
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
+
+	// Squash Merge each Unit's range as one rebased Revision rather than replaying each upstream Revision.
+	Squash bool `json:"Squash,omitempty" yaml:"Squash,omitempty"`
+
+	// TargetStage A Stage of the ChangeOrder's ChangeWorkflow to promote into. Requires a ChangeOrder with a ChangeWorkflow. When empty, and neither WhereSpace nor SpaceFilterID is given, the next Stage the change has not reached.
+	TargetStage string `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
+
+	// WhereSpace A where expression selecting the Spaces to promote. Intersected with the other selectors.
+	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
+}
+
+// PromoteResult defines model for PromoteResult.
+type PromoteResult struct {
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// Complete Every Stage of the ChangeWorkflow already has the change; nothing was promoted.
+	Complete bool `json:"Complete,omitempty" yaml:"Complete,omitempty"`
+
+	// DryRun True when nothing was written.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
+	// Plan Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan.
+	Plan string `json:"Plan,omitempty" yaml:"Plan,omitempty"`
+
+	// Spaces In the order they were, or would be, promoted: a Space after any selected Space it takes from.
+	Spaces []PromoteSpaceResult `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+
+	// Stages The Stages entered, each with every gate evaluated over the Stage before it.
+	Stages []PromoteStageResult `json:"Stages,omitempty" yaml:"Stages,omitempty"`
+}
+
+// PromoteSpaceResult defines model for PromoteSpaceResult.
+type PromoteSpaceResult struct {
+	// Action Promote, Unchanged, Skipped, Blocked, or Failed.
+	Action string              `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error  *ResponseError      `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Links  []PromoteLinkResult `json:"Links,omitempty" yaml:"Links,omitempty"`
+
+	// PreviewedAgainstCurrentUpstream A dry run previewed this Space against its upstream as it is now, although the same request promotes that upstream first.
+	PreviewedAgainstCurrentUpstream bool `json:"PreviewedAgainstCurrentUpstream,omitempty" yaml:"PreviewedAgainstCurrentUpstream,omitempty"`
+
+	// Reason Why the Space was Skipped or Blocked.
+	Reason            string              `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	SpaceID           openapi_types.UUID  `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug         string              `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	Stage             string              `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+	Units             []PromoteUnitResult `json:"Units,omitempty" yaml:"Units,omitempty"`
+	UpstreamSpaceID   *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
+	UpstreamSpaceSlug string              `json:"UpstreamSpaceSlug,omitempty" yaml:"UpstreamSpaceSlug,omitempty"`
+}
+
+// PromoteStageResult defines model for PromoteStageResult.
+type PromoteStageResult struct {
+	// Chosen The Stage was the next one the change has not reached, rather than named.
+	Chosen bool `json:"Chosen,omitempty" yaml:"Chosen,omitempty"`
+
+	// Forced The gates did not hold and the promotion was forced.
+	Forced bool                `json:"Forced,omitempty" yaml:"Forced,omitempty"`
+	Gates  []PromoteGateResult `json:"Gates,omitempty" yaml:"Gates,omitempty"`
+	Name   string              `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// PreviousStage The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, which has no gates.
+	PreviousStage string `json:"PreviousStage,omitempty" yaml:"PreviousStage,omitempty"`
+}
+
+// PromoteUnitResult defines model for PromoteUnitResult.
+type PromoteUnitResult struct {
+	// Action Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
+	Action                  string                `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Conflicts               *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Error                   *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Mutations               *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
+	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
+	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
+
+	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, or AlreadyTaken.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Slug   string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// UnitID Absent for a clone a dry run would create.
+	UnitID         *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UpstreamUnitID *openapi_types.UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
+}
 
 // QueuedOperation UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type QueuedOperation struct {
@@ -5108,7 +5252,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5189,7 +5333,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5312,7 +5456,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5425,7 +5569,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8191,6 +8335,15 @@ type ListOrganizationMembersParams struct {
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 }
 
+// PromoteParams defines parameters for Promote.
+type PromoteParams struct {
+	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. On a dry run it runs the merges a plan otherwise skips, so it is returned only when named.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
 // ListAllReleasesParams defines parameters for ListAllReleases.
 type ListAllReleasesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -9270,7 +9423,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15288,6 +15441,9 @@ type UpdateOrganizationJSONRequestBody = Organization
 
 // CreateOrganizationMemberJSONRequestBody defines body for CreateOrganizationMember for application/json ContentType.
 type CreateOrganizationMemberJSONRequestBody = OrganizationMember
+
+// PromoteJSONRequestBody defines body for Promote for application/json ContentType.
+type PromoteJSONRequestBody = PromoteRequest
 
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space

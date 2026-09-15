@@ -2423,7 +2423,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2590,7 +2590,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2751,7 +2751,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3006,7 +3006,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -9459,6 +9459,103 @@ paths:
       summary: Get OrganizationMember
       tags:
       - OrganizationMember
+  /promote:
+    post:
+      description: 'Moves changes from upstream Spaces into the downstream variants
+        selected by WhereSpace, SpaceFilterID, ChangeOrderID and TargetStage, and
+        makes them match: Units are upgraded, emptied, revived and cloned, clones
+        are placed in the variant''s namespace, and their Links are copied. With a
+        ChangeOrder only its range is promoted, and with a ChangeWorkflow the Stage''s
+        entry gates are enforced. Promoting again changes nothing.'
+      operationId: Promote
+      parameters:
+      - description: Plan the promotion, evaluate its gates, and return the same response
+          without writing anything.
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      - description: 'Comma-separated parts of the result to return in addition to
+          the actions: Mutations for what each Unit write changed, or on a dry run
+          would change. On a dry run it runs the merges a plan otherwise skips, so
+          it is returned only when named.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoteRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoteResult'
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoteResult'
+          description: 'Multi-Status: some Unit or Link writes failed, each carrying
+            its own error'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Promote request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Promote not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoteResult'
+          description: The Stage's entry gates do not hold; the result names each
+            gate and whether it holds. Nothing was written.
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The plan differs from ExpectedPlan. Nothing was written.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Promote.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Promote changes into downstream variants
+      tags:
+      - Promote
   /release:
     get:
       description: Retrieves a list of Releases across spaces in the Organization
@@ -12633,7 +12730,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -31614,6 +31711,12 @@ components:
             set for the whole ChangeOrder, not one per Space. Immutable.
           type: object
           x-go-type-skip-optional-pointer: true
+        PromotionOverrides:
+          items:
+            $ref: '#/components/schemas/ChangeOrderPromotionOverride'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         ReleasedRestoredSpaceIDs:
           description: 'ReleasedRestoredSpaceIDs is where the undoing has been released:
             the Spaces in RestoredSpaceIDs whose Units are released at or past the
@@ -31757,6 +31860,30 @@ components:
           $ref: '#/components/schemas/ChangeOrder'
         Error:
           $ref: '#/components/schemas/ResponseError'
+      type: object
+    ChangeOrderPromotionOverride:
+      properties:
+        FailedGates:
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        OverriddenAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Stage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
       type: object
     ChangeSet:
       description: Defines an entity changeset.
@@ -34122,6 +34249,263 @@ components:
     Permissions:
       additionalProperties:
         $ref: '#/components/schemas/Subjects'
+      type: object
+    PromoteGateResult:
+      properties:
+        Message:
+          description: Why the gate does not hold.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Prerequisite:
+          description: Promoted, Released, Healthy, or a custom prerequisite's name.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Satisfied:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PromoteLinkResult:
+      properties:
+        Action:
+          description: Create, Unchanged, Skip, or Orphaned.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        FromUnitSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LinkID:
+          description: Absent for a Link a dry run would create.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Reason:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToSpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToUnitSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpstreamLinkID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+      type: object
+    PromoteRequest:
+      properties:
+        ChangeDescription:
+          description: Recorded on each Unit write.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: The ChangeOrder to promote. Without one, everything each upstream
+            has reached is promoted. With one, only its range is, into the Spaces
+            it is headed for.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        ChangeSetID:
+          description: An existing open ChangeSet to record every write in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        ExpectedPlan:
+          description: The Plan a previous dry run returned. If the plan now differs,
+            nothing is written and the request fails with 412.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Force:
+          description: Promote even though the Stage's entry gates do not hold. Requires
+            ForceReason, and Edit permission on the ChangeOrder, where the override
+            is recorded.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        ForceReason:
+          description: Why the gates were overridden. Required with Force.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceFilterID:
+          description: A Filter over Spaces selecting the Spaces to promote. Intersected
+            with the other selectors.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Squash:
+          description: Merge each Unit's range as one rebased Revision rather than
+            replaying each upstream Revision.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        TargetStage:
+          description: A Stage of the ChangeOrder's ChangeWorkflow to promote into.
+            Requires a ChangeOrder with a ChangeWorkflow. When empty, and neither
+            WhereSpace nor SpaceFilterID is given, the next Stage the change has not
+            reached.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereSpace:
+          description: A where expression selecting the Spaces to promote. Intersected
+            with the other selectors.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PromoteResult:
+      properties:
+        ChangeOrderID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Complete:
+          description: Every Stage of the ChangeWorkflow already has the change; nothing
+            was promoted.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        DryRun:
+          description: True when nothing was written.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Plan:
+          description: Digest of the planned actions. Send it as ExpectedPlan to apply
+            exactly this plan.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Spaces:
+          description: 'In the order they were, or would be, promoted: a Space after
+            any selected Space it takes from.'
+          items:
+            $ref: '#/components/schemas/PromoteSpaceResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Stages:
+          description: The Stages entered, each with every gate evaluated over the
+            Stage before it.
+          items:
+            $ref: '#/components/schemas/PromoteStageResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PromoteSpaceResult:
+      properties:
+        Action:
+          description: Promote, Unchanged, Skipped, Blocked, or Failed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Links:
+          items:
+            $ref: '#/components/schemas/PromoteLinkResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        PreviewedAgainstCurrentUpstream:
+          description: A dry run previewed this Space against its upstream as it is
+            now, although the same request promotes that upstream first.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: Why the Space was Skipped or Blocked.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Stage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Units:
+          items:
+            $ref: '#/components/schemas/PromoteUnitResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        UpstreamSpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        UpstreamSpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PromoteStageResult:
+      properties:
+        Chosen:
+          description: The Stage was the next one the change has not reached, rather
+            than named.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Forced:
+          description: The gates did not hold and the promotion was forced.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Gates:
+          items:
+            $ref: '#/components/schemas/PromoteGateResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Name:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        PreviousStage:
+          description: The Stage whose Spaces the gates are evaluated over. Empty
+            for the first Stage, which has no gates.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    PromoteUnitResult:
+      properties:
+        Action:
+          description: Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or
+            Skip.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Conflicts:
+          $ref: '#/components/schemas/MutationConflictList'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Mutations:
+          $ref: '#/components/schemas/ResourceMutationList'
+        PreviousHeadMutationNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        PreviousHeadRevisionNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: 'For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder,
+            or AlreadyTaken.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Absent for a clone a dry run would create.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        UpstreamUnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
       type: object
     QueuedOperation:
       description: UnitAction is a record of an operation queued for a Worker, such

@@ -60,6 +60,14 @@ func ValidateCELPrerequisite(expression string) error {
 // gate that could not answer must not read as a gate that answered no.
 func EvaluateCELPrerequisite(expression string, space *goclientnew.Space,
 	changeOrder *goclientnew.ChangeOrder, release *goclientnew.Release) (bool, error) {
+	return EvaluateCELPrerequisiteEntities(expression, space, changeOrder, release)
+}
+
+// EvaluateCELPrerequisiteEntities is EvaluateCELPrerequisite for any value that serializes as the
+// API's JSON for a Space, a ChangeOrder and a Release. The server evaluates gates over its own
+// model types, which marshal to the same JSON the generated client types do, so both answer an
+// expression the same way. A nil pointer binds as null.
+func EvaluateCELPrerequisiteEntities(expression string, space, changeOrder, release any) (bool, error) {
 	program, err := celPrerequisiteProgram(expression)
 	if err != nil {
 		return false, err

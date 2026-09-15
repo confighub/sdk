@@ -304,6 +304,11 @@ type ClientInterface interface {
 	// GetOrganizationMember request
 	GetOrganizationMember(ctx context.Context, organizationId openapi_types.UUID, organizationMemberId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// PromoteWithBody request with any body
+	PromoteWithBody(ctx context.Context, params *PromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Promote(ctx context.Context, params *PromoteParams, body PromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAllReleases request
 	ListAllReleases(ctx context.Context, params *ListAllReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1812,6 +1817,30 @@ func (c *Client) DeleteOrganizationMember(ctx context.Context, organizationId op
 
 func (c *Client) GetOrganizationMember(ctx context.Context, organizationId openapi_types.UUID, organizationMemberId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetOrganizationMemberRequest(c.Server, organizationId, organizationMemberId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PromoteWithBody(ctx context.Context, params *PromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPromoteRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Promote(ctx context.Context, params *PromoteParams, body PromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPromoteRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -10137,6 +10166,84 @@ func NewGetOrganizationMemberRequest(server string, organizationId openapi_types
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewPromoteRequest calls the generic Promote builder with application/json body
+func NewPromoteRequest(server string, params *PromoteParams, body PromoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPromoteRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewPromoteRequestWithBody generates requests for Promote with any type of body
+func NewPromoteRequestWithBody(server string, params *PromoteParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/promote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -25310,6 +25417,11 @@ type ClientWithResponsesInterface interface {
 	// GetOrganizationMemberWithResponse request
 	GetOrganizationMemberWithResponse(ctx context.Context, organizationId openapi_types.UUID, organizationMemberId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetOrganizationMemberResponse, error)
 
+	// PromoteWithBodyWithResponse request with any body
+	PromoteWithBodyWithResponse(ctx context.Context, params *PromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PromoteResponse, error)
+
+	PromoteWithResponse(ctx context.Context, params *PromoteParams, body PromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*PromoteResponse, error)
+
 	// ListAllReleasesWithResponse request
 	ListAllReleasesWithResponse(ctx context.Context, params *ListAllReleasesParams, reqEditors ...RequestEditorFn) (*ListAllReleasesResponse, error)
 
@@ -27493,6 +27605,37 @@ func (r GetOrganizationMemberResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetOrganizationMemberResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PromoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *PromoteResult
+	JSON207      *PromoteResult
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *PromoteResult
+	JSON412      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PromoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PromoteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -32594,6 +32737,23 @@ func (c *ClientWithResponses) GetOrganizationMemberWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetOrganizationMemberResponse(rsp)
+}
+
+// PromoteWithBodyWithResponse request with arbitrary body returning *PromoteResponse
+func (c *ClientWithResponses) PromoteWithBodyWithResponse(ctx context.Context, params *PromoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PromoteResponse, error) {
+	rsp, err := c.PromoteWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePromoteResponse(rsp)
+}
+
+func (c *ClientWithResponses) PromoteWithResponse(ctx context.Context, params *PromoteParams, body PromoteJSONRequestBody, reqEditors ...RequestEditorFn) (*PromoteResponse, error) {
+	rsp, err := c.Promote(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePromoteResponse(rsp)
 }
 
 // ListAllReleasesWithResponse request returning *ListAllReleasesResponse
@@ -38650,6 +38810,95 @@ func ParseGetOrganizationMemberResponse(rsp *http.Response) (*GetOrganizationMem
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePromoteResponse parses an HTTP response from a PromoteWithResponse call
+func ParsePromoteResponse(rsp *http.Response) (*PromoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PromoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest PromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest PromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest PromoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 412:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON412 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

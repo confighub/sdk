@@ -20,6 +20,7 @@ export const addTagTypes = [
   'OAuthClient',
   'Organization',
   'OrganizationMember',
+  'Promote',
   'Release',
   'Resource',
   'Revision',
@@ -831,6 +832,18 @@ const injectedRtkApi = api
           url: `/organization/${queryArg.organizationId}/organization_member/${queryArg.organizationMemberId}`,
         }),
         providesTags: ['OrganizationMember'],
+      }),
+      promote: build.mutation<PromoteApiResponse, PromoteApiArg>({
+        query: (queryArg) => ({
+          url: `/promote`,
+          method: 'POST',
+          body: queryArg.promoteRequest,
+          params: {
+            dry_run: queryArg.dryRun,
+            include: queryArg.include,
+          },
+        }),
+        invalidatesTags: ['Promote'],
       }),
       listAllReleases: build.query<ListAllReleasesApiResponse, ListAllReleasesApiArg>({
         query: (queryArg) => ({
@@ -3824,7 +3837,7 @@ export type BulkDeleteChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3901,7 +3914,7 @@ export type ListAllChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3989,7 +4002,7 @@ export type BulkPatchChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -4098,7 +4111,7 @@ export type BulkCreateChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -6832,6 +6845,16 @@ export type GetOrganizationMemberApiArg = {
   /** Unique identifier for a organization_member_id */
   organizationMemberId: string;
 };
+export type PromoteApiResponse = /** status 200 OK */
+  | PromoteResult
+  | /** status 207 Multi-Status: some Unit or Link writes failed, each carrying its own error */ PromoteResult;
+export type PromoteApiArg = {
+  /** Plan the promotion, evaluate its gates, and return the same response without writing anything. */
+  dryRun?: boolean;
+  /** Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. On a dry run it runs the merges a plan otherwise skips, so it is returned only when named. */
+  include?: string;
+  promoteRequest: PromoteRequest;
+};
 export type ListAllReleasesApiResponse = /** status 200 OK */ ExtendedReleaseRead[];
 export type ListAllReleasesApiArg = {
   /** The specified string is an expression for the purpose of filtering
@@ -7976,7 +7999,7 @@ export type ListChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
+    Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereUnit.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -15051,6 +15074,13 @@ export type ChangeOrder = {
   /** WhereUnit narrows which Units of each Space in scope an Invoke ChangeOrder covers, and is refused on the other UpdateTypes. Empty covers every Unit. Unlike InScopeSpaceIDs it is asked again on every read, so a Unit added to a Space afterwards counts against that Space. Immutable. */
   WhereUnit?: string;
 };
+export type ChangeOrderPromotionOverride = {
+  FailedGates?: string[];
+  OverriddenAt?: string;
+  Reason?: string;
+  Stage?: string;
+  UserID?: string;
+};
 export type ChangeOrderRead = {
   /** AbortedReason says why the ChangeOrder was given up on. Setting it is what aborts one: a ChangeOrder with a reason is Aborted whatever its Links say. */
   AbortedReason?: string;
@@ -15093,6 +15123,7 @@ export type ChangeOrderRead = {
   Parameters?: {
     [key: string]: any;
   };
+  PromotionOverrides?: ChangeOrderPromotionOverride[];
   /** ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read. */
   ReleasedRestoredSpaceIDs?: Uuid[];
   /** ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. Derived when the ChangeOrder is read. */
@@ -16324,6 +16355,104 @@ export type OAuthClientRead = {
   OrganizationID?: string;
   /** Exact redirect URIs permitted for the app's login (no wildcards). */
   RedirectURIs?: string[] | null;
+};
+export type PromoteLinkResult = {
+  /** Create, Unchanged, Skip, or Orphaned. */
+  Action?: string;
+  Error?: ResponseError;
+  FromUnitSlug?: string;
+  /** Absent for a Link a dry run would create. */
+  LinkID?: string;
+  Reason?: string;
+  Slug?: string;
+  ToSpaceSlug?: string;
+  ToUnitSlug?: string;
+  UpstreamLinkID?: string;
+};
+export type PromoteUnitResult = {
+  /** Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip. */
+  Action?: string;
+  Conflicts?: MutationConflictList;
+  Error?: ResponseError;
+  Mutations?: ResourceMutationList;
+  PreviousHeadMutationNum?: number;
+  PreviousHeadRevisionNum?: number;
+  /** For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, or AlreadyTaken. */
+  Reason?: string;
+  Slug?: string;
+  /** Absent for a clone a dry run would create. */
+  UnitID?: string;
+  UpstreamUnitID?: string;
+};
+export type PromoteSpaceResult = {
+  /** Promote, Unchanged, Skipped, Blocked, or Failed. */
+  Action?: string;
+  Error?: ResponseError;
+  Links?: PromoteLinkResult[];
+  /** A dry run previewed this Space against its upstream as it is now, although the same request promotes that upstream first. */
+  PreviewedAgainstCurrentUpstream?: boolean;
+  /** Why the Space was Skipped or Blocked. */
+  Reason?: string;
+  SpaceID?: string;
+  SpaceSlug?: string;
+  Stage?: string;
+  Units?: PromoteUnitResult[];
+  UpstreamSpaceID?: string;
+  UpstreamSpaceSlug?: string;
+};
+export type PromoteGateResult = {
+  /** Why the gate does not hold. */
+  Message?: string;
+  /** Promoted, Released, Healthy, or a custom prerequisite's name. */
+  Prerequisite?: string;
+  Satisfied?: boolean;
+  SpaceID?: string;
+  SpaceSlug?: string;
+};
+export type PromoteStageResult = {
+  /** The Stage was the next one the change has not reached, rather than named. */
+  Chosen?: boolean;
+  /** The gates did not hold and the promotion was forced. */
+  Forced?: boolean;
+  Gates?: PromoteGateResult[];
+  Name?: string;
+  /** The Stage whose Spaces the gates are evaluated over. Empty for the first Stage, which has no gates. */
+  PreviousStage?: string;
+};
+export type PromoteResult = {
+  ChangeOrderID?: string;
+  /** Every Stage of the ChangeWorkflow already has the change; nothing was promoted. */
+  Complete?: boolean;
+  /** True when nothing was written. */
+  DryRun?: boolean;
+  /** Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan. */
+  Plan?: string;
+  /** In the order they were, or would be, promoted: a Space after any selected Space it takes from. */
+  Spaces?: PromoteSpaceResult[];
+  /** The Stages entered, each with every gate evaluated over the Stage before it. */
+  Stages?: PromoteStageResult[];
+};
+export type PromoteRequest = {
+  /** Recorded on each Unit write. */
+  ChangeDescription?: string;
+  /** The ChangeOrder to promote. Without one, everything each upstream has reached is promoted. With one, only its range is, into the Spaces it is headed for. */
+  ChangeOrderID?: string;
+  /** An existing open ChangeSet to record every write in. */
+  ChangeSetID?: string;
+  /** The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412. */
+  ExpectedPlan?: string;
+  /** Promote even though the Stage's entry gates do not hold. Requires ForceReason, and Edit permission on the ChangeOrder, where the override is recorded. */
+  Force?: boolean;
+  /** Why the gates were overridden. Required with Force. */
+  ForceReason?: string;
+  /** A Filter over Spaces selecting the Spaces to promote. Intersected with the other selectors. */
+  SpaceFilterID?: string;
+  /** Merge each Unit's range as one rebased Revision rather than replaying each upstream Revision. */
+  Squash?: boolean;
+  /** A Stage of the ChangeOrder's ChangeWorkflow to promote into. Requires a ChangeOrder with a ChangeWorkflow. When empty, and neither WhereSpace nor SpaceFilterID is given, the next Stage the change has not reached. */
+  TargetStage?: string;
+  /** A where expression selecting the Spaces to promote. Intersected with the other selectors. */
+  WhereSpace?: string;
 };
 export type Release = {
   /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
@@ -18074,6 +18203,7 @@ export const {
   useDeleteOrganizationMemberMutation,
   useGetOrganizationMemberQuery,
   useLazyGetOrganizationMemberQuery,
+  usePromoteMutation,
   useListAllReleasesQuery,
   useLazyListAllReleasesQuery,
   useListAllResourcesQuery,
