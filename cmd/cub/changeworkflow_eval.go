@@ -12,8 +12,10 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
+	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/changeworkflow"
@@ -271,6 +273,43 @@ func checkChangeOrderIsReleasedToVariant(changeOrder *goclientnew.ChangeOrder, v
 	return nil
 }
 
+// checkChangeOrderIsValidated errors when any Unit of a Variant of the previous Stage has
+// ValidationErrors on the Revision the change order's end Tag marks there: the change as it was
+// promoted, not whatever has been written since.
+func checkChangeOrderIsValidated(changeOrder *goclientnew.ChangeOrder, variant *goclientnew.Space, stage, variantName string) error {
+	if changeOrder.EndTagID == uuid.Nil {
+		return errors.Newf("unable to promote to stage '%s', change order '%s' has no end tag marking the Revisions to validate",
+			stage, changeOrder.Slug)
+	}
+	revisions, err := apiSearchListRevisions(
+		fmt.Sprintf("SpaceID = '%s' AND Tags ? '%s'", variant.SpaceID, changeOrder.EndTagID), "UnitID,RevisionNum,ValidationErrors", "")
+	if err != nil {
+		return err
+	}
+	if len(revisions) == 0 {
+		return errors.Newf("unable to promote to stage '%s', Variant '%s' has taken change order '%s' but nothing in it carries the change order's end tag, so its validation cannot be read",
+			stage, variantName, changeOrder.Slug)
+	}
+	var descriptions []string
+	for _, extended := range revisions {
+		if extended.Revision == nil || len(extended.Revision.ValidationErrors) == 0 {
+			continue
+		}
+		slug := extended.Revision.UnitID.String()
+		if extended.Unit != nil {
+			slug = extended.Unit.Slug
+		}
+		gates := slices.Sorted(maps.Keys(extended.Revision.ValidationErrors))
+		descriptions = append(descriptions, fmt.Sprintf("%s (%s)", slug, strings.Join(gates, ", ")))
+	}
+	if len(descriptions) == 0 {
+		return nil
+	}
+	slices.Sort(descriptions)
+	return errors.Newf("unable to promote to stage '%s', Variant '%s' has ValidationErrors on the Revisions change order '%s' marks: %s",
+		stage, variantName, changeOrder.Slug, strings.Join(descriptions, "; "))
+}
+
 // revisionNumsForTag is the Revision each Unit of the Space sits at under this Tag.
 func revisionNumsForTag(spaceID, tagID uuid.UUID) (map[uuid.UUID]int64, error) {
 	revisions, err := apiSearchListRevisions(
@@ -393,13 +432,14 @@ func checkVariantSatisfiesExpression(
 // server's promotion and by checkVariantPrerequisites below; authoring refuses anything else before a
 // definition is stored, so the two cannot come to name different sets.
 const (
-	prerequisiteReleased = "Released"
-	prerequisiteHealthy  = "Healthy"
+	prerequisiteValidated = "Validated"
+	prerequisiteReleased  = "Released"
+	prerequisiteHealthy   = "Healthy"
 )
 
 // knownPrerequisites is what a definition may name, in the order they are offered
 // to someone writing one.
-var knownPrerequisites = []string{prerequisiteReleased, prerequisiteHealthy}
+var knownPrerequisites = []string{prerequisiteValidated, prerequisiteReleased, prerequisiteHealthy}
 
 func getPrerequisiteDefinition(
 	name string,
@@ -453,6 +493,10 @@ func checkVariantPrerequisites(
 		switch prerequisite {
 		case prerequisiteHealthy: // validate live-status reflects the intended change is healthy
 			if err := checkVariantIsHealthy(variant, variantName); err != nil {
+				return err
+			}
+		case prerequisiteValidated: // validate the promoted Revisions have no ValidationErrors
+			if err := checkChangeOrderIsValidated(changeOrder, variant, stage, variantName); err != nil {
 				return err
 			}
 		case prerequisiteReleased: // validate the change has been released to this Variant

@@ -72,7 +72,8 @@ the cloned space's labels (and .SourceEntitySlug for the upstream slug), for exa
 "template:{{.Labels.Component}}-{{.Labels.Variant}}".
 
 The following are copied from the upstream space to the new space: WhereTrigger, TriggerFilterID,
-Permissions, and DeleteGates.
+and Permissions. Triggers are not copied: the copied WhereTrigger and TriggerFilterID select the
+upstream space's Triggers where they are.
 
 Metadata flags are split by what they target, space vs. unit, as on "cub variant upload":
   --space-label / --space-annotation /       set on the new space, merged onto the values copied
@@ -89,8 +90,8 @@ Metadata flags are split by what they target, space vs. unit, as on "cub variant
                                              is queued.
 
 To automatically customize the cloned units, create PostClone triggers and select them via the
-upstream space's WhereTrigger or TriggerFilterID so that they are copied to the downstream space and
-run during the clone. Trigger arguments can reference space metadata in Go templates, such as
+upstream space's WhereTrigger or TriggerFilterID. The downstream space gets the same selection, so
+they run during the clone. Trigger arguments can reference space metadata in Go templates, such as
 "template:{{.SpaceLabels.Region}}" or "template:{{.SpaceAnnotations.host}}" — set the latter with
 --space-annotation. Any other changes can be made after the clone completes.
 
@@ -208,8 +209,8 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		changesetID = &id
 	}
 
-	// Step 1: clone the upstream space. WhereTrigger, TriggerFilterID, Permissions, and DeleteGates
-	// are copied from the upstream space by the clone (we pass an empty patch so nothing is overridden).
+	// Step 1: clone the upstream space. WhereTrigger, TriggerFilterID, and Permissions are copied
+	// from the upstream space by the clone (we pass an empty patch so nothing is overridden).
 	newSpace, err := cloneVariantSpace(variantName, upstreamSpace.Space)
 	if err != nil {
 		return err

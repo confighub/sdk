@@ -420,14 +420,14 @@ type ClientInterface interface {
 	GetChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchChangeOrderWithBody request with any body
-	PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateChangeOrderWithBody request with any body
-	UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListChangeSets request
 	ListChangeSets(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2331,8 +2331,8 @@ func (c *Client) GetChangeOrder(ctx context.Context, spaceId openapi_types.UUID,
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, contentType, body)
+func (c *Client) PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2343,8 +2343,8 @@ func (c *Client) PatchChangeOrderWithBody(ctx context.Context, spaceId openapi_t
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeOrderId, body)
+func (c *Client) PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeOrderId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2355,8 +2355,8 @@ func (c *Client) PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, contentType, body)
+func (c *Client) UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeOrderRequestWithBody(c.Server, spaceId, changeOrderId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2367,8 +2367,8 @@ func (c *Client) UpdateChangeOrderWithBody(ctx context.Context, spaceId openapi_
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeOrderRequest(c.Server, spaceId, changeOrderId, body)
+func (c *Client) UpdateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeOrderRequest(c.Server, spaceId, changeOrderId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -6148,6 +6148,22 @@ func NewBulkPatchChangeOrdersRequestWithBody(server string, params *BulkPatchCha
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.RefreshSpaces != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_spaces", runtime.ParamLocationQuery, *params.RefreshSpaces); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12848,18 +12864,18 @@ func NewGetChangeOrderRequest(server string, spaceId openapi_types.UUID, changeO
 }
 
 // NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchChangeOrder builder with application/merge-patch+json body
-func NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchChangeOrderRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchChangeOrderRequestWithBody(server, spaceId, changeOrderId, "application/merge-patch+json", bodyReader)
+	return NewPatchChangeOrderRequestWithBody(server, spaceId, changeOrderId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchChangeOrderRequestWithBody generates requests for PatchChangeOrder with any type of body
-func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12889,6 +12905,28 @@ func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshSpaces != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_spaces", runtime.ParamLocationQuery, *params.RefreshSpaces); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -12902,18 +12940,18 @@ func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUI
 }
 
 // NewUpdateChangeOrderRequest calls the generic UpdateChangeOrder builder with application/json body
-func NewUpdateChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody) (*http.Request, error) {
+func NewUpdateChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateChangeOrderRequestWithBody(server, spaceId, changeOrderId, "application/json", bodyReader)
+	return NewUpdateChangeOrderRequestWithBody(server, spaceId, changeOrderId, params, "application/json", bodyReader)
 }
 
 // NewUpdateChangeOrderRequestWithBody generates requests for UpdateChangeOrder with any type of body
-func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12943,6 +12981,28 @@ func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UU
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.RefreshSpaces != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_spaces", runtime.ParamLocationQuery, *params.RefreshSpaces); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -25533,14 +25593,14 @@ type ClientWithResponsesInterface interface {
 	GetChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*GetChangeOrderResponse, error)
 
 	// PatchChangeOrderWithBodyWithResponse request with any body
-	PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
+	PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
 
-	PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
+	PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error)
 
 	// UpdateChangeOrderWithBodyWithResponse request with any body
-	UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
+	UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
 
-	UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
+	UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error)
 
 	// ListChangeSetsWithResponse request
 	ListChangeSetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeSetsParams, reqEditors ...RequestEditorFn) (*ListChangeSetsResponse, error)
@@ -33107,16 +33167,16 @@ func (c *ClientWithResponses) GetChangeOrderWithResponse(ctx context.Context, sp
 }
 
 // PatchChangeOrderWithBodyWithResponse request with arbitrary body returning *PatchChangeOrderResponse
-func (c *ClientWithResponses) PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
-	rsp, err := c.PatchChangeOrderWithBody(ctx, spaceId, changeOrderId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
+	rsp, err := c.PatchChangeOrderWithBody(ctx, spaceId, changeOrderId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchChangeOrderResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
-	rsp, err := c.PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeOrderId, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeOrderWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *PatchChangeOrderParams, body PatchChangeOrderApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeOrderResponse, error) {
+	rsp, err := c.PatchChangeOrderWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeOrderId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -33124,16 +33184,16 @@ func (c *ClientWithResponses) PatchChangeOrderWithApplicationMergePatchPlusJSONB
 }
 
 // UpdateChangeOrderWithBodyWithResponse request with arbitrary body returning *UpdateChangeOrderResponse
-func (c *ClientWithResponses) UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
-	rsp, err := c.UpdateChangeOrderWithBody(ctx, spaceId, changeOrderId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeOrderWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
+	rsp, err := c.UpdateChangeOrderWithBody(ctx, spaceId, changeOrderId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateChangeOrderResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
-	rsp, err := c.UpdateChangeOrder(ctx, spaceId, changeOrderId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *UpdateChangeOrderParams, body UpdateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeOrderResponse, error) {
+	rsp, err := c.UpdateChangeOrder(ctx, spaceId, changeOrderId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

@@ -47,6 +47,8 @@ rollout. A stage named with --stage selects "Labels.` + changeWorkflowStageLabel
 other way is written in a file.
 
 The gates a stage can declare are:
+  Validated  no Unit of any Space of the stage ahead has ValidationErrors on the Revision the change
+             order's end tag marks
   Released   every Space of the stage ahead has published a Release carrying the change
   Healthy    every Space of the stage ahead reports it Synced, Succeeded and Healthy
 

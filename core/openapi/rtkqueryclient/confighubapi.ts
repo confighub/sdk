@@ -4,13 +4,21 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import type { FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
+import { getAccessToken } from '@/auth/sdk';
+
+import { instanceUrl, isBearerMode } from '@/auth/config';
+import { handleUnauthorized } from '@/auth/session';
+
 // fetchBaseQuery uses URLSearchParams, which already escapes query parameters.
 // https://redux-toolkit.js.org/rtk-query/api/fetchBaseQuery
 // https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
 // https://github.com/reduxjs/redux-toolkit/pull/4568
 const baseQuery = fetchBaseQuery({
-  baseUrl: '/api',
-  credentials: 'include', // This enables sending cookies with requests
+  baseUrl: instanceUrl('/api'),
+  // Cookie mode: the session rides as HttpOnly cookies, so send them. Bearer mode
+  // must not: the API answers cross-origin with Access-Control-Allow-Origin: *,
+  // and a browser refuses that combination for a credentialed request.
+  credentials: isBearerMode() ? 'same-origin' : 'include',
   isJsonContentType: (headers) => {
     const ct = headers.get('Content-Type') ?? '';
     return ct.includes('json');
@@ -22,6 +30,10 @@ const baseQuery = fetchBaseQuery({
   // isJsonContentType above, so those come back as text and everything else is unchanged.
   responseHandler: 'content-type',
   prepareHeaders: (headers, { endpoint }) => {
+    if (isBearerMode()) {
+      const token = getAccessToken();
+      if (token) headers.set('Authorization', `Bearer ${token}`);
+    }
     // Set content type for operations that require merge-patch+json
     if (
       endpoint.startsWith('patch') ||
@@ -67,7 +79,10 @@ const baseQueryWithReauth: BaseQueryFn<
 > = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
+  if (result.error && result.error.status === 401 && isBearerMode()) {
+    // The token is stale or gone; the auth layer decides how to recover.
+    handleUnauthorized();
+  } else if (result.error && result.error.status === 401) {
     // Unauthorized. Where to send them depends on whether this instance has an
     // identity provider; only asked here, on the path that needs the answer.
     if (await hasIdentityProvider()) {
@@ -97,7 +112,11 @@ const baseQueryWithReauth: BaseQueryFn<
     const errorMessage = errorData?.message || '';
     const isPendingApproval = errorMessage.includes('pending approval');
 
-    if (isPendingApproval) {
+    if (isPendingApproval && isBearerMode()) {
+      // The page's "try again" starts a fresh login, which is what picks up the
+      // approval; there is no server session to end first.
+      window.location.replace('/pending-approval');
+    } else if (isPendingApproval) {
       // For pending approval, log out the user first so they get a fresh JWT when approved
       // The return_to parameter will bring them back to the pending approval page
       const returnTo = encodeURIComponent(`${window.location.origin}/pending-approval`);

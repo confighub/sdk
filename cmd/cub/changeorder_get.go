@@ -200,6 +200,15 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	stage, completed := changeOrderRollout(changeorderDetails)
 	view.Append([]string{"Stage", stage})
 	view.Append([]string{"Completed", completed})
+	// The selection, when there is one, is how the server worked out the in-scope spaces.
+	if changeorderDetails.WhereSpace != "" {
+		view.Append([]string{"Where Space", changeorderDetails.WhereSpace})
+	}
+	if extendedChangeOrder.SpaceFilter != nil {
+		view.Append([]string{"Space Filter", extendedChangeOrder.SpaceFilter.Slug})
+	} else if changeorderDetails.SpaceFilterID != nil {
+		view.Append([]string{"Space Filter ID", changeorderDetails.SpaceFilterID.String()})
+	}
 	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
 	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
 	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})

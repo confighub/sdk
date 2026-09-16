@@ -44,6 +44,14 @@ Examples:
   SPACES=$(cub space list --quiet --no-headers -o name --where "Labels.Component = 'my-app'" | paste -sd, -)
   cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 
+  # Or let the server work the list out from a where expression, a Filter over Spaces, or both
+  # (ANDed). The server records the spaces they select, and works them out again when either
+  # changes or on "cub changeorder update --refresh-spaces"
+  cub changeorder create --space my-space bump-base-image \
+    --where-space-field "Labels.Component = 'my-app' AND Labels.Region = 'use2'"
+  cub changeorder create --space my-space bump-base-image \
+    --space-filter platform/prod-spaces --where-space-field "Labels.Region = 'use2'"
+
   # Or say it by component, which selects the same spaces without listing them
   cub changeorder create --space my-space bump-base-image --component my-app
 
@@ -107,6 +115,8 @@ var changeorderCreateArgs struct {
 	changeorderSlugs []string
 	description      string
 	inScopeSpaces    []string
+	whereSpaceField  string
+	spaceFilter      string
 	endTag           string
 	updateType       string
 	filterSpace      string
@@ -129,6 +139,8 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.changeWorkflow, "change-workflow", "", "identifier (slug, space/slug, or UUID) of the ChangeWorkflow to promote the ChangeOrder under")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.description, "description", "", "human-readable description of the change")
 	changeorderCreateCmd.Flags().StringSliceVar(&changeorderCreateArgs.inScopeSpaces, "in-scope-space", []string{}, "spaces (slug or UUID) this change order propagates into, stored on it as InScopeSpaceIDs (can be repeated or comma-separated); without any, wherever its links reach is where it is headed")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting where this change order is headed, stored on it as WhereSpace and ANDed with --space-filter; the server records the spaces they select as its in-scope spaces")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting where this change order is headed, ANDed with --where-space-field")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "how the change order propagates: UpgradeUnit (the clone lineage, the default) or MergeUnits, which follow links and take the change from revisions the source unit already has, or Invoke, where the change is one invocation run in each space in scope and is made after the change order is created")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.invocation, "invocation", "", "invocation (slug, space/slug, or UUID) to run in each space in scope; required with --update-type Invoke and refused otherwise. Naming it on the change order is what holds every space to the same update -- the invoke API takes what it runs from here. Immutable once set")
 	changeorderCreateCmd.Flags().StringArrayVar(&changeorderCreateArgs.params, "param", []string{}, "value for one of the invocation's declared parameters, as name=value (can be repeated). One set for the whole change order, since a value that differed by space would make each variant a different change")
@@ -206,6 +218,10 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 		if changeorderCreateArgs.component != "" && len(changeorderCreateArgs.inScopeSpaces) > 0 {
 			return false, errors.New("--component and --in-scope-space flags are mutually exclusive")
 		}
+		// The server sets the list from a selection, and refuses one supplied alongside it.
+		if changeOrderCreateHasSpaceSelection() && len(changeorderCreateArgs.inScopeSpaces) > 0 {
+			return false, errors.New("--in-scope-space cannot be combined with --where-space-field or --space-filter")
+		}
 	}
 
 	if err := validateSpaceFlag(isBulkCreateMode); err != nil {
@@ -226,6 +242,12 @@ func checkChangeOrderCreateConflictingArgs(args []string) (bool, error) {
 	}
 
 	return isBulkCreateMode, nil
+}
+
+// changeOrderCreateHasSpaceSelection reports whether the change order is created with a selection
+// over Spaces, which the server evaluates into its in-scope spaces.
+func changeOrderCreateHasSpaceSelection() bool {
+	return changeorderCreateArgs.whereSpaceField != "" || changeorderCreateArgs.spaceFilter != ""
 }
 
 // resolveChangeWorkflowForChangeOrder resolves --change-workflow to the ChangeWorkflow governing
@@ -383,9 +405,19 @@ func runSingleChangeOrderCreate(args []string) error {
 		newBody.EndTagID = endTagID
 	}
 	// Where the change is headed, settled here rather than derived from the
-	// ChangeWorkflow: the Spaces named literally, or the ones the component filter
-	// selects. A ChangeOrder with neither says nothing about where it is going, and
-	// wherever its Links reach is what it covers.
+	// ChangeWorkflow: the Spaces named literally, a selection the server evaluates, or
+	// the ones the component filter selects. A ChangeOrder with none of them says
+	// nothing about where it is going, and wherever its Links reach is what it covers.
+	if changeorderCreateArgs.whereSpaceField != "" {
+		newBody.WhereSpace = changeorderCreateArgs.whereSpaceField
+	}
+	if changeorderCreateArgs.spaceFilter != "" {
+		spaceFilterID, err := resolveFilterID(changeorderCreateArgs.spaceFilter)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse space-filter")
+		}
+		newBody.SpaceFilterID = &spaceFilterID
+	}
 	if len(changeorderCreateArgs.inScopeSpaces) > 0 {
 		inScopeSpaceIDs, err := resolveChangeOrderInScopeSpaces(changeorderCreateArgs.inScopeSpaces)
 		if err != nil {
@@ -400,7 +432,7 @@ func runSingleChangeOrderCreate(args []string) error {
 		if err != nil {
 			return err
 		}
-		if len(newBody.InScopeSpaceIDs) == 0 {
+		if len(newBody.InScopeSpaceIDs) == 0 && newBody.WhereSpace == "" && newBody.SpaceFilterID == nil {
 			inScopeSpaceIDs, err := componentSpaceIDs(component)
 			if err != nil {
 				return err
@@ -479,6 +511,14 @@ func runBulkChangeOrderCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Resolved before the enhancer runs, since it cannot report an error of its own.
+	var spaceFilterIDString string
+	if changeorderCreateArgs.spaceFilter != "" {
+		spaceFilterID, err := resolveFilterID(changeorderCreateArgs.spaceFilter)
+		if err != nil {
+			return errors.Wrap(err, "failed to parse space-filter")
+		}
+		spaceFilterIDString = spaceFilterID.String()
+	}
 	var inScopeSpaceIDStrings []string
 	if len(changeorderCreateArgs.inScopeSpaces) > 0 {
 		inScopeSpaceIDs, err := resolveChangeOrderInScopeSpaces(changeorderCreateArgs.inScopeSpaces)
@@ -498,6 +538,12 @@ func runBulkChangeOrderCreate() error {
 		}
 		if len(changeorderCreateArgs.inScopeSpaces) > 0 {
 			patchMap["InScopeSpaceIDs"] = inScopeSpaceIDStrings
+		}
+		if changeorderCreateArgs.whereSpaceField != "" {
+			patchMap["WhereSpace"] = changeorderCreateArgs.whereSpaceField
+		}
+		if spaceFilterIDString != "" {
+			patchMap["SpaceFilterID"] = spaceFilterIDString
 		}
 	}
 
