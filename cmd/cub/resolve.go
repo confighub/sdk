@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -47,18 +48,11 @@ func resolveOpts(spaceID string, selectParam string) cubapi.ResolveOpts {
 }
 
 // defaultSpaceID is the space an unqualified reference is looked up in: the one
-// --space selected, else the context's default. It is empty when neither names
-// one, which makes the lookup organization-wide.
+// --space selected. It is empty when none was, which makes the lookup
+// organization-wide.
 func defaultSpaceID() string {
 	if selectedSpaceID != "" && selectedSpaceID != "*" {
 		return selectedSpaceID
-	}
-	if cubContext := contextManager.CurrentContext(); cubContext != nil {
-		if space := cubContext.Settings.DefaultSpace; space != "" && space != "*" {
-			if resolved, err := resolveSpace(space, ""); err == nil {
-				return resolved.Space.SpaceID.String()
-			}
-		}
 	}
 	return ""
 }
@@ -293,4 +287,22 @@ func resolveTargetCore(ref string, spaceID string, selectParam string) (*goclien
 		return nil, err
 	}
 	return target.Target, nil
+}
+
+// spaceForNewEntity is the space a command that creates an entity on the fly
+// puts it in: the reference's own space when it names one, else the selected
+// space. A create needs a concrete space, so with neither the error says how
+// to supply one.
+func spaceForNewEntity(ref string) (uuid.UUID, error) {
+	if space := cubapi.ParseRef(ref).Space; space != "" && space != "*" {
+		resolved, err := resolveSpace(space, "")
+		if err != nil {
+			return uuid.Nil, err
+		}
+		return uuid.UUID(resolved.Space.SpaceID), nil
+	}
+	if selectedSpaceID != "" && selectedSpaceID != "*" {
+		return uuid.MustParse(selectedSpaceID), nil
+	}
+	return uuid.Nil, fmt.Errorf("creating %q needs a space: pass --space <space>, or name it as <space>/<slug>", ref)
 }

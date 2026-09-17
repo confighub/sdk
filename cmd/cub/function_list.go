@@ -119,7 +119,10 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 		entity = unitIDStr
 	}
 
-	if selectedSpaceID == "*" {
+	// No space and the wildcard both mean the organization: a command that runs
+	// with no space selected (login preloading the builtin functions, a
+	// SpaceOptional command) has nothing to parse as a UUID.
+	if selectedSpaceID == "" || selectedSpaceID == "*" {
 		orgListParams := &goclientnew.ListOrgFunctionsParams{}
 		if executorSpace != "" {
 			orgListParams.ExecutorSpace = &executorSpace

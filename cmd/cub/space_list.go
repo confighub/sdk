@@ -56,8 +56,8 @@ Initial setup:
   # Discover available spaces
   cub space list -o jq='.[].Space.Slug'
   
-  # Set default space context
-  cub context set --space CHOSEN_SPACE
+  # Work in one of them
+  cub unit list --space CHOSEN_SPACE
 
 Environment-specific operations:
   # Find production spaces
@@ -67,7 +67,7 @@ Environment-specific operations:
   cub space list --where "Labels.Environment = 'staging'" -o name
 
 Key information provided:
-- Space slugs: Used for --space flag and context setting
+- Space slugs: Used for the --space flag and in SPACE_SLUG/SLUG references
 - Standard labels: Component, Owner, Variant, Stage, Environment, Region, Layer
 - Unit count: Number of units in each space; -o wide adds the remaining summary counts
 - Organization context: Which org these spaces belong to
@@ -81,9 +81,8 @@ Important flags for agents:
 - --no-headers: Suppress table headers for clean output
 
 Next steps after listing spaces:
-1. Use 'context set --space SPACE_SLUG' to set default context
-2. Use 'unit list --space SPACE_SLUG' to explore units in the space
-3. Use 'function list --space SPACE_SLUG' to see available functions`
+1. Use 'unit list --space SPACE_SLUG' to explore units in the space
+2. Use 'function list --space SPACE_SLUG' to see available functions`
 
 	return getCommandHelp(baseHelp, agentContext)
 }

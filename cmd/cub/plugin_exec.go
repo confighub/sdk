@@ -51,10 +51,6 @@ func pluginEnv() []string {
 	env = append(env, fmt.Sprintf("CUB_CONTEXT=%s", activeCtx.Name))
 	env = append(env, fmt.Sprintf("CUB_SERVER=%s", activeCtx.Coordinate.ServerURL))
 
-	if activeCtx.Settings.DefaultSpace != "" {
-		env = append(env, fmt.Sprintf("CUB_SPACE=%s", activeCtx.Settings.DefaultSpace))
-	}
-
 	tokenData, err := contextManager.LoadTokenData(activeCtx)
 	if err == nil && tokenData.AccessToken != "" {
 		env = append(env, fmt.Sprintf("CUB_TOKEN=%s", tokenData.AccessToken))

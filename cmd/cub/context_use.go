@@ -60,7 +60,6 @@ func contextUseCmdRun(_ *cobra.Command, args []string) error {
 	// Show context details
 	fmt.Printf("Server: %s\n", ctx.Coordinate.ServerURL)
 	fmt.Printf("Organization: %s\n", ctx.Coordinate.OrganizationID)
-	fmt.Printf("Default Space: %s\n", ctx.Settings.DefaultSpace)
 	if ctx.Coordinate.User != "" {
 		fmt.Printf("User: %s\n", ctx.Coordinate.User)
 	}

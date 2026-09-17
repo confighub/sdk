@@ -71,7 +71,11 @@ type Coordinate struct {
 
 // Settings holds per-context preferences.
 type Settings struct {
-	DefaultSpace string `yaml:"defaultSpace" json:"defaultSpace"`
+	// DefaultSpace is kept so that config files written before cub stopped
+	// consulting a default space still parse, and for SDK consumers that set
+	// it themselves. cub neither writes nor reads it: which space a command
+	// runs in comes from the command line.
+	DefaultSpace string `yaml:"defaultSpace,omitempty" json:"defaultSpace,omitempty"`
 }
 
 // Metadata holds optional, non-identifying context data.

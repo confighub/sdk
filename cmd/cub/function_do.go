@@ -110,7 +110,7 @@ Examples:
 
 Prerequisites:
 - Authentication: Run 'cub auth login' first
-- Space context: Set with 'cub context set --space SPACE_SLUG' or use --space flag
+- Space: pass --space SPACE_SLUG, or name each unit as SPACE_SLUG/UNIT_SLUG
 - Discovery: Use 'cub function list' to see available functions for each toolchain
 
 Common agent workflows. Each uses the verb for the function's kind rather than
@@ -528,7 +528,10 @@ type invokeArgs struct {
 
 func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	var resp *[]goclientnew.FunctionInvocationsResponse
-	if selectedSpaceID == "*" {
+	// No space and the wildcard both mean the organization: a command that runs
+	// with no space selected (login preloading the builtin functions, a
+	// SpaceOptional command) has nothing to parse as a UUID.
+	if selectedSpaceID == "" || selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
 		newParams.Include = invokeIncludeConfigData()
 		if executorSpace != "" {

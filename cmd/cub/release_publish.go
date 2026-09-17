@@ -41,8 +41,8 @@ number that means something different in every Unit:
 
 A revision number, a Revision ID and the named revisions each pick out a
 Revision of one Unit, so they are not accepted. Slugs resolve like any other
-entity slug: in --space, or in the context's default Space, unless qualified as
-space/slug.
+entity slug: in --space, or across the organization when there is none, unless
+qualified as space/slug.
 
 --label, --annotation and --delete-gate set the Release's metadata at publish
 time; `+"`cub release update`"+` can change it afterwards. The bundled content

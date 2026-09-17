@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -59,18 +59,22 @@ func init() {
 	workerRunCmd.Flags().StringVar(&workerRunArgs.executable, "executable", "", "Path to worker executable (overrides CONFIGHUB_WORKER_EXECUTABLE env var)")
 	workerRunCmd.Flags().BoolVarP(&workerRunArgs.daemon, "daemon", "d", false, "Run worker in background (daemon mode)")
 
+	enableOptionalSpace(workerRunCmd)
 	workerCmd.AddCommand(workerRunCmd)
 }
 
 func workerRunCmdRun(cmd *cobra.Command, args []string) error {
-	spaceID := uuid.MustParse(selectedSpaceID)
 	var worker *goclientnew.BridgeWorker
 	workerEnvelope, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		// assume worker not found and create a default worker on the fly
+		spaceID, spaceErr := spaceForNewEntity(args[0])
+		if spaceErr != nil {
+			return spaceErr
+		}
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
 			SpaceID: spaceID,
-			Slug:    args[0],
+			Slug:    cubapi.ParseRef(args[0]).Name,
 		}, spaceID)
 		if err != nil {
 			return err

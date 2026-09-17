@@ -10,11 +10,11 @@ import "testing"
 func setupContextCreateTest(t *testing.T) *ContextManager {
 	t.Helper()
 	cm := setupLoginTargetTest(t)
-	prevServer, prevOrg, prevSpace, prevUse := createServer, createOrganization, createSpace, createUse
+	prevServer, prevOrg, prevUse := createServer, createOrganization, createUse
 	t.Cleanup(func() {
-		createServer, createOrganization, createSpace, createUse = prevServer, prevOrg, prevSpace, prevUse
+		createServer, createOrganization, createUse = prevServer, prevOrg, prevUse
 	})
-	createServer, createOrganization, createSpace, createUse = "", "", "", false
+	createServer, createOrganization, createUse = "", "", false
 	return cm
 }
 

@@ -297,9 +297,6 @@ func TestPluginEnv(t *testing.T) {
 	if envMap["CUB_SERVER"] != "https://example.com" {
 		t.Errorf("expected CUB_SERVER=https://example.com, got %q", envMap["CUB_SERVER"])
 	}
-	if envMap["CUB_SPACE"] != "prod" {
-		t.Errorf("expected CUB_SPACE=prod, got %q", envMap["CUB_SPACE"])
-	}
 	if envMap["CUB_TOKEN"] != "test-token-123" {
 		t.Errorf("expected CUB_TOKEN=test-token-123, got %q", envMap["CUB_TOKEN"])
 	}

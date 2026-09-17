@@ -32,9 +32,6 @@ cub auth login
 # Check authentication status (contacts the server to verify the token)
 cub auth status
 
-# Set default space context
-cub context set --space SPACE_SLUG
-
 # Get current context (local only; does not contact the server)
 cub context get
 ```
@@ -48,7 +45,7 @@ confirm the token is actually accepted.
 
 ### Common Flags
 
-- `--space SPACE_SLUG`: Override default space context; specify `*` to indicate all spaces
+- `--space SPACE_SLUG`: The space to operate in. Omitted, lists and bulk operations span all spaces, and a single entity is named as `SPACE_SLUG/SLUG`.
 - `-o, --output <format>`: Select output format (kubectl-style). Values: `json`, `yaml`, `name`, `wide`, `jq=<expr>`, `yq=<expr>`, `custom-columns=<spec>`, `mutations`. For space-resident entities, `-o name` prints `<space-slug>/<slug>` — the same identifier syntax accepted by other commands.
 - `--show <section>`: Function commands only (`function do|exec|vet|get|set`). Selects which part of the response is the subject: `output`, `values`, `data`. Combine with `-o` to format the selected section, e.g. `--show output -o json`.
 - `-O, --output-file <path>`: Write raw payload to a file. Accepts `{space}`, `{unit}`, `{section}` placeholders for per-unit file paths in bulk operations.

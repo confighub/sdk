@@ -27,7 +27,7 @@ func TestLoadOrInitCreatesDefault(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ActiveContext: %v", err)
 	}
-	if active.Coordinate.ServerURL != DefaultServerURL || active.Settings.DefaultSpace != "default" {
+	if active.Coordinate.ServerURL != DefaultServerURL || active.Settings.DefaultSpace != "" {
 		t.Fatalf("defaults not applied: %+v", active)
 	}
 
@@ -70,7 +70,7 @@ func TestCreateContextValidationAndDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateContext(prod): %v", err)
 	}
-	if first.Coordinate.ServerURL != DefaultServerURL || first.Settings.DefaultSpace != "default" {
+	if first.Coordinate.ServerURL != DefaultServerURL || first.Settings.DefaultSpace != "" {
 		t.Fatalf("defaults not applied: %+v", first)
 	}
 	if store.CurrentContextName() != "prod" {

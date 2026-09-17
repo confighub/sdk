@@ -59,7 +59,7 @@ func init() {
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
-	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the selected or default Space; a Target ID is also accepted; use '-' to clear)")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	spaceUpdateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")

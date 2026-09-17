@@ -46,8 +46,9 @@ func (s *Store) saveConfigLocked() error {
 }
 
 // CreateContext adds a new context with the given (required, valid, unique) name.
-// serverURL, organization, and defaultSpace fall back to defaults when empty. The
-// first context created becomes the current one. It mutates the in-memory config
+// serverURL falls back to the default server when empty; defaultSpace is stored
+// as given, and cub passes none (see Settings). The first context created becomes
+// the current one. It mutates the in-memory config
 // only; call [Store.SaveConfig] to persist.
 func (s *Store) CreateContext(name, serverURL, organization, defaultSpace string) (*Context, error) {
 	s.mu.Lock()
@@ -63,9 +64,6 @@ func (s *Store) CreateContext(name, serverURL, organization, defaultSpace string
 		return nil, fmt.Errorf("context %q already exists", name)
 	}
 
-	if defaultSpace == "" {
-		defaultSpace = "default"
-	}
 	if serverURL == "" {
 		serverURL = DefaultServerURL
 	}

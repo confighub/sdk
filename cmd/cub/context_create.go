@@ -40,14 +40,12 @@ Examples:
 var (
 	createServer       string
 	createOrganization string
-	createSpace        string
 	createUse          bool
 )
 
 func init() {
 	contextCreateCmd.Flags().StringVar(&createServer, "server", "", "API server URL")
 	contextCreateCmd.Flags().StringVar(&createOrganization, "organization", "", "Identity provider organization ID (optional)")
-	contextCreateCmd.Flags().StringVar(&createSpace, "space", "", "Default space (optional)")
 	contextCreateCmd.Flags().BoolVar(&createUse, "use", false, "Also make the new context the current one")
 
 	contextCmd.AddCommand(contextCreateCmd)
@@ -64,7 +62,7 @@ func contextCreateCmdRun(_ *cobra.Command, args []string) error {
 	}
 
 	// Create the context
-	ctx, err := contextManager.CreateContext(name, createServer, createOrganization, createSpace)
+	ctx, err := contextManager.CreateContext(name, createServer, createOrganization, "")
 	if err != nil {
 		return err
 	}

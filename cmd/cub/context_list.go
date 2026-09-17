@@ -14,7 +14,7 @@ var contextListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"get-contexts"},
 	Short:   "List all contexts",
-	Long: getCommandHelp(`List all available contexts showing current context, server, organization, user, and default space.
+	Long: getCommandHelp(`List all available contexts showing current context, server, organization, and user.
 
 SELECTED names everything that asked for a context — the --context flag, the
 CUB_CONTEXT environment variable, config.yaml — and stars the one in effect, which
@@ -74,7 +74,7 @@ func displayContextList(ctxs []*Context) {
 func contextListTable(ctxs []*Context) (header []string, rows [][]string) {
 	active := contextManager.ActiveContextName()
 
-	header = []string{"SELECTED", "NAME", "SERVER", "ORGANIZATION", "USER", "SPACE"}
+	header = []string{"SELECTED", "NAME", "SERVER", "ORGANIZATION", "USER"}
 
 	for _, ctx := range ctxs {
 		selected := contextSelectedBy(ctx.Name, ctx.Name == active)
@@ -89,11 +89,6 @@ func contextListTable(ctxs []*Context) (header []string, rows [][]string) {
 			}
 		}
 
-		space := ctx.Settings.DefaultSpace
-		if space == "" {
-			space = "(none)"
-		}
-
 		// Show organization name if available, otherwise show ID
 		org := ctx.Metadata.OrganizationName
 		if org == "" {
@@ -106,7 +101,6 @@ func contextListTable(ctxs []*Context) (header []string, rows [][]string) {
 			ctx.Coordinate.ServerURL,
 			org,
 			user,
-			space,
 		})
 	}
 

@@ -21,6 +21,7 @@ The image tag is derived from the connected server's version (falling back to :l
 }
 
 func init() {
+	enableOptionalSpace(workerGetImageCmd)
 	workerCmd.AddCommand(workerGetImageCmd)
 }
 

@@ -14,7 +14,7 @@ const AnnotationUpstreamSpaceID = "UpstreamSpaceID"
 
 // variantCmd is inherently multi-space: it reads from an upstream space and
 // writes to a freshly created downstream space. It therefore does NOT use the
-// standard spacePreRunE (which resolves a single default space). It only needs
+// standard spacePreRunE (which settles a single space). It only needs
 // globalPreRun to initialize the API client.
 var variantCmd = &cobra.Command{
 	Use:               "variant",

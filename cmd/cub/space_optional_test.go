@@ -32,6 +32,7 @@ var referenceOperandCommands = []string{
 	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
 	"worker logs", "worker status", "worker stop",
 	"worker key add", "worker key list", "worker key delete",
+	"worker get-image", "worker run", "worker install", "worker upgrade",
 	"user key add", "user key list", "user key delete",
 }
 
@@ -58,20 +59,6 @@ func TestReferenceOperandCommandsAllowOmittedSpace(t *testing.T) {
 			t.Errorf("%q resolves its operand by reference but does not allow an omitted space; "+
 				"call enableOptionalSpace in its init", path)
 		}
-	}
-}
-
-// TestOptionalSpaceImpliesWildcardIsAccepted: a command that can run with no
-// space at all must also accept the explicit spelling of the same thing, or
-// omitting --space would work where --space '*' did not.
-func TestOptionalSpaceImpliesWildcardIsAccepted(t *testing.T) {
-	cmd := &cobra.Command{Use: "example"}
-	if allowWildcardSpace(cmd) {
-		t.Fatal("a bare command must not accept --space '*'")
-	}
-	enableOptionalSpace(cmd)
-	if !allowWildcardSpace(cmd) {
-		t.Error("a command that may omit its space must also accept --space '*'")
 	}
 }
 
@@ -111,7 +98,7 @@ var resolverBackedWrites = []string{
 func TestResolverBackedWritesAcceptWildcardSpace(t *testing.T) {
 	for _, path := range resolverBackedWrites {
 		cmd := findCommand(t, path)
-		if !allowWildcardSpace(cmd) {
+		if _, ok := cmd.Annotations["OrgLevel"]; !ok {
 			t.Errorf("%q resolves its operand and writes through that entity's space, "+
 				"so it must be able to start with no space selected; give it the OrgLevel annotation", path)
 		}

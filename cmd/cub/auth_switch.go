@@ -104,8 +104,8 @@ func switchToOrganization(searchTerm string) error {
 		if err := contextManager.SetCurrentContext(ctx.Name); err != nil {
 			return err
 		}
-		// Make the handed-off context the active one so setSpaceContext below
-		// updates the context that just received the new tokens.
+		// Make the handed-off context the active one so the rest of the flow
+		// reads and writes the context that just received the new tokens.
 		if err := contextManager.OverrideCurrentContext(ctx.Name); err != nil {
 			return err
 		}
@@ -127,12 +127,6 @@ func switchToOrganization(searchTerm string) error {
 	cubClientNew, err = InitializeClient(ctx)
 	if err != nil {
 		return fmt.Errorf("error initializing client: %w", err)
-	}
-
-	// Set the space context after switching organizations
-	err = setSpaceContext()
-	if err != nil {
-		return fmt.Errorf("failed to set space context: %w", err)
 	}
 
 	// Save the configuration

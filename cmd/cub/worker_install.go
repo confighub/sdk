@@ -16,7 +16,6 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/confighub/sdk/core/workerapi"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 )
@@ -106,6 +105,7 @@ func init() {
 	workerInstallCmd.Flags().IntVar(&workerInstallArgs.httpPort, "http-port", 0, "Container HTTP port to expose, with liveness/readiness probes targeting it. The standard worker image always exposes a port (defaulting to 9092); custom worker images expose a port only when this flag is set.")
 	enableWaitFlag(workerInstallCmd)
 
+	enableOptionalSpace(workerInstallCmd)
 	workerCmd.AddCommand(workerInstallCmd)
 }
 
@@ -120,14 +120,17 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	workerSlug := args[0]
-	spaceID := uuid.MustParse(selectedSpaceID)
 	var worker *goclientnew.BridgeWorker
 	workerEnvelope, err := resolveWorker(workerSlug, selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		// Worker not found, create it on the fly
+		spaceID, spaceErr := spaceForNewEntity(workerSlug)
+		if spaceErr != nil {
+			return spaceErr
+		}
 		worker, err = apiCreateWorker(&goclientnew.BridgeWorker{
 			SpaceID: spaceID,
-			Slug:    workerSlug,
+			Slug:    cubapi.ParseRef(workerSlug).Name,
 		}, spaceID)
 		if err != nil {
 			return err
@@ -179,7 +182,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		workerPatchRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, spaceID, worker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(workerPatchJSON))
+		workerPatchRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, worker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(workerPatchJSON))
 		if cubapi.IsAPIError(err, workerPatchRes) {
 			return cubapi.InterpretErrorGeneric(err, workerPatchRes)
 		}
@@ -380,7 +383,8 @@ func generateKubernetesManifest(worker *goclientnew.BridgeWorker, includeSecret 
 }
 
 func createUnitWithManifest(worker *goclientnew.BridgeWorker, unitSlug, targetSlug, manifest string) (*goclientnew.Unit, error) {
-	spaceID := uuid.MustParse(selectedSpaceID)
+	// The unit lives with the worker that will run it.
+	spaceID := worker.SpaceID
 
 	// Create new unit
 	newUnit := &goclientnew.Unit{

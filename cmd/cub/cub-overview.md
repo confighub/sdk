@@ -20,11 +20,7 @@ cub auth status
 
 This contacts the server to verify the access token and exits non-zero if it is missing or expired, in which case run `cub auth login` again. (`cub context get` reports a local token status but does not contact the server.)
 
-To set the default space, where SPACE is set to the slug of a space you have access to within the organization you are logged into:
-
-```
-cub context set --space $SPACE
-```
+A context names a server, an organization and a user. A command says which space it means with `--space`, or by naming the entity as `<space>/<slug>`; lists and bulk operations span the organization unless `--space` narrows them.
 
 To get your current context:
 
@@ -50,7 +46,7 @@ For example:
 cub unit create --space prod-eu deployment deployment.yaml
 ```
 
-An entity that lives in a space is named by its slug, by `<space>/<slug>`, or by its UUID, and every command accepts all three wherever it takes a reference: positional arguments, and flags such as `--target`, `--unit`, `--filter` and `--with-unit`. A bare slug is looked up in the space `--space` names, else in the context's default space, and searched for across the organization when neither is set, which is an error if more than one space holds it. `<space>/<slug>` names the space itself and wins over both, so `cub unit get prod/frontend` reads the same unit whatever `--space` or the context says. A UUID needs no space. Prefer the qualified form in scripts and in anything pasted elsewhere: it keeps working when the context changes.
+An entity that lives in a space is named by its slug, by `<space>/<slug>`, or by its UUID, and every command accepts all three wherever it takes a reference: positional arguments, and flags such as `--target`, `--unit`, `--filter` and `--with-unit`. A bare slug is looked up in the space `--space` names, and searched for across the organization when there is none, which is an error if more than one space holds it. `<space>/<slug>` names the space itself and wins over `--space`, so `cub unit get prod/frontend` reads the same unit whatever `--space` says. A UUID needs no space. Creating an entity always takes `--space`.
 
 ### Entities / areas (command groups)
 
@@ -111,7 +107,7 @@ There are also some common flags that affect the output, input, or operation.
 
 #### Selection/filtering flags
 
-- `--space`: Specify the slug of the space of the entity or functional area. Overrides the current context, and is itself overridden by a `<space>/<slug>` reference. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
+- `--space`: The space to operate in, by slug or UUID. Applies to all verbs, for entities/areas contained within spaces. Omitted, a list or bulk operation spans every accessible space and a single entity is named as `<space>/<slug>`, which overrides `--space`. A value of "\*" is accepted and means the same as omitting it.
 - `--where`: The specified string is an expression for the purpose of filtering the list of entities returned or operated upon. The expression syntax was inspired by SQL. For syntax details, see [our documentation](https://docs.confighub.com/concepts/filters/). Applies to `list` and to all [bulk operations](https://docs.confighub.com/concepts/bulk-operations/).
 - `--contains`: Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with `--where` using AND logic. Example: `--contains backend` to find entities with "backend" in any searchable field. Applies to `list`.
 - `--filter`: Use a saved Filter entity in `<space>/<filter>` syntax to filter the operation.
@@ -501,7 +497,6 @@ Plugins receive context via environment variables:
 - `CUB_CONTEXT` — active context name
 - `CUB_SERVER` — server URL from active context
 - `CUB_TOKEN` — access token (if authenticated)
-- `CUB_SPACE` — default space slug (if set)
 
 ### Managing plugins
 

@@ -308,7 +308,7 @@ func enableGetWaitFlag(cmd *cobra.Command) {
 // which can say how many matched.
 func validateSpaceFlag(bulk bool) error {
 	if !bulk && selectedSpaceID == "*" {
-		return errors.New("--space must not be '*' when creating a single entity")
+		return errors.New("creating a single entity needs a space: pass --space <space> (the context's default space is no longer used)")
 	}
 	return nil
 }

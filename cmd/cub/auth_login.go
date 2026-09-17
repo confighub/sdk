@@ -173,7 +173,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	displayContextDetails(contextManager.ActiveContext())
 
 	// Preload builtin functions
-	// Don't use the default space in case it is not valid
+	// Builtin functions are the same in every space, so list them organization-wide
 	selectedSpaceID = "*"
 	if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err != nil {
 		return err
@@ -443,8 +443,7 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 	// renewal at a key that is no longer how this context gets in.
 	ctx.Metadata.PrivateKey = privateKeyRef
 	// Point the active context at the login target so the rest of the flow
-	// (setSpaceContext, the org switch-back in authLoginCmdRun, the summary we
-	// print) reads and writes the context that just received the token, whether
+	// (the org switch-back in authLoginCmdRun, the summary we print) reads and writes the context that just received the token, whether
 	// that context came from an override or from coordinate matching.
 	if err := contextManager.OverrideCurrentContext(ctx.Name); err != nil {
 		return err
@@ -473,12 +472,6 @@ func updateContextFromSession(coordinate Coordinate, session *cubapi.AuthSession
 		ctx.Metadata.OrganizationName = OrgNameLookupFailure
 	} else {
 		ctx.Metadata.OrganizationName = org.DisplayName
-	}
-
-	// Sets selectedSpaceID and selectedSpaceSlug to valid values and updates default space in context if it doesn't exist
-	err = setSpaceContext()
-	if err != nil {
-		return err
 	}
 
 	err = contextManager.SaveConfig()
@@ -782,37 +775,5 @@ func performLogout(logoutURL string, accessToken string) error {
 		body, _ := io.ReadAll(resp.Body)
 		tprint("Response: %v", string(body))
 	}
-	return nil
-}
-
-// setSpaceContext ensures the space context is properly set
-func setSpaceContext() error {
-	ctx := contextManager.ActiveContext()
-
-	// A wildcard ("*") or empty default space selects cross-space (org-level)
-	// operations by default; there is no space to resolve, so honor it directly.
-	if ctx.Settings.DefaultSpace == "*" || ctx.Settings.DefaultSpace == "" {
-		selectedSpaceID = "*"
-		selectedSpaceSlug = "*"
-		return nil
-	}
-
-	currentSpace, err := resolveSpace(ctx.Settings.DefaultSpace, "")
-	if err != nil {
-		spaceList, err := apiListSpaces("", "")
-		if err != nil {
-			return err
-		}
-		if len(spaceList) == 0 {
-			return fmt.Errorf("no spaces found. Current space could not be set")
-		}
-		// Just pick the first one
-		tprint("Default space from context, %s not found in org. Using %s instead", ctx.Settings.DefaultSpace, spaceList[0].Slug)
-		currentSpace = &goclientnew.ExtendedSpace{Space: spaceList[0]}
-		// Update context. This will not be persisted until SaveConfig is called.
-		ctx.Settings.DefaultSpace = currentSpace.Space.Slug
-	}
-	selectedSpaceID = currentSpace.Space.SpaceID.String()
-	selectedSpaceSlug = currentSpace.Space.Slug
 	return nil
 }

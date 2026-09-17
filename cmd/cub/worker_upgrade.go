@@ -58,6 +58,7 @@ func init() {
 	enableWaitFlag(workerUpgradeCmd)
 	enableDisplayMutationsFlag(workerUpgradeCmd)
 
+	enableOptionalSpace(workerUpgradeCmd)
 	workerCmd.AddCommand(workerUpgradeCmd)
 }
 

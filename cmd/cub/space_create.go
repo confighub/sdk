@@ -22,7 +22,6 @@ var spaceCreateArgs struct {
 	whereTrigger  string
 	triggerFilter string
 	releaseTarget string
-	setContext    bool
 	permissions   []string
 	variantLabels []string
 	namePattern   string
@@ -71,8 +70,7 @@ func init() {
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
-	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the selected or default Space; a Target ID is also accepted)")
-	spaceCreateCmd.Flags().BoolVar(&spaceCreateArgs.setContext, "set-context", false, "set the newly created space as the default in the current context")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
 	spaceCreateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceCreateCmd)
@@ -203,8 +201,8 @@ func runSingleSpaceCreate(args []string) error {
 	}
 
 	// Set ReleaseTargetID if provided. The Target may live in any Space, so it is
-	// addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in the
-	// selected/default Space, and a Target UUID is also accepted).
+	// addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in
+	// --space, and a Target UUID is also accepted).
 	if spaceCreateArgs.releaseTarget != "" {
 		releaseTargetID, err := resolveTargetID(spaceCreateArgs.releaseTarget)
 		if err != nil {
@@ -228,16 +226,6 @@ func runSingleSpaceCreate(args []string) error {
 	spaceDetails := spaceRes.JSON200
 
 	displayCreateResults(spaceDetails, "space", newBody.Slug, spaceDetails.SpaceID.String(), displaySpaceDetails)
-	// Set context if requested
-	if spaceCreateArgs.setContext {
-		if err := setSpaceAsDefault(spaceDetails.Slug); err != nil {
-			// Don't fail the space creation if context setting fails, just warn
-			tprint("Warning: Failed to set space as default in context: %v", err)
-		} else {
-			tprint("%q set as default in current context", spaceDetails.Slug)
-		}
-	}
-
 	return nil
 }
 
@@ -445,32 +433,6 @@ func randomUnusedSlug() string {
 	// If we can't find a unique name after 1000 attempts, return a random one
 	// The server will handle the conflict if it occurs
 	return cubbyname.Random()
-}
-
-// setSpaceAsDefault sets the given space as the default in the current context
-func setSpaceAsDefault(spaceSlug string) error {
-	if contextManager == nil {
-		return fmt.Errorf("context manager not initialized")
-	}
-
-	ctx := contextManager.ActiveContext()
-	if ctx == nil {
-		return fmt.Errorf("no active context")
-	}
-
-	// Set the default space in the context
-	ctx.Settings.DefaultSpace = spaceSlug
-
-	// Update global variables for immediate effect
-	selectedSpaceID = ""
-	selectedSpaceSlug = ""
-
-	// Save the configuration
-	if err := contextManager.SaveConfig(); err != nil {
-		return fmt.Errorf("failed to save context: %w", err)
-	}
-
-	return nil
 }
 
 // UnmarshalBinary interface implementation
