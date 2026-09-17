@@ -109,6 +109,9 @@ func formatChangeWorkflowStagesForDisplay(stages []goclientnew.ChangeWorkflowSta
 }
 
 func displayChangeWorkflowList(changeWorkflows []*goclientnew.ExtendedChangeWorkflow) {
+	if displayRequestedColumns(changeWorkflows, changeWorkflowAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "Stages", "Final-Gates"})
@@ -144,7 +147,7 @@ func apiListChangeWorkflows(spaceID string, whereFilter string, selectParam stri
 
 func apiListAllChangeWorkflows(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeWorkflow, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("ChangeWorkflow", nil, changeWorkflowListInclude, defaultChangeWorkflowColumns,
+		return buildSelectList("ChangeWorkflow", listColumnsFor("cub changeworkflow list"), changeWorkflowListInclude, defaultChangeWorkflowColumns,
 			changeWorkflowAliases, changeWorkflowCustomColumnDependencies, changeWorkflowBaseSelectFields)
 	})
 	return cubapi.ListChangeWorkflows(ctx, cubClient, where, cubapi.ListOpts{

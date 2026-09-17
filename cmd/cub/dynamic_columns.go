@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/spf13/cobra"
 )
 
 // DynamicColumnProvider provides dynamic column access for any struct
@@ -129,6 +130,11 @@ func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
 	}
 
 	parts := strings.Split(fieldPath, ".")
+	// An entity that is not wrapped in an ExtendedX has no X field to step into, so
+	// "User.Username" on a User names the field Username.
+	if len(parts) > 1 && parts[0] == p.entityType && v.Kind() == reflect.Struct && !v.FieldByName(parts[0]).IsValid() {
+		parts = parts[1:]
+	}
 	for i := 0; i < len(parts); i++ {
 		part := parts[i]
 
@@ -310,6 +316,32 @@ func DisplayListGeneric[T any](entities []*T, columnSpec []string, defaultCols [
 	}
 
 	table.Render()
+}
+
+// displayRequestedColumns renders entities with the columns named by --columns or
+// -o custom-columns and reports whether it did. Every list display function calls it
+// first and falls through to its own table when it returns false, so a list's default
+// layout, with whatever formatting it does by hand, is what shows when no columns are asked for.
+func displayRequestedColumns[T any](entities []*T, aliases map[string]string, customColumns map[string]func(any) string) bool {
+	cols := effectiveColumns()
+	if len(cols) == 0 {
+		return false
+	}
+	DisplayListGeneric(entities, cols, nil, aliases, customColumns)
+	return true
+}
+
+// literalNameAlias is for entities that have a Name field of their own, where the
+// provider's default reading of Name as Slug would find nothing.
+var literalNameAlias = map[string]string{"Name": "Name"}
+
+// rejectRequestedColumns is for list-shaped commands whose rows are not entities the
+// column provider can read. Refusing is better than accepting the flag and ignoring it.
+func rejectRequestedColumns(cmd *cobra.Command) error {
+	if len(effectiveColumns()) > 0 {
+		return fmt.Errorf("%s does not support --columns or --output=custom-columns; use -o json with -o jq=<expr>", cmd.CommandPath())
+	}
+	return nil
 }
 
 // columnToHeader converts column name to header format

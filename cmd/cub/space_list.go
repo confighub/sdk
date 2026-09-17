@@ -109,6 +109,33 @@ var spaceCustomColumnDependencies = func() map[string][]string {
 	return deps
 }()
 
+// spaceCustomColumns are the columns the default table computes rather than reads: a
+// standard label by its bare name, and the two counts the server returns as a map.
+var spaceCustomColumns = func() map[string]func(any) string {
+	cols := make(map[string]func(any) string, len(standardSpaceLabels)+2)
+	for _, label := range standardSpaceLabels {
+		cols[label] = func(obj any) string {
+			if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok && extendedSpace.Space != nil {
+				return extendedSpace.Space.Labels[label]
+			}
+			return ""
+		}
+	}
+	cols["TriggerCountByEventType"] = func(obj any) string {
+		if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok {
+			return fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))
+		}
+		return ""
+	}
+	cols["TargetCountByToolchainType"] = func(obj any) string {
+		if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok {
+			return fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))
+		}
+		return ""
+	}
+	return cols
+}()
+
 func init() {
 	addStandardListFlags(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
@@ -153,6 +180,9 @@ func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 }
 
 func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
+	if displayRequestedColumns(extendedSpaces, spaceAliases, spaceCustomColumns) {
+		return
+	}
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
@@ -199,7 +229,7 @@ func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space
 // false to avoid that work.
 func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam string, summary bool) ([]*goclientnew.ExtendedSpace, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Space", nil, "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, spaceBaseSelectFields)
+		return buildSelectList("Space", listColumnsFor("cub space list"), "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, spaceBaseSelectFields)
 	})
 	var with []func(*goclientnew.ListSpacesParams)
 	if summary {

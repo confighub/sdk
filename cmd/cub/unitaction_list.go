@@ -177,6 +177,9 @@ func getUnitActionSlug(entity *goclientnew.UnitAction) string {
 }
 
 func displayUnitActionList(actions []*goclientnew.UnitAction) {
+	if displayRequestedColumns(actions, unitActionAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Num", "Action", "Status", "Created-At", "ID", "User", "Unit", "Space"})

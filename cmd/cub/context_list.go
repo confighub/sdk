@@ -55,6 +55,9 @@ func contextListCmdRun(_ *cobra.Command, _ []string) error {
 }
 
 func displayContextList(ctxs []*Context) {
+	if displayRequestedColumns(ctxs, literalNameAlias, nil) {
+		return
+	}
 	header, rows := contextListTable(ctxs)
 	table := tableView()
 	table.SetHeader(header)

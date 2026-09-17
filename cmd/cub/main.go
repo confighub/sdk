@@ -149,6 +149,7 @@ func applyContextOverride() error {
 }
 
 func globalPreRun(cmd *cobra.Command, args []string) error {
+	runningCommandPath = cmd.CommandPath()
 	if debug {
 		err := os.Setenv("CONFIGHUB_DEBUG", "1")
 		if err != nil {

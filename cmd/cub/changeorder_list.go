@@ -113,6 +113,9 @@ func getChangeOrderSlug(changeorder *goclientnew.ExtendedChangeOrder) string {
 // displayChangeOrderList renders the table. The start and end tags are named after the ChangeSet
 // they came from, so the default layout leaves them out and -o wide shows them.
 func displayChangeOrderList(changeorders []*goclientnew.ExtendedChangeOrder) {
+	if displayRequestedColumns(changeorders, changeorderAliases, nil) {
+		return
+	}
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
@@ -176,7 +179,7 @@ func apiListChangeOrders(spaceID string, whereFilter string, selectParam string,
 
 func apiListAllChangeOrders(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeOrder, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("ChangeOrder", nil, changeorderListInclude, defaultChangeOrderColumns, changeorderAliases, changeorderCustomColumnDependencies, changeorderBaseSelectFields)
+		return buildSelectList("ChangeOrder", listColumnsFor("cub changeorder list"), changeorderListInclude, defaultChangeOrderColumns, changeorderAliases, changeorderCustomColumnDependencies, changeorderBaseSelectFields)
 	})
 	return cubapi.ListChangeOrders(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

@@ -117,6 +117,9 @@ func getTriggerSlug(trigger *goclientnew.ExtendedTrigger) string {
 }
 
 func displayTriggerList(triggers []*goclientnew.ExtendedTrigger) {
+	if displayRequestedColumns(triggers, triggerAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "Worker", "Event", "Validating", "Disabled", "Warn", "Toolchain-Type", "Function-Name", "Num-Args", "Invocation"})
@@ -166,7 +169,7 @@ func apiListTriggers(spaceID string, whereFilter string, selectParam string, fil
 
 func apiListAllTriggers(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTrigger, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Trigger", nil, triggerListInclude, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, triggerBaseSelectFields)
+		return buildSelectList("Trigger", listColumnsFor("cub trigger list"), triggerListInclude, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, triggerBaseSelectFields)
 	})
 	return cubapi.ListTriggers(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

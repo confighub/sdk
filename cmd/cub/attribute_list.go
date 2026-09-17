@@ -85,6 +85,9 @@ func getAttributeSlug(attr *goclientnew.ExtendedAttribute) string {
 }
 
 func displayAttributeList(attrs []*goclientnew.ExtendedAttribute) {
+	if displayRequestedColumns(attrs, attributeAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "Toolchain-Type", "Data-Type", "Description"})
@@ -124,7 +127,7 @@ func apiListAttributes(spaceID string, whereFilter string, selectParam string, f
 
 func apiListAllAttributes(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedAttribute, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Attribute", nil, attributeListInclude, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, attributeBaseSelectFields)
+		return buildSelectList("Attribute", listColumnsFor("cub attribute list"), attributeListInclude, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, attributeBaseSelectFields)
 	})
 	return cubapi.ListAttributes(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

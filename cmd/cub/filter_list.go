@@ -111,6 +111,9 @@ func getFilterSlug(filter *goclientnew.ExtendedFilter) string {
 }
 
 func displayFilterList(filters []*goclientnew.ExtendedFilter) {
+	if displayRequestedColumns(filters, filterAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "From", "Where", "Where-Data", "Resource-Type", "From-Space"})
@@ -160,7 +163,7 @@ func apiListFilters(spaceID string, whereFilter string, selectParam string) ([]*
 
 func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.ExtendedFilter, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Filter", nil, filterListInclude, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, filterBaseSelectFields)
+		return buildSelectList("Filter", listColumnsFor("cub filter list"), filterListInclude, defaultFilterColumns, filterAliases, filterCustomColumnDependencies, filterBaseSelectFields)
 	})
 
 	// Resolve the --entity-type/--entity-id options up front (resolution can

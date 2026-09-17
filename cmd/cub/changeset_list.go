@@ -91,6 +91,9 @@ func getChangeSetSlug(changeset *goclientnew.ExtendedChangeSet) string {
 // displayChangeSetList renders the table. The start and end tags are named after the ChangeSet
 // itself, so the default layout leaves them out and -o wide shows them.
 func displayChangeSetList(changesets []*goclientnew.ExtendedChangeSet) {
+	if displayRequestedColumns(changesets, changesetAliases, nil) {
+		return
+	}
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
@@ -143,7 +146,7 @@ func apiListChangeSets(spaceID string, whereFilter string, selectParam string, f
 
 func apiListAllChangeSets(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedChangeSet, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("ChangeSet", nil, changesetListInclude, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, changesetBaseSelectFields)
+		return buildSelectList("ChangeSet", listColumnsFor("cub changeset list"), changesetListInclude, defaultChangeSetColumns, changesetAliases, changesetCustomColumnDependencies, changesetBaseSelectFields)
 	})
 	return cubapi.ListChangeSets(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

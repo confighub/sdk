@@ -55,6 +55,9 @@ func getNameForOAuthClient(client *goclientnew.OAuthClient) string {
 }
 
 func displayOAuthClientList(clients []*goclientnew.OAuthClient) {
+	if displayRequestedColumns(clients, literalNameAlias, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Client-ID", "Available-To", "Redirect-URIs"})

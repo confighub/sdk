@@ -312,6 +312,9 @@ const maxRevisionAssociation = 32
 // without pushing anything else off. -o wide adds when, who, and the gate state, and stops
 // truncating the description.
 func displayRevisionList(extendedRevisions []*goclientnew.ExtendedRevision) {
+	if displayRequestedColumns(extendedRevisions, revisionAliases, nil) {
+		return
+	}
 	wide := effectiveOutput().Kind == OutputWide
 	crossSpace := selectedSpaceID == "*"
 	table := tableView()
@@ -403,7 +406,7 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "SpaceSlug", "OrganizationID"}
-		return buildSelectList("Revision", nil, include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+		return buildSelectList("Revision", listColumnsFor("cub revision list"), include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
@@ -445,7 +448,7 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"RevisionNum", "RevisionID", "UnitID", "SpaceID", "SpaceSlug", "OrganizationID"}
-		return buildSelectList("Revision", nil, include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
+		return buildSelectList("Revision", listColumnsFor("cub revision list"), include, defaultRevisionColumns, revisionAliases, revisionCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

@@ -109,6 +109,9 @@ func getMutationSlugFromExtended(mutationDetails *goclientnew.ExtendedMutation) 
 }
 
 func displayMutationList(extendedMutations []*goclientnew.ExtendedMutation) {
+	if displayRequestedColumns(extendedMutations, mutationAliases, nil) {
+		return
+	}
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
@@ -205,7 +208,7 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"MutationNum", "MutationID", "UnitID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Mutation", nil, include, defaultMutationColumns, mutationAliases, mutationCustomColumnDependencies, baseFields)
+		return buildSelectList("Mutation", listColumnsFor("cub mutation list"), include, defaultMutationColumns, mutationAliases, mutationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

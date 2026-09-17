@@ -228,6 +228,9 @@ func listAndMaybeSaveFunctions(targetSlug, workerSlug, unitSlug, whereClause str
 }
 
 func functionListCmdRun(cmd *cobra.Command, args []string) error {
+	if err := rejectRequestedColumns(cmd); err != nil {
+		return err
+	}
 	effectiveWhere := addToolchainToWhereClause(where, functionListCmdArgs.toolchainType)
 	_, funcs, err := listAndMaybeSaveFunctions(functionListCmdArgs.targetSlug, functionListCmdArgs.workerSlug, functionListCmdArgs.unitSlug, effectiveWhere)
 	if err != nil {

@@ -70,6 +70,9 @@ func getSlugForUser(userDetails *goclientnew.User) string {
 }
 
 func displayUserList(users []*goclientnew.User) {
+	if displayRequestedColumns(users, userAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"User-ID", "External-ID", "Name", "Username"})

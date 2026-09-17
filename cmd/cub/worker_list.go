@@ -86,7 +86,7 @@ func apiListBridgeworkers(spaceID string, whereFilter string, selectParam string
 
 func apiListAllBridgeWorkers(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedBridgeWorker, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("BridgeWorker", nil, workerListInclude, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, workerBaseSelectFields)
+		return buildSelectList("BridgeWorker", listColumnsFor("cub worker list"), workerListInclude, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, workerBaseSelectFields)
 	})
 	return cubapi.ListBridgeWorkers(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),
@@ -105,6 +105,9 @@ func getExtendedWorkerSlug(worker *goclientnew.ExtendedBridgeWorker) string {
 }
 
 func displayExtendedWorkerList(workers []*goclientnew.ExtendedBridgeWorker) {
+	if displayRequestedColumns(workers, workerAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Condition", "Space", "Last-Seen"})

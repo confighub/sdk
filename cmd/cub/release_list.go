@@ -79,6 +79,9 @@ func getReleaseSlug(release *goclientnew.ExtendedRelease) string {
 }
 
 func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
+	if displayRequestedColumns(releases, releaseAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Release-ID", "Published", "Manifest-Digest", "Created"})
@@ -105,7 +108,7 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 func releaseSelectValue(selectParam, include string) string {
 	return handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"ReleaseID", "SpaceID", "OrganizationID"}
-		return buildSelectList("Release", nil, include, defaultReleaseColumns, releaseAliases, releaseCustomColumnDependencies, baseFields)
+		return buildSelectList("Release", listColumnsFor("cub release list"), include, defaultReleaseColumns, releaseAliases, releaseCustomColumnDependencies, baseFields)
 	})
 }
 

@@ -111,6 +111,9 @@ func formatColumnsForDisplay(columns []goclientnew.Column) string {
 }
 
 func displayViewList(views []*goclientnew.ExtendedView) {
+	if displayRequestedColumns(views, viewAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "Filter", "Columns", "Group-By", "Order-By"})
@@ -160,7 +163,7 @@ func apiListViews(spaceID string, whereFilter string, selectParam string, filter
 
 func apiListAllViews(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedView, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("View", nil, viewListInclude, defaultViewColumns, viewAliases, viewCustomColumnDependencies, viewBaseSelectFields)
+		return buildSelectList("View", listColumnsFor("cub view list"), viewListInclude, defaultViewColumns, viewAliases, viewCustomColumnDependencies, viewBaseSelectFields)
 	})
 	return cubapi.ListViews(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

@@ -73,6 +73,9 @@ func componentListCmdRun(_ *cobra.Command, _ []string) error {
 }
 
 func displayComponentList(components []*Component) {
+	if displayRequestedColumns(components, literalNameAlias, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Owner", "Variants", "#Spaces", "#Units"})

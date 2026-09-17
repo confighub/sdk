@@ -63,6 +63,9 @@ func getTargetSlug(exTarget *goclientnew.ExtendedTarget) string {
 }
 
 func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
+	if displayRequestedColumns(exTargets, targetAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Worker", "ProviderType", "Parameters", "Space"})
@@ -95,7 +98,7 @@ func apiListTargets(spaceID string, whereFilter string, selectParam string, filt
 
 func apiListAllTargets(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTarget, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Target", nil, targetListInclude, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, targetBaseSelectFields)
+		return buildSelectList("Target", listColumnsFor("cub target list"), targetListInclude, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, targetBaseSelectFields)
 	})
 	return cubapi.ListTargets(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

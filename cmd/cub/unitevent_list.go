@@ -131,6 +131,9 @@ func getUnitEventSlug(entity *goclientnew.UnitEvent) string {
 }
 
 func displayUnitEventList(events []*goclientnew.UnitEvent) {
+	if displayRequestedColumns(events, unitEventAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Num", "Action", "Result", "Status", "Created-At", "Terminated-At", "Message", "Unit", "Space"})

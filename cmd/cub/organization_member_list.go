@@ -72,6 +72,9 @@ func getSlugForOrgMember(member *goclientnew.OrganizationMember) string {
 }
 
 func displayOrganizationMemberList(organizationMembers []*goclientnew.OrganizationMember) {
+	if displayRequestedColumns(organizationMembers, organizationMemberAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"User-ID", "External-ID", "Name", "Username", "Org-ID", "Org-Ext-ID"})

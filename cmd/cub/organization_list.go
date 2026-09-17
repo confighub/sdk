@@ -68,6 +68,9 @@ func getOrganizationSlug(organization *goclientnew.Organization) string {
 }
 
 func displayOrganizationList(organizations []*goclientnew.Organization) {
+	if displayRequestedColumns(organizations, organizationAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Display-Name", "ID", "External-ID"})
@@ -95,7 +98,7 @@ func apiListOrganizations(whereFilter string, selectParam string, filterParam st
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "OrganizationID"}
-		return buildSelectList("Organization", nil, "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
+		return buildSelectList("Organization", listColumnsFor("cub organization list"), "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
 	})
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

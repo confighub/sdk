@@ -109,6 +109,9 @@ func getLinkSlug(extendedLink *goclientnew.ExtendedLink) string {
 }
 
 func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
+	if displayRequestedColumns(extendedLinks, linkAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Stale", "Upstream-Link-ID"})
@@ -172,7 +175,7 @@ func apiListLinks(spaceID string, whereFilter string, selectParam string, filter
 
 func apiListAllLinks(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedLink, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Link", nil, linkListInclude, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, linkBaseSelectFields)
+		return buildSelectList("Link", listColumnsFor("cub link list"), linkListInclude, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, linkBaseSelectFields)
 	})
 	return cubapi.ListLinks(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

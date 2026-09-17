@@ -59,6 +59,9 @@ func getWorkerStatusSlug(status *goclientnew.BridgeWorkerStatus) string {
 }
 
 func displayWorkerStatusList(statuses []*goclientnew.BridgeWorkerStatus) {
+	if displayRequestedColumns(statuses, nil, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"ID", "Status", "Remote IP", "Seen At"})

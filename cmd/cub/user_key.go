@@ -110,6 +110,9 @@ func jwkThumbprint(publicJWK json.RawMessage) (string, error) {
 // several hundred characters and the kid identifies the key. `-o json` returns
 // it in full, which is the point of not redacting it server-side.
 func displayKeyList(credentials []*goclientnew.UserKey) {
+	if displayRequestedColumns(credentials, nil, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Kid", "Description", "Created", "Last-Used"})

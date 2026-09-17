@@ -25,7 +25,10 @@ func init() {
 	workerCmd.AddCommand(workerListFunctionCmd)
 }
 
-func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
+func workerListFunctionCmdRun(cmd *cobra.Command, args []string) error {
+	if err := rejectRequestedColumns(cmd); err != nil {
+		return err
+	}
 	entity, err := resolveWorker(args[0], selectedSpaceID, "*") // get all fields for now
 	if err != nil {
 		return err

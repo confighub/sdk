@@ -99,6 +99,9 @@ func getInvocationSlug(invocation *goclientnew.ExtendedInvocation) string {
 }
 
 func displayInvocationList(invocations []*goclientnew.ExtendedInvocation) {
+	if displayRequestedColumns(invocations, invocationAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "Worker", "Toolchain-Type", "Functions"})
@@ -138,7 +141,7 @@ func apiListInvocations(spaceID string, whereFilter string, selectParam string, 
 
 func apiListAllInvocations(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedInvocation, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Invocation", nil, invocationListInclude, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, invocationBaseSelectFields)
+		return buildSelectList("Invocation", listColumnsFor("cub invocation list"), invocationListInclude, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, invocationBaseSelectFields)
 	})
 	return cubapi.ListInvocations(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

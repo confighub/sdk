@@ -162,6 +162,9 @@ func getResourceSlug(r *goclientnew.ExtendedResource) string {
 }
 
 func displayResourceList(resources []*goclientnew.ExtendedResource) {
+	if displayRequestedColumns(resources, resourceAliases, nil) {
+		return
+	}
 	// With a view active, its columns replace the default ones.
 	if resourceViewSlug != "" && len(resources) > 0 && resources[0].View != nil && len(resources[0].View.Columns) > 0 {
 		displayResourceViewColumns(resources)
@@ -240,7 +243,7 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		where = where.SpaceID(goclientnew.UUID(uuid.MustParse(spaceID)))
 	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Resource", nil, resourceListInclude, defaultResourceColumns, resourceAliases, resourceCustomColumnDependencies, resourceBaseSelectFields)
+		return buildSelectList("Resource", listColumnsFor("cub resource list"), resourceListInclude, defaultResourceColumns, resourceAliases, resourceCustomColumnDependencies, resourceBaseSelectFields)
 	})
 	return cubapi.ListResources(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),

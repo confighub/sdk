@@ -207,6 +207,22 @@ func writeOrPrint(data []byte, space, unit, section string) error {
 	return nil
 }
 
+// runningCommandPath is the cobra path ("cub target list") of the command being run,
+// recorded by globalPreRun.
+var runningCommandPath string
+
+// listColumnsFor returns the requested columns when commandPath is the command being
+// run, and nil otherwise. The list API helpers build their select list from it, and
+// they are also called by other commands -- unit tree lists links, component list
+// lists spaces -- where the columns on the command line name some other entity's
+// fields and must not narrow this one's query.
+func listColumnsFor(commandPath string) []string {
+	if runningCommandPath != commandPath {
+		return nil
+	}
+	return effectiveColumns()
+}
+
 // effectiveColumns resolves the columns spec for list commands that support
 // dynamic columns. It prefers an explicit --columns flag value, falling back
 // to parsing -o custom-columns=<spec> when present.

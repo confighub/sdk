@@ -91,6 +91,9 @@ func getTagSlug(tag *goclientnew.ExtendedTag) string {
 }
 
 func displayTagList(tags []*goclientnew.ExtendedTag) {
+	if displayRequestedColumns(tags, tagAliases, nil) {
+		return
+	}
 	table := tableView()
 	if !noheader {
 		table.SetHeader([]string{"Name", "Space", "ChangeSet", "Display-Name", "Created-At"})
@@ -135,7 +138,7 @@ func apiListTags(spaceID string, whereFilter string, selectParam string, filterP
 
 func apiListAllTags(where cubapi.Where, selectParam string, filterParam string) ([]*goclientnew.ExtendedTag, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		return buildSelectList("Tag", nil, tagListInclude, defaultTagColumns, tagAliases, tagCustomColumnDependencies, tagBaseSelectFields)
+		return buildSelectList("Tag", listColumnsFor("cub tag list"), tagListInclude, defaultTagColumns, tagAliases, tagCustomColumnDependencies, tagBaseSelectFields)
 	})
 	return cubapi.ListTags(ctx, cubClient, where, cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),
