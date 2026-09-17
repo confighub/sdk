@@ -40,6 +40,7 @@ Examples:
 
 func init() {
 	addStandardListFlags(userKeyListCmd)
+	enableOptionalSpace(userKeyListCmd)
 	userKeyCmd.AddCommand(userKeyListCmd)
 }
 

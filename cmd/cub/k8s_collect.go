@@ -12,7 +12,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -85,6 +84,7 @@ func init() {
 	k8sCollectCmd.Flags().StringVar(&k8sCollectKubeconfig, "kubeconfig", "", "path to the kubeconfig file to use")
 	k8sCollectCmd.Flags().StringVar(&k8sCollectClusterName, "cluster-name", "", "value for the Cluster.Name fact (defaults to the kube context name)")
 	k8sCollectCmd.Flags().BoolVar(&k8sCollectDryRun, "dry-run", false, "print the collected facts without updating any target")
+	enableOptionalSpace(k8sCollectCmd)
 	k8sCmd.AddCommand(k8sCollectCmd)
 }
 
@@ -130,7 +130,7 @@ func k8sCollectCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	spaceID := uuid.MustParse(selectedSpaceID)
+	spaceID := currentTarget.Target.SpaceID
 
 	// Build a JSON merge patch that owns the "Cluster." namespace: set freshly collected
 	// facts and null out previously collected facts that are no longer present. User facts

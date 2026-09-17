@@ -32,6 +32,7 @@ func init() {
 	// stays as a no-op so a script that passes it keeps working.
 	revisionDataCmd.Flags().BoolVar(&revisionDataDecoded, "decode", true, "Deprecated: Data is no longer base64-encoded")
 	_ = revisionDataCmd.Flags().MarkDeprecated("decode", "Data is no longer base64-encoded")
+	enableOptionalSpace(revisionDataCmd)
 	revisionCmd.AddCommand(revisionDataCmd)
 }
 
@@ -44,7 +45,7 @@ func runRevisionData(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return fmt.Errorf("invalid revision number %q: %w", args[1], err)
 	}
-	rev, err := apiGetRevisionFromNumber(num, unit.Unit.UnitID.String(), "RevisionID,DataHash")
+	rev, err := apiGetRevisionFromNumberInSpace(num, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), "RevisionID,DataHash")
 	if err != nil {
 		return err
 	}

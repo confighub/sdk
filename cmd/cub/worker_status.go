@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +25,7 @@ var workerStatusCmd = &cobra.Command{
 }
 
 func init() {
+	enableOptionalSpace(workerStatusCmd)
 	workerCmd.AddCommand(workerStatusCmd)
 }
 
@@ -32,7 +34,7 @@ func workerStatusCmdRun(cmd *cobra.Command, args []string) error {
 
 	if len(args) == 1 {
 		// Check specific worker
-		return checkWorkerStatus(confighubDir, args[0])
+		return checkWorkerStatus(confighubDir, cubapi.ParseRef(args[0]).Name)
 	}
 
 	// Check all workers

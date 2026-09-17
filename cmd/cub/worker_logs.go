@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
 
@@ -31,11 +32,12 @@ var workerLogsArgs struct {
 func init() {
 	workerLogsCmd.Flags().BoolVarP(&workerLogsArgs.follow, "follow", "f", false, "Follow log output (like tail -f)")
 	workerLogsCmd.Flags().IntVarP(&workerLogsArgs.lines, "tail", "n", 0, "Number of lines to show from the end of the logs (0 = all)")
+	enableOptionalSpace(workerLogsCmd)
 	workerCmd.AddCommand(workerLogsCmd)
 }
 
 func workerLogsCmdRun(cmd *cobra.Command, args []string) error {
-	workerSlug := args[0]
+	workerSlug := cubapi.ParseRef(args[0]).Name
 	confighubDir := filepath.Join(os.Getenv("HOME"), CONFIGHUB_DIR)
 	logFile := filepath.Join(confighubDir, "worker", "log", fmt.Sprintf("%s.log", workerSlug))
 

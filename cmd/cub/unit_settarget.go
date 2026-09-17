@@ -101,7 +101,7 @@ func runSingleUnitSetTarget(unitSlug, targetSlug string) error {
 
 	unitRes, err := cubClientNew.PatchUnitWithBodyWithResponse(
 		ctx,
-		uuid.MustParse(selectedSpaceID),
+		configUnit.Unit.SpaceID,
 		configUnit.Unit.UnitID,
 		newParams,
 		"application/merge-patch+json",

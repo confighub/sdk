@@ -87,7 +87,7 @@ func unitEventListRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	events, err := apiListUnitEvents(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, where, filterID)
+	events, err := apiListUnitEvents(u.Unit.SpaceID, u.Unit.UnitID, where, filterID)
 	if err != nil {
 		return err
 	}

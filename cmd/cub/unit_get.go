@@ -321,6 +321,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			tprintRaw("-----------------")
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = unitDetails.Unit.UnitID.String()
+				lookupMutationsSpaceID = unitDetails.Unit.SpaceID.String()
 				displayResourceMutationList(mutationSources, true, 0, "", "")
 			} else {
 				displayJSON(mutationSources)

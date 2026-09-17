@@ -8,7 +8,6 @@ import (
 	"sort"
 
 	"github.com/confighub/sdk/core/cubapi"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +21,7 @@ var workerListFunctionCmd = &cobra.Command{
 
 func init() {
 	addStandardListFlags(workerListFunctionCmd) // TODO: this is wrong
+	enableOptionalSpace(workerListFunctionCmd)
 	workerCmd.AddCommand(workerListFunctionCmd)
 }
 
@@ -31,7 +31,7 @@ func workerListFunctionCmdRun(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	funcsRes, err := cubClientNew.ListBridgeWorkerFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorker.BridgeWorkerID)
+	funcsRes, err := cubClientNew.ListBridgeWorkerFunctionsWithResponse(ctx, entity.BridgeWorker.SpaceID, entity.BridgeWorker.BridgeWorkerID)
 	if cubapi.IsAPIError(err, funcsRes) {
 		return cubapi.InterpretErrorGeneric(err, funcsRes)
 	}

@@ -116,8 +116,11 @@ func init() {
 	workerKeyAddCmd.Flags().StringVar(&userKeyDescription, "description", "",
 		"note recording which host or pipeline holds the private key")
 
+	enableOptionalSpace(workerKeyAddCmd)
 	workerKeyCmd.AddCommand(workerKeyAddCmd)
+	enableOptionalSpace(workerKeyListCmd)
 	workerKeyCmd.AddCommand(workerKeyListCmd)
+	enableOptionalSpace(workerKeyDeleteCmd)
 	workerKeyCmd.AddCommand(workerKeyDeleteCmd)
 	workerCmd.AddCommand(workerKeyCmd)
 }

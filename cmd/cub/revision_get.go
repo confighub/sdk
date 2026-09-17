@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -41,6 +40,7 @@ func init() {
 	enableDisplayMutationsFlag(revisionGetCmd)
 	revisionGetCmd.Flags().BoolVar(&dataOnly, "data-only", false, "show config data without other response details")
 	_ = revisionGetCmd.Flags().MarkDeprecated("data-only", "use 'cub revision data <unit> <revision-num>'")
+	enableOptionalSpace(revisionGetCmd)
 	revisionCmd.AddCommand(revisionGetCmd)
 }
 
@@ -53,7 +53,7 @@ func revisionGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	rev, err := apiGetExtendedRevisionFromNumber(num, unit.Unit.UnitID.String(), selectFields)
+	rev, err := apiGetExtendedRevisionFromNumber(num, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -191,6 +191,7 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 			tprintRaw("Mutation Sources:")
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = rev.UnitID.String()
+				lookupMutationsSpaceID = rev.SpaceID.String()
 				displayResourceMutationList(mutationSources, true, 0, "", "")
 			} else {
 				displayJSON(mutationSources)
@@ -219,47 +220,6 @@ func resolveUsernames(userIDs []goclientnew.UUID) []string {
 	return names
 }
 
-func apiGetExtendedRevision(revisionID string, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
-	newParams := &goclientnew.GetExtendedRevisionParams{}
-	include := "UserID,UnitID,SpaceID,ChangeSetID,Tags,ChangeOrders,Releases"
-	newParams.Include = &include
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	revRes, err := cubClientNew.GetExtendedRevisionWithResponse(ctx,
-		uuid.MustParse(selectedSpaceID),
-		uuid.MustParse(unitID),
-		uuid.MustParse(revisionID),
-		newParams,
-	)
-	if cubapi.IsAPIError(err, revRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, revRes)
-	}
-	if revRes.JSON200.Revision.SpaceID.String() != selectedSpaceID {
-		return nil, fmt.Errorf("SERVER DIDN'T CHECK: revision %s not found", revisionID)
-	}
-
-	return revRes.JSON200, nil
-}
-
-func apiGetRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.Revision, error) {
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	for _, extendedRev := range revisions {
-		if int64(extendedRev.Revision.RevisionNum) == revNo {
-			return extendedRev.Revision, nil
-		}
-	}
-	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
-}
-
 func apiGetRevisionFromNumberInSpace(revNo int64, unitID string, spaceID string, selectParam string) (*goclientnew.Revision, error) {
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {
@@ -277,12 +237,12 @@ func apiGetRevisionFromNumberInSpace(revNo int64, unitID string, spaceID string,
 	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, spaceID)
 }
 
-func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
+func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedRevision, error) {
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	revisions, err := apiListRevisions(selectedSpaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
+	revisions, err := apiListRevisions(spaceID, unitID, fmt.Sprintf("RevisionNum = %d", revNo), selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -291,5 +251,5 @@ func apiGetExtendedRevisionFromNumber(revNo int64, unitID string, selectParam st
 			return extendedRev, nil
 		}
 	}
-	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, selectedSpaceSlug)
+	return nil, fmt.Errorf("rev %d of unit %s not found in space %s", revNo, unitID, spaceID)
 }

@@ -802,6 +802,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			// display can't tell new vs prior. Compute the diff on the fly
 			// to show the user what changed because of this restore.
 			lookupMutationsUnitID = unitDetails.UnitID.String()
+			lookupMutationsSpaceID = unitDetails.SpaceID.String()
 			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
 			// The configuration the restore produced. It comes off the response, which is
 			// the only place a dry run's exists -- reading it back from the Unit would get

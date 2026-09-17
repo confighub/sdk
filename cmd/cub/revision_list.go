@@ -132,7 +132,7 @@ func revisionListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	revisions, err := apiListRevisions(selectedSpaceID, unit.Unit.UnitID.String(), effectiveWhere, selectFields, filterID)
+	revisions, err := apiListRevisions(unit.Unit.SpaceID.String(), unit.Unit.UnitID.String(), effectiveWhere, selectFields, filterID)
 	if err != nil {
 		return err
 	}

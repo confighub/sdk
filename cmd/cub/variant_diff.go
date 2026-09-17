@@ -297,13 +297,14 @@ func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, f
 		// The Mutations displayed are of this Unit, so their details and old values resolve
 		// against it.
 		lookupMutationsUnitID = unit.UnitID.String()
+		lookupMutationsSpaceID = unit.SpaceID.String()
 		// A Unit the to side does not have contributes no Revision to compare against, which
 		// leaves the changed side empty rather than falling back to the Unit's head.
-		changed := changedRevision{UnitID: unit.UnitID, Data: variantDiffData(toData)}
+		changed := changedRevision{SpaceID: unit.SpaceID, UnitID: unit.UnitID, Data: variantDiffData(toData)}
 		if toData != nil {
 			changed.RevisionID = toData.RevisionID
 		}
-		displayMutationsFromDryRun(variantDiffData(fromData), changed, space.SpaceID.String(), "diff")
+		displayMutationsFromDryRun(variantDiffData(fromData), changed, "diff")
 	}
 
 	if !quiet {

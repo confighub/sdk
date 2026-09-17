@@ -33,6 +33,7 @@ Examples:
 }
 
 func init() {
+	enableOptionalSpace(userKeyDeleteCmd)
 	userKeyCmd.AddCommand(userKeyDeleteCmd)
 }
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/core/cubapi"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -31,6 +30,7 @@ var workerSecretArgs struct {
 }
 
 func init() {
+	enableOptionalSpace(workerSecretCmd)
 	workerCmd.AddCommand(workerSecretCmd)
 }
 
@@ -39,7 +39,7 @@ func workerSecretCmdRun(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	workerRes, err := cubClientNew.GetBridgeWorkerWithResponse(ctx, uuid.MustParse(selectedSpaceID),
+	workerRes, err := cubClientNew.GetBridgeWorkerWithResponse(ctx, entity.BridgeWorker.SpaceID,
 		entity.BridgeWorker.BridgeWorkerID, nil)
 	if cubapi.IsAPIError(err, workerRes) {
 		return cubapi.InterpretErrorGeneric(err, workerRes)

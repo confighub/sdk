@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
 
@@ -24,11 +25,12 @@ var workerStopCmd = &cobra.Command{
 }
 
 func init() {
+	enableOptionalSpace(workerStopCmd)
 	workerCmd.AddCommand(workerStopCmd)
 }
 
 func workerStopCmdRun(cmd *cobra.Command, args []string) error {
-	workerSlug := args[0]
+	workerSlug := cubapi.ParseRef(args[0]).Name
 	confighubDir := filepath.Join(os.Getenv("HOME"), CONFIGHUB_DIR)
 	pidFile := filepath.Join(confighubDir, "worker", "pid", fmt.Sprintf("%s.pid", workerSlug))
 

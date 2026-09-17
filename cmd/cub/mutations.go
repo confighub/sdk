@@ -530,15 +530,16 @@ func lookupMutations(indices []int64) map[int64]*goclientnew.ExtendedMutation {
 	return result
 }
 
-// lookupMutationsForCurrentUnit is set by the caller to provide unit context for mutation lookup.
-// This avoids passing unit ID through the display function chain.
-var lookupMutationsUnitID string
+// lookupMutationsUnitID and lookupMutationsSpaceID name the unit whose mutations the display
+// functions look up, and the space it lives in. The caller sets them so the pair does not have
+// to be passed through the display function chain.
+var lookupMutationsUnitID, lookupMutationsSpaceID string
 
 func lookupMutationsForCurrentUnit(whereClause string) ([]*goclientnew.ExtendedMutation, error) {
 	if lookupMutationsUnitID == "" {
 		return nil, fmt.Errorf("no unit ID set for mutation lookup")
 	}
-	return apiListMutations(selectedSpaceID, lookupMutationsUnitID, whereClause, "*", "")
+	return apiListMutations(lookupMutationsSpaceID, lookupMutationsUnitID, whereClause, "*", "")
 }
 
 // changedRevision is the changed side of a computed diff: the Revision whose configuration the
@@ -549,6 +550,7 @@ func lookupMutationsForCurrentUnit(whereClause string) ([]*goclientnew.ExtendedM
 // with the request. It is a Revision rather than the Unit because a Unit is read at its head,
 // which is a different comparison as soon as the changed side is not the head.
 type changedRevision struct {
+	SpaceID    uuid.UUID
 	UnitID     uuid.UUID
 	RevisionID uuid.UUID
 	// Data is the configuration at that Revision. It says whether there is a changed side at
@@ -558,7 +560,7 @@ type changedRevision struct {
 
 // computeMutationsFromDryRun invokes compute-mutations on the server to compute a ResourceMutationList
 // between the config data from before the change and the configuration of the changed Revision.
-func computeMutationsFromDryRun(previousData string, changed changedRevision, unitSpaceID string) (*goclientnew.ResourceMutationList, error) {
+func computeMutationsFromDryRun(previousData string, changed changedRevision) (*goclientnew.ResourceMutationList, error) {
 	if previousData == "" || changed.Data == "" {
 		return nil, nil
 	}
@@ -581,14 +583,8 @@ func computeMutationsFromDryRun(previousData string, changed changedRevision, un
 	// Invoked on the changed Revision, so the diff runs previousData -> that Revision. Invoking
 	// on the Unit instead would diff against its head, whatever Revision the caller named, and
 	// would need reverse=true to come out in this direction.
-	// Save and restore selectedSpaceID if needed
-	savedSpaceID := selectedSpaceID
-	if unitSpaceID != "" {
-		selectedSpaceID = unitSpaceID
-	}
 	// Dry run: compute-mutations is hermetic and non-mutating.
-	resp, err := invokeFunctionsOnRevisionID(changed.UnitID, changed.RevisionID, *body, true)
-	selectedSpaceID = savedSpaceID
+	resp, err := invokeFunctionsOnRevisionID(changed.SpaceID, changed.UnitID, changed.RevisionID, *body, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to invoke compute-mutations: %w", err)
 	}
@@ -914,6 +910,7 @@ func displayMutationsForUnit(unit *goclientnew.Unit, priorHeadMutationNum int64,
 		return
 	}
 	lookupMutationsUnitID = unit.UnitID.String()
+	lookupMutationsSpaceID = unit.SpaceID.String()
 	displayResourceMutationList(mutationSources, true, priorHeadMutationNum, newChangeDescription, priorRevision)
 }
 
@@ -931,13 +928,14 @@ func displayMutationsForRevision(rev *goclientnew.Revision) {
 		return
 	}
 	lookupMutationsUnitID = rev.UnitID.String()
+	lookupMutationsSpaceID = rev.SpaceID.String()
 	displayResourceMutationList(mutationSources, true, 0, "", "")
 }
 
 // displayMutationsFromDryRun computes and displays the mutations between the config data from
 // before the change and the configuration of the changed Revision.
-func displayMutationsFromDryRun(previousData string, changed changedRevision, unitSpaceID string, newChangeDescription string) {
-	mutations, err := computeMutationsFromDryRun(previousData, changed, unitSpaceID)
+func displayMutationsFromDryRun(previousData string, changed changedRevision, newChangeDescription string) {
+	mutations, err := computeMutationsFromDryRun(previousData, changed)
 	if err != nil {
 		tprintErr("Failed to compute mutations: %s", err.Error())
 		return
@@ -1096,6 +1094,7 @@ func displayMutationsFromFunctionResponse(resp *[]goclientnew.FunctionInvocation
 			// For dry-run, use the Mutations field directly.
 			if r.Mutations != nil && len(*r.Mutations) > 0 {
 				lookupMutationsUnitID = r.UnitID.String()
+				lookupMutationsSpaceID = r.SpaceID.String()
 				displayResourceMutationList(r.Mutations, true, priorMutNum, newChangeDescription, priorRevision)
 			} else {
 				tprintRaw("No mutations")
@@ -1108,6 +1107,7 @@ func displayMutationsFromFunctionResponse(resp *[]goclientnew.FunctionInvocation
 				continue
 			}
 			lookupMutationsUnitID = unit.Unit.UnitID.String()
+			lookupMutationsSpaceID = unit.Unit.SpaceID.String()
 			displayMutationsForUnit(unit.Unit, priorMutNum, newChangeDescription, priorRevision)
 		}
 	}
@@ -1142,6 +1142,7 @@ func displayMutationsForBulkUnitUpdate(responses *[]goclientnew.UnitCreateOrUpda
 		first = false
 		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
 		lookupMutationsUnitID = unit.UnitID.String()
+		lookupMutationsSpaceID = unit.SpaceID.String()
 
 		priorRevision := ""
 		if isDryRun {
@@ -1252,5 +1253,6 @@ func displayMutationsForDryRun(result *goclientnew.UnitCreateOrUpdateResponse,
 		return
 	}
 	lookupMutationsUnitID = result.Unit.UnitID.String()
+	lookupMutationsSpaceID = result.Unit.SpaceID.String()
 	displayResourceMutationList(result.MutationSources, true, priorHeadMutationNum, newChangeDescription, "dry-run")
 }

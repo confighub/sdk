@@ -31,6 +31,7 @@ Examples:
 
 func init() {
 	addStandardGetFlags(mutationGetCmd)
+	enableOptionalSpace(mutationGetCmd)
 	mutationCmd.AddCommand(mutationGetCmd)
 }
 
@@ -43,7 +44,7 @@ func mutationGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.Unit.UnitID.String(), selectFields)
+	extendedMutationDetails, err := apiGetMutationFromNumber(num, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), selectFields)
 	if err != nil {
 		return err
 	}
@@ -234,12 +235,12 @@ func resolveBridgeWorkerName(workerID uuid.UUID, mutationSpaceSlug string) strin
 	return qualifySlug(workers[0].BridgeWorker.Slug, workerSpace, mutationSpaceSlug)
 }
 
-func apiGetMutationFromNumber(mutationNum int64, unitID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
+func apiGetMutationFromNumber(mutationNum int64, unitID string, spaceID string, selectParam string) (*goclientnew.ExtendedMutation, error) {
 	// The default for get is "*" rather than auto-selected list columns
 	if selectParam == "" {
 		selectParam = "*"
 	}
-	extendedMutations, err := apiListMutations(selectedSpaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum), selectParam, "")
+	extendedMutations, err := apiListMutations(spaceID, unitID, fmt.Sprintf("MutationNum = %d", mutationNum), selectParam, "")
 	if err != nil {
 		return nil, err
 	}
@@ -249,5 +250,5 @@ func apiGetMutationFromNumber(mutationNum int64, unitID string, selectParam stri
 			return extendedMutation, nil
 		}
 	}
-	return nil, fmt.Errorf("mutation %d of unit %s not found in space %s", mutationNum, unitID, selectedSpaceSlug)
+	return nil, fmt.Errorf("mutation %d of unit %s not found in space %s", mutationNum, unitID, spaceID)
 }

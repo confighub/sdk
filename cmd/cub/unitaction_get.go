@@ -29,6 +29,7 @@ func init() {
 	addStandardGetFlags(unitActionGetCmd)
 	unitActionGetCmd.Flags().BoolVar(&showData, "data", false, "decode and display the Data field")
 	_ = unitActionGetCmd.Flags().MarkDeprecated("data", "use 'cub unit-action data'")
+	enableOptionalSpace(unitActionGetCmd)
 	unitActionCmd.AddCommand(unitActionGetCmd)
 }
 
@@ -43,12 +44,12 @@ func unitActionGetRun(cmd *cobra.Command, args []string) error {
 
 	var action *goclientnew.UnitAction
 	if actionUUID, uuidErr := uuid.Parse(identifier); uuidErr == nil {
-		action, err = apiGetUnitAction(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, actionUUID)
+		action, err = apiGetUnitAction(u.Unit.SpaceID, u.Unit.UnitID, actionUUID)
 		if err != nil {
 			return err
 		}
 	} else if num, numErr := strconv.ParseInt(identifier, 10, 64); numErr == nil {
-		action, err = apiGetUnitActionFromNum(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, num)
+		action, err = apiGetUnitActionFromNum(u.Unit.SpaceID, u.Unit.UnitID, num)
 		if err != nil {
 			return err
 		}

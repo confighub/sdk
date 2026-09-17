@@ -76,6 +76,7 @@ var mutationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(mutationListCmd)
+	enableOptionalSpace(mutationListCmd)
 	mutationCmd.AddCommand(mutationListCmd)
 }
 
@@ -94,7 +95,7 @@ func mutationListCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	unit = resolved.Unit
-	mutations, err := apiListMutations(selectedSpaceID, unit.UnitID.String(), where, selectFields, filterID)
+	mutations, err := apiListMutations(unit.SpaceID.String(), unit.UnitID.String(), where, selectFields, filterID)
 	if err != nil {
 		return err
 	}

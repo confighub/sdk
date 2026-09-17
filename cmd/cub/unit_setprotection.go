@@ -9,7 +9,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -61,6 +60,7 @@ func init() {
 	unitSetProtectionCmd.Flags().StringArrayVar(&unprotectSpecs, "unprotect", nil,
 		"path to re-open to merges, as RESOURCE_TYPE:RESOURCE_NAME:PATH (repeatable)")
 	addStandardDisplayFlags(unitSetProtectionCmd)
+	enableOptionalSpace(unitSetProtectionCmd)
 	unitCmd.AddCommand(unitSetProtectionCmd)
 }
 
@@ -124,7 +124,7 @@ func unitSetProtectionCmdRun(_ *cobra.Command, args []string) error {
 		})
 	}
 
-	res, err := cubClientNew.SetUnitProtectionWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
+	res, err := cubClientNew.SetUnitProtectionWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}

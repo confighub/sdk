@@ -458,25 +458,25 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 	}
 
 	// Get unit from slug
-	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID,SpaceID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
 	}
 
 	// Get revision from number
-	revision, err := apiGetRevisionFromNumber(revisionNum, unit.Unit.UnitID.String(), "RevisionID")
+	revision, err := apiGetRevisionFromNumberInSpace(revisionNum, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), "RevisionID")
 	if err != nil {
 		return nil, fmt.Errorf("failed to get revision %d for unit '%s': %w", revisionNum, unitSlug, err)
 	}
 
-	return invokeFunctionsOnRevisionID(unit.Unit.UnitID, revision.RevisionID, body, dryRun)
+	return invokeFunctionsOnRevisionID(unit.Unit.SpaceID, unit.Unit.UnitID, revision.RevisionID, body, dryRun)
 }
 
 // invokeFunctionsOnRevisionID invokes functions against the configuration of one Revision,
 // which the server requires to be named by both its Unit and its own ID. The Revision is the
 // data the functions run on, so it is how a function reads a Unit at a point other than its
 // head.
-func invokeFunctionsOnRevisionID(unitID, revisionID uuid.UUID, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
+func invokeFunctionsOnRevisionID(spaceID, unitID, revisionID uuid.UUID, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	newParams := &goclientnew.InvokeFunctionsParams{}
 	newParams.Include = invokeIncludeConfigData()
 	unitUUID := goclientnew.UUID(unitID)
@@ -491,7 +491,7 @@ func invokeFunctionsOnRevisionID(unitID, revisionID uuid.UUID, body goclientnew.
 		newParams.OtherDataSource = &functionOtherDataSource
 	}
 
-	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), newParams, body)
+	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, spaceID, newParams, body)
 	if cubapi.IsAPIError(err, funcRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, funcRes)
 	}

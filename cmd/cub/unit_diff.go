@@ -110,6 +110,7 @@ func init() {
 		`Output format. Only "mutations" is supported; replaces the text diff with a resource-mutations diff.`)
 	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
 	_ = unitDiffCmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
+	enableOptionalSpace(unitDiffCmd)
 	unitCmd.AddCommand(unitDiffCmd)
 }
 
@@ -505,11 +506,13 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	if unitDiffArgs.displayMutations || outputFormat == "mutations" {
 		// Display mutations instead of text diff
 		lookupMutationsUnitID = toUnit.UnitID.String()
+		lookupMutationsSpaceID = toUnit.SpaceID.String()
 		displayMutationsFromDryRun(fromData, changedRevision{
+			SpaceID:    toUnit.SpaceID,
 			UnitID:     toUnit.UnitID,
 			RevisionID: revToData.RevisionID,
 			Data:       toData,
-		}, toUnit.SpaceID.String(), "diff")
+		}, "diff")
 	} else {
 		// Compute text diff
 		diffSegments := ComputeStructuredDiff(fromData, toData)
@@ -542,7 +545,7 @@ func formatDiffLabel(spaceSlug, unitSlug string, revNum int64) string {
 func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.Unit) (int64, error) {
 	if isUUID {
 		// It's a revision UUID - look it up
-		rev, err := apiGetRevisionFromUUID(formatted, unit.UnitID.String())
+		rev, err := apiGetRevisionFromUUID(formatted, unit.UnitID.String(), unit.SpaceID.String())
 		if err != nil {
 			return 0, err
 		}
@@ -574,9 +577,9 @@ func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.U
 }
 
 // apiGetRevisionFromUUID fetches a revision by UUID.
-func apiGetRevisionFromUUID(revisionUUID string, unitID string) (*goclientnew.Revision, error) {
+func apiGetRevisionFromUUID(revisionUUID string, unitID string, spaceID string) (*goclientnew.Revision, error) {
 	where := fmt.Sprintf("RevisionID = '%s'", revisionUUID)
-	revisions, err := apiListRevisions(selectedSpaceID, unitID, where, "RevisionNum", "")
+	revisions, err := apiListRevisions(spaceID, unitID, where, "RevisionNum", "")
 	if err != nil {
 		return nil, err
 	}

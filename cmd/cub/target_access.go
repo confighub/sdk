@@ -61,6 +61,7 @@ never sees the credentials.`, `
 func init() {
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.ttl, "ttl", "", "requested token TTL (e.g., 30m, 1h); capped by the policy's max-ttl")
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.output, "output", "", "write kubeconfig to this file instead of stdout")
+	enableOptionalSpace(targetAccessCmd)
 	targetCmd.AddCommand(targetAccessCmd)
 }
 
@@ -75,7 +76,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Look up the unit.
-	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID,TargetID,LastReleasedRevisionNum")
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "UnitID,SpaceID,TargetID,LastReleasedRevisionNum")
 	if err != nil {
 		return fmt.Errorf("unit %q not found in space", unitSlug)
 	}
@@ -87,7 +88,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 
 	// Check the unit has been published in a Release.
 	if unit.Unit.LastReleasedRevisionNum == 0 {
-		return fmt.Errorf("unit %q has not been published yet; run 'cub release publish %s' first", unitSlug, selectedSpaceID)
+		return fmt.Errorf("unit %q has not been published yet; run 'cub release publish %s' first", unitSlug, unit.Unit.SpaceID)
 	}
 
 	// Generate ephemeral X25519 keypair.
@@ -129,7 +130,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Invoke the function.
-	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, uuid.MustParse(selectedSpaceID), params, req)
+	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, unit.Unit.SpaceID, params, req)
 	if cubapi.IsAPIError(err, funcRes) {
 		return errors.Wrap(cubapi.InterpretErrorGeneric(err, funcRes), "failed to invoke generate-kubecontext")
 	}

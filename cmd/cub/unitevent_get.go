@@ -25,6 +25,7 @@ var unitEventGetCmd = &cobra.Command{
 
 func init() {
 	addStandardGetFlags(unitEventGetCmd)
+	enableOptionalSpace(unitEventGetCmd)
 	unitEventCmd.AddCommand(unitEventGetCmd)
 }
 
@@ -39,12 +40,12 @@ func unitEventGetRun(cmd *cobra.Command, args []string) error {
 
 	var event *goclientnew.UnitEvent
 	if eventUUID, uuidErr := uuid.Parse(identifier); uuidErr == nil {
-		event, err = apiGetUnitEvent(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, eventUUID)
+		event, err = apiGetUnitEvent(u.Unit.SpaceID, u.Unit.UnitID, eventUUID)
 		if err != nil {
 			return err
 		}
 	} else if num, numErr := strconv.ParseInt(identifier, 10, 64); numErr == nil {
-		event, err = apiGetUnitEventFromNum(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, num)
+		event, err = apiGetUnitEventFromNum(u.Unit.SpaceID, u.Unit.UnitID, num)
 		if err != nil {
 			return err
 		}

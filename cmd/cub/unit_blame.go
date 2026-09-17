@@ -130,6 +130,7 @@ func init() {
 		"how many upstream units to follow before giving up")
 	unitBlameCmd.Flags().BoolVar(&unitBlameArgs.showInternal, "show-comments", false,
 		"include the comment-carrying pseudo-fields ($comment$...) that hold YAML comments")
+	enableOptionalSpace(unitBlameCmd)
 	unitCmd.AddCommand(unitBlameCmd)
 }
 

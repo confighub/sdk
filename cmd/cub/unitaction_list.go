@@ -94,7 +94,7 @@ func unitActionListRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	actions, err := apiListUnitActions(uuid.MustParse(selectedSpaceID), u.Unit.UnitID, where, filterID)
+	actions, err := apiListUnitActions(u.Unit.SpaceID, u.Unit.UnitID, where, filterID)
 	if err != nil {
 		return err
 	}

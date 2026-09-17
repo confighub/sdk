@@ -4,7 +4,6 @@
 package main
 
 import (
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -32,6 +31,7 @@ var workerListStatusArgs struct {
 
 func init() {
 	addStandardListFlags(workerListStatusCmd)
+	enableOptionalSpace(workerListStatusCmd)
 	workerCmd.AddCommand(workerListStatusCmd)
 }
 
@@ -41,7 +41,7 @@ func workerListStatusCmdRun(_ *cobra.Command, args []string) error {
 		return err
 	}
 
-	statusRes, err := cubClientNew.ListBridgeWorkerStatusesWithResponse(ctx, uuid.MustParse(selectedSpaceID), entity.BridgeWorker.BridgeWorkerID)
+	statusRes, err := cubClientNew.ListBridgeWorkerStatusesWithResponse(ctx, entity.BridgeWorker.SpaceID, entity.BridgeWorker.BridgeWorkerID)
 	if cubapi.IsAPIError(err, statusRes) {
 		return cubapi.InterpretErrorGeneric(err, statusRes)
 	}

@@ -10,21 +10,29 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// resolverBackedGets are the "get" commands that name their operand by
-// reference and resolve it, so they can run with no space: a UUID identifies
-// the entity outright, a "space/slug" carries its own space, and a bare slug is
-// searched for across the organization.
-var resolverBackedGets = []string{
+// referenceOperandCommands name their operand by reference and resolve it, so
+// they can run with no space: a UUID identifies the entity outright, a
+// "space/slug" carries its own space, and a bare slug is searched for across
+// the organization. Every API call they make afterwards addresses the space of
+// the entity they resolved, never the selected one, which is what lets a
+// qualified reference reach another space than --space or the default.
+//
+// The revision, mutation, unit-action, unit-event and release commands have no
+// resolver of their own: they resolve the unit (or, for a release, locate it by
+// UUID organization-wide) and read through its space.
+var referenceOperandCommands = []string{
 	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
 	"unit get", "view get", "worker get",
-}
-
-// spaceScopedGets are the "get" commands that still address a per-space
-// endpoint directly, so a space is still required. They lose the requirement
-// when their entity gains a resolver.
-var spaceScopedGets = []string{
-	"revision get", "mutation get", "release get", "unit-action get", "unit-event get",
+	"unit blame", "unit conflicts", "unit data", "unit diff", "unit edit", "unit mutation-sources",
+	"unit set-guard", "unit set-protection",
+	"revision get", "revision data", "mutation get", "mutation list", "release get",
+	"unit-action get", "unit-action data", "unit-event get",
+	"target access", "k8s collect",
+	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
+	"worker logs", "worker status", "worker stop",
+	"worker key add", "worker key list", "worker key delete",
+	"user key add", "user key list", "user key delete",
 }
 
 func findCommand(t *testing.T, path string) *cobra.Command {
@@ -39,29 +47,16 @@ func findCommand(t *testing.T, path string) *cobra.Command {
 	return cmd
 }
 
-// TestResolverBackedGetsAllowOmittedSpace pins the annotation to the commands
-// that can honor it. A get that resolves by reference but demands a space up
-// front rejects references that need none -- "cub filter get <uuid>" and
-// "cub filter get other-space/thing" both name a filter unambiguously.
-func TestResolverBackedGetsAllowOmittedSpace(t *testing.T) {
-	for _, path := range resolverBackedGets {
+// TestReferenceOperandCommandsAllowOmittedSpace pins the annotation to the
+// commands that can honor it. A command that resolves by reference but demands
+// a space up front rejects references that need none -- "cub filter get <uuid>"
+// and "cub filter get other-space/thing" both name a filter unambiguously.
+func TestReferenceOperandCommandsAllowOmittedSpace(t *testing.T) {
+	for _, path := range referenceOperandCommands {
 		cmd := findCommand(t, path)
 		if !allowOmittedSpace(cmd) {
 			t.Errorf("%q resolves its operand by reference but does not allow an omitted space; "+
 				"call enableOptionalSpace in its init", path)
-		}
-	}
-}
-
-// TestSpaceScopedGetsStillRequireSpace is the other half: these commands read
-// through a per-space endpoint and would parse an empty space as a UUID, so the
-// annotation must not be applied to them before their entity has a resolver.
-func TestSpaceScopedGetsStillRequireSpace(t *testing.T) {
-	for _, path := range spaceScopedGets {
-		cmd := findCommand(t, path)
-		if allowOmittedSpace(cmd) {
-			t.Errorf("%q still addresses a per-space endpoint, so it cannot run without a space; "+
-				"give its entity a resolver before marking it", path)
 		}
 	}
 }

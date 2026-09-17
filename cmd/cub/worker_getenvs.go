@@ -36,6 +36,7 @@ var workerEnvsArgs struct {
 
 func init() {
 	workerEnvsCmd.Flags().BoolVar(&workerEnvsArgs.noExport, "no-export", false, "Emit plain KEY=value lines without shell-specific export/setenv prefixes or source-with comments")
+	enableOptionalSpace(workerEnvsCmd)
 	workerCmd.AddCommand(workerEnvsCmd)
 }
 

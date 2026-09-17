@@ -224,6 +224,8 @@ func main() {
 		}
 		return completions, cobra.ShellCompDirectiveNoFileComp
 	}
+	installReferenceCompletions(rootCmd)
+	installCompletionCommand(rootCmd)
 
 	cmd, err := rootCmd.ExecuteC()
 	if err != nil {

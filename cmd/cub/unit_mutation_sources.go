@@ -43,6 +43,7 @@ func init() {
 	// One request for the whole selection rather than one per Unit. The rows carry the Unit
 	// each belongs to, which a bare list of ResourceMutationLists could not.
 	enableWhereFlag(unitMutationSourcesCmd)
+	enableOptionalSpace(unitMutationSourcesCmd)
 	unitCmd.AddCommand(unitMutationSourcesCmd)
 }
 

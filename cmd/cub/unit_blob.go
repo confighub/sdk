@@ -60,6 +60,7 @@ func newUnitBlobCmd(section, selectField, short, long string, legacyFlags func(*
 	if legacyFlags != nil {
 		legacyFlags(cmd)
 	}
+	enableOptionalSpace(cmd)
 	unitCmd.AddCommand(cmd)
 	return cmd
 }

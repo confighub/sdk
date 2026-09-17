@@ -70,6 +70,7 @@ func init() {
 		"generate an Ed25519 keypair, store the private key under this alias (or path), and register the public half")
 	userKeyAddCmd.Flags().StringVar(&userKeyDescription, "description", "",
 		"note recording which host or pipeline holds the private key")
+	enableOptionalSpace(userKeyAddCmd)
 	userKeyCmd.AddCommand(userKeyAddCmd)
 }
 

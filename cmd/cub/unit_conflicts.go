@@ -9,7 +9,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -106,6 +105,7 @@ func init() {
 		"dry run mode: report what --apply or --dismiss would do without writing anything")
 	enableWaitFlag(unitConflictsCmd)
 	addStandardDisplayFlags(unitConflictsCmd)
+	enableOptionalSpace(unitConflictsCmd)
 	unitCmd.AddCommand(unitConflictsCmd)
 }
 
@@ -142,7 +142,7 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		}}
 	}
 
-	res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
+	res, err := cubClientNew.ResolveUnitConflictsWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}

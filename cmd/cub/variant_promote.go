@@ -430,6 +430,7 @@ func displayPromoteSpaceMutations(space *goclientnew.PromoteSpaceResult, withCha
 		first = false
 		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
 		lookupMutationsUnitID = unit.UnitID.String()
+		lookupMutationsSpaceID = space.SpaceID.String()
 		priorRevision := "dry-run"
 		if !dryRun {
 			priorRevision = ""

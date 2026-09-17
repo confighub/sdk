@@ -32,6 +32,10 @@ To get your current context:
 cub context get
 ```
 
+### Shell completion
+
+`cub completion zsh` (or `bash`, `fish`, `powershell`) prints a completion script; `cub completion zsh --help` says where to install it. With it loaded, the tab key completes commands, flags, and the entities a command names: spaces first, as `prod/`, then the entities in that space, as `prod/frontend`. With `--space` on the line, the slugs in that space complete directly. Completion asks the server, so it needs a logged-in context, and it gives up quietly after a few seconds if the server does not answer.
+
 ## General CLI Usage patterns
 
 The `cub` CLI follows the pattern of:
@@ -45,6 +49,8 @@ For example:
 ```
 cub unit create --space prod-eu deployment deployment.yaml
 ```
+
+An entity that lives in a space is named by its slug, by `<space>/<slug>`, or by its UUID, and every command accepts all three wherever it takes a reference: positional arguments, and flags such as `--target`, `--unit`, `--filter` and `--with-unit`. A bare slug is looked up in the space `--space` names, else in the context's default space, and searched for across the organization when neither is set, which is an error if more than one space holds it. `<space>/<slug>` names the space itself and wins over both, so `cub unit get prod/frontend` reads the same unit whatever `--space` or the context says. A UUID needs no space. Prefer the qualified form in scripts and in anything pasted elsewhere: it keeps working when the context changes.
 
 ### Entities / areas (command groups)
 
@@ -105,7 +111,7 @@ There are also some common flags that affect the output, input, or operation.
 
 #### Selection/filtering flags
 
-- `--space`: Specify the slug of the space of the entity or functional area. Overrides the current context. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
+- `--space`: Specify the slug of the space of the entity or functional area. Overrides the current context, and is itself overridden by a `<space>/<slug>` reference. Applies to all verbs, for entities/areas contained within spaces. A value of "\*" implies the operation should be performed over all accessible spaces; supported by unit list, function do, and function list.
 - `--where`: The specified string is an expression for the purpose of filtering the list of entities returned or operated upon. The expression syntax was inspired by SQL. For syntax details, see [our documentation](https://docs.confighub.com/concepts/filters/). Applies to `list` and to all [bulk operations](https://docs.confighub.com/concepts/bulk-operations/).
 - `--contains`: Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with `--where` using AND logic. Example: `--contains backend` to find entities with "backend" in any searchable field. Applies to `list`.
 - `--filter`: Use a saved Filter entity in `<space>/<filter>` syntax to filter the operation.

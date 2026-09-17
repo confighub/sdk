@@ -28,6 +28,7 @@ var unitEditCmd = &cobra.Command{
 func init() {
 	enableWaitFlag(unitEditCmd)
 	unitEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
+	enableOptionalSpace(unitEditCmd)
 	unitCmd.AddCommand(unitEditCmd)
 }
 

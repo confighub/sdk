@@ -262,7 +262,7 @@ func unitApproveCmdRun(cmd *cobra.Command, args []string) error {
 		params.Revision = revisionParam
 	}
 
-	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, params)
+	approveRes, err := cubClientNew.ApproveUnitWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, params)
 	if cubapi.IsAPIError(err, approveRes) {
 		return cubapi.InterpretErrorGeneric(err, approveRes)
 	}

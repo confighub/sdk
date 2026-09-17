@@ -64,6 +64,7 @@ func init() {
 	addStandardGetFlags(releaseGetCmd)
 	releaseGetCmd.Flags().StringVar(&releaseGetOCIReference, "oci-reference", "", "OCI reference of the release to get: the \"latest\" tag or a manifest digest (sha256:...)")
 	releaseGetCmd.Flags().StringVar(&releaseGetBundleDigest, "bundle-digest", "", "Bundle content digest (sha256:...) of the release to get, instead of a release id")
+	enableOptionalSpace(releaseGetCmd)
 	releaseCmd.AddCommand(releaseGetCmd)
 }
 
@@ -107,7 +108,7 @@ func releaseGetCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return fmt.Errorf("invalid release id %q: %w", args[0], err)
 		}
-		release, err = apiGetExtendedRelease(releaseID.String(), selectFields)
+		release, err = apiGetExtendedReleaseByID(releaseID, selectFields)
 	default:
 		return fmt.Errorf("specify a release id argument, --oci-reference, or --bundle-digest")
 	}
@@ -228,7 +229,7 @@ func displayExtendedReleaseDetails(er *goclientnew.ExtendedRelease) {
 	view.Render()
 }
 
-func apiGetExtendedRelease(releaseID string, selectParam string) (*goclientnew.ExtendedRelease, error) {
+func apiGetExtendedRelease(spaceID string, releaseID string, selectParam string) (*goclientnew.ExtendedRelease, error) {
 	newParams := &goclientnew.GetExtendedReleaseParams{}
 	include := "SpaceID,TagID"
 	newParams.Include = &include
@@ -237,7 +238,7 @@ func apiGetExtendedRelease(releaseID string, selectParam string) (*goclientnew.E
 		newParams.Select = &selectValue
 	}
 	relRes, err := cubClientNew.GetExtendedReleaseWithResponse(ctx,
-		uuid.MustParse(selectedSpaceID),
+		uuid.MustParse(spaceID),
 		uuid.MustParse(releaseID),
 		newParams,
 	)
@@ -245,4 +246,22 @@ func apiGetExtendedRelease(releaseID string, selectParam string) (*goclientnew.E
 		return nil, cubapi.InterpretErrorGeneric(err, relRes)
 	}
 	return relRes.JSON200, nil
+}
+
+// apiGetExtendedReleaseByID reads one release by UUID. A UUID identifies the release
+// in any space, so when no concrete space is selected the release is first located
+// through the organization-wide list and then read from its own space.
+func apiGetExtendedReleaseByID(releaseID uuid.UUID, selectParam string) (*goclientnew.ExtendedRelease, error) {
+	spaceID := selectedSpaceID
+	if spaceID == "" || spaceID == "*" {
+		found, err := apiSearchListReleases("ReleaseID = '"+releaseID.String()+"'", "ReleaseID,SpaceID", "")
+		if err != nil {
+			return nil, err
+		}
+		if len(found) == 0 || found[0].Release == nil {
+			return nil, fmt.Errorf("release %s not found in any space", releaseID)
+		}
+		spaceID = found[0].Release.SpaceID.String()
+	}
+	return apiGetExtendedRelease(spaceID, releaseID.String(), selectParam)
 }

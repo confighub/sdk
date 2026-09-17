@@ -41,6 +41,7 @@ The unit action is identified by its UUID or its per-unit UnitActionNum.`, secti
 	}
 	cmd.Flags().StringVar(&unitActionBlobFilename, "filename", "", fmt.Sprintf("Write %s to file instead of stdout", sectionStr))
 	cmd.Flags().BoolVar(&unitActionBlobDecoded, "decode", true, fmt.Sprintf("Decode base64 %s (default: true)", sectionStr))
+	enableOptionalSpace(cmd)
 	unitActionCmd.AddCommand(cmd)
 	return cmd
 }
@@ -67,7 +68,7 @@ func runUnitActionBlob(section blobSection, unitSlugOrID, actionIdentifier strin
 		return err
 	}
 
-	spaceUUID := uuid.MustParse(selectedSpaceID)
+	spaceUUID := u.Unit.SpaceID
 	action, err := resolveUnitAction(spaceUUID, u.Unit.UnitID, actionIdentifier)
 	if err != nil {
 		return err

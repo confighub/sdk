@@ -9,7 +9,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -83,6 +82,7 @@ func init() {
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
 		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
 	addStandardDisplayFlags(unitSetGuardCmd)
+	enableOptionalSpace(unitSetGuardCmd)
 	unitCmd.AddCommand(unitSetGuardCmd)
 }
 
@@ -209,7 +209,7 @@ func unitSetGuardCmdRun(_ *cobra.Command, args []string) error {
 		body.ResourceGuards = append(body.ResourceGuards, guards)
 	}
 
-	res, err := cubClientNew.SetUnitGuardWithResponse(ctx, uuid.MustParse(selectedSpaceID), configUnit.Unit.UnitID, body)
+	res, err := cubClientNew.SetUnitGuardWithResponse(ctx, configUnit.Unit.SpaceID, configUnit.Unit.UnitID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
