@@ -835,6 +835,11 @@ type ClientInterface interface {
 	// BulkCancelUnits request
 	BulkCancelUnits(ctx context.Context, params *BulkCancelUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkMoveUnitsWithBody request with any body
+	BulkMoveUnitsWithBody(ctx context.Context, params *BulkMoveUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveUnits(ctx context.Context, params *BulkMoveUnitsParams, body BulkMoveUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkTagUnitsWithBody request with any body
 	BulkTagUnitsWithBody(ctx context.Context, params *BulkTagUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -4169,6 +4174,30 @@ func (c *Client) BulkApproveUnits(ctx context.Context, params *BulkApproveUnitsP
 
 func (c *Client) BulkCancelUnits(ctx context.Context, params *BulkCancelUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCancelUnitsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveUnitsWithBody(ctx context.Context, params *BulkMoveUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveUnitsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveUnits(ctx context.Context, params *BulkMoveUnitsParams, body BulkMoveUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveUnitsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -23596,6 +23625,132 @@ func NewBulkCancelUnitsRequest(server string, params *BulkCancelUnitsParams) (*h
 	return req, nil
 }
 
+// NewBulkMoveUnitsRequest calls the generic BulkMoveUnits builder with application/json body
+func NewBulkMoveUnitsRequest(server string, params *BulkMoveUnitsParams, body BulkMoveUnitsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveUnitsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveUnitsRequestWithBody generates requests for BulkMoveUnits with any type of body
+func NewBulkMoveUnitsRequestWithBody(server string, params *BulkMoveUnitsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/unit/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewBulkTagUnitsRequest calls the generic BulkTagUnits builder with application/json body
 func NewBulkTagUnitsRequest(server string, params *BulkTagUnitsParams, body BulkTagUnitsJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -26007,6 +26162,11 @@ type ClientWithResponsesInterface interface {
 
 	// BulkCancelUnitsWithResponse request
 	BulkCancelUnitsWithResponse(ctx context.Context, params *BulkCancelUnitsParams, reqEditors ...RequestEditorFn) (*BulkCancelUnitsResponse, error)
+
+	// BulkMoveUnitsWithBodyWithResponse request with any body
+	BulkMoveUnitsWithBodyWithResponse(ctx context.Context, params *BulkMoveUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveUnitsResponse, error)
+
+	BulkMoveUnitsWithResponse(ctx context.Context, params *BulkMoveUnitsParams, body BulkMoveUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveUnitsResponse, error)
 
 	// BulkTagUnitsWithBodyWithResponse request with any body
 	BulkTagUnitsWithBodyWithResponse(ctx context.Context, params *BulkTagUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkTagUnitsResponse, error)
@@ -31684,6 +31844,36 @@ func (r BulkCancelUnitsResponse) StatusCode() int {
 	return 0
 }
 
+type BulkMoveUnitsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]UnitMoveResponse
+	JSON207      *[]UnitMoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveUnitsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveUnitsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type BulkTagUnitsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -34504,6 +34694,23 @@ func (c *ClientWithResponses) BulkCancelUnitsWithResponse(ctx context.Context, p
 		return nil, err
 	}
 	return ParseBulkCancelUnitsResponse(rsp)
+}
+
+// BulkMoveUnitsWithBodyWithResponse request with arbitrary body returning *BulkMoveUnitsResponse
+func (c *ClientWithResponses) BulkMoveUnitsWithBodyWithResponse(ctx context.Context, params *BulkMoveUnitsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveUnitsResponse, error) {
+	rsp, err := c.BulkMoveUnitsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveUnitsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveUnitsWithResponse(ctx context.Context, params *BulkMoveUnitsParams, body BulkMoveUnitsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveUnitsResponse, error) {
+	rsp, err := c.BulkMoveUnits(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveUnitsResponse(rsp)
 }
 
 // BulkTagUnitsWithBodyWithResponse request with arbitrary body returning *BulkTagUnitsResponse
@@ -49169,6 +49376,88 @@ func ParseBulkCancelUnitsResponse(rsp *http.Response) (*BulkCancelUnitsResponse,
 			return nil, err
 		}
 		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveUnitsResponse parses an HTTP response from a BulkMoveUnitsWithResponse call
+func ParseBulkMoveUnitsResponse(rsp *http.Response) (*BulkMoveUnitsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveUnitsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnitMoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []UnitMoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

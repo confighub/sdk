@@ -169,13 +169,15 @@ func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
 			}
 			v = field
 		} else if v.Kind() == reflect.Map {
-			// Current value is a map, so this part is a key
-			mapKeyValue := reflect.ValueOf(part)
-			value := v.MapIndex(mapKeyValue)
+			// Current value is a map, so this part is a key. A label or annotation key
+			// often contains dots ("app.kubernetes.io/name"), which the path was split
+			// on, so the remaining parts are rejoined to find it.
+			value, consumed := lookupMapKey(v, parts[i:])
 			if !value.IsValid() {
 				return ""
 			}
 			v = value
+			i += consumed - 1
 		} else {
 			// Can't navigate further
 			return "?"
@@ -183,6 +185,24 @@ func (p *DynamicColumnProvider) GetValue(obj any, fieldPath string) string {
 	}
 
 	return p.formatValue(v)
+}
+
+// lookupMapKey finds the entry named by the longest prefix of parts that is a key of m,
+// and reports how many parts that key spanned. The longest prefix is tried first so that a
+// key containing dots is matched whole, while a path that continues past the key into the
+// value still navigates: given a key "a.b", "Map.a.b.Field" reads Field off its value.
+func lookupMapKey(m reflect.Value, parts []string) (reflect.Value, int) {
+	keyType := m.Type().Key()
+	if keyType.Kind() != reflect.String {
+		return reflect.Value{}, 0
+	}
+	for n := len(parts); n > 0; n-- {
+		key := reflect.ValueOf(strings.Join(parts[:n], ".")).Convert(keyType)
+		if value := m.MapIndex(key); value.IsValid() {
+			return value, n
+		}
+	}
+	return reflect.Value{}, 0
 }
 
 // getMapValue extracts a value from a map field
