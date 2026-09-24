@@ -3040,6 +3040,9 @@ type Tag struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
+	// ReleaseID ReleaseID is the optional ID of the Release that made this Tag.
+	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
 
@@ -4242,6 +4245,9 @@ type BulkDeleteSpacesParams struct {
 
 	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
 	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // BulkPatchSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchSpaces.
@@ -5000,6 +5006,9 @@ type BulkDeleteBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllBridgeWorkersParams defines parameters for ListAllBridgeWorkers.
@@ -5353,6 +5362,9 @@ type BulkDeleteChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllChangeOrdersParams defines parameters for ListAllChangeOrders.
@@ -5824,6 +5836,9 @@ type BulkDeleteChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllChangeSetsParams defines parameters for ListAllChangeSets.
@@ -9097,6 +9112,9 @@ type DeleteSpaceParams struct {
 
 	// RecursiveForce Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates.
 	RecursiveForce *string `form:"recursive_force,omitempty" json:"recursive_force,omitempty" yaml:"recursive_force,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetSpaceParams defines parameters for GetSpace.
@@ -9405,6 +9423,12 @@ type CreateBridgeWorkerParams struct {
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 }
 
+// DeleteBridgeWorkerParams defines parameters for DeleteBridgeWorker.
+type DeleteBridgeWorkerParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+}
+
 // GetBridgeWorkerParams defines parameters for GetBridgeWorker.
 type GetBridgeWorkerParams struct {
 	// Include Include clause for expanding related entities in the response for BridgeWorker.
@@ -9547,6 +9571,12 @@ type ListChangeOrdersParams struct {
 type CreateChangeOrderParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
+// DeleteChangeOrderParams defines parameters for DeleteChangeOrder.
+type DeleteChangeOrderParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetChangeOrderParams defines parameters for GetChangeOrder.
@@ -9712,6 +9742,12 @@ type ListChangeSetsParams struct {
 type CreateChangeSetParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
+// DeleteChangeSetParams defines parameters for DeleteChangeSet.
+type DeleteChangeSetParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetChangeSetParams defines parameters for GetChangeSet.
@@ -10622,6 +10658,12 @@ type ListExtendedReleasesParams struct {
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
+// DeleteReleaseParams defines parameters for DeleteRelease.
+type DeleteReleaseParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+}
+
 // GetExtendedReleaseParams defines parameters for GetExtendedRelease.
 type GetExtendedReleaseParams struct {
 	// Include Include clause for expanding related entities in the response for Release.
@@ -10695,7 +10737,7 @@ type ListTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10754,6 +10796,12 @@ type ListTagsParams struct {
 type CreateTagParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
+// DeleteTagParams defines parameters for DeleteTag.
+type DeleteTagParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetTagParams defines parameters for GetTag.
@@ -10894,6 +10942,12 @@ type ListTargetsParams struct {
 type CreateTargetParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+}
+
+// DeleteTargetParams defines parameters for DeleteTarget.
+type DeleteTargetParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetTargetParams defines parameters for GetTarget.
@@ -11269,6 +11323,12 @@ type CreateUnitParams struct {
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
+// DeleteUnitParams defines parameters for DeleteUnit.
+type DeleteUnitParams struct {
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // GetUnitParams defines parameters for GetUnit.
@@ -12406,7 +12466,7 @@ type BulkDeleteTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12449,6 +12509,9 @@ type BulkDeleteTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllTagsParams defines parameters for ListAllTags.
@@ -12487,7 +12550,7 @@ type ListAllTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12599,7 +12662,7 @@ type BulkPatchTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12701,7 +12764,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12891,6 +12954,9 @@ type BulkDeleteTargetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllTargetsParams defines parameters for ListAllTargets.
@@ -13682,6 +13748,9 @@ type BulkDeleteUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
+	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
 
 // ListAllUnitsParams defines parameters for ListAllUnits.

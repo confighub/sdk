@@ -381,7 +381,7 @@ type ClientInterface interface {
 	CreateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteBridgeWorker request
-	DeleteBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *DeleteBridgeWorkerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetBridgeWorker request
 	GetBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *GetBridgeWorkerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -414,7 +414,7 @@ type ClientInterface interface {
 	CreateChangeOrder(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteChangeOrder request
-	DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *DeleteChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetChangeOrder request
 	GetChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -438,7 +438,7 @@ type ClientInterface interface {
 	CreateChangeSet(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeSetParams, body CreateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteChangeSet request
-	DeleteChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *DeleteChangeSetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetChangeSet request
 	GetChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *GetChangeSetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -566,7 +566,7 @@ type ClientInterface interface {
 	PublishRelease(ctx context.Context, spaceId openapi_types.UUID, body PublishReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteRelease request
-	DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *DeleteReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetExtendedRelease request
 	GetExtendedRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -596,7 +596,7 @@ type ClientInterface interface {
 	CreateTag(ctx context.Context, spaceId openapi_types.UUID, params *CreateTagParams, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteTag request
-	DeleteTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTag request
 	GetTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *GetTagParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -620,7 +620,7 @@ type ClientInterface interface {
 	CreateTarget(ctx context.Context, spaceId openapi_types.UUID, params *CreateTargetParams, body CreateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteTarget request
-	DeleteTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *DeleteTargetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetTarget request
 	GetTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *GetTargetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -668,7 +668,7 @@ type ClientInterface interface {
 	CreateUnit(ctx context.Context, spaceId openapi_types.UUID, params *CreateUnitParams, body CreateUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteUnit request
-	DeleteUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	DeleteUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DeleteUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetUnit request
 	GetUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2168,8 +2168,8 @@ func (c *Client) CreateBridgeWorker(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteBridgeWorkerRequest(c.Server, spaceId, bridgeWorkerId)
+func (c *Client) DeleteBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *DeleteBridgeWorkerParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteBridgeWorkerRequest(c.Server, spaceId, bridgeWorkerId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2312,8 +2312,8 @@ func (c *Client) CreateChangeOrder(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteChangeOrderRequest(c.Server, spaceId, changeOrderId)
+func (c *Client) DeleteChangeOrder(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *DeleteChangeOrderParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteChangeOrderRequest(c.Server, spaceId, changeOrderId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2420,8 +2420,8 @@ func (c *Client) CreateChangeSet(ctx context.Context, spaceId openapi_types.UUID
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteChangeSetRequest(c.Server, spaceId, changeSetId)
+func (c *Client) DeleteChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *DeleteChangeSetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteChangeSetRequest(c.Server, spaceId, changeSetId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2996,8 +2996,8 @@ func (c *Client) PublishRelease(ctx context.Context, spaceId openapi_types.UUID,
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteReleaseRequest(c.Server, spaceId, releaseId)
+func (c *Client) DeleteRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *DeleteReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteReleaseRequest(c.Server, spaceId, releaseId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3128,8 +3128,8 @@ func (c *Client) CreateTag(ctx context.Context, spaceId openapi_types.UUID, para
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteTagRequest(c.Server, spaceId, tagId)
+func (c *Client) DeleteTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTagRequest(c.Server, spaceId, tagId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3236,8 +3236,8 @@ func (c *Client) CreateTarget(ctx context.Context, spaceId openapi_types.UUID, p
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteTargetRequest(c.Server, spaceId, targetId)
+func (c *Client) DeleteTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *DeleteTargetParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteTargetRequest(c.Server, spaceId, targetId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -3452,8 +3452,8 @@ func (c *Client) CreateUnit(ctx context.Context, spaceId openapi_types.UUID, par
 	return c.Client.Do(req)
 }
 
-func (c *Client) DeleteUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewDeleteUnitRequest(c.Server, spaceId, unitId)
+func (c *Client) DeleteUnit(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DeleteUnitParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteUnitRequest(c.Server, spaceId, unitId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -4566,6 +4566,22 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 
 		}
 
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -5457,6 +5473,22 @@ func NewBulkDeleteBridgeWorkersRequest(server string, params *BulkDeleteBridgeWo
 
 		}
 
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -5956,6 +5988,22 @@ func NewBulkDeleteChangeOrdersRequest(server string, params *BulkDeleteChangeOrd
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6498,6 +6546,22 @@ func NewBulkDeleteChangeSetsRequest(server string, params *BulkDeleteChangeSetsP
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11382,6 +11446,22 @@ func NewDeleteSpaceRequest(server string, spaceId openapi_types.UUID, params *De
 
 		}
 
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12226,7 +12306,7 @@ func NewCreateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.U
 }
 
 // NewDeleteBridgeWorkerRequest generates requests for DeleteBridgeWorker
-func NewDeleteBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *DeleteBridgeWorkerParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12256,6 +12336,28 @@ func NewDeleteBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bri
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -12773,7 +12875,7 @@ func NewCreateChangeOrderRequestWithBody(server string, spaceId openapi_types.UU
 }
 
 // NewDeleteChangeOrderRequest generates requests for DeleteChangeOrder
-func NewDeleteChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteChangeOrderRequest(server string, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *DeleteChangeOrderParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12803,6 +12905,28 @@ func NewDeleteChangeOrderRequest(server string, spaceId openapi_types.UUID, chan
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -13234,7 +13358,7 @@ func NewCreateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID
 }
 
 // NewDeleteChangeSetRequest generates requests for DeleteChangeSet
-func NewDeleteChangeSetRequest(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteChangeSetRequest(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *DeleteChangeSetParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -13264,6 +13388,28 @@ func NewDeleteChangeSetRequest(server string, spaceId openapi_types.UUID, change
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -15812,7 +15958,7 @@ func NewPublishReleaseRequestWithBody(server string, spaceId openapi_types.UUID,
 }
 
 // NewDeleteReleaseRequest generates requests for DeleteRelease
-func NewDeleteReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *DeleteReleaseParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -15842,6 +15988,28 @@ func NewDeleteReleaseRequest(server string, spaceId openapi_types.UUID, releaseI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -16311,7 +16479,7 @@ func NewCreateTagRequestWithBody(server string, spaceId openapi_types.UUID, para
 }
 
 // NewDeleteTagRequest generates requests for DeleteTag
-func NewDeleteTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *DeleteTagParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16341,6 +16509,28 @@ func NewDeleteTagRequest(server string, spaceId openapi_types.UUID, tagId openap
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -16728,7 +16918,7 @@ func NewCreateTargetRequestWithBody(server string, spaceId openapi_types.UUID, p
 }
 
 // NewDeleteTargetRequest generates requests for DeleteTarget
-func NewDeleteTargetRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteTargetRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *DeleteTargetParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16758,6 +16948,28 @@ func NewDeleteTargetRequest(server string, spaceId openapi_types.UUID, targetId 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -17814,7 +18026,7 @@ func NewCreateUnitRequestWithBody(server string, spaceId openapi_types.UUID, par
 }
 
 // NewDeleteUnitRequest generates requests for DeleteUnit
-func NewDeleteUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID) (*http.Request, error) {
+func NewDeleteUnitRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DeleteUnitParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -17844,6 +18056,28 @@ func NewDeleteUnitRequest(server string, spaceId openapi_types.UUID, unitId open
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
@@ -21155,6 +21389,22 @@ func NewBulkDeleteTagsRequest(server string, params *BulkDeleteTagsParams) (*htt
 
 		}
 
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -21668,6 +21918,22 @@ func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams)
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -22498,6 +22764,22 @@ func NewBulkDeleteUnitsRequest(server string, params *BulkDeleteUnitsParams) (*h
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Detach != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25709,7 +25991,7 @@ type ClientWithResponsesInterface interface {
 	CreateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateBridgeWorkerParams, body CreateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateBridgeWorkerResponse, error)
 
 	// DeleteBridgeWorkerWithResponse request
-	DeleteBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteBridgeWorkerResponse, error)
+	DeleteBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *DeleteBridgeWorkerParams, reqEditors ...RequestEditorFn) (*DeleteBridgeWorkerResponse, error)
 
 	// GetBridgeWorkerWithResponse request
 	GetBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *GetBridgeWorkerParams, reqEditors ...RequestEditorFn) (*GetBridgeWorkerResponse, error)
@@ -25742,7 +26024,7 @@ type ClientWithResponsesInterface interface {
 	CreateChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeOrderParams, body CreateChangeOrderJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateChangeOrderResponse, error)
 
 	// DeleteChangeOrderWithResponse request
-	DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error)
+	DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *DeleteChangeOrderParams, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error)
 
 	// GetChangeOrderWithResponse request
 	GetChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *GetChangeOrderParams, reqEditors ...RequestEditorFn) (*GetChangeOrderResponse, error)
@@ -25766,7 +26048,7 @@ type ClientWithResponsesInterface interface {
 	CreateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateChangeSetParams, body CreateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateChangeSetResponse, error)
 
 	// DeleteChangeSetWithResponse request
-	DeleteChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeSetResponse, error)
+	DeleteChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *DeleteChangeSetParams, reqEditors ...RequestEditorFn) (*DeleteChangeSetResponse, error)
 
 	// GetChangeSetWithResponse request
 	GetChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *GetChangeSetParams, reqEditors ...RequestEditorFn) (*GetChangeSetResponse, error)
@@ -25894,7 +26176,7 @@ type ClientWithResponsesInterface interface {
 	PublishReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, body PublishReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*PublishReleaseResponse, error)
 
 	// DeleteReleaseWithResponse request
-	DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error)
+	DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *DeleteReleaseParams, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error)
 
 	// GetExtendedReleaseWithResponse request
 	GetExtendedReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*GetExtendedReleaseResponse, error)
@@ -25924,7 +26206,7 @@ type ClientWithResponsesInterface interface {
 	CreateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateTagParams, body CreateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTagResponse, error)
 
 	// DeleteTagWithResponse request
-	DeleteTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error)
+	DeleteTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error)
 
 	// GetTagWithResponse request
 	GetTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *GetTagParams, reqEditors ...RequestEditorFn) (*GetTagResponse, error)
@@ -25948,7 +26230,7 @@ type ClientWithResponsesInterface interface {
 	CreateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateTargetParams, body CreateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateTargetResponse, error)
 
 	// DeleteTargetWithResponse request
-	DeleteTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTargetResponse, error)
+	DeleteTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *DeleteTargetParams, reqEditors ...RequestEditorFn) (*DeleteTargetResponse, error)
 
 	// GetTargetWithResponse request
 	GetTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *GetTargetParams, reqEditors ...RequestEditorFn) (*GetTargetResponse, error)
@@ -25996,7 +26278,7 @@ type ClientWithResponsesInterface interface {
 	CreateUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *CreateUnitParams, body CreateUnitJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUnitResponse, error)
 
 	// DeleteUnitWithResponse request
-	DeleteUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteUnitResponse, error)
+	DeleteUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DeleteUnitParams, reqEditors ...RequestEditorFn) (*DeleteUnitResponse, error)
 
 	// GetUnitWithResponse request
 	GetUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitParams, reqEditors ...RequestEditorFn) (*GetUnitResponse, error)
@@ -33234,8 +33516,8 @@ func (c *ClientWithResponses) CreateBridgeWorkerWithResponse(ctx context.Context
 }
 
 // DeleteBridgeWorkerWithResponse request returning *DeleteBridgeWorkerResponse
-func (c *ClientWithResponses) DeleteBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteBridgeWorkerResponse, error) {
-	rsp, err := c.DeleteBridgeWorker(ctx, spaceId, bridgeWorkerId, reqEditors...)
+func (c *ClientWithResponses) DeleteBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *DeleteBridgeWorkerParams, reqEditors ...RequestEditorFn) (*DeleteBridgeWorkerResponse, error) {
+	rsp, err := c.DeleteBridgeWorker(ctx, spaceId, bridgeWorkerId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -33339,8 +33621,8 @@ func (c *ClientWithResponses) CreateChangeOrderWithResponse(ctx context.Context,
 }
 
 // DeleteChangeOrderWithResponse request returning *DeleteChangeOrderResponse
-func (c *ClientWithResponses) DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error) {
-	rsp, err := c.DeleteChangeOrder(ctx, spaceId, changeOrderId, reqEditors...)
+func (c *ClientWithResponses) DeleteChangeOrderWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeOrderId openapi_types.UUID, params *DeleteChangeOrderParams, reqEditors ...RequestEditorFn) (*DeleteChangeOrderResponse, error) {
+	rsp, err := c.DeleteChangeOrder(ctx, spaceId, changeOrderId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -33417,8 +33699,8 @@ func (c *ClientWithResponses) CreateChangeSetWithResponse(ctx context.Context, s
 }
 
 // DeleteChangeSetWithResponse request returning *DeleteChangeSetResponse
-func (c *ClientWithResponses) DeleteChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteChangeSetResponse, error) {
-	rsp, err := c.DeleteChangeSet(ctx, spaceId, changeSetId, reqEditors...)
+func (c *ClientWithResponses) DeleteChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *DeleteChangeSetParams, reqEditors ...RequestEditorFn) (*DeleteChangeSetResponse, error) {
+	rsp, err := c.DeleteChangeSet(ctx, spaceId, changeSetId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -33833,8 +34115,8 @@ func (c *ClientWithResponses) PublishReleaseWithResponse(ctx context.Context, sp
 }
 
 // DeleteReleaseWithResponse request returning *DeleteReleaseResponse
-func (c *ClientWithResponses) DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error) {
-	rsp, err := c.DeleteRelease(ctx, spaceId, releaseId, reqEditors...)
+func (c *ClientWithResponses) DeleteReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *DeleteReleaseParams, reqEditors ...RequestEditorFn) (*DeleteReleaseResponse, error) {
+	rsp, err := c.DeleteRelease(ctx, spaceId, releaseId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -33929,8 +34211,8 @@ func (c *ClientWithResponses) CreateTagWithResponse(ctx context.Context, spaceId
 }
 
 // DeleteTagWithResponse request returning *DeleteTagResponse
-func (c *ClientWithResponses) DeleteTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error) {
-	rsp, err := c.DeleteTag(ctx, spaceId, tagId, reqEditors...)
+func (c *ClientWithResponses) DeleteTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *DeleteTagParams, reqEditors ...RequestEditorFn) (*DeleteTagResponse, error) {
+	rsp, err := c.DeleteTag(ctx, spaceId, tagId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -34007,8 +34289,8 @@ func (c *ClientWithResponses) CreateTargetWithResponse(ctx context.Context, spac
 }
 
 // DeleteTargetWithResponse request returning *DeleteTargetResponse
-func (c *ClientWithResponses) DeleteTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteTargetResponse, error) {
-	rsp, err := c.DeleteTarget(ctx, spaceId, targetId, reqEditors...)
+func (c *ClientWithResponses) DeleteTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *DeleteTargetParams, reqEditors ...RequestEditorFn) (*DeleteTargetResponse, error) {
+	rsp, err := c.DeleteTarget(ctx, spaceId, targetId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -34163,8 +34445,8 @@ func (c *ClientWithResponses) CreateUnitWithResponse(ctx context.Context, spaceI
 }
 
 // DeleteUnitWithResponse request returning *DeleteUnitResponse
-func (c *ClientWithResponses) DeleteUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteUnitResponse, error) {
-	rsp, err := c.DeleteUnit(ctx, spaceId, unitId, reqEditors...)
+func (c *ClientWithResponses) DeleteUnitWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *DeleteUnitParams, reqEditors ...RequestEditorFn) (*DeleteUnitResponse, error) {
+	rsp, err := c.DeleteUnit(ctx, spaceId, unitId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}

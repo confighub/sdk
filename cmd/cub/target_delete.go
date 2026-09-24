@@ -36,6 +36,12 @@ Examples:
   # Delete specific targets by slug
   cub target delete --target my-target,another-target
 `+"```"+`
+
+A Target is not deleted while Units, Spaces or Releases reference it. The error names them.
+Pass --detach to clear their references to it as part of the delete:
+`+"```"+`
+  cub target delete --detach my-target
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        targetDeleteCmdRun,
@@ -51,6 +57,7 @@ func init() {
 	enableWhereFlag(targetDeleteCmd)
 	enableFilterFlag(targetDeleteCmd)
 	targetDeleteCmd.Flags().StringSliceVar(&targetDeleteIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(targetDeleteCmd)
 	targetCmd.AddCommand(targetDeleteCmd)
 }
 
@@ -113,6 +120,7 @@ func runBulkTargetDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteTargetsWithResponse(ctx, params)
@@ -137,7 +145,8 @@ func targetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	deleteRes, err := cubClientNew.DeleteTargetWithResponse(ctx, targetDetails.Target.SpaceID, targetDetails.Target.TargetID)
+	deleteRes, err := cubClientNew.DeleteTargetWithResponse(ctx, targetDetails.Target.SpaceID, targetDetails.Target.TargetID,
+		&goclientnew.DeleteTargetParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

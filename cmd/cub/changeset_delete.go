@@ -39,6 +39,13 @@ Examples:
   # Delete specific changesets by slug
   cub changeset delete --changeset old-changeset,deprecated-changeset
 `+"```"+`
+
+A change set is not deleted while revisions or units outside the delete are in it, or its tags
+mark revisions there. The error names them. Pass --detach to take them out of the change set as
+part of the delete:
+`+"```"+`
+  cub changeset delete --detach my-changeset
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        changesetDeleteCmdRun,
@@ -54,6 +61,7 @@ func init() {
 	enableWhereFlag(changesetDeleteCmd)
 	enableFilterFlag(changesetDeleteCmd)
 	changesetDeleteCmd.Flags().StringSliceVar(&changesetDeleteIdentifiers, "changeset", []string{}, "target specific changesets by slug or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(changesetDeleteCmd)
 	changesetCmd.AddCommand(changesetDeleteCmd)
 }
 
@@ -112,6 +120,7 @@ func runBulkChangeSetDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteChangeSetsWithResponse(ctx, params)
@@ -135,7 +144,8 @@ func changesetDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteChangeSetWithResponse(ctx, changesetDetails.ChangeSet.SpaceID, changesetDetails.ChangeSet.ChangeSetID)
+	deleteRes, err := cubClientNew.DeleteChangeSetWithResponse(ctx, changesetDetails.ChangeSet.SpaceID, changesetDetails.ChangeSet.ChangeSetID,
+		&goclientnew.DeleteChangeSetParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

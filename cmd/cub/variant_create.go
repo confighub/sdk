@@ -111,6 +111,9 @@ merge the changes back into the upstream units with
 
 The syncback links live in the upstream space and are named for the clone they take changes from
 ("syncback-<variant-space>-<unit>"), so an upstream space can have several drafts open at once.
+Because they link to the draft's units, discarding a draft takes --detach, which deletes them:
+
+  cub space delete --recursive --detach <variant-space>
 
 When --target points at a cub-cluster Argo target (an OCI target carrying the
 confighub.com/argo-apps-space annotation that "cub cluster up" stamps), this command also creates the

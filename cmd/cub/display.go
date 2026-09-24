@@ -307,6 +307,29 @@ func displayResponseErrorDetails(respError *goclientnew.ResponseError) {
 	table.Render()
 }
 
+// displayBulkFailure prints why one entity of a bulk operation failed: which entity, the message,
+// and the error's items, one to a line.
+func displayBulkFailure(operationName, entityName string, respError *goclientnew.ResponseError) {
+	name := ""
+	if respError.ErrorMetadata != nil {
+		name = respError.ErrorMetadata.EntitySlug
+		if name == "" {
+			name = respError.ErrorMetadata.EntityID
+		}
+	}
+	if name != "" && strings.Contains(respError.Message, name) {
+		// The message already says which entity, as a refused delete's does.
+		fmt.Println(respError.Message)
+	} else {
+		fmt.Printf("Failed to %s %s %s: %s\n", operationName, entityName, name, respError.Message)
+	}
+	if respError.ErrorMetadata != nil {
+		for _, item := range respError.ErrorMetadata.Items {
+			fmt.Printf("  %s: %s\n", item.Item, item.Description)
+		}
+	}
+}
+
 var verboseErrors = os.Getenv("CONFIGHUB_DEBUG") == "errors"
 
 // displayResponseErrorTable displays a table of multiple ResponseErrors
@@ -516,6 +539,12 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 			}
 		}
 
+		// Why each failed, which the counts below cannot say: a delete another entity still
+		// references names that entity in the error's items.
+		for _, respError := range failedErrors {
+			displayBulkFailure(operationName, entityName, respError)
+		}
+
 		// Display summary
 		fmt.Printf("\nBulk %s operation completed:\n", operationName)
 		fmt.Printf("  Success: %d %s(s)\n", successCount, entityName)
@@ -524,12 +553,6 @@ func displayBulkDeleteResults(responses200 *[]goclientnew.DeleteResponse, respon
 		}
 		if contextInfo != "" {
 			fmt.Printf("  Context: %s\n", contextInfo)
-		}
-
-		// Display detailed errors if verbose
-		if verbose && len(failedErrors) > 0 {
-			fmt.Printf("\nFailures:\n")
-			displayResponseErrorTable(failedErrors)
 		}
 	}
 

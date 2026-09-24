@@ -378,3 +378,19 @@ func addStandardUpdateFlags(cmd *cobra.Command) {
 func addStandardDeleteFlags(cmd *cobra.Command) {
 	addStandardDisplayFlags(cmd)
 }
+
+var deleteDetach bool
+
+// addDetachFlag adds --detach to a delete whose entities other entities may reference.
+func addDetachFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&deleteDetach, "detach", false,
+		"Remove the references other entities have to what is deleted, instead of refusing the delete while any remain")
+}
+
+// detachParam is the detach query parameter --detach sets.
+func detachParam() *bool {
+	if !deleteDetach {
+		return nil
+	}
+	return &deleteDetach
+}

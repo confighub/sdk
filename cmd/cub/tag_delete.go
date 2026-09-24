@@ -39,6 +39,13 @@ Examples:
   # Delete specific tags by slug
   cub tag delete --tag old-tag,deprecated-tag
 `+"```"+`
+
+A tag is not deleted while it marks revisions in other spaces, or while a change set, change order
+or release names it: a tag one of those made is deleted with it. The error names them. Pass
+--detach to remove the tag from those revisions as part of the delete:
+`+"```"+`
+  cub tag delete --detach my-tag
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        tagDeleteCmdRun,
@@ -54,6 +61,7 @@ func init() {
 	enableWhereFlag(tagDeleteCmd)
 	enableFilterFlag(tagDeleteCmd)
 	tagDeleteCmd.Flags().StringSliceVar(&tagDeleteIdentifiers, "tag", []string{}, "target specific tags by slug or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(tagDeleteCmd)
 	tagCmd.AddCommand(tagDeleteCmd)
 }
 
@@ -112,6 +120,7 @@ func runBulkTagDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteTagsWithResponse(ctx, params)
@@ -135,7 +144,8 @@ func tagDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteTagWithResponse(ctx, tagDetails.Tag.SpaceID, tagDetails.Tag.TagID)
+	deleteRes, err := cubClientNew.DeleteTagWithResponse(ctx, tagDetails.Tag.SpaceID, tagDetails.Tag.TagID,
+		&goclientnew.DeleteTagParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

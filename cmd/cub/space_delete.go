@@ -37,6 +37,13 @@ Examples:
   # Delete specific spaces by slug
   cub space delete --space my-space,another-space
 `+"```"+`
+
+A Space is not deleted while entities in other Spaces reference what it contains, such as a
+Space whose release Target is in it. The error names them. Delete those Spaces in the same
+request, remove the references first, or pass --detach to remove them as part of the delete:
+`+"```"+`
+  cub space delete --recursive --detach cluster-space
+`+"```"+`
 `, ""),
 	Args: cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE: spaceDeleteCmdRun,
@@ -55,6 +62,7 @@ func init() {
 	spaceDeleteCmd.Flags().StringSliceVar(&spaceDeleteIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk delete (can be repeated or comma-separated)")
 	spaceDeleteCmd.Flags().BoolVar(&recursive, "recursive", false, "Recursively delete all entities within the deleted space(s) if none have delete gates.")
 	spaceDeleteCmd.Flags().BoolVar(&recursiveForce, "recursive-force", false, "Recursively delete all entities within the deleted space(s) regardless whether any have delete gates.")
+	addDetachFlag(spaceDeleteCmd)
 	spaceCmd.AddCommand(spaceDeleteCmd)
 }
 
@@ -119,6 +127,7 @@ func runBulkSpaceDelete() error {
 		recursiveForceParam := "true"
 		params.RecursiveForce = &recursiveForceParam
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteSpacesWithResponse(ctx, params)
@@ -152,6 +161,7 @@ func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {
 		recursiveForceParam := "true"
 		params.RecursiveForce = &recursiveForceParam
 	}
+	params.Detach = detachParam()
 	deleteRes, err := cubClientNew.DeleteSpaceWithResponse(ctx, spaceID, params)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)

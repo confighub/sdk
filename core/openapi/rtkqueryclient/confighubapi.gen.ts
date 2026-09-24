@@ -53,6 +53,7 @@ const injectedRtkApi = api
             include: queryArg.include,
             recursive: queryArg.recursive,
             recursive_force: queryArg.recursiveForce,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['Space'],
@@ -169,6 +170,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['BridgeWorker'],
@@ -252,6 +254,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['ChangeOrder'],
@@ -325,6 +328,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['ChangeSet'],
@@ -965,6 +969,7 @@ const injectedRtkApi = api
           params: {
             recursive: queryArg.recursive,
             recursive_force: queryArg.recursiveForce,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['Space'],
@@ -1093,6 +1098,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/bridge_worker/${queryArg.bridgeWorkerId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['BridgeWorker'],
       }),
@@ -1185,6 +1193,9 @@ const injectedRtkApi = api
           query: (queryArg) => ({
             url: `/space/${queryArg.spaceId}/change_order/${queryArg.changeOrderId}`,
             method: 'DELETE',
+            params: {
+              detach: queryArg.detach,
+            },
           }),
           invalidatesTags: ['ChangeOrder'],
         },
@@ -1251,6 +1262,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/change_set/${queryArg.changeSetId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['ChangeSet'],
       }),
@@ -1597,6 +1611,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/release/${queryArg.releaseId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['Release'],
       }),
@@ -1672,6 +1689,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/tag/${queryArg.tagId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['Tag'],
       }),
@@ -1729,6 +1749,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/target/${queryArg.targetId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['Target'],
       }),
@@ -1862,6 +1885,9 @@ const injectedRtkApi = api
         query: (queryArg) => ({
           url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}`,
           method: 'DELETE',
+          params: {
+            detach: queryArg.detach,
+          },
         }),
         invalidatesTags: ['Unit'],
       }),
@@ -2242,6 +2268,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['Tag'],
@@ -2303,6 +2330,7 @@ const injectedRtkApi = api
               filter: queryArg.filter,
               contains: queryArg.contains,
               include: queryArg.include,
+              detach: queryArg.detach,
             },
           }),
           invalidatesTags: ['Target'],
@@ -2411,6 +2439,7 @@ const injectedRtkApi = api
             filter: queryArg.filter,
             contains: queryArg.contains,
             include: queryArg.include,
+            detach: queryArg.detach,
           },
         }),
         invalidatesTags: ['Unit'],
@@ -2810,6 +2839,8 @@ export type BulkDeleteSpacesApiArg = {
   recursive?: string;
   /** Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates. */
   recursiveForce?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type BulkPatchSpacesApiResponse = /** status 200 OK */
   | SpaceCreateOrUpdateResponseRead[]
@@ -3542,6 +3573,8 @@ export type BulkDeleteBridgeWorkersApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllBridgeWorkersApiResponse = /** status 200 OK */ ExtendedBridgeWorkerRead[];
 export type ListAllBridgeWorkersApiArg = {
@@ -3899,6 +3932,8 @@ export type BulkDeleteChangeOrdersApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllChangeOrdersApiResponse = /** status 200 OK */ ExtendedChangeOrderRead[];
 export type ListAllChangeOrdersApiArg = {
@@ -4348,6 +4383,8 @@ export type BulkDeleteChangeSetsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllChangeSetsApiResponse = /** status 200 OK */ ExtendedChangeSetRead[];
 export type ListAllChangeSetsApiArg = {
@@ -7518,6 +7555,8 @@ export type DeleteSpaceApiArg = {
   recursive?: string;
   /** Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) regardless whether any have delete gates. */
   recursiveForce?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetSpaceApiResponse = /** status 200 OK */ ExtendedSpaceRead;
 export type GetSpaceApiArg = {
@@ -7879,6 +7918,8 @@ export type DeleteBridgeWorkerApiArg = {
   spaceId: string;
   /** Unique identifier for a bridge_worker_id */
   bridgeWorkerId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetBridgeWorkerApiResponse = /** status 200 OK */ ExtendedBridgeWorkerRead;
 export type GetBridgeWorkerApiArg = {
@@ -8093,6 +8134,8 @@ export type DeleteChangeOrderApiArg = {
   spaceId: string;
   /** Unique identifier for a change_order_id */
   changeOrderId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetChangeOrderApiResponse = /** status 200 OK */ ExtendedChangeOrderRead;
 export type GetChangeOrderApiArg = {
@@ -8275,6 +8318,8 @@ export type DeleteChangeSetApiArg = {
   spaceId: string;
   /** Unique identifier for a change_set_id */
   changeSetId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetChangeSetApiResponse = /** status 200 OK */ ExtendedChangeSetRead;
 export type GetChangeSetApiArg = {
@@ -9303,6 +9348,8 @@ export type DeleteReleaseApiArg = {
   spaceId: string;
   /** Unique identifier for a release_id */
   releaseId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetExtendedReleaseApiResponse =
   /** status 200 Release with additional related entities expanded based on the request's include parameter. */ ExtendedReleaseRead;
@@ -9415,7 +9462,7 @@ export type ListTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9481,6 +9528,8 @@ export type DeleteTagApiArg = {
   spaceId: string;
   /** Unique identifier for a tag_id */
   tagId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetTagApiResponse = /** status 200 OK */ ExtendedTagRead;
 export type GetTagApiArg = {
@@ -9647,6 +9696,8 @@ export type DeleteTargetApiArg = {
   spaceId: string;
   /** Unique identifier for a target_id */
   targetId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetTargetApiResponse = /** status 200 OK */ ExtendedTargetRead;
 export type GetTargetApiArg = {
@@ -10079,6 +10130,8 @@ export type DeleteUnitApiArg = {
   spaceId: string;
   /** Unique identifier for a unit_id */
   unitId: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type GetUnitApiResponse =
   /** status 200 Unit with capability to extend additional related entities. */ ExtendedUnitRead;
@@ -11272,7 +11325,7 @@ export type BulkDeleteTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -11312,6 +11365,8 @@ export type BulkDeleteTagsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllTagsApiResponse = /** status 200 OK */ ExtendedTagRead[];
 export type ListAllTagsApiArg = {
@@ -11349,7 +11404,7 @@ export type ListAllTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -11437,7 +11492,7 @@ export type BulkPatchTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -11536,7 +11591,7 @@ export type BulkCreateTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Slug, SpaceID, TagID, UpdatedAt.
+    Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -11735,6 +11790,8 @@ export type BulkDeleteTargetsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllTargetsApiResponse = /** status 200 OK */ ExtendedTargetRead[];
 export type ListAllTargetsApiArg = {
@@ -12498,6 +12555,8 @@ export type BulkDeleteUnitsApiArg = {
     
     The whole string must be query-encoded. */
   include?: string;
+  /** If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes. */
+  detach?: boolean;
 };
 export type ListAllUnitsApiResponse = /** status 200 OK */ ExtendedUnitRead[];
 export type ListAllUnitsApiArg = {
@@ -15406,6 +15465,8 @@ export type TagRead = {
   };
   /** Unique identifier for an organization. */
   OrganizationID?: string;
+  /** ReleaseID is the optional ID of the Release that made this Tag. */
+  ReleaseID?: string;
   /** Unique URL-safe identifier for the entity. */
   Slug: string;
   /** Unique identifier for a space. */

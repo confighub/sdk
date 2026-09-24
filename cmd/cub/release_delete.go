@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -29,12 +30,19 @@ Examples:
 `+"```"+`
   cub release delete 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 `+"```"+`
+
+A release is not deleted while it, or the tag it made, marks revisions. The error names them. Pass
+--detach to remove those marks as part of the delete; the tag it made is deleted with it:
+`+"```"+`
+  cub release delete --detach 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
+`+"```"+`
 `, ""),
 	RunE: releaseDeleteCmdRun,
 }
 
 func init() {
 	addStandardDeleteFlags(releaseDeleteCmd)
+	addDetachFlag(releaseDeleteCmd)
 	releaseCmd.AddCommand(releaseDeleteCmd)
 }
 
@@ -56,6 +64,7 @@ func releaseDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	deleteRes, err := cubClientNew.DeleteReleaseWithResponse(ctx,
 		releaseSpaceID,
 		releaseID,
+		&goclientnew.DeleteReleaseParams{Detach: detachParam()},
 	)
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)

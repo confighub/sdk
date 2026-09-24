@@ -39,6 +39,13 @@ Examples:
   # Delete specific changeorders by slug
   cub changeorder delete --changeorder old-changeorder,deprecated-changeorder
 `+"```"+`
+
+A change order is not deleted while it, or the tags it made, mark revisions: those of the units
+its changes were made in and promoted to. The error names them. Pass --detach to remove those
+marks as part of the delete:
+`+"```"+`
+  cub changeorder delete --detach my-changeorder
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        changeorderDeleteCmdRun,
@@ -54,6 +61,7 @@ func init() {
 	enableWhereFlag(changeorderDeleteCmd)
 	enableFilterFlag(changeorderDeleteCmd)
 	changeorderDeleteCmd.Flags().StringSliceVar(&changeorderDeleteIdentifiers, "changeorder", []string{}, "target specific changeorders by slug or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(changeorderDeleteCmd)
 	changeorderCmd.AddCommand(changeorderDeleteCmd)
 }
 
@@ -112,6 +120,7 @@ func runBulkChangeOrderDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteChangeOrdersWithResponse(ctx, params)
@@ -135,7 +144,8 @@ func changeorderDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteChangeOrderWithResponse(ctx, changeorderDetails.ChangeOrder.SpaceID, changeorderDetails.ChangeOrder.ChangeOrderID)
+	deleteRes, err := cubClientNew.DeleteChangeOrderWithResponse(ctx, changeorderDetails.ChangeOrder.SpaceID, changeorderDetails.ChangeOrder.ChangeOrderID,
+		&goclientnew.DeleteChangeOrderParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

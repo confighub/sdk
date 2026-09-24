@@ -36,6 +36,13 @@ Examples:
   # Delete specific units by slug
   cub unit delete --unit my-unit,another-unit
 `+"```"+`
+
+A unit is not deleted while units outside the delete link to it, including its clones. The error
+names their links. Delete those units in the same request, or pass --detach to delete their links
+to it as part of the delete, which leaves each clone without an upstream unit:
+`+"```"+`
+  cub unit delete --detach base-unit
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        unitDeleteCmdRun,
@@ -47,6 +54,7 @@ func init() {
 	enableWhereFlag(unitDeleteCmd)
 	enableFilterFlag(unitDeleteCmd)
 	unitDeleteCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(unitDeleteCmd)
 	unitCmd.AddCommand(unitDeleteCmd)
 }
 
@@ -105,6 +113,7 @@ func runBulkUnitDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteUnitsWithResponse(ctx, params)
@@ -128,7 +137,8 @@ func unitDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID)
+	deleteRes, err := cubClientNew.DeleteUnitWithResponse(ctx, unitDetails.Unit.SpaceID, unitDetails.Unit.UnitID,
+		&goclientnew.DeleteUnitParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}

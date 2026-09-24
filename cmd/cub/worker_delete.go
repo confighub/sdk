@@ -39,6 +39,12 @@ Examples:
   # Delete specific bridgeworkers by name
   cub worker delete --worker my-worker,another-worker
 `+"```"+`
+
+A worker is not deleted while Targets name it, and its Targets are not deleted with it. The
+error names them. Pass --detach to leave those Targets without a worker:
+`+"```"+`
+  cub worker delete --detach my-worker
+`+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1), // Allow 0 or 1 args (0 for bulk mode)
 	RunE:        bridgeworkerDeleteCmdRun,
@@ -54,6 +60,7 @@ func init() {
 	enableWhereFlag(bridgeworkerDeleteCmd)
 	enableFilterFlag(bridgeworkerDeleteCmd)
 	bridgeworkerDeleteCmd.Flags().StringSliceVar(&workerDeleteIdentifiers, "worker", []string{}, "target specific bridgeworkers by name or UUID for bulk delete (can be repeated or comma-separated)")
+	addDetachFlag(bridgeworkerDeleteCmd)
 	workerCmd.AddCommand(bridgeworkerDeleteCmd)
 }
 
@@ -116,6 +123,7 @@ func runBulkWorkerDelete() error {
 	if filterID != "" {
 		params.Filter = &filterID
 	}
+	params.Detach = detachParam()
 
 	// Call the bulk delete API
 	bulkRes, err := cubClientNew.BulkDeleteBridgeWorkersWithResponse(ctx, params)
@@ -139,7 +147,8 @@ func bridgeworkerDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	deleteRes, err := cubClientNew.DeleteBridgeWorkerWithResponse(ctx, worker.BridgeWorker.SpaceID, worker.BridgeWorker.BridgeWorkerID)
+	deleteRes, err := cubClientNew.DeleteBridgeWorkerWithResponse(ctx, worker.BridgeWorker.SpaceID, worker.BridgeWorker.BridgeWorkerID,
+		&goclientnew.DeleteBridgeWorkerParams{Detach: detachParam()})
 	if cubapi.IsAPIError(err, deleteRes) {
 		return cubapi.InterpretErrorGeneric(err, deleteRes)
 	}
