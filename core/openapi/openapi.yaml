@@ -17,6 +17,400 @@ servers:
 security:
 - bearerAuth: []
 paths:
+  /_component:
+    delete:
+      description: Delete multiple components selected by query parameters
+      operationId: BulkDeleteComponents
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Components returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Component list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Component).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Component include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Component are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'Component is still in use: it has DeleteGates, or other entities
+            still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk delete multiple components
+      tags:
+      - Component
+    patch:
+      description: Apply JSON merge patch to multiple components selected by query
+        parameters
+      operationId: BulkPatchComponents
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Components returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Component list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Component).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Component include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Component are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Component. All fields are optional
+                and nullable. Readonly fields are ignored.
+              properties:
+                AllowedChangeWorkflowIDs:
+                  description: ""
+                  items:
+                    format: uuid
+                    nullable: true
+                    type: string
+                  nullable: true
+                  type: array
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                ChangeWorkflowRequired:
+                  description: ""
+                  nullable: true
+                  type: boolean
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ComponentCreateOrUpdateResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ComponentCreateOrUpdateResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk patch multiple components
+      tags:
+      - Component
   /_space:
     delete:
       description: Delete multiple spaces selected by query parameters
@@ -1588,6 +1982,185 @@ paths:
       summary: Bulk create (clone) multiple attributes
       tags:
       - Attribute
+  /attribute/move:
+    post:
+      description: Move the selected Attributes to another Space. The Space an Attribute
+        leaves and the one it arrives in are refreshed if they selected it before
+        or select it after, which recomputes their AttributeIDs and rebuilds their
+        function executors. Requires Manage permission on each one moved and CreateChildren
+        permission on the destination Space. Every check runs over the whole selection
+        before anything is moved.
+      operationId: BulkMoveAttributes
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Attributes returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Attribute list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Attribute).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Attribute include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Attribute.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Attribute are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attribute request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attribute not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attribute data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Attribute.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move attributes to another space
+      tags:
+      - Attribute
   /bridge_worker:
     delete:
       description: Delete multiple bridge workers selected by query parameters
@@ -2441,7 +3014,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2617,7 +3190,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -2778,7 +3351,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3051,7 +3624,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -4216,6 +4789,184 @@ paths:
       summary: Bulk create (clone) multiple changesets
       tags:
       - ChangeSet
+  /change_set/move:
+    post:
+      description: Move the selected ChangeSets, with their start and end Tags, to
+        another Space. The Revisions and Units in a ChangeSet stay where they are.
+        Requires Manage permission on each one moved and CreateChildren permission
+        on the destination Space. Every check runs over the whole selection before
+        anything is moved.
+      operationId: BulkMoveChangeSets
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeSets returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeSet list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeSet).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeSet include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeSet.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeSet are EndTagID, OrganizationID, SpaceID, StartTagID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeSet data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeSet.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move change sets to another space
+      tags:
+      - ChangeSet
   /change_workflow:
     delete:
       description: Delete multiple change workflows selected by query parameters
@@ -5095,6 +5846,772 @@ paths:
       summary: Bulk create (clone) multiple change workflows
       tags:
       - ChangeWorkflow
+  /change_workflow/move:
+    post:
+      description: Move the selected ChangeWorkflows to another Space. ChangeOrders
+        that use one refer to it by ID. Requires Manage permission on each one moved
+        and CreateChildren permission on the destination Space. Every check runs over
+        the whole selection before anything is moved.
+      operationId: BulkMoveChangeWorkflows
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ChangeWorkflows returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ChangeWorkflow list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ChangeWorkflow).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ChangeWorkflow include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ChangeWorkflow.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ChangeWorkflow are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeWorkflow request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeWorkflow not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ChangeWorkflow data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ChangeWorkflow.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move change workflows to another space
+      tags:
+      - ChangeWorkflow
+  /component:
+    get:
+      description: List Components
+      operationId: ListComponents
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Components returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Component list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Component).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Component include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Component are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ComponentID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedComponent'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List Components
+      tags:
+      - Component
+    post:
+      description: Create Component
+      operationId: CreateComponent
+      parameters:
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Component'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: The Component a set of Variants make up. Each Variant is a
+            Space naming the Component with ComponentID. The Component decides which
+            ChangeWorkflows promotions and releases of its Variants may use, and whether
+            one is required.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create Component
+      tags:
+      - Component
+  /component/{component_id}:
+    delete:
+      description: Delete Component
+      operationId: DeleteComponent
+      parameters:
+      - description: Unique identifier for a component_id
+        in: path
+        name: component_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'Component is still in use: it has DeleteGates, or other entities
+            still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete Component
+      tags:
+      - Component
+    get:
+      description: Get Component
+      operationId: GetComponent
+      parameters:
+      - description: |-
+          Include clause for expanding related entities in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Component are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Component.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ComponentID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a component_id
+        in: path
+        name: component_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedComponent'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get Component
+      tags:
+      - Component
+    patch:
+      description: Patch Component
+      operationId: PatchComponent
+      parameters:
+      - description: Unique identifier for a component_id
+        in: path
+        name: component_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Component. All fields are optional
+                and nullable. Readonly fields are ignored.
+              properties:
+                AllowedChangeWorkflowIDs:
+                  description: ""
+                  items:
+                    format: uuid
+                    nullable: true
+                    type: string
+                  nullable: true
+                  type: array
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                ChangeWorkflowRequired:
+                  description: ""
+                  nullable: true
+                  type: boolean
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: The Component a set of Variants make up. Each Variant is a
+            Space naming the Component with ComponentID. The Component decides which
+            ChangeWorkflows promotions and releases of its Variants may use, and whether
+            one is required.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch Component
+      tags:
+      - Component
+    put:
+      description: Update Component
+      operationId: UpdateComponent
+      parameters:
+      - description: Unique identifier for a component_id
+        in: path
+        name: component_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Component'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Component'
+          description: The Component a set of Variants make up. Each Variant is a
+            Space naming the Component with ComponentID. The Component decides which
+            ChangeWorkflows promotions and releases of its Variants may use, and whether
+            one is required.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Component data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Component.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update Component
+      tags:
+      - Component
   /filter:
     delete:
       description: Delete multiple filters selected by query parameters
@@ -5981,6 +7498,183 @@ paths:
       summary: Bulk create (clone) multiple filters
       tags:
       - Filter
+  /filter/move:
+    post:
+      description: Move the selected Filters to another Space. Spaces, Views and Triggers
+        that use a Filter refer to it by ID, and keep using it. Requires Manage permission
+        on each one moved and CreateChildren permission on the destination Space.
+        Every check runs over the whole selection before anything is moved.
+      operationId: BulkMoveFilters
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Filters returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Filter list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Filter).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Filter include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Filter.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Filter are FromSpaceID, OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Filter data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Filter.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move filters to another space
+      tags:
+      - Filter
   /function:
     get:
       description: List retrieves a map of Functions across the Organization
@@ -6210,7 +7904,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -7321,6 +9015,185 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Bulk create (clone) multiple invocations
+      tags:
+      - Invocation
+  /invocation/move:
+    post:
+      description: Move the selected Invocations to another Space. An Invocation's
+        built-in functions run on its Space's executor, so a move to a Space with
+        different Attributes re-validates them there, and is refused while a Trigger
+        runs the Invocation. Requires Manage permission on each one moved and CreateChildren
+        permission on the destination Space. Every check runs over the whole selection
+        before anything is moved.
+      operationId: BulkMoveInvocations
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Invocations returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Invocation list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Invocation).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Invocation include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Invocation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Invocation are BridgeWorkerID, OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Invocation data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Invocation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move invocations to another space
       tags:
       - Invocation
   /link:
@@ -9659,7 +11532,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -10040,7 +11913,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -10139,7 +12012,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -10258,7 +12131,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -10357,7 +12230,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -10475,7 +12348,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -10574,7 +12447,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -12811,7 +14684,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -15594,7 +17467,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -17216,7 +19089,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: Annotations, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -20038,7 +21911,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -22776,7 +24649,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -22875,7 +24748,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -23005,7 +24878,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationWarnings, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -25210,6 +27083,184 @@ paths:
       summary: Bulk create (clone) multiple tags
       tags:
       - Tag
+  /tag/move:
+    post:
+      description: Move the selected Tags to another Space. The Revisions a Tag marks
+        keep their marks. A Tag that a ChangeSet, ChangeOrder, or Release owns cannot
+        be moved on its own. Requires Manage permission on each one moved and CreateChildren
+        permission on the destination Space. Every check runs over the whole selection
+        before anything is moved.
+      operationId: BulkMoveTags
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Tags returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Tag list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Tag).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Tag include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Tag.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Tag are ChangeSetID, OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Tag data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Tag.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move tags to another space
+      tags:
+      - Tag
   /target:
     delete:
       description: Delete multiple targets selected by query parameters
@@ -25820,6 +27871,184 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Bulk patch multiple targets
+      tags:
+      - Target
+  /target/move:
+    post:
+      description: Move the selected Targets to another Space. Units and Spaces that
+        use a Target refer to it by ID, and its Releases stay in the Spaces that published
+        them. Requires Manage permission on each one moved and CreateChildren permission
+        on the destination Space. Every check runs over the whole selection before
+        anything is moved.
+      operationId: BulkMoveTargets
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Targets returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Target list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Target).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Target.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Target.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move targets to another space
       tags:
       - Target
   /trigger:
@@ -26872,7 +29101,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27057,7 +29286,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27301,7 +29530,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -27844,7 +30073,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -28276,7 +30505,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -28447,7 +30676,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -28619,7 +30848,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -28795,7 +31024,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -29103,7 +31332,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -29544,7 +31773,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationWarnings, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -31141,6 +33370,182 @@ paths:
       summary: Bulk create (clone) multiple views
       tags:
       - View
+  /view/move:
+    post:
+      description: Move the selected Views to another Space. Requires Manage permission
+        on each one moved and CreateChildren permission on the destination Space.
+        Every check runs over the whole selection before anything is moved.
+      operationId: BulkMoveViews
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Views returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the View list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (View).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for View include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for View.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for View are FilterID, OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Report what the move would do, and what would stop it, without
+          moving anything
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MoveRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/MoveResponse'
+                type: array
+          description: 'Multi-Status: nothing was moved, or some moved and others
+            did not'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: View data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing View.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Move views to another space
+      tags:
+      - View
 components:
   schemas:
     ActionResult:
@@ -32171,6 +34576,12 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        Stage:
+          description: Stage is the stage of ChangeWorkflow the change order has reached,
+            or Completed once the last stage satisfies Final. Set by the server. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
         StartTagID:
           description: StartTagID is the identifier of the set of Revisions immediately
             before the ChangeOrder, making it the half-open interval (start, end].
@@ -32695,6 +35106,113 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    Component:
+      description: The Component a set of Variants make up. Each Variant is a Space
+        naming the Component with ComponentID. The Component decides which ChangeWorkflows
+        promotions and releases of its Variants may use, and whether one is required.
+      properties:
+        AllowedChangeWorkflowIDs:
+          description: The set of ChangeWorkflows that can be used for promotions
+            and releases of this component's Variants. Changing it requires Manage
+            permission on the component. (optional)
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Annotations:
+          additionalProperties:
+            maxLength: 1024
+            pattern: ^(.|\n)*$
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        ChangeWorkflowRequired:
+          description: Whether a ChangeWorkflow must be used for promotions and releases
+            of this component's Variants. Changing it requires Manage permission on
+            the component. (optional)
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        ComponentID:
+          description: Unique identifier for a component.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        DisplayName:
+          description: Friendly name for the entity.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Permissions:
+          $ref: '#/components/schemas/Permissions'
+        Slug:
+          description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Slug
+      type: object
+    ComponentCreateOrUpdateResponse:
+      properties:
+        Component:
+          $ref: '#/components/schemas/Component'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+      type: object
     CreateUserKeyRequest:
       properties:
         Description:
@@ -32820,6 +35338,15 @@ components:
           $ref: '#/components/schemas/Organization'
         Space:
           $ref: '#/components/schemas/Space'
+      type: object
+    ExtendedComponent:
+      properties:
+        Component:
+          $ref: '#/components/schemas/Component'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
       type: object
     ExtendedFilter:
       properties:
@@ -34137,6 +36664,35 @@ components:
         Link:
           $ref: '#/components/schemas/Link'
       type: object
+    MoveRequest:
+      properties:
+        ToSpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    MoveResponse:
+      properties:
+        EntityID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Moved:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        MovedTagSlugs:
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     Mutation:
       description: Mutation is a single source of mutation for a Revision.
       properties:
@@ -35094,6 +37650,13 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: ChangeOrder the Release was published for, when publishing
+            named one. Publishing it advances that ChangeOrder's Stage. (readonly)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -35226,6 +37789,13 @@ components:
           description: Optional override of the name of the Release's tar.gz bundle.
           type: string
           x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: Optional ID of the ChangeOrder the Release is published for.
+            It is recorded as the Release's ChangeOrderID, and the ChangeOrder's Stage
+            is advanced in the same transaction.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -35803,6 +38373,15 @@ components:
             caused it, for the configuration data at this Revision.
           type: object
           x-go-type-skip-optional-pointer: true
+        ValidationTriggerIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Map from each gate name in ValidationErrors, ValidationWarnings,
+            and ValidationPassed to the ID of the Trigger that produced it. A gate
+            no Trigger produced has no entry. The Trigger may since have been renamed,
+            moved, or deleted.
+          type: object
+          x-go-type-skip-optional-pointer: true
         ValidationWarnings:
           additionalProperties:
             type: boolean
@@ -35812,12 +38391,20 @@ components:
             operations.
           type: object
           x-go-type-skip-optional-pointer: true
+        ValueTriggerIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Map from each key in Values to the ID of the Trigger that produced
+            it. The Trigger may since have been renamed, moved, or deleted.
+          type: object
+          x-go-type-skip-optional-pointer: true
         Values:
           additionalProperties:
             type: string
-          description: Map from "<trigger slug>/<attribute name>" to the first output
-            Value with that attribute name of the function invocation specified by
-            the Trigger, as of this Revision.
+          description: Map from "<space slug>/<trigger slug>/<attribute name>" to
+            the first output Value with that attribute name of the function invocation
+            specified by the Trigger, as of this Revision. Revisions written before
+            the Space slug was added have "<trigger slug>/<attribute name>" keys.
           type: object
           x-go-type-skip-optional-pointer: true
         Version:
@@ -35911,14 +38498,15 @@ components:
           format: uuid
           type: string
         AttributeHash:
-          description: Hash of all registered Attribute configurations for the Space.
-            (readonly)
+          description: Hash of the configurations of the Attributes in AttributeIDs,
+            which changes whenever the Space's function executor does. (readonly)
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
         AttributeIDs:
-          description: List of Attribute IDs that match the WhereAttribute and/or
-            AttributeFilterID criteria. (readonly)
+          description: 'List of Attribute IDs the Space''s function executor is built
+            from: those that match the WhereAttribute and/or AttributeFilterID criteria,
+            or, when neither is set, the Attributes in the Space. (readonly)'
           items:
             $ref: '#/components/schemas/UUID'
           readOnly: true
@@ -37095,6 +39683,17 @@ components:
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
+        ValidationTriggerIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Map from each gate name in ValidationErrors and ValidationWarnings,
+            and in the head Revision's ValidationPassed, to the ID of the Trigger
+            that produced it. A gate no Trigger produced has no entry. The Trigger
+            may since have been renamed, moved, or deleted, so find it by this ID
+            rather than by the slugs in the gate name.
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
         ValidationWarnings:
           additionalProperties:
             type: boolean
@@ -37104,12 +39703,21 @@ components:
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
+        ValueTriggerIDs:
+          additionalProperties:
+            $ref: '#/components/schemas/UUID'
+          description: Map from each key in Values to the ID of the Trigger that produced
+            it.
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
         Values:
           additionalProperties:
             type: string
-          description: Map from "<trigger slug>/<attribute name>" to the first output
-            Value with that attribute name of the function invocation specified by
-            the Trigger.
+          description: Map from "<space slug>/<trigger slug>/<attribute name>" to
+            the first output Value with that attribute name of the function invocation
+            specified by the Trigger. Units not resolved since the Space slug was
+            added have "<trigger slug>/<attribute name>" keys.
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true

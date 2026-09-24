@@ -317,7 +317,7 @@ func ValidateInClauseValues(literal string, dataType DataType) error {
 	var want *regexp.Regexp
 	var kind string
 	switch dataType {
-	case DataTypeString, DataTypeUUID, DataTypeTime, DataTypeStringMap, DataTypeUUIDStringMap, DataTypeJSON:
+	case DataTypeString, DataTypeUUID, DataTypeTime, DataTypeStringMap, DataTypeUUIDStringMap, DataTypeStringUUIDMap, DataTypeJSON:
 		// Quoted token whose interior has no quote/backslash, so it cannot escape the '...'.
 		// A JSON value at a path is compared in its text form, so its IN list is quoted too:
 		// `Data.spec.replicas IN ('1', '2')`.
@@ -872,6 +872,43 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 			}
 		}
 		return evaluateUUIDStringMapExpression(expr.Operator, uuidStringMapValue, rightUUIDValue)
+	case DataTypeStringUUIDMap:
+		// A term against one key compares that key's value as DataTypeUUID; what reaches here is
+		// the whole map, for LEN or for `?` on a key.
+		stringUUIDMapValue, ok := leftValue.(map[string]uuid.UUID)
+		if !ok {
+			return false, fmt.Errorf("internal error: expected map[string]uuid but got %T", leftValue)
+		}
+		if expr.IsLengthExpression {
+			var err error
+			var rightIntValue int
+			if rightValue != nil {
+				rightIntValue, err = convertNumberToInt(rightValue)
+				if err != nil {
+					return false, fmt.Errorf("internal error: expected number but got %T", rightValue)
+				}
+			} else {
+				rightIntValue, err = parseIntLiteral(expr.Literal)
+				if err != nil {
+					return false, errors.Wrap(err, "internal error: invalid number literal")
+				}
+			}
+			return evaluateIntExpression(expr.Operator, len(stringUUIDMapValue), rightIntValue), nil
+		}
+		var rightStringValue string
+		if rightValue != nil {
+			rightStringValue, ok = rightValue.(string)
+			if !ok {
+				return false, fmt.Errorf("internal error: expected string but got %T", rightValue)
+			}
+		} else {
+			rightStringValue = parseStringLiteral(expr.Literal)
+		}
+		if expr.Operator != "?" {
+			return false, fmt.Errorf("unsupported operator for string-UUID map: %s", expr.Operator)
+		}
+		_, exists := stringUUIDMapValue[rightStringValue]
+		return exists, nil
 	case DataTypeStringStringUUIDBoolMap:
 		// Permissions type: map[string]map[string]map[uuid.UUID]bool
 		// This case is primarily handled by the in-memory filter evaluator in filter_impl.go

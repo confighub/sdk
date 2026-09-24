@@ -123,6 +123,17 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		body.TagID = &tagID
+
+		// A Release of where a ChangeOrder arrived is published for that ChangeOrder, which the
+		// server records on the Release and advances in the same transaction. The state before
+		// it is not the change, so Before:ChangeOrder: names none.
+		if identifier, ok := strings.CutPrefix(releasePublishRevision, "ChangeOrder:"); ok {
+			changeOrder, err := changeOrderByRef(identifier)
+			if err != nil {
+				return err
+			}
+			body.ChangeOrderID = &changeOrder.ChangeOrderID
+		}
 	}
 
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.Space.SpaceID, body)

@@ -93,6 +93,14 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// BulkDeleteComponents request
+	BulkDeleteComponents(ctx context.Context, params *BulkDeleteComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkPatchComponentsWithBody request with any body
+	BulkPatchComponentsWithBody(ctx context.Context, params *BulkPatchComponentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkPatchComponentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteSpaces request
 	BulkDeleteSpaces(ctx context.Context, params *BulkDeleteSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -121,6 +129,11 @@ type ClientInterface interface {
 	BulkCreateAttributesWithBody(ctx context.Context, params *BulkCreateAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkCreateAttributesWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateAttributesParams, body BulkCreateAttributesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveAttributesWithBody request with any body
+	BulkMoveAttributesWithBody(ctx context.Context, params *BulkMoveAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveAttributes(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteBridgeWorkers request
 	BulkDeleteBridgeWorkers(ctx context.Context, params *BulkDeleteBridgeWorkersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -176,6 +189,11 @@ type ClientInterface interface {
 
 	BulkCreateChangeSetsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeSetsParams, body BulkCreateChangeSetsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkMoveChangeSetsWithBody request with any body
+	BulkMoveChangeSetsWithBody(ctx context.Context, params *BulkMoveChangeSetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveChangeSets(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteChangeWorkflows request
 	BulkDeleteChangeWorkflows(ctx context.Context, params *BulkDeleteChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -192,6 +210,35 @@ type ClientInterface interface {
 
 	BulkCreateChangeWorkflowsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateChangeWorkflowsParams, body BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkMoveChangeWorkflowsWithBody request with any body
+	BulkMoveChangeWorkflowsWithBody(ctx context.Context, params *BulkMoveChangeWorkflowsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveChangeWorkflows(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListComponents request
+	ListComponents(ctx context.Context, params *ListComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateComponentWithBody request with any body
+	CreateComponentWithBody(ctx context.Context, params *CreateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateComponent(ctx context.Context, params *CreateComponentParams, body CreateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteComponent request
+	DeleteComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComponent request
+	GetComponent(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchComponentWithBody request with any body
+	PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateComponentWithBody request with any body
+	UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteFilters request
 	BulkDeleteFilters(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -207,6 +254,11 @@ type ClientInterface interface {
 	BulkCreateFiltersWithBody(ctx context.Context, params *BulkCreateFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkCreateFiltersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateFiltersParams, body BulkCreateFiltersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveFiltersWithBody request with any body
+	BulkMoveFiltersWithBody(ctx context.Context, params *BulkMoveFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveFilters(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListOrgFunctions request
 	ListOrgFunctions(ctx context.Context, params *ListOrgFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -234,6 +286,11 @@ type ClientInterface interface {
 	BulkCreateInvocationsWithBody(ctx context.Context, params *BulkCreateInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkCreateInvocationsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateInvocationsParams, body BulkCreateInvocationsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveInvocationsWithBody request with any body
+	BulkMoveInvocationsWithBody(ctx context.Context, params *BulkMoveInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveInvocations(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteLinks request
 	BulkDeleteLinks(ctx context.Context, params *BulkDeleteLinksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -786,6 +843,11 @@ type ClientInterface interface {
 
 	BulkCreateTagsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateTagsParams, body BulkCreateTagsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkMoveTagsWithBody request with any body
+	BulkMoveTagsWithBody(ctx context.Context, params *BulkMoveTagsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveTags(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteTargets request
 	BulkDeleteTargets(ctx context.Context, params *BulkDeleteTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -796,6 +858,11 @@ type ClientInterface interface {
 	BulkPatchTargetsWithBody(ctx context.Context, params *BulkPatchTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkPatchTargetsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchTargetsParams, body BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveTargetsWithBody request with any body
+	BulkMoveTargetsWithBody(ctx context.Context, params *BulkMoveTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveTargets(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteTriggers request
 	BulkDeleteTriggers(ctx context.Context, params *BulkDeleteTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -894,6 +961,47 @@ type ClientInterface interface {
 	BulkCreateViewsWithBody(ctx context.Context, params *BulkCreateViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkCreateViewsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateViewsParams, body BulkCreateViewsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveViewsWithBody request with any body
+	BulkMoveViewsWithBody(ctx context.Context, params *BulkMoveViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveViews(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) BulkDeleteComponents(ctx context.Context, params *BulkDeleteComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkDeleteComponentsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchComponentsWithBody(ctx context.Context, params *BulkPatchComponentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchComponentsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchComponentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchComponentsRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) BulkDeleteSpaces(ctx context.Context, params *BulkDeleteSpacesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -1018,6 +1126,30 @@ func (c *Client) BulkCreateAttributesWithBody(ctx context.Context, params *BulkC
 
 func (c *Client) BulkCreateAttributesWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateAttributesParams, body BulkCreateAttributesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateAttributesRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveAttributesWithBody(ctx context.Context, params *BulkMoveAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveAttributesRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveAttributes(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveAttributesRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1268,6 +1400,30 @@ func (c *Client) BulkCreateChangeSetsWithApplicationMergePatchPlusJSONBody(ctx c
 	return c.Client.Do(req)
 }
 
+func (c *Client) BulkMoveChangeSetsWithBody(ctx context.Context, params *BulkMoveChangeSetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveChangeSetsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveChangeSets(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveChangeSetsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) BulkDeleteChangeWorkflows(ctx context.Context, params *BulkDeleteChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkDeleteChangeWorkflowsRequest(c.Server, params)
 	if err != nil {
@@ -1340,6 +1496,138 @@ func (c *Client) BulkCreateChangeWorkflowsWithApplicationMergePatchPlusJSONBody(
 	return c.Client.Do(req)
 }
 
+func (c *Client) BulkMoveChangeWorkflowsWithBody(ctx context.Context, params *BulkMoveChangeWorkflowsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveChangeWorkflowsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveChangeWorkflows(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveChangeWorkflowsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListComponents(ctx context.Context, params *ListComponentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListComponentsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateComponentWithBody(ctx context.Context, params *CreateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateComponentRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateComponent(ctx context.Context, params *CreateComponentParams, body CreateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateComponentRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteComponent(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteComponentRequest(c.Server, componentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComponent(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComponentRequest(c.Server, componentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchComponentRequestWithBody(c.Server, componentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(c.Server, componentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentRequestWithBody(c.Server, componentId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentRequest(c.Server, componentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) BulkDeleteFilters(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkDeleteFiltersRequest(c.Server, params)
 	if err != nil {
@@ -1402,6 +1690,30 @@ func (c *Client) BulkCreateFiltersWithBody(ctx context.Context, params *BulkCrea
 
 func (c *Client) BulkCreateFiltersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateFiltersParams, body BulkCreateFiltersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateFiltersRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveFiltersWithBody(ctx context.Context, params *BulkMoveFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveFiltersRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveFilters(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveFiltersRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1522,6 +1834,30 @@ func (c *Client) BulkCreateInvocationsWithBody(ctx context.Context, params *Bulk
 
 func (c *Client) BulkCreateInvocationsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateInvocationsParams, body BulkCreateInvocationsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateInvocationsRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveInvocationsWithBody(ctx context.Context, params *BulkMoveInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveInvocationsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveInvocations(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveInvocationsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3968,6 +4304,30 @@ func (c *Client) BulkCreateTagsWithApplicationMergePatchPlusJSONBody(ctx context
 	return c.Client.Do(req)
 }
 
+func (c *Client) BulkMoveTagsWithBody(ctx context.Context, params *BulkMoveTagsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTagsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveTags(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTagsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) BulkDeleteTargets(ctx context.Context, params *BulkDeleteTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkDeleteTargetsRequest(c.Server, params)
 	if err != nil {
@@ -4006,6 +4366,30 @@ func (c *Client) BulkPatchTargetsWithBody(ctx context.Context, params *BulkPatch
 
 func (c *Client) BulkPatchTargetsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchTargetsParams, body BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkPatchTargetsRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveTargetsWithBody(ctx context.Context, params *BulkMoveTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTargetsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveTargets(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTargetsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4446,6 +4830,237 @@ func (c *Client) BulkCreateViewsWithApplicationMergePatchPlusJSONBody(ctx contex
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveViewsWithBody(ctx context.Context, params *BulkMoveViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveViewsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveViews(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveViewsRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewBulkDeleteComponentsRequest generates requests for BulkDeleteComponents
+func NewBulkDeleteComponentsRequest(server string, params *BulkDeleteComponentsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/_component")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewBulkPatchComponentsRequestWithApplicationMergePatchPlusJSONBody calls the generic BulkPatchComponents builder with application/merge-patch+json body
+func NewBulkPatchComponentsRequestWithApplicationMergePatchPlusJSONBody(server string, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkPatchComponentsRequestWithBody(server, params, "application/merge-patch+json", bodyReader)
+}
+
+// NewBulkPatchComponentsRequestWithBody generates requests for BulkPatchComponents with any type of body
+func NewBulkPatchComponentsRequestWithBody(server string, params *BulkPatchComponentsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/_component")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
 }
 
 // NewBulkDeleteSpacesRequest generates requests for BulkDeleteSpaces
@@ -5361,6 +5976,132 @@ func NewBulkCreateAttributesRequestWithBody(server string, params *BulkCreateAtt
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveAttributesRequest calls the generic BulkMoveAttributes builder with application/json body
+func NewBulkMoveAttributesRequest(server string, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveAttributesRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveAttributesRequestWithBody generates requests for BulkMoveAttributes with any type of body
+func NewBulkMoveAttributesRequestWithBody(server string, params *BulkMoveAttributesParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/attribute/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7015,6 +7756,132 @@ func NewBulkCreateChangeSetsRequestWithBody(server string, params *BulkCreateCha
 	return req, nil
 }
 
+// NewBulkMoveChangeSetsRequest calls the generic BulkMoveChangeSets builder with application/json body
+func NewBulkMoveChangeSetsRequest(server string, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveChangeSetsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveChangeSetsRequestWithBody generates requests for BulkMoveChangeSets with any type of body
+func NewBulkMoveChangeSetsRequestWithBody(server string, params *BulkMoveChangeSetsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_set/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewBulkDeleteChangeWorkflowsRequest generates requests for BulkDeleteChangeWorkflows
 func NewBulkDeleteChangeWorkflowsRequest(server string, params *BulkDeleteChangeWorkflowsParams) (*http.Request, error) {
 	var err error
@@ -7532,6 +8399,507 @@ func NewBulkCreateChangeWorkflowsRequestWithBody(server string, params *BulkCrea
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveChangeWorkflowsRequest calls the generic BulkMoveChangeWorkflows builder with application/json body
+func NewBulkMoveChangeWorkflowsRequest(server string, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveChangeWorkflowsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveChangeWorkflowsRequestWithBody generates requests for BulkMoveChangeWorkflows with any type of body
+func NewBulkMoveChangeWorkflowsRequestWithBody(server string, params *BulkMoveChangeWorkflowsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/change_workflow/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListComponentsRequest generates requests for ListComponents
+func NewListComponentsRequest(server string, params *ListComponentsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateComponentRequest calls the generic CreateComponent builder with application/json body
+func NewCreateComponentRequest(server string, params *CreateComponentParams, body CreateComponentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateComponentRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewCreateComponentRequestWithBody generates requests for CreateComponent with any type of body
+func NewCreateComponentRequestWithBody(server string, params *CreateComponentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.AllowExists != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteComponentRequest generates requests for DeleteComponent
+func NewDeleteComponentRequest(server string, componentId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetComponentRequest generates requests for GetComponent
+func NewGetComponentRequest(server string, componentId openapi_types.UUID, params *GetComponentParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchComponent builder with application/merge-patch+json body
+func NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(server string, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchComponentRequestWithBody(server, componentId, "application/merge-patch+json", bodyReader)
+}
+
+// NewPatchComponentRequestWithBody generates requests for PatchComponent with any type of body
+func NewPatchComponentRequestWithBody(server string, componentId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateComponentRequest calls the generic UpdateComponent builder with application/json body
+func NewUpdateComponentRequest(server string, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateComponentRequestWithBody(server, componentId, "application/json", bodyReader)
+}
+
+// NewUpdateComponentRequestWithBody generates requests for UpdateComponent with any type of body
+func NewUpdateComponentRequestWithBody(server string, componentId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -8073,6 +9441,132 @@ func NewBulkCreateFiltersRequestWithBody(server string, params *BulkCreateFilter
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveFiltersRequest calls the generic BulkMoveFilters builder with application/json body
+func NewBulkMoveFiltersRequest(server string, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveFiltersRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveFiltersRequestWithBody generates requests for BulkMoveFilters with any type of body
+func NewBulkMoveFiltersRequestWithBody(server string, params *BulkMoveFiltersParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filter/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9041,6 +10535,132 @@ func NewBulkCreateInvocationsRequestWithBody(server string, params *BulkCreateIn
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveInvocationsRequest calls the generic BulkMoveInvocations builder with application/json body
+func NewBulkMoveInvocationsRequest(server string, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveInvocationsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveInvocationsRequestWithBody generates requests for BulkMoveInvocations with any type of body
+func NewBulkMoveInvocationsRequestWithBody(server string, params *BulkMoveInvocationsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/invocation/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -21845,6 +23465,132 @@ func NewBulkCreateTagsRequestWithBody(server string, params *BulkCreateTagsParam
 	return req, nil
 }
 
+// NewBulkMoveTagsRequest calls the generic BulkMoveTags builder with application/json body
+func NewBulkMoveTagsRequest(server string, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveTagsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveTagsRequestWithBody generates requests for BulkMoveTags with any type of body
+func NewBulkMoveTagsRequestWithBody(server string, params *BulkMoveTagsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tag/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewBulkDeleteTargetsRequest generates requests for BulkDeleteTargets
 func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams) (*http.Request, error) {
 	var err error
@@ -22188,6 +23934,132 @@ func NewBulkPatchTargetsRequestWithBody(server string, params *BulkPatchTargetsP
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveTargetsRequest calls the generic BulkMoveTargets builder with application/json body
+func NewBulkMoveTargetsRequest(server string, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveTargetsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveTargetsRequestWithBody generates requests for BulkMoveTargets with any type of body
+func NewBulkMoveTargetsRequestWithBody(server string, params *BulkMoveTargetsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/target/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -25660,6 +27532,132 @@ func NewBulkCreateViewsRequestWithBody(server string, params *BulkCreateViewsPar
 	return req, nil
 }
 
+// NewBulkMoveViewsRequest calls the generic BulkMoveViews builder with application/json body
+func NewBulkMoveViewsRequest(server string, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveViewsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveViewsRequestWithBody generates requests for BulkMoveViews with any type of body
+func NewBulkMoveViewsRequestWithBody(server string, params *BulkMoveViewsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/view/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
 	for _, r := range c.RequestEditors {
 		if err := r(ctx, req); err != nil {
@@ -25703,6 +27701,14 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// BulkDeleteComponentsWithResponse request
+	BulkDeleteComponentsWithResponse(ctx context.Context, params *BulkDeleteComponentsParams, reqEditors ...RequestEditorFn) (*BulkDeleteComponentsResponse, error)
+
+	// BulkPatchComponentsWithBodyWithResponse request with any body
+	BulkPatchComponentsWithBodyWithResponse(ctx context.Context, params *BulkPatchComponentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchComponentsResponse, error)
+
+	BulkPatchComponentsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchComponentsResponse, error)
+
 	// BulkDeleteSpacesWithResponse request
 	BulkDeleteSpacesWithResponse(ctx context.Context, params *BulkDeleteSpacesParams, reqEditors ...RequestEditorFn) (*BulkDeleteSpacesResponse, error)
 
@@ -25731,6 +27737,11 @@ type ClientWithResponsesInterface interface {
 	BulkCreateAttributesWithBodyWithResponse(ctx context.Context, params *BulkCreateAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateAttributesResponse, error)
 
 	BulkCreateAttributesWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateAttributesParams, body BulkCreateAttributesApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateAttributesResponse, error)
+
+	// BulkMoveAttributesWithBodyWithResponse request with any body
+	BulkMoveAttributesWithBodyWithResponse(ctx context.Context, params *BulkMoveAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveAttributesResponse, error)
+
+	BulkMoveAttributesWithResponse(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveAttributesResponse, error)
 
 	// BulkDeleteBridgeWorkersWithResponse request
 	BulkDeleteBridgeWorkersWithResponse(ctx context.Context, params *BulkDeleteBridgeWorkersParams, reqEditors ...RequestEditorFn) (*BulkDeleteBridgeWorkersResponse, error)
@@ -25786,6 +27797,11 @@ type ClientWithResponsesInterface interface {
 
 	BulkCreateChangeSetsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateChangeSetsParams, body BulkCreateChangeSetsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateChangeSetsResponse, error)
 
+	// BulkMoveChangeSetsWithBodyWithResponse request with any body
+	BulkMoveChangeSetsWithBodyWithResponse(ctx context.Context, params *BulkMoveChangeSetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveChangeSetsResponse, error)
+
+	BulkMoveChangeSetsWithResponse(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeSetsResponse, error)
+
 	// BulkDeleteChangeWorkflowsWithResponse request
 	BulkDeleteChangeWorkflowsWithResponse(ctx context.Context, params *BulkDeleteChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeWorkflowsResponse, error)
 
@@ -25802,6 +27818,35 @@ type ClientWithResponsesInterface interface {
 
 	BulkCreateChangeWorkflowsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateChangeWorkflowsParams, body BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateChangeWorkflowsResponse, error)
 
+	// BulkMoveChangeWorkflowsWithBodyWithResponse request with any body
+	BulkMoveChangeWorkflowsWithBodyWithResponse(ctx context.Context, params *BulkMoveChangeWorkflowsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveChangeWorkflowsResponse, error)
+
+	BulkMoveChangeWorkflowsWithResponse(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeWorkflowsResponse, error)
+
+	// ListComponentsWithResponse request
+	ListComponentsWithResponse(ctx context.Context, params *ListComponentsParams, reqEditors ...RequestEditorFn) (*ListComponentsResponse, error)
+
+	// CreateComponentWithBodyWithResponse request with any body
+	CreateComponentWithBodyWithResponse(ctx context.Context, params *CreateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateComponentResponse, error)
+
+	CreateComponentWithResponse(ctx context.Context, params *CreateComponentParams, body CreateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateComponentResponse, error)
+
+	// DeleteComponentWithResponse request
+	DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error)
+
+	// GetComponentWithResponse request
+	GetComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*GetComponentResponse, error)
+
+	// PatchComponentWithBodyWithResponse request with any body
+	PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
+
+	PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
+
+	// UpdateComponentWithBodyWithResponse request with any body
+	UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
+
+	UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
+
 	// BulkDeleteFiltersWithResponse request
 	BulkDeleteFiltersWithResponse(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*BulkDeleteFiltersResponse, error)
 
@@ -25817,6 +27862,11 @@ type ClientWithResponsesInterface interface {
 	BulkCreateFiltersWithBodyWithResponse(ctx context.Context, params *BulkCreateFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateFiltersResponse, error)
 
 	BulkCreateFiltersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateFiltersParams, body BulkCreateFiltersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateFiltersResponse, error)
+
+	// BulkMoveFiltersWithBodyWithResponse request with any body
+	BulkMoveFiltersWithBodyWithResponse(ctx context.Context, params *BulkMoveFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveFiltersResponse, error)
+
+	BulkMoveFiltersWithResponse(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveFiltersResponse, error)
 
 	// ListOrgFunctionsWithResponse request
 	ListOrgFunctionsWithResponse(ctx context.Context, params *ListOrgFunctionsParams, reqEditors ...RequestEditorFn) (*ListOrgFunctionsResponse, error)
@@ -25844,6 +27894,11 @@ type ClientWithResponsesInterface interface {
 	BulkCreateInvocationsWithBodyWithResponse(ctx context.Context, params *BulkCreateInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateInvocationsResponse, error)
 
 	BulkCreateInvocationsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateInvocationsParams, body BulkCreateInvocationsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateInvocationsResponse, error)
+
+	// BulkMoveInvocationsWithBodyWithResponse request with any body
+	BulkMoveInvocationsWithBodyWithResponse(ctx context.Context, params *BulkMoveInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveInvocationsResponse, error)
+
+	BulkMoveInvocationsWithResponse(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveInvocationsResponse, error)
 
 	// BulkDeleteLinksWithResponse request
 	BulkDeleteLinksWithResponse(ctx context.Context, params *BulkDeleteLinksParams, reqEditors ...RequestEditorFn) (*BulkDeleteLinksResponse, error)
@@ -26396,6 +28451,11 @@ type ClientWithResponsesInterface interface {
 
 	BulkCreateTagsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateTagsParams, body BulkCreateTagsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateTagsResponse, error)
 
+	// BulkMoveTagsWithBodyWithResponse request with any body
+	BulkMoveTagsWithBodyWithResponse(ctx context.Context, params *BulkMoveTagsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTagsResponse, error)
+
+	BulkMoveTagsWithResponse(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTagsResponse, error)
+
 	// BulkDeleteTargetsWithResponse request
 	BulkDeleteTargetsWithResponse(ctx context.Context, params *BulkDeleteTargetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteTargetsResponse, error)
 
@@ -26406,6 +28466,11 @@ type ClientWithResponsesInterface interface {
 	BulkPatchTargetsWithBodyWithResponse(ctx context.Context, params *BulkPatchTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchTargetsResponse, error)
 
 	BulkPatchTargetsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchTargetsParams, body BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchTargetsResponse, error)
+
+	// BulkMoveTargetsWithBodyWithResponse request with any body
+	BulkMoveTargetsWithBodyWithResponse(ctx context.Context, params *BulkMoveTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTargetsResponse, error)
+
+	BulkMoveTargetsWithResponse(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTargetsResponse, error)
 
 	// BulkDeleteTriggersWithResponse request
 	BulkDeleteTriggersWithResponse(ctx context.Context, params *BulkDeleteTriggersParams, reqEditors ...RequestEditorFn) (*BulkDeleteTriggersResponse, error)
@@ -26504,6 +28569,72 @@ type ClientWithResponsesInterface interface {
 	BulkCreateViewsWithBodyWithResponse(ctx context.Context, params *BulkCreateViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateViewsResponse, error)
 
 	BulkCreateViewsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateViewsParams, body BulkCreateViewsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateViewsResponse, error)
+
+	// BulkMoveViewsWithBodyWithResponse request with any body
+	BulkMoveViewsWithBodyWithResponse(ctx context.Context, params *BulkMoveViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveViewsResponse, error)
+
+	BulkMoveViewsWithResponse(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveViewsResponse, error)
+}
+
+type BulkDeleteComponentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]DeleteResponse
+	JSON207      *[]DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkDeleteComponentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkDeleteComponentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkPatchComponentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ComponentCreateOrUpdateResponse
+	JSON207      *[]ComponentCreateOrUpdateResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkPatchComponentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkPatchComponentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type BulkDeleteSpacesResponse struct {
@@ -26710,6 +28841,36 @@ func (r BulkCreateAttributesResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkCreateAttributesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkMoveAttributesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveAttributesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveAttributesResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -27122,6 +29283,36 @@ func (r BulkCreateChangeSetsResponse) StatusCode() int {
 	return 0
 }
 
+type BulkMoveChangeSetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveChangeSetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveChangeSetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type BulkDeleteChangeWorkflowsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -27241,6 +29432,209 @@ func (r BulkCreateChangeWorkflowsResponse) StatusCode() int {
 	return 0
 }
 
+type BulkMoveChangeWorkflowsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveChangeWorkflowsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveChangeWorkflowsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListComponentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedComponent
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListComponentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListComponentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Component
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ExtendedComponent
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Component
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateComponentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Component
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateComponentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type BulkDeleteFiltersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -27354,6 +29748,36 @@ func (r BulkCreateFiltersResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkCreateFiltersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkMoveFiltersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveFiltersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveFiltersResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -27557,6 +29981,36 @@ func (r BulkCreateInvocationsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkCreateInvocationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkMoveInvocationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveInvocationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveInvocationsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -31735,6 +34189,36 @@ func (r BulkCreateTagsResponse) StatusCode() int {
 	return 0
 }
 
+type BulkMoveTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type BulkDeleteTargetsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -31818,6 +34302,36 @@ func (r BulkPatchTargetsResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkPatchTargetsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkMoveTargetsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveTargetsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveTargetsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -32592,6 +35106,62 @@ func (r BulkCreateViewsResponse) StatusCode() int {
 	return 0
 }
 
+type BulkMoveViewsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveViewsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveViewsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// BulkDeleteComponentsWithResponse request returning *BulkDeleteComponentsResponse
+func (c *ClientWithResponses) BulkDeleteComponentsWithResponse(ctx context.Context, params *BulkDeleteComponentsParams, reqEditors ...RequestEditorFn) (*BulkDeleteComponentsResponse, error) {
+	rsp, err := c.BulkDeleteComponents(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkDeleteComponentsResponse(rsp)
+}
+
+// BulkPatchComponentsWithBodyWithResponse request with arbitrary body returning *BulkPatchComponentsResponse
+func (c *ClientWithResponses) BulkPatchComponentsWithBodyWithResponse(ctx context.Context, params *BulkPatchComponentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchComponentsResponse, error) {
+	rsp, err := c.BulkPatchComponentsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchComponentsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkPatchComponentsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchComponentsParams, body BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchComponentsResponse, error) {
+	rsp, err := c.BulkPatchComponentsWithApplicationMergePatchPlusJSONBody(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchComponentsResponse(rsp)
+}
+
 // BulkDeleteSpacesWithResponse request returning *BulkDeleteSpacesResponse
 func (c *ClientWithResponses) BulkDeleteSpacesWithResponse(ctx context.Context, params *BulkDeleteSpacesParams, reqEditors ...RequestEditorFn) (*BulkDeleteSpacesResponse, error) {
 	rsp, err := c.BulkDeleteSpaces(ctx, params, reqEditors...)
@@ -32685,6 +35255,23 @@ func (c *ClientWithResponses) BulkCreateAttributesWithApplicationMergePatchPlusJ
 		return nil, err
 	}
 	return ParseBulkCreateAttributesResponse(rsp)
+}
+
+// BulkMoveAttributesWithBodyWithResponse request with arbitrary body returning *BulkMoveAttributesResponse
+func (c *ClientWithResponses) BulkMoveAttributesWithBodyWithResponse(ctx context.Context, params *BulkMoveAttributesParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveAttributesResponse, error) {
+	rsp, err := c.BulkMoveAttributesWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveAttributesResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveAttributesWithResponse(ctx context.Context, params *BulkMoveAttributesParams, body BulkMoveAttributesJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveAttributesResponse, error) {
+	rsp, err := c.BulkMoveAttributes(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveAttributesResponse(rsp)
 }
 
 // BulkDeleteBridgeWorkersWithResponse request returning *BulkDeleteBridgeWorkersResponse
@@ -32861,6 +35448,23 @@ func (c *ClientWithResponses) BulkCreateChangeSetsWithApplicationMergePatchPlusJ
 	return ParseBulkCreateChangeSetsResponse(rsp)
 }
 
+// BulkMoveChangeSetsWithBodyWithResponse request with arbitrary body returning *BulkMoveChangeSetsResponse
+func (c *ClientWithResponses) BulkMoveChangeSetsWithBodyWithResponse(ctx context.Context, params *BulkMoveChangeSetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveChangeSetsResponse, error) {
+	rsp, err := c.BulkMoveChangeSetsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveChangeSetsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveChangeSetsWithResponse(ctx context.Context, params *BulkMoveChangeSetsParams, body BulkMoveChangeSetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeSetsResponse, error) {
+	rsp, err := c.BulkMoveChangeSets(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveChangeSetsResponse(rsp)
+}
+
 // BulkDeleteChangeWorkflowsWithResponse request returning *BulkDeleteChangeWorkflowsResponse
 func (c *ClientWithResponses) BulkDeleteChangeWorkflowsWithResponse(ctx context.Context, params *BulkDeleteChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*BulkDeleteChangeWorkflowsResponse, error) {
 	rsp, err := c.BulkDeleteChangeWorkflows(ctx, params, reqEditors...)
@@ -32913,6 +35517,101 @@ func (c *ClientWithResponses) BulkCreateChangeWorkflowsWithApplicationMergePatch
 	return ParseBulkCreateChangeWorkflowsResponse(rsp)
 }
 
+// BulkMoveChangeWorkflowsWithBodyWithResponse request with arbitrary body returning *BulkMoveChangeWorkflowsResponse
+func (c *ClientWithResponses) BulkMoveChangeWorkflowsWithBodyWithResponse(ctx context.Context, params *BulkMoveChangeWorkflowsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveChangeWorkflowsResponse, error) {
+	rsp, err := c.BulkMoveChangeWorkflowsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveChangeWorkflowsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveChangeWorkflowsWithResponse(ctx context.Context, params *BulkMoveChangeWorkflowsParams, body BulkMoveChangeWorkflowsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveChangeWorkflowsResponse, error) {
+	rsp, err := c.BulkMoveChangeWorkflows(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveChangeWorkflowsResponse(rsp)
+}
+
+// ListComponentsWithResponse request returning *ListComponentsResponse
+func (c *ClientWithResponses) ListComponentsWithResponse(ctx context.Context, params *ListComponentsParams, reqEditors ...RequestEditorFn) (*ListComponentsResponse, error) {
+	rsp, err := c.ListComponents(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListComponentsResponse(rsp)
+}
+
+// CreateComponentWithBodyWithResponse request with arbitrary body returning *CreateComponentResponse
+func (c *ClientWithResponses) CreateComponentWithBodyWithResponse(ctx context.Context, params *CreateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateComponentResponse, error) {
+	rsp, err := c.CreateComponentWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateComponentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateComponentWithResponse(ctx context.Context, params *CreateComponentParams, body CreateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateComponentResponse, error) {
+	rsp, err := c.CreateComponent(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateComponentResponse(rsp)
+}
+
+// DeleteComponentWithResponse request returning *DeleteComponentResponse
+func (c *ClientWithResponses) DeleteComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteComponentResponse, error) {
+	rsp, err := c.DeleteComponent(ctx, componentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteComponentResponse(rsp)
+}
+
+// GetComponentWithResponse request returning *GetComponentResponse
+func (c *ClientWithResponses) GetComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*GetComponentResponse, error) {
+	rsp, err := c.GetComponent(ctx, componentId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComponentResponse(rsp)
+}
+
+// PatchComponentWithBodyWithResponse request with arbitrary body returning *PatchComponentResponse
+func (c *ClientWithResponses) PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
+	rsp, err := c.PatchComponentWithBody(ctx, componentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchComponentResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
+	rsp, err := c.PatchComponentWithApplicationMergePatchPlusJSONBody(ctx, componentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchComponentResponse(rsp)
+}
+
+// UpdateComponentWithBodyWithResponse request with arbitrary body returning *UpdateComponentResponse
+func (c *ClientWithResponses) UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
+	rsp, err := c.UpdateComponentWithBody(ctx, componentId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateComponentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
+	rsp, err := c.UpdateComponent(ctx, componentId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateComponentResponse(rsp)
+}
+
 // BulkDeleteFiltersWithResponse request returning *BulkDeleteFiltersResponse
 func (c *ClientWithResponses) BulkDeleteFiltersWithResponse(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*BulkDeleteFiltersResponse, error) {
 	rsp, err := c.BulkDeleteFilters(ctx, params, reqEditors...)
@@ -32963,6 +35662,23 @@ func (c *ClientWithResponses) BulkCreateFiltersWithApplicationMergePatchPlusJSON
 		return nil, err
 	}
 	return ParseBulkCreateFiltersResponse(rsp)
+}
+
+// BulkMoveFiltersWithBodyWithResponse request with arbitrary body returning *BulkMoveFiltersResponse
+func (c *ClientWithResponses) BulkMoveFiltersWithBodyWithResponse(ctx context.Context, params *BulkMoveFiltersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveFiltersResponse, error) {
+	rsp, err := c.BulkMoveFiltersWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveFiltersResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveFiltersWithResponse(ctx context.Context, params *BulkMoveFiltersParams, body BulkMoveFiltersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveFiltersResponse, error) {
+	rsp, err := c.BulkMoveFilters(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveFiltersResponse(rsp)
 }
 
 // ListOrgFunctionsWithResponse request returning *ListOrgFunctionsResponse
@@ -33050,6 +35766,23 @@ func (c *ClientWithResponses) BulkCreateInvocationsWithApplicationMergePatchPlus
 		return nil, err
 	}
 	return ParseBulkCreateInvocationsResponse(rsp)
+}
+
+// BulkMoveInvocationsWithBodyWithResponse request with arbitrary body returning *BulkMoveInvocationsResponse
+func (c *ClientWithResponses) BulkMoveInvocationsWithBodyWithResponse(ctx context.Context, params *BulkMoveInvocationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveInvocationsResponse, error) {
+	rsp, err := c.BulkMoveInvocationsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveInvocationsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveInvocationsWithResponse(ctx context.Context, params *BulkMoveInvocationsParams, body BulkMoveInvocationsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveInvocationsResponse, error) {
+	rsp, err := c.BulkMoveInvocations(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveInvocationsResponse(rsp)
 }
 
 // BulkDeleteLinksWithResponse request returning *BulkDeleteLinksResponse
@@ -34821,6 +37554,23 @@ func (c *ClientWithResponses) BulkCreateTagsWithApplicationMergePatchPlusJSONBod
 	return ParseBulkCreateTagsResponse(rsp)
 }
 
+// BulkMoveTagsWithBodyWithResponse request with arbitrary body returning *BulkMoveTagsResponse
+func (c *ClientWithResponses) BulkMoveTagsWithBodyWithResponse(ctx context.Context, params *BulkMoveTagsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTagsResponse, error) {
+	rsp, err := c.BulkMoveTagsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTagsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveTagsWithResponse(ctx context.Context, params *BulkMoveTagsParams, body BulkMoveTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTagsResponse, error) {
+	rsp, err := c.BulkMoveTags(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTagsResponse(rsp)
+}
+
 // BulkDeleteTargetsWithResponse request returning *BulkDeleteTargetsResponse
 func (c *ClientWithResponses) BulkDeleteTargetsWithResponse(ctx context.Context, params *BulkDeleteTargetsParams, reqEditors ...RequestEditorFn) (*BulkDeleteTargetsResponse, error) {
 	rsp, err := c.BulkDeleteTargets(ctx, params, reqEditors...)
@@ -34854,6 +37604,23 @@ func (c *ClientWithResponses) BulkPatchTargetsWithApplicationMergePatchPlusJSONB
 		return nil, err
 	}
 	return ParseBulkPatchTargetsResponse(rsp)
+}
+
+// BulkMoveTargetsWithBodyWithResponse request with arbitrary body returning *BulkMoveTargetsResponse
+func (c *ClientWithResponses) BulkMoveTargetsWithBodyWithResponse(ctx context.Context, params *BulkMoveTargetsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTargetsResponse, error) {
+	rsp, err := c.BulkMoveTargetsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTargetsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveTargetsWithResponse(ctx context.Context, params *BulkMoveTargetsParams, body BulkMoveTargetsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTargetsResponse, error) {
+	rsp, err := c.BulkMoveTargets(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTargetsResponse(rsp)
 }
 
 // BulkDeleteTriggersWithResponse request returning *BulkDeleteTriggersResponse
@@ -35168,6 +37935,194 @@ func (c *ClientWithResponses) BulkCreateViewsWithApplicationMergePatchPlusJSONBo
 		return nil, err
 	}
 	return ParseBulkCreateViewsResponse(rsp)
+}
+
+// BulkMoveViewsWithBodyWithResponse request with arbitrary body returning *BulkMoveViewsResponse
+func (c *ClientWithResponses) BulkMoveViewsWithBodyWithResponse(ctx context.Context, params *BulkMoveViewsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveViewsResponse, error) {
+	rsp, err := c.BulkMoveViewsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveViewsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveViewsWithResponse(ctx context.Context, params *BulkMoveViewsParams, body BulkMoveViewsJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveViewsResponse, error) {
+	rsp, err := c.BulkMoveViews(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveViewsResponse(rsp)
+}
+
+// ParseBulkDeleteComponentsResponse parses an HTTP response from a BulkDeleteComponentsWithResponse call
+func ParseBulkDeleteComponentsResponse(rsp *http.Response) (*BulkDeleteComponentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkDeleteComponentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkPatchComponentsResponse parses an HTTP response from a BulkPatchComponentsWithResponse call
+func ParseBulkPatchComponentsResponse(rsp *http.Response) (*BulkPatchComponentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkPatchComponentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ComponentCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []ComponentCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseBulkDeleteSpacesResponse parses an HTTP response from a BulkDeleteSpacesWithResponse call
@@ -35685,6 +38640,88 @@ func ParseBulkCreateAttributesResponse(rsp *http.Response) (*BulkCreateAttribute
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []AttributeCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveAttributesResponse parses an HTTP response from a BulkMoveAttributesWithResponse call
+func ParseBulkMoveAttributesResponse(rsp *http.Response) (*BulkMoveAttributesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveAttributesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -36794,6 +39831,88 @@ func ParseBulkCreateChangeSetsResponse(rsp *http.Response) (*BulkCreateChangeSet
 	return response, nil
 }
 
+// ParseBulkMoveChangeSetsResponse parses an HTTP response from a BulkMoveChangeSetsWithResponse call
+func ParseBulkMoveChangeSetsResponse(rsp *http.Response) (*BulkMoveChangeSetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveChangeSetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteChangeWorkflowsResponse parses an HTTP response from a BulkDeleteChangeWorkflowsWithResponse call
 func ParseBulkDeleteChangeWorkflowsResponse(rsp *http.Response) (*BulkDeleteChangeWorkflowsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -37115,6 +40234,531 @@ func ParseBulkCreateChangeWorkflowsResponse(rsp *http.Response) (*BulkCreateChan
 	return response, nil
 }
 
+// ParseBulkMoveChangeWorkflowsResponse parses an HTTP response from a BulkMoveChangeWorkflowsWithResponse call
+func ParseBulkMoveChangeWorkflowsResponse(rsp *http.Response) (*BulkMoveChangeWorkflowsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveChangeWorkflowsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListComponentsResponse parses an HTTP response from a ListComponentsWithResponse call
+func ParseListComponentsResponse(rsp *http.Response) (*ListComponentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListComponentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedComponent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateComponentResponse parses an HTTP response from a CreateComponentWithResponse call
+func ParseCreateComponentResponse(rsp *http.Response) (*CreateComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Component
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteComponentResponse parses an HTTP response from a DeleteComponentWithResponse call
+func ParseDeleteComponentResponse(rsp *http.Response) (*DeleteComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetComponentResponse parses an HTTP response from a GetComponentWithResponse call
+func ParseGetComponentResponse(rsp *http.Response) (*GetComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExtendedComponent
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchComponentResponse parses an HTTP response from a PatchComponentWithResponse call
+func ParsePatchComponentResponse(rsp *http.Response) (*PatchComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Component
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateComponentResponse parses an HTTP response from a UpdateComponentWithResponse call
+func ParseUpdateComponentResponse(rsp *http.Response) (*UpdateComponentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateComponentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Component
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteFiltersResponse parses an HTTP response from a BulkDeleteFiltersWithResponse call
 func ParseBulkDeleteFiltersResponse(rsp *http.Response) (*BulkDeleteFiltersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -37377,6 +41021,88 @@ func ParseBulkCreateFiltersResponse(rsp *http.Response) (*BulkCreateFiltersRespo
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []FilterCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveFiltersResponse parses an HTTP response from a BulkMoveFiltersWithResponse call
+func ParseBulkMoveFiltersResponse(rsp *http.Response) (*BulkMoveFiltersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveFiltersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -37902,6 +41628,88 @@ func ParseBulkCreateInvocationsResponse(rsp *http.Response) (*BulkCreateInvocati
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []InvocationCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveInvocationsResponse parses an HTTP response from a BulkMoveInvocationsWithResponse call
+func ParseBulkMoveInvocationsResponse(rsp *http.Response) (*BulkMoveInvocationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveInvocationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -48605,6 +52413,88 @@ func ParseBulkCreateTagsResponse(rsp *http.Response) (*BulkCreateTagsResponse, e
 	return response, nil
 }
 
+// ParseBulkMoveTagsResponse parses an HTTP response from a BulkMoveTagsWithResponse call
+func ParseBulkMoveTagsResponse(rsp *http.Response) (*BulkMoveTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteTargetsResponse parses an HTTP response from a BulkDeleteTargetsWithResponse call
 func ParseBulkDeleteTargetsResponse(rsp *http.Response) (*BulkDeleteTargetsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -48785,6 +52675,88 @@ func ParseBulkPatchTargetsResponse(rsp *http.Response) (*BulkPatchTargetsRespons
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []TargetCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveTargetsResponse parses an HTTP response from a BulkMoveTargetsWithResponse call
+func ParseBulkMoveTargetsResponse(rsp *http.Response) (*BulkMoveTargetsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveTargetsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -50833,6 +54805,88 @@ func ParseBulkCreateViewsResponse(rsp *http.Response) (*BulkCreateViewsResponse,
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []ViewCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveViewsResponse parses an HTTP response from a BulkMoveViewsWithResponse call
+func ParseBulkMoveViewsResponse(rsp *http.Response) (*BulkMoveViewsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveViewsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

@@ -37,16 +37,19 @@ var componentCmd = &cobra.Command{
 }
 
 func getComponentCommandGroupHelp() string {
-	baseHelp := `The component subcommands list components and open them in the web UI.
+	baseHelp := `The component subcommands list components and open them in the web UI, and manage Component entities.
 
-A component is an application or service tracked across its variants. It is not a stored entity:
-it is the set of spaces sharing a "Component" label value, one space per variant, as created by
+A component is an application or service tracked across its variants. 'list' and 'open' show it as
+the set of spaces sharing a "Component" label value, one space per variant, as created by
 'cub variant upload' and 'cub variant create'. The web UI's component view shows those variants as
-a deployment graph and is where config changes are promoted downstream.`
+a deployment graph and is where config changes are promoted downstream.
 
-	agentContext := `Components are a view over Space labels, not an API resource. There is no
-component create/update/delete: a component comes into existence when a space is labeled
+'create', 'get', 'update' and 'delete' manage the Component entity, which decides which
+ChangeWorkflows promotions and releases of its variants may use, and whether one is required.`
+
+	agentContext := `'list' and 'open' are a view over Space labels: a component appears there when a space is labeled
 Component=<name>, and gains a variant when another space with the same Component label is created.
+'create', 'get', 'update' and 'delete' operate on the Component entity by slug or UUID.
 
 The equivalent raw query is:
   cub space list --where "Labels.Component = 'my-app'"

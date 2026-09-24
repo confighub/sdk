@@ -71,6 +71,12 @@ func resolveSpaceSummary(ref string, selectParam string) (*goclientnew.ExtendedS
 		})
 }
 
+// resolveComponent resolves a Component entity. Unlike "cub component list", which
+// groups spaces by their Component label, this names the stored entity.
+func resolveComponent(ref string, selectParam string) (*goclientnew.ExtendedComponent, error) {
+	return cubapi.ResolveComponent(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
+}
+
 func resolveUnit(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	return cubapi.ResolveUnit(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }

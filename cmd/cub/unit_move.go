@@ -57,6 +57,8 @@ var unitMoveArgs struct {
 func init() {
 	enableWhereFlag(unitMoveCmd)
 	enableFilterFlag(unitMoveCmd)
+	enableQuietFlag(unitMoveCmd)
+	enableOutputFlag(unitMoveCmd)
 	unitMoveCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "move specific units by slug or UUID (can be repeated or comma-separated)")
 	unitMoveCmd.Flags().BoolVar(&unitMoveArgs.dryRun, "dry-run", false, "report what the move would do without moving anything")
 	unitCmd.AddCommand(unitMoveCmd)

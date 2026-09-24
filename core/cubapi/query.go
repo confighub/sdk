@@ -241,6 +241,25 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 	return derefPtrs(res.JSON200), nil
 }
 
+// ListComponents returns the Component entities in the organization matching where.
+func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedComponent, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListComponentsParams{
+		Where:    ptrIf(where.String()),
+		Select:   ptrIf(opts.Select),
+		Include:  ptrIf(opts.Include),
+		Filter:   ptrIf(opts.Filter),
+		Contains: ptrIf(opts.Contains),
+	}
+	res, err := c.API.ListComponentsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
 // ListTargets returns targets across the organization matching where.
 func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTarget, error) {
 	if err := where.Err(); err != nil {

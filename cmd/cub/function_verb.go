@@ -46,8 +46,9 @@ func (m FunctionKindMode) verb() string {
 //  2. The name does not already start with the corresponding verb prefix.
 //  3. The as-typed name is not a registered function but <prefix><name> is.
 //
-// Signatures are sourced from the on-disk cache populated by listAndSaveFunctions.
-// If the initial lookup misses, the cache is refreshed once before giving up.
+// Signatures are sourced from the on-disk cache of builtin functions populated by
+// listAndMaybeSaveFunctions. If the initial lookup misses, the functions are
+// listed once more (for --worker too, when set) before giving up.
 // When neither form resolves, the original name is returned so the downstream
 // kind-validation error message refers to what the user actually typed.
 func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
@@ -59,9 +60,9 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 		return name
 	}
 
+	cached, _ := loadFunctions()
+	sigs := flattenFunctionSignatures(cached)
 	lookup := func() (string, bool) {
-		cached, _ := loadFunctions()
-		sigs := flattenFunctionSignatures(cached)
 		if _, ok := sigs[name]; ok {
 			return name, true
 		}
@@ -76,7 +77,10 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	}
 	// Cache miss: best-effort refresh, then retry once. Pass --worker through
 	// so worker-provided functions participate in the convenience.
-	if _, _, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
+	// A worker listing is not cached, so its signatures are merged from the
+	// response rather than re-read from the cache.
+	if _, funcs, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
+		addFunctionSignatures(sigs, funcs)
 		if resolved, ok := lookup(); ok {
 			return resolved
 		}
@@ -85,7 +89,8 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 		// Also refresh the builtin entity so verb-prefix resolution against
 		// builtin functions still works when --worker is set but the short
 		// name refers to a builtin.
-		if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
+		if _, funcs, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
+			addFunctionSignatures(sigs, funcs)
 			if resolved, ok := lookup(); ok {
 				return resolved
 			}
@@ -97,8 +102,8 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 // validateFunctionKinds rejects function invocations (direct, via triggers, or
 // via invocations) whose kind doesn't match the verb's permitted set.
 //
-// Function signatures come from the on-disk cache populated by
-// listAndSaveFunctions. Trigger and Invocation function names come from the
+// Function signatures come from the on-disk cache of builtin functions populated
+// by listAndMaybeSaveFunctions, topped up from a fresh listing on a miss. Trigger and Invocation function names come from the
 // entities that newFunctionInvocationsRequest already resolved while
 // constructing the request body (resolvedTriggers / resolvedInvocations).
 func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvocationsRequest) error {
@@ -149,10 +154,10 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 	}
 	if missing {
 		// Best-effort refresh. Include --worker if set so worker-provided
-		// functions are validated against their own catalog.
-		if _, _, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
-			cached, _ = loadFunctions()
-			sigs = flattenFunctionSignatures(cached)
+		// functions are validated against their own catalog. A worker listing
+		// is not cached, so its signatures are merged from the response.
+		if _, funcs, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
+			addFunctionSignatures(sigs, funcs)
 		}
 		// If the worker refresh didn't resolve everything, top up with builtin.
 		stillMissing := false
@@ -163,9 +168,8 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 			}
 		}
 		if stillMissing && workerSlug != "" {
-			if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
-				cached, _ = loadFunctions()
-				sigs = flattenFunctionSignatures(cached)
+			if _, funcs, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
+				addFunctionSignatures(sigs, funcs)
 			}
 		}
 	}
@@ -192,13 +196,19 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 func flattenFunctionSignatures(cached functionsByEntity) map[string]goclientnew.FunctionSignature {
 	out := map[string]goclientnew.FunctionSignature{}
 	for _, byToolchain := range cached {
-		for _, byName := range byToolchain {
-			for name, sig := range byName {
-				out[name] = sig
-			}
-		}
+		addFunctionSignatures(out, byToolchain)
 	}
 	return out
+}
+
+// addFunctionSignatures adds one entity's signatures to sigs, keyed by
+// function name, with the same last-one-wins rule as flattenFunctionSignatures.
+func addFunctionSignatures(sigs map[string]goclientnew.FunctionSignature, byToolchain functionsByToolchain) {
+	for _, byName := range byToolchain {
+		for name, sig := range byName {
+			sigs[name] = sig
+		}
+	}
 }
 
 // functionKindCommandLabel is the command prefix used in kind-mismatch error

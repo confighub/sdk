@@ -268,6 +268,29 @@ func ResolveSpace(ctx context.Context, c *Client, ref Ref, opts ResolveOpts,
 	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
 }
 
+// ResolveComponent looks up one Component entity by slug or UUID. A Component is
+// organization-level, so ResolveOpts.Space is ignored.
+func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedComponent, error) {
+	r := resolver[goclientnew.ExtendedComponent]{
+		entity: "component", idField: "ComponentID", include: "",
+		list: ListComponents,
+		slugOf: func(e *goclientnew.ExtendedComponent) string {
+			if e.Component == nil {
+				return ""
+			}
+			return e.Component.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedComponent) goclientnew.UUID {
+			if e.Component == nil {
+				return goclientnew.UUID{}
+			}
+			return e.Component.ComponentID
+		},
+	}
+	// A component reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
+}
+
 // ResolveUnit looks up one unit by slug, space/slug, or UUID.
 func ResolveUnit(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedUnit, error) {
 	return resolver[goclientnew.ExtendedUnit]{

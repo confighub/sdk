@@ -27,7 +27,7 @@ var reset = false
 
 func init() {
 	runCmd.Flags().BoolVar(&reload, "reload", false, "Reload the function list")
-	runCmd.Flags().BoolVar(&reload, "reset", false, "Reset the function list")
+	runCmd.Flags().BoolVar(&reset, "reset", false, "Reset the function list")
 
 	addSpaceFlags(runCmd)
 	runCmd.PersistentFlags().StringVar(&workerSlug, "worker", "", "worker to execute the function")

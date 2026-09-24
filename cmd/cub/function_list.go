@@ -196,34 +196,21 @@ func removeFunctions() error {
 	return os.Remove(functionSpecFilePath())
 }
 
-func saveFunctionsForEntity(entity string, functionMap functionsByToolchain) error {
-	// Ignore errors in the case that functions weren't saved or weren't compatible.
-	functions, _ := loadFunctions()
-
-	// Update the functions for the specified entity
-	functions[entity] = functionMap
-
-	// Save the functions
-	err := saveFunctions(functions)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // listAndMaybeSaveFunctions fetches functions and caches them locally only when the
-// result is a full listing (no --where / --toolchain filtering). Filtered results are
-// returned without being written to the functions.json cache, so subsequent calls
-// that rely on the cache continue to see the last unfiltered snapshot.
+// result is the full builtin listing: no --where / --toolchain filtering and no
+// --target, --worker, or --unit. Only the builtin entry is read back to register
+// function commands, and per-entity listings would accumulate one entry per
+// Target, Worker, or Unit ever listed; every cub invocation parses the cache at
+// startup, so its size is paid on every command. Saving replaces the whole cache.
 func listAndMaybeSaveFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
 	entity, functions, err := listFunctions(targetSlug, workerSlug, unitSlug, whereClause)
 	if err != nil {
 		return entity, functions, err
 	}
-	if whereClause != "" {
+	if whereClause != "" || entity != builtinFunctionKey {
 		return entity, functions, nil
 	}
-	err = saveFunctionsForEntity(entity, functions)
+	err = saveFunctions(functionsByEntity{builtinFunctionKey: functions})
 	return entity, functions, err
 }
 

@@ -266,8 +266,8 @@ func resolveChangeWorkflowForChangeOrder(identifier string) (*goclientnew.Change
 // created in.
 //
 // The ChangeOrder does not exist yet to be asked, which is why this reads the
-// Space rather than going through changeOrderComponent as a promotion does. The
-// two agree: without the flag both read the same label off the same Space.
+// Space rather than the ChangeOrder's own Space as a promotion does. The two
+// agree: without the flag both read the same label off the same Space.
 func changeOrderCreateComponent(changeOrderSpaceID uuid.UUID) (string, error) {
 	if changeorderCreateArgs.component != "" {
 		return changeorderCreateArgs.component, nil

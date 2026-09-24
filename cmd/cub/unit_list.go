@@ -42,7 +42,7 @@ Examples:
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
 
   # List units with approval gates
-  cub unit list --space my-space --where "ValidationErrors.require-approval/vet-approvedby = true"
+  cub unit list --space my-space --where "ValidationErrors.my-space/require-approval/vet-approvedby = true"
 
   # List units with any validation errors
   cub unit list --space my-space --where "LEN(ValidationErrors) > 0"

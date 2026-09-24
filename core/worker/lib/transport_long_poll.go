@@ -31,7 +31,6 @@ import (
 //	auth once:           POST /auth/worker { worker_id, worker_secret }      → JWT + Worker { space_id, slug }
 //	per claim attempt:   POST /api/space/{space_id}/bridge_worker/{id}/lease
 //	after first claim:   PATCH /api/space/{space_id}/bridge_worker/{id}      (merge-patch: ProvidedInfo)
-//	                     POST/PATCH /api/space/{space_id}/target/...         (one per AvailableTarget with Name)
 //	per poll:            POST /api/space/{space_id}/bridge_worker/{id}/queued_operation/poll
 //	per result:          PATCH /api/space/{space_id}/bridge_worker/{id}/queued_operation/{op_id}
 //	on shutdown:         DELETE /api/space/{space_id}/bridge_worker/{id}/lease
@@ -40,7 +39,7 @@ import (
 // the lease over its operation queue and renews it by polling. Poll and result
 // submission act on the queued_operation resource.
 //
-// ProvidedInfo / Target registration is gated on holding the lease: two
+// ProvidedInfo registration is gated on holding the lease: two
 // workers booting against the same bridge_worker would otherwise race each
 // other into PATCHing ProvidedInfo, leaving stale data on whichever lost
 // the claim race.
@@ -156,7 +155,7 @@ func newLongPollTransport(
 // loop. Blocks until ctx is canceled. On shutdown, best-effort releases the
 // claim.
 //
-// ProvidedInfo / Target registration runs *after* the first successful claim,
+// ProvidedInfo registration runs *after* the first successful claim,
 // not at process startup. Otherwise two workers booting against the same
 // bridge_worker would both PATCH ProvidedInfo before either had won the
 // claim — one's update would silently overwrite the other's, leaving stale
