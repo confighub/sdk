@@ -82,13 +82,29 @@ prints:
       WhereSpace: "Labels.Stage = 'dev'"
     - Name: prod
       WhereSpace: "Labels.Stage = 'prod'"
-      Prerequisites: [Released, Healthy, code-freeze]
+      Prerequisites: [Released, Healthy, code-freeze, two-approvers]
+      ReleasePrerequisites: [release-manager]
   Final:
     Prerequisites: [Released, Healthy]
   CustomPrerequisites:
     - Name: code-freeze
       Expression: "cel:Space.Annotations['code-freeze'] != 'true'"
+  AttestationPrerequisites:
+    - Name: two-approvers
+      Count: 2
+      Description: two approvals of the change in staging, by people who did not write it
+    - Name: release-manager
+      FromUserIDs: [9b2c0f3e-5d7a-4a61-8f0e-2b6d1c4e7a90]
+      MaxAge: 72h
 ` + "```" + `
+
+An attestation prerequisite requires Attestations (see "cub attestation") of each Revision a gate
+reads: Count distinct users recording a Pass, of Type Approval unless another is named. By
+default an author of the change does not count (AllowAuthors), and an unrevoked Fail blocks
+(IgnoreFail). A stage's Prerequisites read the Revisions the change order marks in the stage
+ahead; its ReleasePrerequisites, which may name only attestation prerequisites, read what a
+release of the change order in one of the stage's spaces bundles. "cub variant approve" records
+approvals.
 
 BULK CHANGEWORKFLOW CREATION:
 

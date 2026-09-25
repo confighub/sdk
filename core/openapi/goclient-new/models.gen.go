@@ -46,6 +46,12 @@ const (
 	NA              ActionType = "N/A"
 )
 
+// Defines values for AttestationResult.
+const (
+	Fail AttestationResult = "Fail"
+	Pass AttestationResult = "Pass"
+)
+
 // Defines values for MutationType.
 const (
 	Add     MutationType = "Add"
@@ -189,6 +195,138 @@ type ArrayElementAliasMap map[string]map[string]string
 
 // ArrayOrderMap defines model for ArrayOrderMap.
 type ArrayOrderMap map[string][]string
+
+// AttestRequest defines model for AttestRequest.
+type AttestRequest struct {
+	ChangeOrderID          *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	Claims                 map[string]string   `json:"Claims,omitempty" yaml:"Claims,omitempty"`
+	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
+	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
+	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+	Result                 string              `json:"Result,omitempty" yaml:"Result,omitempty"`
+	Revision               string              `json:"Revision,omitempty" yaml:"Revision,omitempty"`
+	RevokedAttestationID   *openapi_types.UUID `json:"RevokedAttestationID,omitempty" yaml:"RevokedAttestationID,omitempty"`
+	SpaceFilterID          *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
+	TargetStage            string              `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
+	Type                   string              `json:"Type,omitempty" yaml:"Type,omitempty"`
+	WhereSpace             string              `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
+	WhereUnit              string              `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
+}
+
+// AttestResult defines model for AttestResult.
+type AttestResult struct {
+	Spaces []AttestSpaceResult `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+}
+
+// AttestSpaceResult defines model for AttestSpaceResult.
+type AttestSpaceResult struct {
+	// Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
+	Attestation  *Attestation             `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
+	Error        *ResponseError           `json:"Error,omitempty" yaml:"Error,omitempty"`
+	SkippedUnits []AttestationSkippedUnit `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
+	SpaceID      openapi_types.UUID       `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug    string                   `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	Subjects     []AttestationSubject     `json:"Subjects,omitempty" yaml:"Subjects,omitempty"`
+}
+
+// Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
+type Attestation struct {
+	// AttestationID Uniquely identifies the Attestation.
+	AttestationID openapi_types.UUID `json:"AttestationID,omitempty" yaml:"AttestationID,omitempty"`
+
+	// ChangeOrderID The ChangeOrder the Attestation was made in the context of. Context only: it does not change which Revisions are covered.
+	ChangeOrderID *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// Claims Anything else the attester records, as string key/value pairs with the limits of Annotations.
+	Claims map[string]string `json:"Claims,omitempty" yaml:"Claims,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// EvidenceAttestationIDs Other Attestations this one relied on. They may be in other Spaces.
+	EvidenceAttestationIDs []UUID `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
+
+	// ExpiresAt When the Attestation stops satisfying requirements. Optional.
+	ExpiresAt time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+
+	// Note The attester's reason, in their own words.
+	Note string `json:"Note,omitempty" yaml:"Note,omitempty"`
+
+	// OrganizationID The Organization the Attestation belongs to.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// ReleaseID A published Release the claim is about.
+	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+
+	// Result The outcome: Pass or Fail. For an Approval, approve or reject. Defaults to Pass.
+	Result AttestationResult `json:"Result,omitempty" yaml:"Result,omitempty"`
+
+	// RevokedAttestationID An earlier Attestation in the same Space that this one withdraws. A revocation covers no Revisions of its own.
+	RevokedAttestationID *openapi_types.UUID `json:"RevokedAttestationID,omitempty" yaml:"RevokedAttestationID,omitempty"`
+
+	// SpaceID The Space the Attestation belongs to. Every Revision it covers is in this Space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space the Attestation belongs to.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// Type What is being claimed, such as Approval. Requirements select Attestations by it. Defaults to Approval.
+	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UserID The authenticated User that created the Attestation.
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// AttestationResult The outcome: Pass or Fail. For an Approval, approve or reject. Defaults to Pass.
+type AttestationResult string
+
+// AttestationCreateRequest defines model for AttestationCreateRequest.
+type AttestationCreateRequest struct {
+	ChangeOrderID          *openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	Claims                 map[string]string   `json:"Claims,omitempty" yaml:"Claims,omitempty"`
+	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
+	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
+	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+	Result                 string              `json:"Result,omitempty" yaml:"Result,omitempty"`
+	Revision               string              `json:"Revision,omitempty" yaml:"Revision,omitempty"`
+	RevokedAttestationID   *openapi_types.UUID `json:"RevokedAttestationID,omitempty" yaml:"RevokedAttestationID,omitempty"`
+	Type                   string              `json:"Type,omitempty" yaml:"Type,omitempty"`
+	WhereUnit              string              `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
+}
+
+// AttestationCreateResponse defines model for AttestationCreateResponse.
+type AttestationCreateResponse struct {
+	// Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
+	Attestation  *Attestation             `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
+	SkippedUnits []AttestationSkippedUnit `json:"SkippedUnits,omitempty" yaml:"SkippedUnits,omitempty"`
+	Subjects     []AttestationSubject     `json:"Subjects,omitempty" yaml:"Subjects,omitempty"`
+}
+
+// AttestationSkippedUnit defines model for AttestationSkippedUnit.
+type AttestationSkippedUnit struct {
+	Reason   string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	UnitID   openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitSlug string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+}
+
+// AttestationSubject defines model for AttestationSubject.
+type AttestationSubject struct {
+	RevisionID  openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+	RevisionNum int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+	UnitID      openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitSlug    string             `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+}
 
 // Attribute Defines a dynamic configuration attribute that registers getter and setter functions
 // and their associated paths in a Space's FunctionExecutor. Attributes enable per-Space
@@ -782,6 +920,9 @@ type ChangeWorkflow struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
+	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
+	AttestationPrerequisites []ChangeWorkflowAttestationPrerequisite `json:"AttestationPrerequisites,omitempty" yaml:"AttestationPrerequisites,omitempty"`
+
 	// ChangeWorkflowID ChangeWorkflowID uniquely identifies a change workflow within the system.
 	ChangeWorkflowID openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
 
@@ -826,6 +967,39 @@ type ChangeWorkflow struct {
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
 
+// ChangeWorkflowAttestationPrerequisite defines model for ChangeWorkflowAttestationPrerequisite.
+type ChangeWorkflowAttestationPrerequisite struct {
+	// AllowAuthors Count an attester who wrote a Revision of the change. By default one does not count.
+	AllowAuthors bool `json:"AllowAuthors,omitempty" yaml:"AllowAuthors,omitempty"`
+
+	// Count How many distinct attesters must record a Pass on each Revision. 1 when zero.
+	Count int `json:"Count,omitempty" yaml:"Count,omitempty"`
+
+	// Description What the requirement is for, in the author's words.
+	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
+
+	// DistinctGroups Reserved: each counted attester must be from a different group of FromGroupIDs. Refused until Groups are recorded on Attestations.
+	DistinctGroups bool `json:"DistinctGroups,omitempty" yaml:"DistinctGroups,omitempty"`
+
+	// FromGroupIDs Reserved: Groups whose members' Attestations count. Refused until Groups are recorded on Attestations.
+	FromGroupIDs []UUID `json:"FromGroupIDs,omitempty" yaml:"FromGroupIDs,omitempty"`
+
+	// FromUserIDs The Users whose Attestations count. Empty is anyone who may record an Attestation in the Space.
+	FromUserIDs []UUID `json:"FromUserIDs,omitempty" yaml:"FromUserIDs,omitempty"`
+
+	// IgnoreFail Count only passes. By default an unrevoked Fail from an eligible attester fails the requirement, however many passes there are.
+	IgnoreFail bool `json:"IgnoreFail,omitempty" yaml:"IgnoreFail,omitempty"`
+
+	// MaxAge How old an Attestation may be and still count, as a duration such as 72h. No limit when empty.
+	MaxAge string `json:"MaxAge,omitempty" yaml:"MaxAge,omitempty"`
+
+	// Name What a stage, its ReleasePrerequisites, or Final gates on. Unique among the workflow's prerequisites, and refused if it shadows a built-in name.
+	Name string `json:"Name" yaml:"Name"`
+
+	// Type The Attestation Type that counts. Approval when empty.
+	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
+}
+
 // ChangeWorkflowCreateOrUpdateResponse defines model for ChangeWorkflowCreateOrUpdateResponse.
 type ChangeWorkflowCreateOrUpdateResponse struct {
 	// ChangeWorkflow Declares how a change is promoted: the ordered stages it moves through, which Spaces each stage selects, and the gates that have to pass before it enters one.
@@ -853,6 +1027,9 @@ type ChangeWorkflowPrerequisite struct {
 
 // ChangeWorkflowSpec defines model for ChangeWorkflowSpec.
 type ChangeWorkflowSpec struct {
+	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
+	AttestationPrerequisites []ChangeWorkflowAttestationPrerequisite `json:"AttestationPrerequisites,omitempty" yaml:"AttestationPrerequisites,omitempty"`
+
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites []ChangeWorkflowPrerequisite `json:"CustomPrerequisites,omitempty" yaml:"CustomPrerequisites,omitempty"`
 	Final               *ChangeWorkflowFinalStage    `json:"Final,omitempty" yaml:"Final,omitempty"`
@@ -868,6 +1045,9 @@ type ChangeWorkflowStage struct {
 
 	// Prerequisites The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage ahead of this one, so the first stage's are never evaluated.
 	Prerequisites []string `json:"Prerequisites,omitempty" yaml:"Prerequisites,omitempty"`
+
+	// ReleasePrerequisites Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites. Evaluated over the Revisions the Release bundles.
+	ReleasePrerequisites []string `json:"ReleasePrerequisites,omitempty" yaml:"ReleasePrerequisites,omitempty"`
 
 	// WhereSpace Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
@@ -992,6 +1172,18 @@ type ErrorMetadata struct {
 
 	// Items Collection of error details
 	Items []ErrorItem `json:"Items,omitempty" yaml:"Items,omitempty"`
+}
+
+// ExtendedAttestation Attestation with additional related entities expanded based on the request's include parameter.
+type ExtendedAttestation struct {
+	// Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
+	Attestation *Attestation `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 }
 
 // ExtendedAttribute defines model for ExtendedAttribute.
@@ -1260,6 +1452,7 @@ type ExtendedResource struct {
 
 // ExtendedRevision defines model for ExtendedRevision.
 type ExtendedRevision struct {
+	Attestations []Attestation `json:"Attestations,omitempty" yaml:"Attestations,omitempty"`
 	ChangeOrders []ChangeOrder `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
 
 	// ChangeSet Defines an entity changeset.
@@ -2789,7 +2982,10 @@ type Revision struct {
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
 	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
-	ApprovedBy   []UUID            `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
+	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
+
+	// Attestations A set (map) of AttestationIDs of the Attestations covering this Revision: approvals, reviews, and other claims made about it. The string values have no particular meaning.
+	Attestations map[string]string `json:"Attestations,omitempty" yaml:"Attestations,omitempty"`
 	ChangeOrders map[string]string `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
 
 	// ChangeSetID Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets.
@@ -4763,6 +4959,103 @@ type BulkCreateSpacesParams struct {
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 }
 
+// AttestParams defines parameters for Attest.
+type AttestParams struct {
+	// DryRun Resolve the Revisions that would be covered and return the same response without writing anything.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// ListAllAttestationsParams defines parameters for ListAllAttestations.
+type ListAllAttestationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Attestations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Attestation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Attestation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
 // BulkDeleteAttributesParams defines parameters for BulkDeleteAttributes.
 type BulkDeleteAttributesParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -6690,7 +6983,7 @@ type BulkDeleteChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6771,7 +7064,7 @@ type ListAllChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6830,6 +7123,9 @@ type ListAllChangeWorkflowsParams struct {
 type BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
+	AttestationPrerequisites *[]map[string]interface{} `json:"AttestationPrerequisites" yaml:"AttestationPrerequisites"`
 
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites *[]map[string]interface{} `json:"CustomPrerequisites" yaml:"CustomPrerequisites"`
@@ -6892,7 +7188,7 @@ type BulkPatchChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6941,6 +7237,9 @@ type BulkPatchChangeWorkflowsParams struct {
 type BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
+	AttestationPrerequisites *[]map[string]interface{} `json:"AttestationPrerequisites" yaml:"AttestationPrerequisites"`
 
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites *[]map[string]interface{} `json:"CustomPrerequisites" yaml:"CustomPrerequisites"`
@@ -7003,7 +7302,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7150,7 +7449,7 @@ type BulkMoveChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9515,7 +9814,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -9556,7 +9855,7 @@ type ListAllRevisionsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9581,7 +9880,7 @@ type ListAllRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9639,7 +9938,7 @@ type SearchRevisionDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -9680,7 +9979,7 @@ type SearchRevisionDataParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9705,7 +10004,7 @@ type SearchRevisionDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9763,7 +10062,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -9804,7 +10103,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -9829,7 +10128,7 @@ type SearchRevisionMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10025,6 +10324,125 @@ type PatchSpaceParams struct {
 type UpdateSpaceParams struct {
 	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+}
+
+// ListExtendedAttestationsParams defines parameters for ListExtendedAttestations.
+type ListExtendedAttestationsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Attestations returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Attestation list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Attestation).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// CreateAttestationParams defines parameters for CreateAttestation.
+type CreateAttestationParams struct {
+	// DryRun Resolve the Revisions that would be covered and return the same response without writing anything.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// GetExtendedAttestationParams defines parameters for GetExtendedAttestation.
+type GetExtendedAttestationParams struct {
+	// Include Include clause for expanding related entities in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Attestation are OrganizationID, SpaceID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for Attestation.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
 // ListAttributesParams defines parameters for ListAttributes.
@@ -10676,7 +11094,7 @@ type ListChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10763,6 +11181,9 @@ type GetChangeWorkflowParams struct {
 type PatchChangeWorkflowApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
+	AttestationPrerequisites *[]map[string]interface{} `json:"AttestationPrerequisites" yaml:"AttestationPrerequisites"`
 
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites *[]map[string]interface{} `json:"CustomPrerequisites" yaml:"CustomPrerequisites"`
@@ -12828,7 +13249,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -12869,7 +13290,7 @@ type ListExtendedRevisionsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12894,7 +13315,7 @@ type ListExtendedRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -12910,7 +13331,7 @@ type GetExtendedRevisionParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+	// Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12935,7 +13356,7 @@ type GetExtendedRevisionParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -16714,6 +17135,9 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody BulkPatchSpacesAppl
 // BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateSpaces for application/merge-patch+json ContentType.
 type BulkCreateSpacesApplicationMergePatchPlusJSONRequestBody BulkCreateSpacesApplicationMergePatchPlusJSONBody
 
+// AttestJSONRequestBody defines body for Attest for application/json ContentType.
+type AttestJSONRequestBody = AttestRequest
+
 // BulkPatchAttributesApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchAttributes for application/merge-patch+json ContentType.
 type BulkPatchAttributesApplicationMergePatchPlusJSONRequestBody BulkPatchAttributesApplicationMergePatchPlusJSONBody
 
@@ -16812,6 +17236,9 @@ type PatchSpaceApplicationMergePatchPlusJSONRequestBody PatchSpaceApplicationMer
 
 // UpdateSpaceJSONRequestBody defines body for UpdateSpace for application/json ContentType.
 type UpdateSpaceJSONRequestBody = Space
+
+// CreateAttestationJSONRequestBody defines body for CreateAttestation for application/json ContentType.
+type CreateAttestationJSONRequestBody = AttestationCreateRequest
 
 // CreateAttributeJSONRequestBody defines body for CreateAttribute for application/json ContentType.
 type CreateAttributeJSONRequestBody = Attribute

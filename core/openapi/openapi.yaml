@@ -1112,6 +1112,247 @@ paths:
       summary: Bulk create (clone) multiple spaces
       tags:
       - Space
+  /attest:
+    post:
+      description: Record an Attestation in each Space selected by WhereSpace, SpaceFilterID,
+        ChangeOrderID and TargetStage, covering one Revision of each Unit WhereUnit
+        selects there, named by Revision. It defaults to the Revision the ChangeOrder's
+        end Tag marks when ChangeOrderID is given, and to the head Revision otherwise.
+        Each Space is recorded on its own and reported on its own.
+      operationId: Attest
+      parameters:
+      - description: Resolve the Revisions that would be covered and return the same
+          response without writing anything.
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttestRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttestResult'
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttestResult'
+          description: Recording failed in some Spaces; each Space's result carries
+            its own error
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attest request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attest not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attest data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Attest.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Record Attestations across Spaces
+      tags:
+      - Attest
+  /attestation:
+    get:
+      description: Retrieves a list of Attestations across spaces in the Organization
+      operationId: ListAllAttestations
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Attestations returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Attestation list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Attestation).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Attestation are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedAttestation'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attestation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attestation not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Attestation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of Attestations across spaces
+      tags:
+      - Attestation
   /attribute:
     delete:
       description: Delete multiple attributes selected by query parameters
@@ -5007,7 +5248,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5174,7 +5415,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5335,7 +5576,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5409,6 +5650,14 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AttestationPrerequisites:
+                  description: The Attestations a stage, its releases, or Final may
+                    require. Declared once and named wherever they apply.
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 CustomPrerequisites:
                   description: The checks a stage or Final may gate on beyond the
                     built-in ones. Declared once and named wherever they apply.
@@ -5565,7 +5814,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -5730,6 +5979,14 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AttestationPrerequisites:
+                  description: The Attestations a stage, its releases, or Final may
+                    require. Declared once and named wherever they apply.
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 CustomPrerequisites:
                   description: The checks a stage or Final may gate on beyond the
                     built-in ones. Declared once and named wherever they apply.
@@ -5889,7 +6146,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -11913,7 +12170,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -11966,7 +12223,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -12012,7 +12269,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -12131,7 +12388,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -12184,7 +12441,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -12230,7 +12487,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -12348,7 +12605,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -12401,7 +12658,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -12447,7 +12704,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -13168,6 +13425,346 @@ paths:
       summary: Update Space
       tags:
       - Space
+  /space/{space_id}/attestation:
+    get:
+      description: List ExtendedAttestations
+      operationId: ListExtendedAttestations
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Attestations returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Attestation list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Attestation).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Attestation are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedAttestation'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedAttestation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedAttestation not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedAttestation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ExtendedAttestations
+      tags:
+      - Attestation
+    post:
+      description: Record an Attestation in the Space, covering one Revision of each
+        Unit WhereUnit selects, named by Revision. Units with no such Revision are
+        reported as skipped. When nothing is covered, nothing is recorded. With RevokedAttestationID,
+        withdraw an earlier Attestation instead; a revocation covers no Revisions
+        of its own. Requires Approve permission on the Space.
+      operationId: CreateAttestation
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Resolve the Revisions that would be covered and return the same
+          response without writing anything.
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttestationCreateRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttestationCreateResponse'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attestation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attestation not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Attestation data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Attestation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Record an Attestation
+      tags:
+      - Attestation
+  /space/{space_id}/attestation/{attestation_id}:
+    get:
+      description: Get ExtendedAttestation
+      operationId: GetExtendedAttestation
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Attestation are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Attestation.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a attestation_id
+        in: path
+        name: attestation_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedAttestation'
+          description: Attestation with additional related entities expanded based
+            on the request's include parameter.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedAttestation request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedAttestation not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedAttestation.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ExtendedAttestation
+      tags:
+      - Attestation
   /space/{space_id}/attribute:
     get:
       description: List Attributes
@@ -15987,7 +16584,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+          Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -16387,6 +16984,14 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
+                AttestationPrerequisites:
+                  description: The Attestations a stage, its releases, or Final may
+                    require. Declared once and named wherever they apply.
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 CustomPrerequisites:
                   description: The checks a stage or Final may gate on beyond the
                     built-in ones. Declared once and named wherever they apply.
@@ -19275,7 +19880,9 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
-          description: A Unit to be bundled has outstanding validation errors
+          description: A Unit to be bundled has outstanding validation errors, or,
+            for a change order, the bundled Revisions do not satisfy the ReleasePrerequisites
+            of the stage the Space belongs to
         "500":
           content:
             application/json:
@@ -24649,7 +25256,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -24702,7 +25309,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -24748,7 +25355,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -24832,7 +25439,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+          Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -24878,7 +25485,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -33725,6 +34332,308 @@ components:
           type: string
         type: array
       type: object
+    AttestRequest:
+      properties:
+        ChangeOrderID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Claims:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-type-skip-optional-pointer: true
+        EvidenceAttestationIDs:
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Note:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ReleaseID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Result:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Revision:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevokedAttestationID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SpaceFilterID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        TargetStage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Type:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereSpace:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereUnit:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestResult:
+      properties:
+        Spaces:
+          items:
+            $ref: '#/components/schemas/AttestSpaceResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestSpaceResult:
+      properties:
+        Attestation:
+          $ref: '#/components/schemas/Attestation'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        SkippedUnits:
+          items:
+            $ref: '#/components/schemas/AttestationSkippedUnit'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Subjects:
+          items:
+            $ref: '#/components/schemas/AttestationSubject'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    Attestation:
+      description: 'An Attestation records that a principal made a claim about specific
+        Revisions, all in its Space: that they approve them, that a review or check
+        passed or failed, or anything else its Type names. It is never updated; withdrawing
+        one is a new Attestation naming it in RevokedAttestationID.'
+      properties:
+        AttestationID:
+          description: Uniquely identifies the Attestation.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: 'The ChangeOrder the Attestation was made in the context of.
+            Context only: it does not change which Revisions are covered.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Claims:
+          additionalProperties:
+            type: string
+          description: Anything else the attester records, as string key/value pairs
+            with the limits of Annotations.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EvidenceAttestationIDs:
+          description: Other Attestations this one relied on. They may be in other
+            Spaces.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          description: When the Attestation stops satisfying requirements. Optional.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Note:
+          description: The attester's reason, in their own words.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: The Organization the Attestation belongs to.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ReleaseID:
+          description: A published Release the claim is about.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Result:
+          description: 'The outcome: Pass or Fail. For an Approval, approve or reject.
+            Defaults to Pass.'
+          enum:
+          - Pass
+          - Fail
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevokedAttestationID:
+          description: An earlier Attestation in the same Space that this one withdraws.
+            A revocation covers no Revisions of its own.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SpaceID:
+          description: The Space the Attestation belongs to. Every Revision it covers
+            is in this Space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space the Attestation belongs to.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Type:
+          description: What is being claimed, such as Approval. Requirements select
+            Attestations by it. Defaults to Approval.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: The authenticated User that created the Attestation.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestationCreateRequest:
+      properties:
+        ChangeOrderID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Claims:
+          additionalProperties:
+            type: string
+          type: object
+          x-go-type-skip-optional-pointer: true
+        EvidenceAttestationIDs:
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Note:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ReleaseID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Result:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Revision:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevokedAttestationID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        Type:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereUnit:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestationCreateResponse:
+      properties:
+        Attestation:
+          $ref: '#/components/schemas/Attestation'
+        SkippedUnits:
+          items:
+            $ref: '#/components/schemas/AttestationSkippedUnit'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Subjects:
+          items:
+            $ref: '#/components/schemas/AttestationSubject'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestationSkippedUnit:
+      properties:
+        Reason:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    AttestationSubject:
+      properties:
+        RevisionID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevisionNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     Attribute:
       description: |-
         Defines a dynamic configuration attribute that registers getter and setter functions
@@ -34861,6 +35770,13 @@ components:
             attach information to entities.
           type: object
           x-go-type-skip-optional-pointer: true
+        AttestationPrerequisites:
+          description: The Attestations a stage, its releases, or Final may require.
+            Declared once and named wherever they apply.
+          items:
+            $ref: '#/components/schemas/ChangeWorkflowAttestationPrerequisite'
+          type: array
+          x-go-type-skip-optional-pointer: true
         ChangeWorkflowID:
           description: ChangeWorkflowID uniquely identifies a change workflow within
             the system.
@@ -34962,6 +35878,64 @@ components:
       - Slug
       - Stages
       type: object
+    ChangeWorkflowAttestationPrerequisite:
+      properties:
+        AllowAuthors:
+          description: Count an attester who wrote a Revision of the change. By default
+            one does not count.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Count:
+          description: How many distinct attesters must record a Pass on each Revision.
+            1 when zero.
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Description:
+          description: What the requirement is for, in the author's words.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DistinctGroups:
+          description: 'Reserved: each counted attester must be from a different group
+            of FromGroupIDs. Refused until Groups are recorded on Attestations.'
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        FromGroupIDs:
+          description: 'Reserved: Groups whose members'' Attestations count. Refused
+            until Groups are recorded on Attestations.'
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        FromUserIDs:
+          description: The Users whose Attestations count. Empty is anyone who may
+            record an Attestation in the Space.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        IgnoreFail:
+          description: Count only passes. By default an unrevoked Fail from an eligible
+            attester fails the requirement, however many passes there are.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        MaxAge:
+          description: How old an Attestation may be and still count, as a duration
+            such as 72h. No limit when empty.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Name:
+          description: What a stage, its ReleasePrerequisites, or Final gates on.
+            Unique among the workflow's prerequisites, and refused if it shadows a
+            built-in name.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Type:
+          description: The Attestation Type that counts. Approval when empty.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Name
+      type: object
     ChangeWorkflowCreateOrUpdateResponse:
       properties:
         ChangeWorkflow:
@@ -35004,6 +35978,13 @@ components:
       type: object
     ChangeWorkflowSpec:
       properties:
+        AttestationPrerequisites:
+          description: The Attestations a stage, its releases, or Final may require.
+            Declared once and named wherever they apply.
+          items:
+            $ref: '#/components/schemas/ChangeWorkflowAttestationPrerequisite'
+          type: array
+          x-go-type-skip-optional-pointer: true
         CustomPrerequisites:
           description: The checks a stage or Final may gate on beyond the built-in
             ones. Declared once and named wherever they apply.
@@ -35034,6 +36015,14 @@ components:
           description: The stage's entry gates, each naming a built-in check or one
             declared in CustomPrerequisites. Evaluated over every Space of the stage
             ahead of this one, so the first stage's are never evaluated.
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ReleasePrerequisites:
+          description: Gates on publishing a Release for a change order in one of
+            the stage's Spaces, each naming one declared in AttestationPrerequisites.
+            Evaluated over the Revisions the Release bundles.
           items:
             type: string
           type: array
@@ -35264,6 +36253,17 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
+    ExtendedAttestation:
+      description: Attestation with additional related entities expanded based on
+        the request's include parameter.
+      properties:
+        Attestation:
+          $ref: '#/components/schemas/Attestation'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        Space:
+          $ref: '#/components/schemas/Space'
+      type: object
     ExtendedAttribute:
       properties:
         Attribute:
@@ -35459,6 +36459,11 @@ components:
       type: object
     ExtendedRevision:
       properties:
+        Attestations:
+          items:
+            $ref: '#/components/schemas/Attestation'
+          type: array
+          x-go-type-skip-optional-pointer: true
         ChangeOrders:
           items:
             $ref: '#/components/schemas/ChangeOrder'
@@ -38212,6 +39217,15 @@ components:
           items:
             $ref: '#/components/schemas/UUID'
           type: array
+          x-go-type-skip-optional-pointer: true
+        Attestations:
+          additionalProperties:
+            type: string
+          description: 'A set (map) of AttestationIDs of the Attestations covering
+            this Revision: approvals, reviews, and other claims made about it. The
+            string values have no particular meaning.'
+          readOnly: true
+          type: object
           x-go-type-skip-optional-pointer: true
         ChangeOrders:
           additionalProperties:

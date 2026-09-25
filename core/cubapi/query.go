@@ -418,6 +418,25 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 	return derefPtrs(res.JSON200), nil
 }
 
+// ListAttestations returns Attestations across the organization matching where.
+func ListAttestations(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedAttestation, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllAttestationsParams{
+		Where:    ptrIf(where.String()),
+		Select:   ptrIf(opts.Select),
+		Include:  ptrIf(opts.Include),
+		Filter:   ptrIf(opts.Filter),
+		Contains: ptrIf(opts.Contains),
+	}
+	res, err := c.API.ListAllAttestationsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
 // ListViews returns views across the organization matching where.
 func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedView, error) {
 	if err := where.Err(); err != nil {

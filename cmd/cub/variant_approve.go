@@ -5,10 +5,13 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/cockroachdb/errors"
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -19,9 +22,14 @@ import (
 const variantApproveDefaultWhere = "TargetID IS NOT NULL"
 
 var variantApproveArgs struct {
-	revision string
-	all      bool
-	noWait   bool
+	statement   attestationStatementArgs
+	revision    string
+	all         bool
+	noWait      bool
+	changeOrder string
+	stage       string
+	whereSpace  string
+	dryRun      bool
 }
 
 // variantApproveTriggerTimeout bounds the wait for trigger evaluation to finish.
@@ -31,32 +39,33 @@ const variantApproveTriggerTimeout = 2 * time.Minute
 
 var variantApproveCmd = &cobra.Command{
 	Use:         "approve [<space>]",
-	Short:       "Approve the deployable units of a variant",
+	Short:       "Approve the units of one or more variants",
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Approve every unit of a variant space that can be released.
+	Long: getCommandHelp(`Approve one revision of each unit in one or more variant spaces.
 
-Approval is per unit and per revision, so approving a variant that a change has just
-reached otherwise means naming its units. This approves the whole variant in one step:
-the review is of the change that arrived, and the change arrived across the space.
+An approval is an attestation of type Approval, recorded per space and covering specific
+revisions: the ones approved, and later revisions of the same unit with identical
+content. A new revision with different content is not approved until someone approves
+it. See `+"`cub attestation`"+`.
 
-By default the units with a Target are approved -- what a release of this space would
-publish. A base has no Target, so "`+variantApproveDefaultWhere+`" selects nothing
-there; pass --all to approve regardless, which is what a base being reviewed before its
-deployments take the change wants.
+The spaces are the one named as an argument, or those --where-space selects, or those
+--change-order names -- its own space and the spaces it is headed for -- narrowed to one
+stage of its change workflow with --stage. These combine as an intersection.
 
---where narrows the selection further, ANDed with the default. --revision approves a
-revision other than each unit's head, which is what a review of an already-superseded
-change needs; it takes the same forms "cub unit approve --revision" does.
+In each space, the units approved are those with a Target -- what a release of the space
+would publish -- unless --change-order or --all is given, in which case they are every
+unit. --where narrows the units further. The revision of each is the head, or with
+--change-order the revision its end tag marks there, or --revision: a number,
+LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset> or ChangeOrder:<changeorder>,
+optionally prefixed with Before:. A unit with no such revision is reported and skipped.
 
-A vet-approvedby Trigger is what makes approval load-bearing: it attaches an ApplyGate
-to every revision with too few approvals, and "cub release publish" refuses while a gate
-is on. Approving clears the gate for the revision approved and no other, so a later
-change is gated again without anyone re-arming anything.
+--reject records a rejection instead, and --note says why.
 
-Approving waits for the space's Triggers to finish evaluating before returning, because
-publishing is what usually comes next and a publish issued while evaluation is pending
-fails on the transient "awaiting/triggers" gate rather than on anything real. Pass
---no-wait to return as soon as the approvals are recorded.
+While spaces still gate releases with a vet-approvedby Trigger, approving a unit's head
+revision also clears that Trigger's gate, and this command waits for the space's
+Triggers to finish evaluating before returning, since a publish issued while evaluation
+is pending fails on the transient "awaiting/triggers" gate. Pass --no-wait to return as
+soon as the approvals are recorded.
 
 Examples:
 `+"```"+`
@@ -72,6 +81,12 @@ Examples:
 
   # Approve a base, which has no targets of its own.
   cub variant approve apptique-base --all
+
+  # Approve change order checkout-v42 as it stands in every staging space.
+  cub variant approve --change-order apptique-base/checkout-v42 --stage staging
+
+  # Reject it in one of them.
+  cub variant approve apptique-staging-eu --change-order apptique-base/checkout-v42 --reject --note "breaks the EU ingress"
 `+"```"+`
 `, ""),
 	Args: cobra.MaximumNArgs(1),
@@ -80,10 +95,19 @@ Examples:
 
 func init() {
 	enableWhereFlag(variantApproveCmd)
+	addAttestationStatementFlags(variantApproveCmd, &variantApproveArgs.statement, false)
 	variantApproveCmd.Flags().StringVar(&variantApproveArgs.revision, "revision", "",
-		"revision to approve (defaults to each unit's head); a number, LastReleasedRevisionNum, Tag:slug, or ChangeSet:slug")
+		"revision of each unit to approve; defaults to the change order's, or the head")
 	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.all, "all", false,
 		"approve every unit in the space, not only the ones with a Target")
+	variantApproveCmd.Flags().StringVar(&variantApproveArgs.changeOrder, "change-order", "",
+		"approve this change order: the spaces it is headed for, and the revisions its end tag marks")
+	variantApproveCmd.Flags().StringVar(&variantApproveArgs.stage, "stage", "",
+		"with --change-order, approve in the spaces of this stage of its change workflow")
+	variantApproveCmd.Flags().StringVar(&variantApproveArgs.whereSpace, "where-space", "",
+		"select the spaces to approve in with a where expression over spaces")
+	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.dryRun, "dry-run", false,
+		"report what would be approved, and record nothing")
 	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.noWait, "no-wait", false,
 		"return as soon as the approvals are recorded, without waiting for triggers to finish evaluating")
 	addStandardDisplayFlags(variantApproveCmd)
@@ -120,45 +144,99 @@ func variantApproveWhere(userWhere string, all bool) string {
 }
 
 func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
-	spaceSlug := ""
+	variantApproveArgs.statement.attestationType = "Approval"
+	request := goclientnew.AttestRequest{}
+	var spaceClauses []string
 	if len(args) == 1 {
-		spaceSlug = args[0]
-	} else if selectedSpaceSlug != "" && selectedSpaceSlug != "*" {
-		spaceSlug = selectedSpaceSlug
+		space, err := resolveSpace(args[0], "SpaceID,Slug")
+		if err != nil {
+			return err
+		}
+		spaceClauses = append(spaceClauses, fmt.Sprintf("SpaceID = '%s'", space.Space.SpaceID))
+	} else if selectedSpaceID != "" && selectedSpaceID != "*" {
+		spaceClauses = append(spaceClauses, fmt.Sprintf("SpaceID = '%s'", selectedSpaceID))
 	}
-	if spaceSlug == "" {
-		return errors.New("approve needs the variant space to approve, either as an argument or as the selected space")
+	if variantApproveArgs.whereSpace != "" {
+		spaceClauses = append(spaceClauses, variantApproveArgs.whereSpace)
+	}
+	request.WhereSpace = strings.Join(spaceClauses, " AND ")
+
+	var changeOrderID *uuid.UUID
+	if variantApproveArgs.changeOrder != "" {
+		id, err := resolveChangeOrderID(variantApproveArgs.changeOrder)
+		if err != nil {
+			return err
+		}
+		changeOrderID = &id
+	}
+	if variantApproveArgs.stage != "" && changeOrderID == nil {
+		return errors.New("--stage names a stage of a change order's workflow, so it needs --change-order")
+	}
+	if request.WhereSpace == "" && changeOrderID == nil {
+		return errors.New("approve needs the spaces to approve in: name a space, or pass --where-space or --change-order")
 	}
 
-	space, err := resolveSpace(spaceSlug, "SpaceID,Slug")
+	statement, err := variantApproveArgs.statement.statement(changeOrderID)
 	if err != nil {
 		return err
 	}
-	// As "variant promote" does: this command names its space positionally, so the
-	// selected space may be unset or "*". Point it at the space being approved.
-	selectedSpaceID = space.Space.SpaceID.String()
-	selectedSpaceSlug = space.Space.Slug
-
-	revisionParam, err := parseApproveRevisionParameter(variantApproveArgs.revision)
+	revision, err := attestationRevisionParameter(variantApproveArgs.revision)
 	if err != nil {
 		return err
 	}
+	selection := statement.attestRequest()
+	selection.WhereSpace = request.WhereSpace
+	selection.TargetStage = variantApproveArgs.stage
+	selection.Revision = revision
+	// A release publishes the Units with a Target, so that is what approving for a release
+	// covers. A change is approved wherever it landed, Target or not.
+	selection.WhereUnit = variantApproveWhere(where, variantApproveArgs.all || changeOrderID != nil)
 
-	// The selection is kept without the space clause as well: the bulk API wants it
-	// included, and apiListUnits adds its own.
-	selectionWhere := variantApproveWhere(where, variantApproveArgs.all)
-	effectiveWhere := addSpaceIDToWhereClause(selectionWhere, selectedSpaceID)
-
-	if !quiet && !isAlternativeOutput() {
-		tprint("Approving units in %s", space.Space.Slug)
-	}
-	if err := bulkApproveUnits(effectiveWhere, "", revisionParam); err != nil {
+	result, err := cubapi.Attest(ctx, cubClient, selection, variantApproveArgs.dryRun)
+	if err != nil {
 		return err
 	}
-	if variantApproveArgs.noWait {
+	var failed []string
+	for i := range result.Spaces {
+		space := &result.Spaces[i]
+		if space.Error != nil {
+			failed = append(failed, space.SpaceSlug)
+			if !quiet && !isAlternativeOutput() {
+				tprint("Failed to approve in %s: %s", space.SpaceSlug, space.Error.Message)
+			}
+			continue
+		}
+		displayAttestationCreateResult(space.SpaceSlug, &goclientnew.AttestationCreateResponse{
+			Attestation: space.Attestation, Subjects: space.Subjects, SkippedUnits: space.SkippedUnits,
+		}, variantApproveArgs.dryRun)
+	}
+	renderPayload(result)
+	if len(failed) > 0 {
+		return errors.Newf("approval failed in %d space(s): %s", len(failed), strings.Join(failed, ", "))
+	}
+	if variantApproveArgs.noWait || variantApproveArgs.dryRun || variantApproveArgs.statement.reject {
 		return nil
 	}
-	return variantApproveWaitTriggers(selectionWhere)
+	for i := range result.Spaces {
+		space := &result.Spaces[i]
+		if space.Attestation == nil || len(space.Subjects) == 0 {
+			continue
+		}
+		selectedSpaceID = space.SpaceID.String()
+		if err := variantApproveWaitTriggers(unitIDsWhere(space.Subjects)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// unitIDsWhere selects the Units an attestation covered.
+func unitIDsWhere(subjects []goclientnew.AttestationSubject) string {
+	ids := make([]string, 0, len(subjects))
+	for _, subject := range subjects {
+		ids = append(ids, "'"+subject.UnitID.String()+"'")
+	}
+	return "UnitID IN (" + strings.Join(ids, ", ") + ")"
 }
 
 // variantApproveWaitTriggers waits for the approved units to finish trigger

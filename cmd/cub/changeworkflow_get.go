@@ -59,7 +59,36 @@ func formatChangeWorkflowStage(stage goclientnew.ChangeWorkflowStage) string {
 	if len(stage.Prerequisites) > 0 {
 		parts = append(parts, "gates: "+strings.Join(stage.Prerequisites, ", "))
 	}
+	if len(stage.ReleasePrerequisites) > 0 {
+		parts = append(parts, "release gates: "+strings.Join(stage.ReleasePrerequisites, ", "))
+	}
 	return strings.Join(parts, "; ")
+}
+
+// formatAttestationPrerequisite says what an attestation requirement asks for, in a line.
+func formatAttestationPrerequisite(required goclientnew.ChangeWorkflowAttestationPrerequisite) string {
+	count := required.Count
+	if count <= 0 {
+		count = 1
+	}
+	attestationType := required.Type
+	if attestationType == "" {
+		attestationType = "Approval"
+	}
+	detail := fmt.Sprintf("%d %s attestation(s)", count, attestationType)
+	if len(required.FromUserIDs) > 0 {
+		detail += fmt.Sprintf(" from %d named user(s)", len(required.FromUserIDs))
+	}
+	if !required.AllowAuthors {
+		detail += ", not by an author of the change"
+	}
+	if required.MaxAge != "" {
+		detail += ", at most " + required.MaxAge + " old"
+	}
+	if required.Description != "" {
+		detail = required.Description + " (" + detail + ")"
+	}
+	return detail
 }
 
 func displayChangeWorkflowDetails(changeWorkflowDetails *goclientnew.ChangeWorkflow) {
@@ -107,6 +136,9 @@ func displayExtendedChangeWorkflowDetails(extendedChangeWorkflow *goclientnew.Ex
 			detail = custom.Description + " (" + custom.Expression + ")"
 		}
 		view.Append([]string{"Prerequisite " + custom.Name, detail})
+	}
+	for _, required := range changeWorkflowDetails.AttestationPrerequisites {
+		view.Append([]string{"Prerequisite " + required.Name, formatAttestationPrerequisite(required)})
 	}
 
 	view.Render()

@@ -5,6 +5,8 @@ import { confighubApi as api } from './confighubapi';
 export const addTagTypes = [
   'Component',
   'Space',
+  'Attest',
+  'Attestation',
   'Attribute',
   'BridgeWorker',
   'QueuedOperation',
@@ -124,6 +126,33 @@ const injectedRtkApi = api
           },
         }),
         invalidatesTags: ['Space'],
+      }),
+      attest: build.mutation<AttestApiResponse, AttestApiArg>({
+        query: (queryArg) => ({
+          url: `/attest`,
+          method: 'POST',
+          body: queryArg.attestRequest,
+          params: {
+            dry_run: queryArg.dryRun,
+          },
+        }),
+        invalidatesTags: ['Attest'],
+      }),
+      listAllAttestations: build.query<
+        ListAllAttestationsApiResponse,
+        ListAllAttestationsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/attestation`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+          },
+        }),
+        providesTags: ['Attestation'],
       }),
       bulkDeleteAttributes: build.mutation<
         BulkDeleteAttributesApiResponse,
@@ -1181,6 +1210,48 @@ const injectedRtkApi = api
           },
         }),
         invalidatesTags: ['Space'],
+      }),
+      listExtendedAttestations: build.query<
+        ListExtendedAttestationsApiResponse,
+        ListExtendedAttestationsApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/attestation`,
+          params: {
+            where: queryArg.where,
+            filter: queryArg.filter,
+            contains: queryArg.contains,
+            include: queryArg.include,
+            select: queryArg.select,
+          },
+        }),
+        providesTags: ['Attestation'],
+      }),
+      createAttestation: build.mutation<CreateAttestationApiResponse, CreateAttestationApiArg>(
+        {
+          query: (queryArg) => ({
+            url: `/space/${queryArg.spaceId}/attestation`,
+            method: 'POST',
+            body: queryArg.attestationCreateRequest,
+            params: {
+              dry_run: queryArg.dryRun,
+            },
+          }),
+          invalidatesTags: ['Attestation'],
+        },
+      ),
+      getExtendedAttestation: build.query<
+        GetExtendedAttestationApiResponse,
+        GetExtendedAttestationApiArg
+      >({
+        query: (queryArg) => ({
+          url: `/space/${queryArg.spaceId}/attestation/${queryArg.attestationId}`,
+          params: {
+            include: queryArg.include,
+            select: queryArg.select,
+          },
+        }),
+        providesTags: ['Attestation'],
       }),
       listAttributes: build.query<ListAttributesApiResponse, ListAttributesApiArg>({
         query: (queryArg) => ({
@@ -3469,6 +3540,100 @@ export type BulkCreateSpacesApiArg = {
     WhereTrigger?: string | null;
   };
 };
+export type AttestApiResponse = /** status 200 OK */
+  | AttestResultRead
+  | /** status 207 Recording failed in some Spaces; each Space's result carries its own error */ AttestResultRead;
+export type AttestApiArg = {
+  /** Resolve the Revisions that would be covered and return the same response without writing anything. */
+  dryRun?: boolean;
+  attestRequest: AttestRequest;
+};
+export type ListAllAttestationsApiResponse = /** status 200 OK */ ExtendedAttestationRead[];
+export type ListAllAttestationsApiArg = {
+  /** The specified string is an expression for the purpose of filtering
+    the list of Attestations returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Attestation list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Attestation).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Attestation are OrganizationID, SpaceID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+};
 export type BulkDeleteAttributesApiResponse = /** status 200 OK */
   | DeleteResponse[]
   | /** status 207 Multi-Status: Mixed success and failure results */ DeleteResponse[];
@@ -5337,7 +5502,7 @@ export type BulkDeleteChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5415,7 +5580,7 @@ export type ListAllChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5503,7 +5668,7 @@ export type BulkPatchChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5548,6 +5713,8 @@ export type BulkPatchChangeWorkflowsApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+    AttestationPrerequisites?: (object | null)[] | null;
     /** The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply. */
     CustomPrerequisites?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
@@ -5608,7 +5775,7 @@ export type BulkCreateChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -5713,6 +5880,8 @@ export type BulkCreateChangeWorkflowsApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+    AttestationPrerequisites?: (object | null)[] | null;
     /** The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply. */
     CustomPrerequisites?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
@@ -5773,7 +5942,7 @@ export type BulkMoveChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8122,7 +8291,7 @@ export type ListAllRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8160,7 +8329,7 @@ export type ListAllRevisionsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -8181,7 +8350,7 @@ export type ListAllRevisionsApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8234,7 +8403,7 @@ export type SearchRevisionDataApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8272,7 +8441,7 @@ export type SearchRevisionDataApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -8293,7 +8462,7 @@ export type SearchRevisionDataApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8347,7 +8516,7 @@ export type SearchRevisionMutationSourcesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8385,7 +8554,7 @@ export type SearchRevisionMutationSourcesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -8406,7 +8575,7 @@ export type SearchRevisionMutationSourcesApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8598,6 +8767,128 @@ export type UpdateSpaceApiArg = {
   /** If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed */
   refreshTriggers?: boolean;
   space: Space;
+};
+export type ListExtendedAttestationsApiResponse =
+  /** status 200 OK */ ExtendedAttestationRead[];
+export type ListExtendedAttestationsApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** The specified string is an expression for the purpose of filtering
+    the list of Attestations returned. The expression syntax was inspired by SQL.
+    It supports conjunctions using `AND` of relational expressions of the form *attribute*
+    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+    as in the JSON encoding.
+    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+    UUIDs and boolean attributes support equality and inequality only.
+    UUID and time literals must be quoted as string literals.
+    String literals are quoted with single quotes, such as `'string'`.
+    Time literals use the same form as when serialized as JSON,
+    such as: `CreatedAt > '2025-02-18T23:16:34'`.
+    Integer and boolean literals are also supported for attributes of those types.
+    Arrays support the `?` operator to to match any element of the array,
+    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+    Without the `*` such a reference is an error, since it names no single value to compare.
+    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+    Conjunctions are supported using the `AND` operator.
+    An example conjunction is:
+    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+    
+    Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+    
+    The whole string must be query-encoded. */
+  where?: string;
+  /** UUID of a Filter entity to apply to the Attestation list.
+    
+    The Filter must be in the same Organization as the user credentials.
+    
+    The Filter's From field must match the entity type being filtered (Attestation).
+    
+    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+    
+    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+    
+    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
+  filter?: string;
+  /** Free text search that approximately matches the specified string against string fields and map keys/values.
+    
+    The search is case-insensitive and uses pattern matching to find entities containing the text.
+    
+    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+    
+    For map fields (like Labels and Annotations), the search matches both map keys and values.
+    
+    The search uses OR logic across all searchable fields, so matching any field will return the entity.
+    
+    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+    
+    Searchable fields for Attestation include string and map-type attributes from the queryable attributes list.
+    
+    The whole string must be query-encoded. */
+  contains?: string;
+  /** Include clause for expanding related entities in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Attestation are OrganizationID, SpaceID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+};
+export type CreateAttestationApiResponse = /** status 200 OK */ AttestationCreateResponseRead;
+export type CreateAttestationApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Resolve the Revisions that would be covered and return the same response without writing anything. */
+  dryRun?: boolean;
+  attestationCreateRequest: AttestationCreateRequest;
+};
+export type GetExtendedAttestationApiResponse =
+  /** status 200 Attestation with additional related entities expanded based on the request's include parameter. */ ExtendedAttestationRead;
+export type GetExtendedAttestationApiArg = {
+  /** Unique identifier for a space_id */
+  spaceId: string;
+  /** Include clause for expanding related entities in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    
+    Supported attributes for Attestation are OrganizationID, SpaceID.
+    
+    The whole string must be query-encoded. */
+  include?: string;
+  /** Select clause for specifying which fields to include in the response for Attestation.
+    The attribute names are case-sensitive, PascalCase, and
+    expected in a comma-separated list format as in the JSON encoding.
+    If not specified, all fields are returned.
+    Entity and parent IDs (like OrganizationID, SpaceID, AttestationID) and Slug are always returned regardless of the select parameter.
+    Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+    Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+    The whole string must be query-encoded. */
+  select?: string;
+  /** Unique identifier for a attestation_id */
+  attestationId: string;
 };
 export type ListAttributesApiResponse = /** status 200 OK */ ExtendedAttributeRead[];
 export type ListAttributesApiArg = {
@@ -9393,7 +9684,7 @@ export type ListChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on ChangeWorkflow: Annotations, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+    Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -9496,6 +9787,8 @@ export type PatchChangeWorkflowApiArg = {
     Annotations?: {
       [key: string]: string | null;
     } | null;
+    /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+    AttestationPrerequisites?: (object | null)[] | null;
     /** The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply. */
     CustomPrerequisites?: (object | null)[] | null;
     /** An optional set of gates that, if any is present, will block deletion */
@@ -11757,7 +12050,7 @@ export type ListExtendedRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list a tagged Revision use `Tags ? '<tag-id>'`.
     
@@ -11795,7 +12088,7 @@ export type ListExtendedRevisionsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -11816,7 +12109,7 @@ export type ListExtendedRevisionsApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -11835,7 +12128,7 @@ export type GetExtendedRevisionApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Revision are ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
+    Supported attributes for Revision are Attestations, ChangeOrders, ChangeSetID, OrganizationID, Releases, SpaceID, Tags, UnitID, UserID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -11856,7 +12149,7 @@ export type GetExtendedRevisionApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -15894,6 +16187,193 @@ export type SpaceCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Space?: SpaceRead;
 };
+export type Attestation = {
+  /** Uniquely identifies the Attestation. */
+  AttestationID?: string;
+  /** The ChangeOrder the Attestation was made in the context of. Context only: it does not change which Revisions are covered. */
+  ChangeOrderID?: string;
+  /** Anything else the attester records, as string key/value pairs with the limits of Annotations. */
+  Claims?: {
+    [key: string]: string;
+  };
+  /** Other Attestations this one relied on. They may be in other Spaces. */
+  EvidenceAttestationIDs?: Uuid[];
+  /** When the Attestation stops satisfying requirements. Optional. */
+  ExpiresAt?: string;
+  /** The attester's reason, in their own words. */
+  Note?: string;
+  /** The Organization the Attestation belongs to. */
+  OrganizationID?: string;
+  /** A published Release the claim is about. */
+  ReleaseID?: string;
+  /** The outcome: Pass or Fail. For an Approval, approve or reject. Defaults to Pass. */
+  Result?: 'Pass' | 'Fail';
+  /** An earlier Attestation in the same Space that this one withdraws. A revocation covers no Revisions of its own. */
+  RevokedAttestationID?: string;
+  /** The Space the Attestation belongs to. Every Revision it covers is in this Space. */
+  SpaceID?: string;
+  /** What is being claimed, such as Approval. Requirements select Attestations by it. Defaults to Approval. */
+  Type?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type AttestationRead = {
+  /** Uniquely identifies the Attestation. */
+  AttestationID?: string;
+  /** The ChangeOrder the Attestation was made in the context of. Context only: it does not change which Revisions are covered. */
+  ChangeOrderID?: string;
+  /** Anything else the attester records, as string key/value pairs with the limits of Annotations. */
+  Claims?: {
+    [key: string]: string;
+  };
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Other Attestations this one relied on. They may be in other Spaces. */
+  EvidenceAttestationIDs?: Uuid[];
+  /** When the Attestation stops satisfying requirements. Optional. */
+  ExpiresAt?: string;
+  /** The attester's reason, in their own words. */
+  Note?: string;
+  /** The Organization the Attestation belongs to. */
+  OrganizationID?: string;
+  /** A published Release the claim is about. */
+  ReleaseID?: string;
+  /** The outcome: Pass or Fail. For an Approval, approve or reject. Defaults to Pass. */
+  Result?: 'Pass' | 'Fail';
+  /** An earlier Attestation in the same Space that this one withdraws. A revocation covers no Revisions of its own. */
+  RevokedAttestationID?: string;
+  /** The Space the Attestation belongs to. Every Revision it covers is in this Space. */
+  SpaceID?: string;
+  /** Slug of the Space the Attestation belongs to. */
+  SpaceSlug?: string;
+  /** What is being claimed, such as Approval. Requirements select Attestations by it. Defaults to Approval. */
+  Type?: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** The authenticated User that created the Attestation. */
+  UserID?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type AttestationSkippedUnit = {
+  Reason?: string;
+  UnitID?: string;
+  UnitSlug?: string;
+};
+export type AttestationSubject = {
+  RevisionID?: string;
+  RevisionNum?: number;
+  UnitID?: string;
+  UnitSlug?: string;
+};
+export type AttestSpaceResult = {
+  Attestation?: Attestation;
+  Error?: ResponseError;
+  SkippedUnits?: AttestationSkippedUnit[];
+  SpaceID?: string;
+  SpaceSlug?: string;
+  Subjects?: AttestationSubject[];
+};
+export type AttestSpaceResultRead = {
+  Attestation?: AttestationRead;
+  Error?: ResponseError;
+  SkippedUnits?: AttestationSkippedUnit[];
+  SpaceID?: string;
+  SpaceSlug?: string;
+  Subjects?: AttestationSubject[];
+};
+export type AttestResult = {
+  Spaces?: AttestSpaceResult[];
+};
+export type AttestResultRead = {
+  Spaces?: AttestSpaceResultRead[];
+};
+export type AttestRequest = {
+  ChangeOrderID?: string;
+  Claims?: {
+    [key: string]: string;
+  };
+  EvidenceAttestationIDs?: Uuid[];
+  ExpiresAt?: string;
+  Note?: string;
+  ReleaseID?: string;
+  Result?: string;
+  Revision?: string;
+  RevokedAttestationID?: string;
+  SpaceFilterID?: string;
+  TargetStage?: string;
+  Type?: string;
+  WhereSpace?: string;
+  WhereUnit?: string;
+};
+export type Organization = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Unique email domain name for the External Identity Provider record matching this organization */
+  EmailDomain?: string;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type OrganizationRead = {
+  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
+  Annotations?: {
+    [key: string]: string;
+  };
+  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
+  CreatedAt?: string;
+  /** An optional set of gates that, if any is present, will block deletion. */
+  DeleteGates?: {
+    [key: string]: boolean;
+  };
+  /** Friendly name for the entity. */
+  DisplayName?: string;
+  /** Unique email domain name for the External Identity Provider record matching this organization */
+  EmailDomain?: string;
+  /** The type of entity. */
+  EntityType?: string;
+  /** Unique identifier for the External Identity Provider record matching this organization. */
+  ExternalID?: string;
+  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
+  Labels?: {
+    [key: string]: string;
+  };
+  /** Unique identifier for an organization. */
+  OrganizationID?: string;
+  /** Unique URL-safe identifier for the entity. */
+  Slug: string;
+  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
+  UpdatedAt?: string;
+  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
+  Version?: number;
+};
+export type ExtendedAttestation = {
+  Attestation?: Attestation;
+  Organization?: Organization;
+  Space?: Space;
+};
+export type ExtendedAttestationRead = {
+  Attestation?: AttestationRead;
+  Organization?: OrganizationRead;
+  Space?: SpaceRead;
+};
 export type Schema = any;
 export type FunctionParameter = {
   /** Data type of the parameter */
@@ -16069,62 +16549,6 @@ export type AttributeRead = {
   SpaceSlug?: string;
   /** ToolchainType specifies the type of toolchain this attribute works with. */
   ToolchainType: string;
-  /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
-  UpdatedAt?: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type Organization = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Unique email domain name for the External Identity Provider record matching this organization */
-  EmailDomain?: string;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
-  /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
-  Version?: number;
-};
-export type OrganizationRead = {
-  /** An optional map of Annotation key/value pairs for tools to attach information to entities. */
-  Annotations?: {
-    [key: string]: string;
-  };
-  /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
-  CreatedAt?: string;
-  /** An optional set of gates that, if any is present, will block deletion. */
-  DeleteGates?: {
-    [key: string]: boolean;
-  };
-  /** Friendly name for the entity. */
-  DisplayName?: string;
-  /** Unique email domain name for the External Identity Provider record matching this organization */
-  EmailDomain?: string;
-  /** The type of entity. */
-  EntityType?: string;
-  /** Unique identifier for the External Identity Provider record matching this organization. */
-  ExternalID?: string;
-  /** An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them. */
-  Labels?: {
-    [key: string]: string;
-  };
-  /** Unique identifier for an organization. */
-  OrganizationID?: string;
-  /** Unique URL-safe identifier for the entity. */
-  Slug: string;
   /** The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format. */
   UpdatedAt?: string;
   /** An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update. */
@@ -16473,6 +16897,28 @@ export type ActionResult = {
   /** UUID of the Unit on which the action is performed */
   UnitID?: string;
 };
+export type ChangeWorkflowAttestationPrerequisite = {
+  /** Count an attester who wrote a Revision of the change. By default one does not count. */
+  AllowAuthors?: boolean;
+  /** How many distinct attesters must record a Pass on each Revision. 1 when zero. */
+  Count?: number;
+  /** What the requirement is for, in the author's words. */
+  Description?: string;
+  /** Reserved: each counted attester must be from a different group of FromGroupIDs. Refused until Groups are recorded on Attestations. */
+  DistinctGroups?: boolean;
+  /** Reserved: Groups whose members' Attestations count. Refused until Groups are recorded on Attestations. */
+  FromGroupIDs?: Uuid[];
+  /** The Users whose Attestations count. Empty is anyone who may record an Attestation in the Space. */
+  FromUserIDs?: Uuid[];
+  /** Count only passes. By default an unrevoked Fail from an eligible attester fails the requirement, however many passes there are. */
+  IgnoreFail?: boolean;
+  /** How old an Attestation may be and still count, as a duration such as 72h. No limit when empty. */
+  MaxAge?: string;
+  /** What a stage, its ReleasePrerequisites, or Final gates on. Unique among the workflow's prerequisites, and refused if it shadows a built-in name. */
+  Name: string;
+  /** The Attestation Type that counts. Approval when empty. */
+  Type?: string;
+};
 export type ChangeWorkflowPrerequisite = {
   /** What the gate checks, in the author's words. A promotion this gate holds up reports the prerequisite by Name, so this is where the reason lives. Read by nobody: it is not part of what the gate evaluates. */
   Description?: string;
@@ -16490,10 +16936,14 @@ export type ChangeWorkflowStage = {
   Name: string;
   /** The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage ahead of this one, so the first stage's are never evaluated. */
   Prerequisites?: string[];
+  /** Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites. Evaluated over the Revisions the Release bundles. */
+  ReleasePrerequisites?: string[];
   /** Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component. */
   WhereSpace?: string;
 };
 export type ChangeWorkflowSpec = {
+  /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+  AttestationPrerequisites?: ChangeWorkflowAttestationPrerequisite[];
   /** The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply. */
   CustomPrerequisites?: ChangeWorkflowPrerequisite[];
   Final?: ChangeWorkflowFinalStage;
@@ -17105,6 +17555,8 @@ export type ChangeWorkflow = {
   Annotations?: {
     [key: string]: string;
   };
+  /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+  AttestationPrerequisites?: ChangeWorkflowAttestationPrerequisite[];
   /** ChangeWorkflowID uniquely identifies a change workflow within the system. */
   ChangeWorkflowID?: string;
   /** CustomPrerequisites declares the checks a stage or Final may gate on beyond the built-in ones, each carrying a Name to gate on and a "cel:" Expression to evaluate. Declared once and named wherever they apply. */
@@ -17136,6 +17588,8 @@ export type ChangeWorkflowRead = {
   Annotations?: {
     [key: string]: string;
   };
+  /** The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply. */
+  AttestationPrerequisites?: ChangeWorkflowAttestationPrerequisite[];
   /** ChangeWorkflowID uniquely identifies a change workflow within the system. */
   ChangeWorkflowID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
@@ -18590,6 +19044,10 @@ export type RevisionRead = {
   };
   /** the users that have approved the latest version of the config data for the Unit. */
   ApprovedBy?: Uuid[];
+  /** A set (map) of AttestationIDs of the Attestations covering this Revision: approvals, reviews, and other claims made about it. The string values have no particular meaning. */
+  Attestations?: {
+    [key: string]: string;
+  };
   ChangeOrders?: {
     [key: string]: string;
   };
@@ -18711,6 +19169,7 @@ export type UserRead = {
   Version?: number;
 };
 export type ExtendedRevision = {
+  Attestations?: Attestation[];
   ChangeOrders?: ChangeOrder[];
   ChangeSet?: ChangeSet;
   Error?: ResponseError;
@@ -18723,6 +19182,7 @@ export type ExtendedRevision = {
   User?: User;
 };
 export type ExtendedRevisionRead = {
+  Attestations?: AttestationRead[];
   ChangeOrders?: ChangeOrderRead[];
   ChangeSet?: ChangeSetRead;
   Error?: ResponseError;
@@ -18969,6 +19429,31 @@ export type ExtendedSpaceRead = {
   UnreleasedUnitCount?: number;
   UpgradableUnitCount?: number;
   WarnedUnitCount?: number;
+};
+export type AttestationCreateResponse = {
+  Attestation?: Attestation;
+  SkippedUnits?: AttestationSkippedUnit[];
+  Subjects?: AttestationSubject[];
+};
+export type AttestationCreateResponseRead = {
+  Attestation?: AttestationRead;
+  SkippedUnits?: AttestationSkippedUnit[];
+  Subjects?: AttestationSubject[];
+};
+export type AttestationCreateRequest = {
+  ChangeOrderID?: string;
+  Claims?: {
+    [key: string]: string;
+  };
+  EvidenceAttestationIDs?: Uuid[];
+  ExpiresAt?: string;
+  Note?: string;
+  ReleaseID?: string;
+  Result?: string;
+  Revision?: string;
+  RevokedAttestationID?: string;
+  Type?: string;
+  WhereUnit?: string;
 };
 export type BridgeWorkerStatus = {
   /** Unique identifier for the Bridge Worker. */
@@ -19745,6 +20230,9 @@ export const {
   useBulkDeleteSpacesMutation,
   useBulkPatchSpacesMutation,
   useBulkCreateSpacesMutation,
+  useAttestMutation,
+  useListAllAttestationsQuery,
+  useLazyListAllAttestationsQuery,
   useBulkDeleteAttributesMutation,
   useListAllAttributesQuery,
   useLazyListAllAttributesQuery,
@@ -19848,6 +20336,11 @@ export const {
   useLazyGetSpaceQuery,
   usePatchSpaceMutation,
   useUpdateSpaceMutation,
+  useListExtendedAttestationsQuery,
+  useLazyListExtendedAttestationsQuery,
+  useCreateAttestationMutation,
+  useGetExtendedAttestationQuery,
+  useLazyGetExtendedAttestationQuery,
   useListAttributesQuery,
   useLazyListAttributesQuery,
   useCreateAttributeMutation,

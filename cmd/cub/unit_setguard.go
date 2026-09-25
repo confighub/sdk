@@ -25,11 +25,13 @@ it. Two examples of the shape:
   owner=transform-link          this field is maintained by a link
   policy-exception=host-network this value breaks a default policy on purpose
 
-A guard is enforced by merges: a merge that is not cleared for the reasons at a
-path does not overwrite it, and reports what it withheld. Editing the guards at a
-path that already carries some needs --clearance for those, on the same rule --
-a clearance is the statement that the reasons are understood. Setting the first
-guard on a path needs none, since there is nothing yet to understand.
+A guard is enforced on every change to the unit's configuration data -- an
+edit, a function invocation, a trigger, a link, a merge: a change that is not
+cleared for the reasons at a path does not overwrite it, and reports what it
+withheld as a conflict. Editing the guards at a path that already carries some
+needs --clearance for those, on the same rule -- a clearance is the statement
+that the reasons are understood. Setting the first guard on a path needs none,
+since there is nothing yet to understand.
 
 A guard may name a path -- or a resource -- the unit does not have. A guard is
 policy about the configuration rather than a statement about its current

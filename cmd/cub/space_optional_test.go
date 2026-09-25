@@ -17,9 +17,9 @@ import (
 // the entity they resolved, never the selected one, which is what lets a
 // qualified reference reach another space than --space or the default.
 //
-// The revision, mutation, unit-action, unit-event and release commands have no
-// resolver of their own: they resolve the unit (or, for a release, locate it by
-// UUID organization-wide) and read through its space.
+// The revision, mutation, unit-action, unit-event, release and attestation commands
+// have no resolver of their own: they resolve the unit (or, for a release or an
+// attestation, locate it by UUID organization-wide) and read through its space.
 var referenceOperandCommands = []string{
 	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
@@ -27,6 +27,7 @@ var referenceOperandCommands = []string{
 	"unit blame", "unit conflicts", "unit data", "unit diff", "unit edit", "unit mutation-sources",
 	"unit set-guard", "unit set-protection",
 	"revision get", "revision data", "mutation get", "mutation list", "release get",
+	"attestation get", "attestation revoke",
 	"unit-action get", "unit-action data", "unit-event get",
 	"target access", "k8s collect",
 	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",

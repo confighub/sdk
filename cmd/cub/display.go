@@ -414,6 +414,8 @@ type ModelConstraint interface {
 		goclientnew.ExtendedUnit |
 		goclientnew.Attribute |
 		goclientnew.ExtendedAttribute |
+		goclientnew.Attestation |
+		goclientnew.ExtendedAttestation |
 		goclientnew.Release |
 		goclientnew.ExtendedRelease |
 		goclientnew.OAuthClient |
