@@ -82,9 +82,9 @@ func GetComponentURL(serverURL, component, spaceID string) string {
 //
 // externalOrgID must be the organization's ExternalID (the identity provider's
 // ID), not its ConfigHub OrganizationID: the UI compares it against the current
-// session's external org ID and hands it to /auth/switch-organization, which
-// verifies membership against the identity provider. An empty externalOrgID, or
-// a URL that already names an org, is left alone.
+// session's external org ID, and signs in again for that organization when they
+// differ. An empty externalOrgID, or a URL that already names an org, is left
+// alone.
 func WithOrganization(webURL, externalOrgID string) string {
 	if externalOrgID == "" {
 		return webURL

@@ -36400,11 +36400,6 @@
             "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },
-          "AuthServer": {
-            "type": "string",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
           "Build": {
             "type": "string",
             "description": "Build identifier for support cases.",
@@ -36443,11 +36438,6 @@
           "OCIPort": {
             "type": "string",
             "description": "OCI registry port for pulling configuration artifacts.",
-            "readOnly": true,
-            "x-go-type-skip-optional-pointer": true
-          },
-          "RedirectURI": {
-            "type": "string",
             "readOnly": true,
             "x-go-type-skip-optional-pointer": true
           },

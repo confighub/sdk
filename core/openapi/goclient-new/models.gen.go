@@ -152,7 +152,6 @@ type ActionType string
 // ApiInfo Information provided to clients by the server.
 type ApiInfo struct {
 	AuthIssuer string `json:"AuthIssuer,omitempty" yaml:"AuthIssuer,omitempty"`
-	AuthServer string `json:"AuthServer,omitempty" yaml:"AuthServer,omitempty"`
 
 	// Build Build identifier for support cases.
 	Build string `json:"Build,omitempty" yaml:"Build,omitempty"`
@@ -170,7 +169,6 @@ type ApiInfo struct {
 
 	// OCIPort OCI registry port for pulling configuration artifacts.
 	OCIPort               string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
-	RedirectURI           string `json:"RedirectURI,omitempty" yaml:"RedirectURI,omitempty"`
 	TokenExchangeAudience string `json:"TokenExchangeAudience,omitempty" yaml:"TokenExchangeAudience,omitempty"`
 	TokenExchangeEndpoint string `json:"TokenExchangeEndpoint,omitempty" yaml:"TokenExchangeEndpoint,omitempty"`
 

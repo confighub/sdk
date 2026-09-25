@@ -34009,10 +34009,6 @@ components:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
-        AuthServer:
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
         Build:
           description: Build identifier for support cases.
           readOnly: true
@@ -34045,10 +34041,6 @@ components:
           x-go-type-skip-optional-pointer: true
         OCIPort:
           description: OCI registry port for pulling configuration artifacts.
-          readOnly: true
-          type: string
-          x-go-type-skip-optional-pointer: true
-        RedirectURI:
           readOnly: true
           type: string
           x-go-type-skip-optional-pointer: true
