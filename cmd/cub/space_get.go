@@ -115,7 +115,6 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	// TODO: TriggerCountByEventType, TargetCountByToolchainType
 	view.Append([]string{"# Units", fmt.Sprintf("%d", extendedSpace.TotalUnitCount)})
 	view.Append([]string{"# Unreleased Units", fmt.Sprintf("%d", extendedSpace.UnreleasedUnitCount)})
-	view.Append([]string{"# Unapproved Units", fmt.Sprintf("%d", extendedSpace.UnapprovedUnitCount)})
 	view.Append([]string{"# Gated Units", fmt.Sprintf("%d", extendedSpace.GatedUnitCount)})
 	view.Append([]string{"# Warned Units", fmt.Sprintf("%d", extendedSpace.WarnedUnitCount)})
 	view.Append([]string{"# Upgradable Units", fmt.Sprintf("%d", extendedSpace.UpgradableUnitCount)})

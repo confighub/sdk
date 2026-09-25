@@ -6,7 +6,6 @@ package main
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -15,27 +14,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// variantApproveDefaultWhere selects the Units of a variant that can be released.
-// A base has no Target, so nothing in it is awaiting the approval that gates a
-// release; approving there would clear gates nobody is waiting on and consume the
-// approval of a revision the deployments have not taken yet.
+// variantApproveDefaultWhere selects the Units of a variant that can be released: the ones with
+// a Target, which are what a release of the space bundles. A base has none, so approving one
+// takes --all.
 const variantApproveDefaultWhere = "TargetID IS NOT NULL"
 
 var variantApproveArgs struct {
 	statement   attestationStatementArgs
 	revision    string
 	all         bool
-	noWait      bool
 	changeOrder string
 	stage       string
 	whereSpace  string
 	dryRun      bool
 }
-
-// variantApproveTriggerTimeout bounds the wait for trigger evaluation to finish.
-// Generous because a Trigger whose function a worker hosts is a round trip per
-// unit, and a whole variant is approved at once.
-const variantApproveTriggerTimeout = 2 * time.Minute
 
 var variantApproveCmd = &cobra.Command{
 	Use:         "approve [<space>]",
@@ -60,12 +52,6 @@ LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset> or ChangeOrder:<change
 optionally prefixed with Before:. A unit with no such revision is reported and skipped.
 
 --reject records a rejection instead, and --note says why.
-
-While spaces still gate releases with a vet-approvedby Trigger, approving a unit's head
-revision also clears that Trigger's gate, and this command waits for the space's
-Triggers to finish evaluating before returning, since a publish issued while evaluation
-is pending fails on the transient "awaiting/triggers" gate. Pass --no-wait to return as
-soon as the approvals are recorded.
 
 Examples:
 `+"```"+`
@@ -108,26 +94,8 @@ func init() {
 		"select the spaces to approve in with a where expression over spaces")
 	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.dryRun, "dry-run", false,
 		"report what would be approved, and record nothing")
-	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.noWait, "no-wait", false,
-		"return as soon as the approvals are recorded, without waiting for triggers to finish evaluating")
 	addStandardDisplayFlags(variantApproveCmd)
 	variantCmd.AddCommand(variantApproveCmd)
-}
-
-// reportRemainingValidationErrors names the units whose gates outlived the wait. Approval
-// clears the gate it answers and no other, so a unit listed here is failing something
-// else -- a policy vet, a placeholder -- and the release will refuse it.
-func reportRemainingValidationErrors(units []*goclientnew.Unit) {
-	if quiet || isAlternativeOutput() {
-		return
-	}
-	for _, unit := range units {
-		if unit == nil || len(unit.ValidationErrors) == 0 {
-			continue
-		}
-		tprint("Unit %s (%s) has validation errors: %s",
-			unit.Slug, unit.UnitID.String(), validationErrorsToString(unit.ValidationErrors))
-	}
 }
 
 // variantApproveWhere composes the selection: what --where asked for, narrowed to
@@ -214,82 +182,5 @@ func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
 	if len(failed) > 0 {
 		return errors.Newf("approval failed in %d space(s): %s", len(failed), strings.Join(failed, ", "))
 	}
-	if variantApproveArgs.noWait || variantApproveArgs.dryRun || variantApproveArgs.statement.reject {
-		return nil
-	}
-	for i := range result.Spaces {
-		space := &result.Spaces[i]
-		if space.Attestation == nil || len(space.Subjects) == 0 {
-			continue
-		}
-		selectedSpaceID = space.SpaceID.String()
-		if err := variantApproveWaitTriggers(unitIDsWhere(space.Subjects)); err != nil {
-			return err
-		}
-	}
 	return nil
-}
-
-// unitIDsWhere selects the Units an attestation covered.
-func unitIDsWhere(subjects []goclientnew.AttestationSubject) string {
-	ids := make([]string, 0, len(subjects))
-	for _, subject := range subjects {
-		ids = append(ids, "'"+subject.UnitID.String()+"'")
-	}
-	return "UnitID IN (" + strings.Join(ids, ", ") + ")"
-}
-
-// variantApproveWaitTriggers waits for the approved units to finish trigger
-// evaluation. Triggers run asynchronously on every Mutation, and while one is
-// pending the unit carries an "awaiting/triggers" ApplyGate; "cub release publish"
-// refuses to bundle a unit with any gate, so a publish issued straight after an
-// approval fails on that transient gate rather than on a real verdict. Same reason
-// "cub cluster up" waits after its own mutations.
-//
-// This polls the whole selection rather than calling awaitTriggersRemoval per unit,
-// which is what the rest of the CLI does (including the bulk patch in unit_update).
-// That helper reads one unit per request, so waiting on a variant would cost a fetch
-// of every unit up front and a poll loop per unit that is still pending -- sequential,
-// and proportional to the size of the variant. One list query selecting just the gates
-// answers for all of them at once, which is the difference between a handful of
-// requests and a few hundred on a 36-unit variant.
-//
-// What it keeps from that helper: a unit still carrying a gate when the wait ends is
-// reported, because that gate is a real verdict rather than a transient one. This
-// waits for evaluation to finish, not for it to pass -- enforcing the verdict is the
-// server's job.
-func variantApproveWaitTriggers(selectionWhere string) error {
-	deadline := time.Now().Add(variantApproveTriggerTimeout)
-	backoff := 500 * time.Millisecond
-	for {
-		units, err := apiListUnits(selectedSpaceID, selectionWhere, "UnitID,Slug,ValidationErrors")
-		if err != nil {
-			return err
-		}
-		pending := 0
-		for _, unit := range units {
-			if unit == nil {
-				continue
-			}
-			if _, awaiting := unit.ValidationErrors["awaiting/triggers"]; awaiting {
-				pending++
-			}
-		}
-		if pending == 0 {
-			reportRemainingValidationErrors(units)
-			return nil
-		}
-		if time.Now().After(deadline) {
-			return errors.Newf("%d unit(s) still awaiting trigger evaluation after %s",
-				pending, variantApproveTriggerTimeout)
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(backoff):
-		}
-		if backoff < 2*time.Second {
-			backoff *= 2
-		}
-	}
 }

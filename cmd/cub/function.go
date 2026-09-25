@@ -45,7 +45,7 @@ unintended write, and an agent or role can be granted "function get" alone:
   set   mutating functions (Mutating=true):
         set-container-image, set-replicas, set-yq, search-replace, ensure-namespaces
   vet   validating functions (Validating=true):
-        vet-schemas, vet-placeholders, vet-cel, vet-approvedby
+        vet-schemas, vet-placeholders, vet-cel
   do    any kind. The escape hatch for a single command that must mix kinds.
 
 The verb supplies a missing prefix, so "function set replicas 3" invokes
@@ -81,7 +81,7 @@ Flags for mutating invocations:
 Some function names are retained as deprecated aliases and should not be used in
 new work: yq (use get-yq), yq-i (use set-yq), set-image/get-image (use
 set-container-image/get-container-image), cel-validate (use vet-cel),
-no-placeholders (use vet-placeholders), is-approved (use vet-approvedby).
+no-placeholders (use vet-placeholders).
 'cub function list' marks each one in its description.`
 
 	return getCommandHelp(baseHelp, agentContext)

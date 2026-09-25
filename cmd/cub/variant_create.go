@@ -64,12 +64,12 @@ well-known "Stage", "Environment", "Region", "Layer", and "Owner" labels, since 
 Region) commonly differ between variants, and --space-label to add or change any other label. The
 Component label is inherited and can be overridden with --variant-labels.
 
-The new space's slug defaults to <component>-<variant>, derived from the cloned space's Component
-and Variant labels — the same convention as "cub variant upload" and "cub helm install". When the
-cloned space would have no Component label, the server instead derives the slug from the upstream
+The new space's slug defaults to <component>-<variant>, derived from the slug of the cloned space's
+Component and its Variant label — the same convention as "cub variant upload" and "cub helm install".
+When the cloned space would have no Component, the server instead derives the slug from the upstream
 space's slug and the variant name. Use --space-pattern to override: a Go template evaluated over
-the cloned space's labels (and .SourceEntitySlug for the upstream slug), for example
-"template:{{.Labels.Component}}-{{.Labels.Variant}}".
+the cloned space's Component and labels (and .SourceEntitySlug for the upstream slug), for example
+"template:{{.Component.Slug}}-{{.Labels.Variant}}".
 
 The following are copied from the upstream space to the new space: WhereTrigger, TriggerFilterID,
 and Permissions. Triggers are not copied: the copied WhereTrigger and TriggerFilterID select the
@@ -163,7 +163,7 @@ Examples:
 func init() {
 	addStandardDisplayFlags(variantCreateCmd)
 	enableAllowExistsFlag(variantCreateCmd)
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug and .Labels for the cloned space's labels; defaults to 'template:{{.Labels.Component}}-{{.Labels.Variant}}' when the cloned space has a Component label")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug, .Component for the cloned space's Component, and .Labels for the cloned space's labels; defaults to 'template:{{.Component.Slug}}-{{.Labels.Variant}}' when the cloned space has a Component")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space, and for an OCI target the new space's ReleaseTargetID (required by 'cub release publish')")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.stage, "stage", "", "set the \"Stage\" label on the new space (example: \"Canary\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.environment, "environment", "", "set the \"Environment\" label on the new space (example: \"Prod\")")
@@ -315,24 +315,11 @@ func checkSpaceLabelFlags(spaceLabels []string, reserved map[string]string) erro
 
 // componentVariantPattern is the default slug pattern for a variant space,
 // matching the convention used by "cub variant upload" and "cub helm install".
-const componentVariantPattern = "template:{{.Labels.Component}}-{{.Labels.Variant}}"
-
-// effectiveComponent returns the Component label the cloned space will have: a
-// Component override from --variant-labels (applied last, so it wins) or the
-// inherited upstream label.
-func effectiveComponent(upstreamSpace *goclientnew.Space) string {
-	component := upstreamSpace.Labels["Component"]
-	for _, kv := range variantCreateArgs.variantLabels {
-		if k, v, ok := strings.Cut(kv, "="); ok && k == "Component" {
-			component = v
-		}
-	}
-	return component
-}
+const componentVariantPattern = "template:{{.Component.Slug}}-{{.Labels.Variant}}"
 
 // cloneVariantSpace clones the upstream space, setting the new space's Variant label to variantName
 // (plus any extra --variant-labels) and applying the --space-pattern, defaulted to
-// <component>-<variant> when the cloned space has a Component label.
+// <component>-<variant> when the cloned space has a Component.
 func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*goclientnew.Space, error) {
 	upstreamSpaceID := upstreamSpace.SpaceID
 	// The Variant label is always set from the variant name. --stage, --environment, --region,
@@ -370,7 +357,7 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 		VariantLabels: &variantLabelsStr,
 	}
 	spacePattern := variantCreateArgs.spacePattern
-	if spacePattern == "" && effectiveComponent(upstreamSpace) != "" {
+	if spacePattern == "" && upstreamSpace.ComponentID != nil {
 		spacePattern = componentVariantPattern
 	}
 	if spacePattern != "" {

@@ -21,24 +21,26 @@ import (
 // the component at all, not name it with a particular comparison.
 var componentPredicate = regexp.MustCompile(`(?i)\bLabels\.` + labelComponent + `\b`)
 
-// spaceComponent is the component a Space belongs to: its "Component" label. A
-// component is not an entity of its own -- it is the set of Spaces sharing that
-// label value -- so the label is the whole of it.
+// spaceComponent is the component a Space belongs to: the Component its
+// ComponentID names.
 //
-// A Space with no Component label leaves a ChangeWorkflow's Stages with nothing to
+// A Space with no ComponentID leaves a ChangeWorkflow's Stages with nothing to
 // confine them to, which is an error rather than Stages selecting every component's
 // Spaces at once.
-func spaceComponent(spaceID uuid.UUID) (string, error) {
+func spaceComponent(spaceID uuid.UUID) (*goclientnew.Component, error) {
 	space, err := resolveSpace(spaceID.String(), "*")
 	if err != nil {
-		return "", errors.Wrapf(err, "failed to fetch Space %s", spaceID)
+		return nil, errors.Wrapf(err, "failed to fetch Space %s", spaceID)
 	}
-	component := space.Space.Labels[labelComponent]
-	if component == "" {
-		return "", errors.Newf("Space '%s' has no %s label, so there is no component for a ChangeWorkflow's stages to select within",
-			space.Space.Slug, labelComponent)
+	if space.Space.ComponentID == nil {
+		return nil, errors.Newf("Space '%s' has no ComponentID, so there is no component for a ChangeWorkflow's stages to select within",
+			space.Space.Slug)
 	}
-	return component, nil
+	component, err := resolveComponent(space.Space.ComponentID.String(), "")
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to fetch Component %s", *space.Space.ComponentID)
+	}
+	return component.Component, nil
 }
 
 // stageWhereSpace renders the clause selecting a Stage's Spaces: the Stage's own
@@ -53,12 +55,12 @@ func spaceComponent(spaceID uuid.UUID) (string, error) {
 // reports nothing. Refusing keeps that failure loud, and it is not hypothetical, a
 // definition written against the older format carrying the predicate and a clone of
 // one into another component being exactly how a Stage goes silently empty.
-func stageWhereSpace(stage *goclientnew.ChangeWorkflowStage, component string) (string, error) {
+func stageWhereSpace(stage *goclientnew.ChangeWorkflowStage, component *goclientnew.Component) (string, error) {
 	if componentPredicate.MatchString(stage.WhereSpace) {
 		return "", errors.Newf("stage '%s' names Labels.%s in its whereSpace %q: the component is the change order's own and is appended to every stage's selector, so remove the predicate",
 			stage.Name, labelComponent, stage.WhereSpace)
 	}
-	componentWhere := fmt.Sprintf("Labels.%s = '%s'", labelComponent, component)
+	componentWhere := fmt.Sprintf("ComponentID = '%s'", component.ComponentID)
 	if stage.WhereSpace == "" {
 		return componentWhere, nil
 	}

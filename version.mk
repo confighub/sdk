@@ -18,7 +18,7 @@
 # below rather than shipping a binary whose version misdescribes the API it speaks.
 
 API_MAJOR := 0
-API_MINOR := 5
+API_MINOR := 6
 
 ifeq ($(strip $(VERSION)),)
   # Nobody named a version for this build, so it is a development build. It still says

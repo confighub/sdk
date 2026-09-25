@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
-	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -147,8 +146,12 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 		if len(rev.ValidationPassed) != 0 {
 			view.Append([]string{"Validation Passed", validationErrorsToString(rev.ValidationPassed)})
 		}
-		if len(rev.ApprovedBy) != 0 {
-			view.Append([]string{"Approved By", strings.Join(resolveUsernames(rev.ApprovedBy), ", ")})
+		if len(rev.Attestations) != 0 {
+			attestations, err := describeRevisionAttestations(rev.SpaceID, rev.Attestations)
+			if err != nil {
+				attestations = fmt.Sprintf("%d, which could not be read: %v", len(rev.Attestations), err)
+			}
+			view.Append([]string{"Attestations", attestations})
 		}
 
 		// The annotations and the withheld mutations are lists, too long for a row apiece: the
@@ -204,8 +207,8 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 	tprintRaw(revData)
 }
 
-// resolveUsernames names the users that approved a Revision, falling back to the id for a user
-// that cannot be read -- an approver removed from the organization since approving, for instance.
+// resolveUsernames names users, falling back to the id for a user that cannot be read -- one
+// removed from the organization since, for instance.
 func resolveUsernames(userIDs []goclientnew.UUID) []string {
 	names := make([]string, 0, len(userIDs))
 	for _, userID := range userIDs {

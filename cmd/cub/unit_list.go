@@ -41,17 +41,11 @@ Examples:
   # List units with specific labels
   cub unit list --space my-space --where "Labels.tier = 'Backend'"
 
-  # List units with approval gates
-  cub unit list --space my-space --where "ValidationErrors.my-space/require-approval/vet-approvedby = true"
+  # List units a particular Trigger gates
+  cub unit list --space my-space --where "ValidationErrors.my-space/no-latest/vet-cel = true"
 
   # List units with any validation errors
   cub unit list --space my-space --where "LEN(ValidationErrors) > 0"
-
-  # List units that have been approved
-  cub unit list --space my-space --where "LEN(ApprovedBy) > 0"
-
-  # List units approved by a specific user
-  cub unit list --space my-space --where "ApprovedBy ? 'd1b98309-874c-44ab-b1f2-a505e53dd9e8'"
 
   # List units with upstream revisions
   cub unit list --space my-space --where "UpstreamRevisionNum > 0"
@@ -76,7 +70,7 @@ Available columns (prefixed with Unit.):
 
   - Basic: Slug (or Name), DataBytes, HeadRevisionNum, HeadMutationNum
   - Metadata: CreatedAt, UpdatedAt, SpaceID, OrganizationID, UnitID
-  - Status: ValidationErrors, LastChangeDescription, ApprovedBy
+  - Status: ValidationErrors, LastChangeDescription
   - Relationships: TargetID, ToolchainType
   - Revisions: LastReleasedRevisionNum
   - Dynamic: Labels.<key>, Annotations.<key>
@@ -99,9 +93,7 @@ Configuration state:
 - Find never-released units: --where 'LastReleasedRevisionNum = 0'
 - Find units with placeholders: Use 'function do get-placeholders' instead
 
-Approval workflow:
-- Find units needing approval: --where 'LEN(ApprovedBy) = 0'
-- Find approved units: --where 'LEN(ApprovedBy) > 0'
+Validation:
 - Find units with validation errors: --where 'LEN(ValidationErrors) > 0'
 
 Content filtering:

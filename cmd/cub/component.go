@@ -8,13 +8,14 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
 
-// Well-known Space labels that define a component. A component is not a stored
-// entity: it is the set of spaces sharing a "Component" label value, one space
-// per variant. The web UI derives its component view from exactly these labels.
+// Well-known Space labels. A Space's component is the Component it names with
+// ComponentID, not a label; labelComponent is the label a Stage's selector may
+// not name, since the component is the change order's own (see stageWhereSpace).
 const (
 	labelComponent = "Component"
 	labelVariant   = "Variant"
@@ -39,20 +40,22 @@ var componentCmd = &cobra.Command{
 func getComponentCommandGroupHelp() string {
 	baseHelp := `The component subcommands list components and open them in the web UI, and manage Component entities.
 
-A component is an application or service tracked across its variants. 'list' and 'open' show it as
-the set of spaces sharing a "Component" label value, one space per variant, as created by
-'cub variant upload' and 'cub variant create'. The web UI's component view shows those variants as
-a deployment graph and is where config changes are promoted downstream.
+A component is an application or service tracked across its variants. 'list', 'create', 'get',
+'update' and 'delete' manage the Component entity, which decides which ChangeWorkflows promotions
+and releases of its variants may use, and whether one is required. Its variants are the spaces
+naming it with ComponentID.
 
-'create', 'get', 'update' and 'delete' manage the Component entity, which decides which
-ChangeWorkflows promotions and releases of its variants may use, and whether one is required.`
+'open' shows the web UI's component view of a Component's variants, as created by 'cub variant
+upload' and 'cub variant create'. It shows those variants as a deployment graph and is where config
+changes are promoted downstream.`
 
-	agentContext := `'list' and 'open' are a view over Space labels: a component appears there when a space is labeled
-Component=<name>, and gains a variant when another space with the same Component label is created.
-'create', 'get', 'update' and 'delete' operate on the Component entity by slug or UUID.
+	agentContext := `'list', 'create', 'get', 'update' and 'delete' operate on the Component entity by slug or UUID.
+'open' shows a Component's variants: the spaces naming it with ComponentID, which 'cub variant
+upload' sets and 'cub variant create' inherits from the upstream space.
 
 The equivalent raw query is:
-  cub space list --where "Labels.Component = 'my-app'"
+  COMPONENT_ID=$(cub component get my-app -o jq=.ComponentID)
+  cub space list --where "ComponentID = '$COMPONENT_ID'"
 
 'component open' is interactive — it launches a browser — so prefer 'component list' and the space
 and unit commands for automation. Use 'component open --print-url' when you only need the URL.`
@@ -64,7 +67,8 @@ func init() {
 	rootCmd.AddCommand(componentCmd)
 }
 
-// Component aggregates the spaces that share one "Component" label value.
+// Component aggregates the spaces that are Variants of one Component, named by
+// its slug.
 type Component struct {
 	Name string
 	// Owner is the "Owner" label, taken from the component's spaces. Empty when
@@ -73,28 +77,39 @@ type Component struct {
 	// Variants are the "Variant" label values, sorted, one per space. A space
 	// with no Variant label contributes an empty string.
 	Variants []string
-	// Spaces are the spaces carrying this Component label, sorted by slug.
+	// Spaces are the spaces naming this Component with ComponentID, sorted by slug.
 	Spaces []*goclientnew.ExtendedSpace
 	// UnitCount is the total number of units across those spaces.
 	UnitCount int
 }
 
-// apiListComponents groups every space the caller can see by its "Component"
-// label. Spaces without that label are not part of any component and are
-// dropped. This mirrors the web UI, which filters the same way client-side;
-// there is no server-side component query to delegate to.
+// apiListComponents groups every space the caller can see by its ComponentID,
+// naming each group by the Component's slug. Spaces in no Component are not
+// part of any component and are dropped.
 func apiListComponents(whereFilter string, filterParam string) ([]*Component, error) {
 	extendedSpaces, err := apiListExtendedSpaces(whereFilter, "", filterParam, true)
 	if err != nil {
 		return nil, err
 	}
+	componentEntities, err := cubapi.ListComponents(ctx, cubClient, cubapi.NewWhere(""), cubapi.ListOpts{
+		Select: "ComponentID,Slug,OrganizationID",
+	})
+	if err != nil {
+		return nil, err
+	}
+	componentSlugs := make(map[goclientnew.UUID]string, len(componentEntities))
+	for _, c := range componentEntities {
+		if c.Component != nil {
+			componentSlugs[c.Component.ComponentID] = c.Component.Slug
+		}
+	}
 
 	byName := map[string]*Component{}
 	for _, extendedSpace := range extendedSpaces {
-		if extendedSpace.Space == nil {
+		if extendedSpace.Space == nil || extendedSpace.Space.ComponentID == nil {
 			continue
 		}
-		name := extendedSpace.Space.Labels[labelComponent]
+		name := componentSlugs[*extendedSpace.Space.ComponentID]
 		if name == "" {
 			continue
 		}
@@ -139,9 +154,13 @@ func commonOwnerLabel(spaces []*goclientnew.ExtendedSpace) string {
 	return owner
 }
 
-// apiGetComponentFromName resolves a component by its "Component" label value.
+// apiGetComponentFromName resolves a component by its Component's slug.
 func apiGetComponentFromName(name string) (*Component, error) {
-	components, err := apiListComponents(fmt.Sprintf("Labels.%s = '%s'", labelComponent, name), "")
+	entity, err := resolveComponent(name, "")
+	if err != nil {
+		return nil, err
+	}
+	components, err := apiListComponents(fmt.Sprintf("ComponentID = '%s'", entity.Component.ComponentID), "")
 	if err != nil {
 		return nil, err
 	}

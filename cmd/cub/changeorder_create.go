@@ -41,14 +41,15 @@ Examples:
     --in-scope-space staging,prod-use2,prod-usw2
 
   # The list is a list, so work it out however you like and pass the answer
-  SPACES=$(cub space list --quiet --no-headers -o name --where "Labels.Component = 'my-app'" | paste -sd, -)
+  COMPONENT_ID=$(cub component get my-app -o jq=.ComponentID)
+  SPACES=$(cub space list --quiet --no-headers -o name --where "ComponentID = '$COMPONENT_ID'" | paste -sd, -)
   cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 
   # Or let the server work the list out from a where expression, a Filter over Spaces, or both
   # (ANDed). The server records the spaces they select, and works them out again when either
   # changes or on "cub changeorder update --refresh-spaces"
   cub changeorder create --space my-space bump-base-image \
-    --where-space-field "Labels.Component = 'my-app' AND Labels.Region = 'use2'"
+    --where-space-field "ComponentID = '$COMPONENT_ID' AND Labels.Region = 'use2'"
   cub changeorder create --space my-space bump-base-image \
     --space-filter platform/prod-spaces --where-space-field "Labels.Region = 'use2'"
 
@@ -268,9 +269,13 @@ func resolveChangeWorkflowForChangeOrder(identifier string) (*goclientnew.Change
 // The ChangeOrder does not exist yet to be asked, which is why this reads the
 // Space rather than the ChangeOrder's own Space as a promotion does. The two
 // agree: without the flag both read the same label off the same Space.
-func changeOrderCreateComponent(changeOrderSpaceID uuid.UUID) (string, error) {
+func changeOrderCreateComponent(changeOrderSpaceID uuid.UUID) (*goclientnew.Component, error) {
 	if changeorderCreateArgs.component != "" {
-		return changeorderCreateArgs.component, nil
+		component, err := resolveComponent(changeorderCreateArgs.component, "")
+		if err != nil {
+			return nil, err
+		}
+		return component.Component, nil
 	}
 	return spaceComponent(changeOrderSpaceID)
 }
@@ -286,11 +291,11 @@ func changeOrderCreateComponent(changeOrderSpaceID uuid.UUID) (string, error) {
 // after the ChangeOrder exists, so it cannot select the Spaces of the ChangeOrder
 // being created; the component can, and it says the same thing a Stage's clause
 // says about which component's Spaces are meant.
-func componentSpaceIDs(component string) ([]uuid.UUID, error) {
-	where := fmt.Sprintf("Labels.%s = '%s'", labelComponent, component)
+func componentSpaceIDs(component *goclientnew.Component) ([]uuid.UUID, error) {
+	where := fmt.Sprintf("ComponentID = '%s'", component.ComponentID)
 	spaces, err := apiListSpaces(where, "SpaceID")
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve the Spaces of component '%s'", component)
+		return nil, errors.Wrapf(err, "failed to resolve the Spaces of component '%s'", component.Slug)
 	}
 	spaceIDs := make([]uuid.UUID, 0, len(spaces))
 	for _, space := range spaces {
@@ -315,7 +320,7 @@ func componentSpaceIDs(component string) ([]uuid.UUID, error) {
 // Only the clause is checked, not what it selects. Where the change is headed is
 // the component's Spaces, or the list the client names -- never the union of the
 // Stages -- so there is nothing here to resolve Spaces for.
-func validateChangeWorkflowStages(changeWorkflow *goclientnew.ChangeWorkflow, component string) error {
+func validateChangeWorkflowStages(changeWorkflow *goclientnew.ChangeWorkflow, component *goclientnew.Component) error {
 	for i := range changeWorkflow.Stages {
 		if _, err := stageWhereSpace(&changeWorkflow.Stages[i], component); err != nil {
 			return err

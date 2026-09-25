@@ -135,7 +135,7 @@ Key flags for agents:
 Post-creation workflow:
 1. Use 'function do get-placeholders' to check for placeholder values
 2. Use 'function do' commands to modify configuration as needed
-3. Use 'unit approve' if approval is required
+3. Use 'variant approve' if the change workflow requires an approval
 4. Use 'release publish' to publish the space, which Argo CD / Flux pull
 
 Important: Unit slugs must be unique within a space and follow naming conventions (lowercase, hyphens allowed).`

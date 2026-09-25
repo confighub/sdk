@@ -35,7 +35,6 @@ type FunctionContext struct {
 	QueuedOperationID uuid.UUID               `description:"Unique ID of the operation this function is executed under"`
 	NotLive           bool                    `description:"True if the configuration has never been applied or has been destroyed; not set for Revision invocations"`
 	PreviousDataHash  DataHash                `json:",omitempty" description:"SHA256 hash of the previous copy of the data, for determining whether it has been changed since it was last written"`
-	ApprovedBy        []string                `description:"Usernames of users that have approved this revision of the configuration data"`
 
 	// Conflicts are the Unit's outstanding merge conflicts — the parts of a merge's patch
 	// that were not applied. Populated only when the invocation asks for them with

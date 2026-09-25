@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/skratchdot/open-golang/open"
@@ -41,8 +43,30 @@ func openWebUI(url string) error {
 	return nil
 }
 
-// webUIServerURL returns the base URL the web UI is served from, which is the
-// same origin as the API server in the active context.
+// webUIServerURL returns the base URL the web UI is served from for the active
+// context: the context's UI URL if one is set, and otherwise its server URL,
+// which is right wherever the UI is embedded in the server.
 func webUIServerURL() string {
-	return contextManager.ActiveContext().Coordinate.ServerURL
+	return contextUIURL(contextManager.ActiveContext())
+}
+
+// contextUIURL is the base URL ctx's web UI is served from.
+func contextUIURL(ctx *Context) string {
+	if ctx.Settings.UIURL != "" {
+		return ctx.Settings.UIURL
+	}
+	return ctx.Coordinate.ServerURL
+}
+
+// normalizeUIURL checks a UI URL given on the command line and returns it without
+// a trailing slash. Empty is allowed and means the server URL.
+func normalizeUIURL(raw string) (string, error) {
+	if raw == "" {
+		return "", nil
+	}
+	u, err := url.Parse(raw)
+	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
+		return "", fmt.Errorf("--ui-url must be an http or https URL, like https://ui.example.com; got %q", raw)
+	}
+	return strings.TrimRight(raw, "/"), nil
 }

@@ -189,12 +189,6 @@ Create a trigger to ensure that no placeholder values remain before you apply:
 cub trigger create --space $SPACE complete Mutation "Kubernetes/YAML" vet-placeholders
 ```
 
-Create a trigger to ensure that a unit has been reviewed and approved after any change by at least one person prior to apply:
-
-```
-cub trigger create --space $SPACE require-approval Mutation "Kubernetes/YAML" vet-approvedby 1
-```
-
 Create a trigger to ensure that all Kubernetes resources are annotated with unit metadata:
 
 ```
@@ -221,16 +215,16 @@ Clone a unit:
 cub unit create --space $SPACE --verbose --from-stdin myvariant --upstream-unit sample-deployment --upstream-space sample-space < variantmetadata.json
 ```
 
-Approve a unit:
+Approve the units in a space, recording an Attestation that a change workflow can require:
 
 ```
-cub unit approve --space $SPACE myunit
+cub variant approve $SPACE
 ```
 
-Apply a unit:
+Publish a Release of the space:
 
 ```
-cub unit apply --space $SPACE myunit
+cub release publish $SPACE
 ```
 
 ### Variants
@@ -238,11 +232,11 @@ cub unit apply --space $SPACE myunit
 Clone a whole space and its units into a new downstream variant space in one step. The new space's
 `Variant` label is set to the variant name; other labels are inherited from the upstream space, and
 `--stage`, `--environment`, and `--region` can add or change the `Stage`, `Environment`, and
-`Region` labels. The slug is derived from `--space-pattern` (here, the `Component` label prefix and
-the `Variant` label suffix). The cloned units can be retargeted:
+`Region` labels. The slug is derived from `--space-pattern` (here, the Component's slug as the prefix
+and the `Variant` label suffix). The cloned units can be retargeted:
 
 ```
-cub variant create test website-prod --space-pattern "template:{{.Labels.Component}}-{{.Labels.Variant}}" --target website-test/cluster
+cub variant create test website-prod --space-pattern "template:{{.Component.Slug}}-{{.Labels.Variant}}" --target website-test/cluster
 ```
 
 ### Links
@@ -283,18 +277,6 @@ Find units created after a specific time within a space:
 
 ```
 cub unit list --space $SPACE --where "CreatedAt > '2025-02-18T23:16:34'"
-```
-
-Find units approved by a specific user by ID:
-
-```
-cub unit list --no-headers --space $SPACE --where "ApprovedBy ? 'c9369257-0d7b-40d0-9127-454d90f5dcf8'"
-```
-
-Find units that have been approved:
-
-```
-cub unit list --space $SPACE --where 'LEN(ApprovedBy) > 0'
 ```
 
 Find units with validation errors:

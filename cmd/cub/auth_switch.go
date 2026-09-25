@@ -4,10 +4,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"net/url"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -78,7 +80,7 @@ func switchToOrganization(searchTerm string) error {
 	}
 
 	// Call the switch organization API
-	newTokens, err := callSwitchOrganizationAPI(tokenData.RefreshToken, matchedOrg.ExternalID)
+	newTokens, err := callSwitchOrganizationAPI(tokenData.AccessToken, tokenData.RefreshToken, matchedOrg.ExternalID)
 	if err != nil {
 		return fmt.Errorf("failed to switch organization: %w. Try running 'cub auth login' to re-authenticate first", err)
 	}
@@ -165,68 +167,65 @@ func findBestMatchingOrganization(organizations []*goclientnew.Organization, sea
 	return nil
 }
 
-// SwitchOrganizationResponse represents the response from the switch organization API
-type SwitchOrganizationResponse struct {
+// switchOrganizationRequest is the body of POST /auth/refresh. An organization id
+// asks the server to mint for that organization instead of the current one; it
+// verifies membership itself, because Keycloak does not honour an organization
+// selection on a refresh_token grant before 26.6.
+type switchOrganizationRequest struct {
+	RefreshToken   string `json:"refresh_token"`
+	OrganizationID string `json:"organization_id"`
+}
+
+// switchOrganizationResponse is the pair of tokens the refresh returns.
+type switchOrganizationResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
 
-// callSwitchOrganizationAPI calls the /auth/switch-organization endpoint
-func callSwitchOrganizationAPI(refreshToken, organizationID string) (*SwitchOrganizationResponse, error) {
-	// Construct the URL
-	switchURL := fmt.Sprintf("%s/auth/switch-organization?organization_id=%s",
-		strings.TrimSuffix(contextManager.ActiveContext().Coordinate.ServerURL, "/api"),
-		url.QueryEscape(organizationID))
+// callSwitchOrganizationAPI mints a session for another organization through
+// POST /auth/refresh.
+//
+// The endpoint authenticates the caller twice over: the refresh token proves the
+// identity provider session, and the current ConfigHub token in the Authorization
+// header proves which session is asking. Both are already in the context, so this
+// needs nothing the CLI does not hold.
+func callSwitchOrganizationAPI(accessToken, refreshToken, organizationID string) (*switchOrganizationResponse, error) {
+	body, err := json.Marshal(switchOrganizationRequest{
+		RefreshToken:   refreshToken,
+		OrganizationID: organizationID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build request: %w", err)
+	}
 
-	// Create the HTTP request
-	req, err := http.NewRequestWithContext(context.Background(), "GET", switchURL, nil)
+	refreshURL := strings.TrimSuffix(contextManager.ActiveContext().Coordinate.ServerURL, "/api") + "/auth/refresh"
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, refreshURL, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	// Add the refresh token as a cookie
-	req.AddCookie(&http.Cookie{
-		Name:  "confighub_refresh_token",
-		Value: refreshToken,
-	})
-
-	// Create client that doesn't follow redirects automatically
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
-	// Make the request
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request: %w", err)
 	}
 	defer resp.Body.Close()
 
-	// Check for redirect status codes (3xx)
-	if resp.StatusCode < 300 || resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("API request failed with status %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusOK {
+		// The body carries the server's reason -- not a member of that
+		// organization, an expired refresh token -- which is worth more than the
+		// status alone.
+		detail, _ := io.ReadAll(io.LimitReader(resp.Body, 2048))
+		return nil, fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, strings.TrimSpace(string(detail)))
 	}
 
-	// Extract tokens from the response cookies
-	var newAccessToken, newRefreshToken string
-
-	for _, cookie := range resp.Cookies() {
-		switch cookie.Name {
-		case "confighub_session":
-			newAccessToken = cookie.Value
-		case "confighub_refresh_token":
-			newRefreshToken = cookie.Value
-		}
+	var tokens switchOrganizationResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokens); err != nil {
+		return nil, fmt.Errorf("failed to read the new session: %w", err)
 	}
-
-	if newAccessToken == "" || newRefreshToken == "" {
-		return nil, fmt.Errorf("failed to get new tokens from response cookies")
+	if tokens.AccessToken == "" || tokens.RefreshToken == "" {
+		return nil, fmt.Errorf("the server returned no session for that organization")
 	}
-
-	return &SwitchOrganizationResponse{
-		AccessToken:  newAccessToken,
-		RefreshToken: newRefreshToken,
-	}, nil
+	return &tokens, nil
 }

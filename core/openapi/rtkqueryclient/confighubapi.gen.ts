@@ -2209,16 +2209,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
-      approveUnit: build.mutation<ApproveUnitApiResponse, ApproveUnitApiArg>({
-        query: (queryArg) => ({
-          url: `/space/${queryArg.spaceId}/unit/${queryArg.unitId}/approve`,
-          method: 'POST',
-          params: {
-            revision: queryArg.revision,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       resolveUnitConflicts: build.mutation<
         ResolveUnitConflictsApiResponse,
         ResolveUnitConflictsApiArg
@@ -2796,20 +2786,6 @@ const injectedRtkApi = api
         }),
         invalidatesTags: ['Unit'],
       }),
-      bulkApproveUnits: build.mutation<BulkApproveUnitsApiResponse, BulkApproveUnitsApiArg>({
-        query: (queryArg) => ({
-          url: `/unit/approve`,
-          method: 'POST',
-          params: {
-            where: queryArg.where,
-            filter: queryArg.filter,
-            contains: queryArg.contains,
-            include: queryArg.include,
-            revision: queryArg.revision,
-          },
-        }),
-        invalidatesTags: ['Unit'],
-      }),
       bulkCancelUnits: build.mutation<BulkCancelUnitsApiResponse, BulkCancelUnitsApiArg>({
         query: (queryArg) => ({
           url: `/unit/cancel`,
@@ -3070,8 +3046,8 @@ export type BulkDeleteComponentsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3149,8 +3125,8 @@ export type BulkPatchComponentsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3253,8 +3229,8 @@ export type BulkDeleteSpacesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3269,7 +3245,7 @@ export type BulkDeleteSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3305,7 +3281,7 @@ export type BulkDeleteSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -3338,8 +3314,8 @@ export type BulkPatchSpacesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3354,7 +3330,7 @@ export type BulkPatchSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3390,7 +3366,7 @@ export type BulkPatchSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -3402,6 +3378,7 @@ export type BulkPatchSpacesApiArg = {
       [key: string]: string | null;
     } | null;
     AttributeFilterID?: string | null;
+    ComponentID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -3447,8 +3424,8 @@ export type BulkCreateSpacesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3463,7 +3440,7 @@ export type BulkCreateSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -3499,7 +3476,7 @@ export type BulkCreateSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -3517,6 +3494,7 @@ export type BulkCreateSpacesApiArg = {
       [key: string]: string | null;
     } | null;
     AttributeFilterID?: string | null;
+    ComponentID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -3568,8 +3546,8 @@ export type ListAllAttestationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3656,8 +3634,8 @@ export type BulkDeleteAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3733,8 +3711,8 @@ export type ListAllAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3821,8 +3799,8 @@ export type BulkPatchAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3925,8 +3903,8 @@ export type BulkCreateAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4001,8 +3979,8 @@ export type BulkCreateAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4017,7 +3995,7 @@ export type BulkCreateAttributesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning attributes
     
@@ -4085,8 +4063,8 @@ export type BulkMoveAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4167,8 +4145,8 @@ export type BulkDeleteBridgeWorkersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4246,8 +4224,8 @@ export type ListAllBridgeWorkersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4336,8 +4314,8 @@ export type BulkPatchBridgeWorkersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4441,8 +4419,8 @@ export type ListQueuedOperationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4526,8 +4504,8 @@ export type BulkDeleteChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4605,8 +4583,8 @@ export type ListAllChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4693,8 +4671,8 @@ export type BulkPatchChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4806,8 +4784,8 @@ export type BulkCreateChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4886,8 +4864,8 @@ export type BulkCreateChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4902,7 +4880,7 @@ export type BulkCreateChangeOrdersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning changeorders
     
@@ -4977,8 +4955,8 @@ export type BulkDeleteChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5056,8 +5034,8 @@ export type ListAllChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5144,8 +5122,8 @@ export type BulkPatchChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5244,8 +5222,8 @@ export type BulkCreateChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5324,8 +5302,8 @@ export type BulkCreateChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5340,7 +5318,7 @@ export type BulkCreateChangeSetsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning changesets
     
@@ -5404,8 +5382,8 @@ export type BulkMoveChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5486,8 +5464,8 @@ export type BulkDeleteChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5564,8 +5542,8 @@ export type ListAllChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5652,8 +5630,8 @@ export type BulkPatchChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5759,8 +5737,8 @@ export type BulkCreateChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5839,8 +5817,8 @@ export type BulkCreateChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5855,7 +5833,7 @@ export type BulkCreateChangeWorkflowsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning change workflows
     
@@ -5926,8 +5904,8 @@ export type BulkMoveChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6006,8 +5984,8 @@ export type ListComponentsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6167,8 +6145,8 @@ export type BulkDeleteFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6244,8 +6222,8 @@ export type ListAllFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6336,8 +6314,8 @@ export type BulkPatchFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6440,8 +6418,8 @@ export type BulkCreateFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6520,8 +6498,8 @@ export type BulkCreateFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6536,7 +6514,7 @@ export type BulkCreateFiltersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning filters
     
@@ -6604,8 +6582,8 @@ export type BulkMoveFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6690,8 +6668,8 @@ export type ListOrgFunctionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6751,8 +6729,8 @@ export type InvokeFunctionsOnOrgApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6767,7 +6745,7 @@ export type InvokeFunctionsOnOrgApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -6828,8 +6806,8 @@ export type BulkDeleteInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6907,8 +6885,8 @@ export type ListAllInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6997,8 +6975,8 @@ export type BulkPatchInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7102,8 +7080,8 @@ export type BulkCreateInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7184,8 +7162,8 @@ export type BulkCreateInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7200,7 +7178,7 @@ export type BulkCreateInvocationsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning invocations
     
@@ -7267,8 +7245,8 @@ export type BulkMoveInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7349,8 +7327,8 @@ export type BulkDeleteLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7428,8 +7406,8 @@ export type SearchListLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7516,8 +7494,8 @@ export type BulkPatchLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7642,8 +7620,8 @@ export type BulkCreateLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7696,8 +7674,8 @@ export type BulkCreateLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7736,8 +7714,8 @@ export type BulkCreateLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7848,8 +7826,8 @@ export type ListOrganizationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7979,8 +7957,8 @@ export type ListOrganizationMembersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8081,8 +8059,8 @@ export type ListAllReleasesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8167,8 +8145,8 @@ export type ListAllResourcesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8275,8 +8253,8 @@ export type ListAllRevisionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8291,7 +8269,7 @@ export type ListAllRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8350,7 +8328,7 @@ export type ListAllRevisionsApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8387,8 +8365,8 @@ export type SearchRevisionDataApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8403,7 +8381,7 @@ export type SearchRevisionDataApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8462,7 +8440,7 @@ export type SearchRevisionDataApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8500,8 +8478,8 @@ export type SearchRevisionMutationSourcesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8516,7 +8494,7 @@ export type SearchRevisionMutationSourcesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list tagged Revisions use `Tags ? '<tag-id>'`.
     
@@ -8575,7 +8553,7 @@ export type SearchRevisionMutationSourcesApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -8612,8 +8590,8 @@ export type ListSpacesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8628,7 +8606,7 @@ export type ListSpacesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   where?: string;
@@ -8664,7 +8642,7 @@ export type ListSpacesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -8705,7 +8683,7 @@ export type GetSpaceApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+    Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -8736,6 +8714,7 @@ export type PatchSpaceApiArg = {
       [key: string]: string | null;
     } | null;
     AttributeFilterID?: string | null;
+    ComponentID?: string | null;
     /** An optional set of gates that, if any is present, will block deletion */
     DeleteGates?: {
       [key: string]: boolean | null;
@@ -8791,8 +8770,8 @@ export type ListExtendedAttestationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8912,8 +8891,8 @@ export type ListAttributesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9092,8 +9071,8 @@ export type ListBridgeWorkersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9315,8 +9294,8 @@ export type ListChangeOrdersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9499,8 +9478,8 @@ export type ListChangeSetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9668,8 +9647,8 @@ export type ListChangeWorkflowsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9842,8 +9821,8 @@ export type ListFiltersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10022,8 +10001,8 @@ export type ListFunctionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10087,8 +10066,8 @@ export type InvokeFunctionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10103,7 +10082,7 @@ export type InvokeFunctionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -10161,8 +10140,8 @@ export type ListInvocationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10333,8 +10312,8 @@ export type ListLinksApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10533,8 +10512,8 @@ export type ListExtendedReleasesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10711,8 +10690,8 @@ export type ListTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10879,8 +10858,8 @@ export type ListTargetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11069,8 +11048,8 @@ export type ListTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11286,8 +11265,8 @@ export type ListUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11302,7 +11281,7 @@ export type ListUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -11340,7 +11319,7 @@ export type ListUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -11407,7 +11386,7 @@ export type GetUnitApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -11475,8 +11454,8 @@ export type PatchUnitApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11609,8 +11588,8 @@ export type UpdateUnitApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11654,15 +11633,6 @@ export type UpdateUnitApiArg = {
   /** Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced. */
   include?: string;
   unit: Unit;
-};
-export type ApproveUnitApiResponse = /** status 200 OK */ ApproveResponseRead;
-export type ApproveUnitApiArg = {
-  /** Unique identifier for a space_id */
-  spaceId: string;
-  /** Unique identifier for a unit_id */
-  unitId: string;
-  /** Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
-  revision?: string;
 };
 export type ResolveUnitConflictsApiResponse = /** status 200 OK */ UnitConflictsResponseRead;
 export type ResolveUnitConflictsApiArg = {
@@ -11743,8 +11713,8 @@ export type ListExtendedMutationsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11876,8 +11846,8 @@ export type ListExtendedResourcesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12034,8 +12004,8 @@ export type ListExtendedRevisionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12050,7 +12020,7 @@ export type ListExtendedRevisionsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     To list a tagged Revision use `Tags ? '<tag-id>'`.
     
@@ -12109,7 +12079,7 @@ export type ListExtendedRevisionsApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -12149,7 +12119,7 @@ export type GetExtendedRevisionApiArg = {
     
     Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
     
-    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
     
@@ -12203,8 +12173,8 @@ export type ListUnitActionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12286,8 +12256,8 @@ export type ListUnitEventsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12405,8 +12375,8 @@ export type ListViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12574,8 +12544,8 @@ export type BulkDeleteTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12653,8 +12623,8 @@ export type ListAllTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12741,8 +12711,8 @@ export type BulkPatchTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12840,8 +12810,8 @@ export type BulkCreateTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12920,8 +12890,8 @@ export type BulkCreateTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12936,7 +12906,7 @@ export type BulkCreateTagsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning tags
     
@@ -12999,8 +12969,8 @@ export type BulkMoveTagsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13081,8 +13051,8 @@ export type BulkDeleteTargetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13160,8 +13130,8 @@ export type ListAllTargetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13248,8 +13218,8 @@ export type BulkPatchTargetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13367,8 +13337,8 @@ export type BulkMoveTargetsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13449,8 +13419,8 @@ export type BulkDeleteTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13528,8 +13498,8 @@ export type ListAllTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13618,8 +13588,8 @@ export type BulkPatchTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13744,8 +13714,8 @@ export type BulkCreateTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13822,8 +13792,8 @@ export type BulkCreateTriggersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13838,7 +13808,7 @@ export type BulkCreateTriggersApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning triggers
     
@@ -13926,8 +13896,8 @@ export type BulkDeleteUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13942,7 +13912,7 @@ export type BulkDeleteUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -13980,7 +13950,7 @@ export type BulkDeleteUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14007,8 +13977,8 @@ export type ListAllUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14023,7 +13993,7 @@ export type ListAllUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14061,7 +14031,7 @@ export type ListAllUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14111,8 +14081,8 @@ export type BulkPatchUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14127,7 +14097,7 @@ export type BulkPatchUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14165,7 +14135,7 @@ export type BulkPatchUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14213,8 +14183,8 @@ export type BulkPatchUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14315,8 +14285,8 @@ export type BulkCreateUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14331,7 +14301,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14369,7 +14339,7 @@ export type BulkCreateUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14397,8 +14367,8 @@ export type BulkCreateUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14413,7 +14383,7 @@ export type BulkCreateUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning units
     
@@ -14451,8 +14421,8 @@ export type BulkCreateUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14515,89 +14485,6 @@ export type BulkCreateUnitsApiArg = {
     Version?: number | null;
   };
 };
-export type BulkApproveUnitsApiResponse = /** status 200 OK */
-  | ApproveResponseRead[]
-  | /** status 207 Multi-Status: Mixed success and failure results */ ApproveResponseRead[];
-export type BulkApproveUnitsApiArg = {
-  /** The specified string is an expression for the purpose of filtering
-    the list of Units returned. The expression syntax was inspired by SQL.
-    It supports conjunctions using `AND` of relational expressions of the form *attribute*
-    *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-    as in the JSON encoding.
-    Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-    String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-    `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-    String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-    `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-    Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-    UUIDs and boolean attributes support equality and inequality only.
-    UUID and time literals must be quoted as string literals.
-    String literals are quoted with single quotes, such as `'string'`.
-    Time literals use the same form as when serialized as JSON,
-    such as: `CreatedAt > '2025-02-18T23:16:34'`.
-    Integer and boolean literals are also supported for attributes of those types.
-    Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-    An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-    as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-    Without the `*` such a reference is an error, since it names no single value to compare.
-    Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-    Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-    as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-    Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-    These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-    The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-    such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-    Conjunctions are supported using the `AND` operator.
-    An example conjunction is:
-    `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-    
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
-    
-    Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
-    
-    The whole string must be query-encoded. */
-  where?: string;
-  /** UUID of a Filter entity to apply to the Unit list.
-    
-    The Filter must be in the same Organization as the user credentials.
-    
-    The Filter's From field must match the entity type being filtered (Unit).
-    
-    For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-    
-    The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-    
-    If both 'filter' and 'where' parameters are specified, they are combined with AND logic. */
-  filter?: string;
-  /** Free text search that approximately matches the specified string against string fields and map keys/values.
-    
-    The search is case-insensitive and uses pattern matching to find entities containing the text.
-    
-    Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-    
-    For map fields (like Labels and Annotations), the search matches both map keys and values.
-    
-    The search uses OR logic across all searchable fields, so matching any field will return the entity.
-    
-    If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-    
-    Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-    
-    The whole string must be query-encoded. */
-  contains?: string;
-  /** Include clause for expanding related entities in the response for Unit.
-    The attribute names are case-sensitive, PascalCase, and
-    expected in a comma-separated list format as in the JSON encoding.
-    
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-    
-    The whole string must be query-encoded. */
-  include?: string;
-  /** Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc. */
-  revision?: string;
-};
 export type BulkCancelUnitsApiResponse = /** status 200 OK */
   | UnitActionResponse[]
   | /** status 207 Multi-Status: Mixed success and failure results */ UnitActionResponse[];
@@ -14620,8 +14507,8 @@ export type BulkCancelUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14636,7 +14523,7 @@ export type BulkCancelUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14674,7 +14561,7 @@ export type BulkCancelUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14701,8 +14588,8 @@ export type BulkMoveUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14717,7 +14604,7 @@ export type BulkMoveUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14755,7 +14642,7 @@ export type BulkMoveUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14785,8 +14672,8 @@ export type BulkTagUnitsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14801,7 +14688,7 @@ export type BulkTagUnitsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14839,7 +14726,7 @@ export type BulkTagUnitsApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -14865,8 +14752,8 @@ export type ListAllUnitActionsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14934,8 +14821,8 @@ export type SearchUnitDataApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14950,7 +14837,7 @@ export type SearchUnitDataApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -14988,7 +14875,7 @@ export type SearchUnitDataApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -15036,8 +14923,8 @@ export type ListAllUnitEventsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15129,8 +15016,8 @@ export type SearchUnitMutationSourcesApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15145,7 +15032,7 @@ export type SearchUnitMutationSourcesApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+    Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
     
     Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
     
@@ -15183,7 +15070,7 @@ export type SearchUnitMutationSourcesApiArg = {
     The attribute names are case-sensitive, PascalCase, and
     expected in a comma-separated list format as in the JSON encoding.
     
-    Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+    Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
     
     The whole string must be query-encoded. */
   include?: string;
@@ -15241,8 +15128,8 @@ export type ListUsersApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15336,8 +15223,8 @@ export type BulkDeleteViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15413,8 +15300,8 @@ export type ListAllViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15501,8 +15388,8 @@ export type BulkPatchViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15606,8 +15493,8 @@ export type BulkCreateViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15686,8 +15573,8 @@ export type BulkCreateViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15702,7 +15589,7 @@ export type BulkCreateViewsApiArg = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     Where expression to select destination spaces for cloning views
     
@@ -15771,8 +15658,8 @@ export type BulkMoveViewsApiArg = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15959,6 +15846,8 @@ export type Space = {
   };
   /** Reference to a Filter entity used to identify Attributes for the Space's FunctionExecutor. The Filter's From field must be set to 'Attribute'. */
   AttributeFilterID?: string;
+  /** Reference to the Component this Space is a Variant of. (optional) */
+  ComponentID?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
   DeleteGates?: {
     [key: string]: boolean;
@@ -16000,8 +15889,8 @@ export type Space = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16038,8 +15927,8 @@ export type Space = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16070,6 +15959,8 @@ export type SpaceRead = {
   AttributeHash?: string;
   /** List of Attribute IDs the Space's function executor is built from: those that match the WhereAttribute and/or AttributeFilterID criteria, or, when neither is set, the Attributes in the Space. (readonly) */
   AttributeIDs?: Uuid[];
+  /** Reference to the Component this Space is a Variant of. (optional) */
+  ComponentID?: string;
   /** The timestamp when the entity was created in "2023-01-01T12:00:00Z" format. */
   CreatedAt?: string;
   /** An optional set of gates that, if any is present, will block deletion. */
@@ -16120,8 +16011,8 @@ export type SpaceRead = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16158,8 +16049,8 @@ export type SpaceRead = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -17016,8 +16907,8 @@ export type ChangeOrder = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -17032,7 +16923,7 @@ export type ChangeOrder = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   WhereSpace?: string;
@@ -17143,8 +17034,8 @@ export type ChangeOrderRead = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -17159,7 +17050,7 @@ export type ChangeOrderRead = {
     An example conjunction is:
     `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
     
-    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+    Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
     
     The whole string must be query-encoded. */
   WhereSpace?: string;
@@ -18026,8 +17917,6 @@ export type UnitRead = {
   ApplyWarnings?: {
     [key: string]: boolean;
   };
-  /** The users that have approved the latest revision of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
   /** ID of the BridgeWorker from the Target assigned to this Unit. */
   BridgeWorkerID?: string;
   /** Unique identifier for the ChangeSet to which the current Revision belongs. Optional. Units are not required to belong to ChangeSets. */
@@ -18707,8 +18596,8 @@ export type Target = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -18812,8 +18701,8 @@ export type TargetRead = {
     such as: `CreatedAt > '2025-02-18T23:16:34'`.
     Integer and boolean literals are also supported for attributes of those types.
     Arrays support the `?` operator to to match any element of the array,
-    as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-    Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+    as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+    Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
     An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
     as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
     Without the `*` such a reference is an error, since it names no single value to compare.
@@ -18964,8 +18853,6 @@ export type ExtendedResourceRead = {
   ViewColumns?: ViewColumn[];
 };
 export type Revision = {
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
   /** Unique identifier for the ChangeSet to which this Revision belongs. Optional. Revisions are not required to belong to ChangeSets. */
   ChangeSetID?: string;
   Conflicts?: MutationConflictList;
@@ -19042,8 +18929,6 @@ export type RevisionRead = {
   ApplyWarnings?: {
     [key: string]: boolean;
   };
-  /** the users that have approved the latest version of the config data for the Unit. */
-  ApprovedBy?: Uuid[];
   /** A set (map) of AttestationIDs of the Attestations covering this Revision: approvals, reviews, and other claims made about it. The string values have no particular meaning. */
   Attestations?: {
     [key: string]: string;
@@ -19365,6 +19250,7 @@ export type TriggerRead = {
 export type ExtendedSpace = {
   AttributeFilter?: Filter;
   Attributes?: Attribute[];
+  Component?: Component;
   Error?: ResponseError;
   GatedUnitCount?: number;
   Organization?: Organization;
@@ -19390,7 +19276,6 @@ export type ExtendedSpace = {
   } | null;
   TriggerFilter?: Filter;
   Triggers?: Trigger[];
-  UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
   UnreleasedUnitCount?: number;
   UpgradableUnitCount?: number;
@@ -19399,6 +19284,7 @@ export type ExtendedSpace = {
 export type ExtendedSpaceRead = {
   AttributeFilter?: FilterRead;
   Attributes?: AttributeRead[];
+  Component?: ComponentRead;
   Error?: ResponseError;
   GatedUnitCount?: number;
   Organization?: OrganizationRead;
@@ -19424,7 +19310,6 @@ export type ExtendedSpaceRead = {
   } | null;
   TriggerFilter?: FilterRead;
   Triggers?: TriggerRead[];
-  UnapprovedUnitCount?: number;
   UnlinkedUnitCount?: number;
   UnreleasedUnitCount?: number;
   UpgradableUnitCount?: number;
@@ -19716,8 +19601,6 @@ export type UnitEventRead = {
   Version?: number;
 };
 export type ExtendedUnit = {
-  /** the users that have approved the latest revision of the config data. */
-  ApprovedBy?: User[];
   BridgeWorker?: BridgeWorker;
   ChangeSet?: ChangeSet;
   Error?: ResponseError;
@@ -19736,8 +19619,6 @@ export type ExtendedUnit = {
   ViewColumns?: ViewColumn[];
 };
 export type ExtendedUnitRead = {
-  /** the users that have approved the latest revision of the config data. */
-  ApprovedBy?: UserRead[];
   BridgeWorker?: BridgeWorkerRead;
   ChangeSet?: ChangeSetRead;
   Error?: ResponseError;
@@ -19771,16 +19652,6 @@ export type UnitCreateOrUpdateResponseRead = {
   Error?: ResponseError;
   Links?: LinkCreateOrUpdateResponseRead[];
   MutationSources?: ResourceMutationList;
-  Unit?: UnitRead;
-};
-export type ApproveResponse = {
-  Error?: ResponseError;
-  Message?: string;
-  Unit?: Unit;
-};
-export type ApproveResponseRead = {
-  Error?: ResponseError;
-  Message?: string;
   Unit?: UnitRead;
 };
 export type UnitConflictsResponse = {
@@ -20119,7 +19990,7 @@ export type UploadResult = {
 export type UploadComponentRequest = {
   /** Synthesize the release Namespace if the bundle lacks it. Off by default. */
   CreateNamespace?: boolean;
-  /** Names of the components this one depends on, recorded in the Space's DependsOn annotation. Requires a Variant Space label. */
+  /** Names of the components this one depends on, recorded by ComponentID in the Space's DependsOn annotation. Each Component must already exist. Requires a Variant Space label. */
   DependsOn?: string[];
   /** The component name. */
   Name?: string;
@@ -20199,7 +20070,7 @@ export type UploadRequest = {
   SpaceLabels?: {
     [key: string]: string;
   };
-  /** Slug pattern for created Spaces, over the Space's labels. Default {{.Labels.Component}}-{{.Labels.Variant}}. */
+  /** Slug pattern for created Spaces, over the Space's Component and labels. Default {{.Component.Slug}}-{{.Labels.Variant}}. */
   SpacePattern?: string;
 };
 export type UserKey = {
@@ -20457,7 +20328,6 @@ export const {
   useLazyGetUnitQuery,
   usePatchUnitMutation,
   useUpdateUnitMutation,
-  useApproveUnitMutation,
   useResolveUnitConflictsMutation,
   useDownloadUnitDataQuery,
   useLazyDownloadUnitDataQuery,
@@ -20519,7 +20389,6 @@ export const {
   useLazyListAllUnitsQuery,
   useBulkPatchUnitsMutation,
   useBulkCreateUnitsMutation,
-  useBulkApproveUnitsMutation,
   useBulkCancelUnitsMutation,
   useBulkMoveUnitsMutation,
   useBulkTagUnitsMutation,

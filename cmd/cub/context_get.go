@@ -60,6 +60,9 @@ func displayContextDetails(ctx *Context) {
 	view.Append([]string{"Organization ID", ctx.Coordinate.OrganizationID})
 	view.Append([]string{"Organization Name", ctx.Metadata.OrganizationName})
 	view.Append([]string{"Server URL", ctx.Coordinate.ServerURL})
+	if ctx.Settings.UIURL != "" {
+		view.Append([]string{"UI URL", ctx.Settings.UIURL})
+	}
 	view.Append([]string{"Token Status", localTokenStatus(ctx)})
 	// Shown because it answers "how does this context get in", which otherwise
 	// has to be remembered or rediscovered when a token expires.

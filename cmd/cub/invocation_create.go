@@ -45,7 +45,6 @@ Toolchain Types:
 Example Functions:
 
   - vet-cel: Validate resources using CEL expressions
-  - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
   - set-default-names: Set default names for resources
   - set-annotation: Set annotations on resources
@@ -74,9 +73,6 @@ Single Invocation Examples:
 
   # Create an invocation to ensure no placeholders exist in resources
   cub invocation create --space my-space -o json complete Kubernetes/YAML vet-placeholders
-
-  # Create an invocation requiring approval before applying changes
-  cub invocation create --space my-space -o json require-approval Kubernetes/YAML vet-approvedby 1
 
   # Create an invocation to add a "cloned=true" annotation
   cub invocation create --space my-space -o json stamp Kubernetes/YAML set-annotation cloned true

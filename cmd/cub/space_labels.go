@@ -12,12 +12,11 @@ import (
 
 // standardSpaceLabels are the well-known Space labels, in the order they are
 // displayed as columns by the space list command.
-var standardSpaceLabels = []string{"Component", "Owner", "Variant", "Stage", "Environment", "Region", "Layer"}
+var standardSpaceLabels = []string{"Owner", "Variant", "Stage", "Environment", "Region", "Layer"}
 
 // standardSpaceLabelExamples gives each well-known label an example value, for
 // the help text of the flag that sets it.
 var standardSpaceLabelExamples = map[string]string{
-	"Component":   "website",
 	"Owner":       "Engineering",
 	"Variant":     "prod",
 	"Stage":       "Canary",
@@ -27,7 +26,7 @@ var standardSpaceLabelExamples = map[string]string{
 }
 
 // spaceLabelFlagValues holds the values given for the well-known Space label
-// flags (--component, --stage, …) registered by addStandardSpaceLabelFlags,
+// flags (--owner, --stage, …) registered by addStandardSpaceLabelFlags,
 // keyed by label name.
 type spaceLabelFlagValues map[string]*string
 

@@ -22,6 +22,7 @@ var spaceCreateArgs struct {
 	whereTrigger  string
 	triggerFilter string
 	releaseTarget string
+	component     string
 	permissions   []string
 	variantLabels []string
 	namePattern   string
@@ -46,7 +47,7 @@ Single space creation examples:
   # Create a space and set it as the default in the current context
   cub space create my-space --set-context
 
-  # Create a space with the well-known Space labels, as shown by "cub space list"
+  # Create a space in the "website" Component, with the well-known Space labels, as shown by "cub space list"
   cub space create website-canary --component website --variant canary --stage Canary \
     --environment Prod --region us-east1
 `+"```"+`
@@ -71,6 +72,7 @@ func init() {
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted)")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
 	spaceCreateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceCreateCmd)
@@ -211,6 +213,15 @@ func runSingleSpaceCreate(args []string) error {
 		newBody.ReleaseTargetID = &releaseTargetID
 	}
 
+	// Set ComponentID if provided
+	if spaceCreateArgs.component != "" {
+		componentID, err := resolveComponentID(spaceCreateArgs.component)
+		if err != nil {
+			return err
+		}
+		newBody.ComponentID = &componentID
+	}
+
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateSpaceParams{}
 	if allowExists {
@@ -255,6 +266,16 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 		releaseTargetUUID = &releaseTargetID
 	}
 
+	// Resolve ComponentID if provided
+	var componentUUID *uuid.UUID
+	if spaceCreateArgs.component != "" {
+		componentID, err := resolveComponentID(spaceCreateArgs.component)
+		if err != nil {
+			return nil, err
+		}
+		componentUUID = &componentID
+	}
+
 	// Build patch data with space enhancer
 	spaceEnhancer := func(patchMap map[string]interface{}) {
 		// Add WhereTrigger if provided
@@ -272,6 +293,10 @@ func createBulkSpaceCreatePatch() ([]byte, error) {
 		// Add ReleaseTargetID if provided
 		if releaseTargetUUID != nil {
 			patchMap["ReleaseTargetID"] = releaseTargetUUID.String()
+		}
+		// Add ComponentID if provided
+		if componentUUID != nil {
+			patchMap["ComponentID"] = componentUUID.String()
 		}
 	}
 

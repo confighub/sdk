@@ -31,6 +31,10 @@ Examples:
 
   # Create it and switch to it
   cub context create staging --server=https://api.confighub.com --use
+
+  # A context whose web UI is served apart from the server
+  cub context create hub-next --server=https://hub.confighub.com \
+    --ui-url=https://ui-next.testhub.confighub.net
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(0, 1),
@@ -41,12 +45,14 @@ var (
 	createServer       string
 	createOrganization string
 	createUse          bool
+	createUIURL        string
 )
 
 func init() {
 	contextCreateCmd.Flags().StringVar(&createServer, "server", "", "API server URL")
 	contextCreateCmd.Flags().StringVar(&createOrganization, "organization", "", "Identity provider organization ID (optional)")
 	contextCreateCmd.Flags().BoolVar(&createUse, "use", false, "Also make the new context the current one")
+	contextCreateCmd.Flags().StringVar(&createUIURL, "ui-url", "", "Where this context's web UI is served, if not from the server itself")
 
 	contextCmd.AddCommand(contextCreateCmd)
 }
@@ -61,11 +67,17 @@ func contextCreateCmdRun(_ *cobra.Command, args []string) error {
 		name = args[0]
 	}
 
+	uiURL, err := normalizeUIURL(createUIURL)
+	if err != nil {
+		return err
+	}
+
 	// Create the context
 	ctx, err := contextManager.CreateContext(name, createServer, createOrganization, "")
 	if err != nil {
 		return err
 	}
+	ctx.Settings.UIURL = uiURL
 
 	// Adding a context says nothing about what anything should be talking to. The current
 	// context is one setting shared by every shell and script on the machine, so switching it

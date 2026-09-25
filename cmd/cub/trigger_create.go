@@ -52,7 +52,6 @@ Toolchain Types:
 Example Functions:
 
   - vet-cel: Validate resources using CEL expressions
-  - vet-approvedby: Check if resource is approved
   - vet-placeholders: Ensure no placeholders exist
   - vet-schemas: Validate resources against their OpenAPI schemas
   - vet-no-merge-conflicts: Fail while a merge has changes still withheld on the unit
@@ -78,9 +77,6 @@ Single Trigger Examples:
 
   # Create a trigger to ensure no placeholders exist in resources
   cub trigger create --space my-space --json complete Mutation Kubernetes/YAML vet-placeholders
-
-  # Create a trigger requiring approval before applying changes
-  cub trigger create --space my-space --json require-approval Mutation Kubernetes/YAML vet-approvedby 1
 
   # Create a trigger to ensure context annotations
   cub trigger create --space my-space --json annotate-resources Mutation Kubernetes/YAML ensure-context true

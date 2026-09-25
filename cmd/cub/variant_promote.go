@@ -123,7 +123,8 @@ Examples:
   cub variant promote web-prod --dry-run -o mutations
 
   # Promote every variant of a component
-  cub variant promote --where-space "Labels.Component = 'web' AND Labels.Variant != 'base'"
+  COMPONENT_ID=$(cub component get web -o jq=.ComponentID)
+  cub variant promote --where-space "ComponentID = '$COMPONENT_ID' AND Labels.Variant != 'base'"
 
   # Promote, recording the whole range as one revision per unit
   cub variant promote web-prod --squash

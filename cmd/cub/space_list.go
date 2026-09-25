@@ -68,7 +68,8 @@ Environment-specific operations:
 
 Key information provided:
 - Space slugs: Used for the --space flag and in SPACE_SLUG/SLUG references
-- Standard labels: Component, Owner, Variant, Stage, Environment, Region, Layer
+- Component: the slug of the Component each space is a Variant of
+- Standard labels: Owner, Variant, Stage, Environment, Region, Layer
 - Unit count: Number of units in each space; -o wide adds the remaining summary counts
 - Organization context: Which org these spaces belong to
 
@@ -88,7 +89,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels","Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
 
 // spaceBaseSelectFields are the fields always returned by space list queries,
 // regardless of the requested columns.
@@ -102,17 +103,25 @@ var spaceAliases = map[string]string{
 
 // Space custom column dependencies (e.g. Environment comes from Labels.Environment)
 var spaceCustomColumnDependencies = func() map[string][]string {
-	deps := make(map[string][]string, len(standardSpaceLabels))
+	deps := make(map[string][]string, len(standardSpaceLabels)+1)
+	deps["Component"] = []string{"ComponentID"}
 	for _, label := range standardSpaceLabels {
 		deps[label] = []string{"Labels"}
 	}
 	return deps
 }()
 
-// spaceCustomColumns are the columns the default table computes rather than reads: a
-// standard label by its bare name, and the two counts the server returns as a map.
+// spaceCustomColumns are the columns the default table computes rather than reads: the
+// Component's slug, a standard label by its bare name, and the two counts the server
+// returns as a map.
 var spaceCustomColumns = func() map[string]func(any) string {
-	cols := make(map[string]func(any) string, len(standardSpaceLabels)+2)
+	cols := make(map[string]func(any) string, len(standardSpaceLabels)+3)
+	cols["Component"] = func(obj any) string {
+		if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok {
+			return spaceComponentSlug(extendedSpace)
+		}
+		return ""
+	}
 	for _, label := range standardSpaceLabels {
 		cols[label] = func(obj any) string {
 			if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok && extendedSpace.Space != nil {
@@ -158,6 +167,15 @@ func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
 	return extendedSpace.Space.Slug
 }
 
+// spaceComponentSlug is the slug of the Space's included Component, empty for a
+// Space in no Component.
+func spaceComponentSlug(extendedSpace *goclientnew.ExtendedSpace) string {
+	if extendedSpace.Component != nil {
+		return extendedSpace.Component.Slug
+	}
+	return ""
+}
+
 // wideSpaceCountColumns are the count columns shown only with --output=wide.
 // #Units is always shown, so it isn't listed here.
 var wideSpaceCountColumns = []string{"#Links", "#Tags", "#ChangeSets", "#ChangeOrders", "#ChangeWorkflows", "#Filters", "#Views", "#Invocations", "#Triggers", "#Workers", "#Targets", "#Attributes"}
@@ -186,7 +204,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		header := append([]string{"Name"}, standardSpaceLabels...)
+		header := append([]string{"Name", "Component"}, standardSpaceLabels...)
 		header = append(header, "#Units")
 		if wide {
 			header = append(header, wideSpaceCountColumns...)
@@ -194,7 +212,7 @@ func displayExtendedSpaceList(extendedSpaces []*goclientnew.ExtendedSpace) {
 		table.SetHeader(header)
 	}
 	for _, extendedSpace := range extendedSpaces {
-		row := []string{extendedSpace.Space.Slug}
+		row := []string{extendedSpace.Space.Slug, spaceComponentSlug(extendedSpace)}
 		for _, label := range standardSpaceLabels {
 			row = append(row, extendedSpace.Space.Labels[label])
 		}
@@ -224,22 +242,25 @@ func apiListSpaces(whereFilter string, selectParam string) ([]*goclientnew.Space
 }
 
 // apiListExtendedSpaces lists spaces. When summary is true the per-space counts
-// (units, links, targets, triggers, …) are computed and returned, as displayed
-// by the space list command; callers that only need the core Space records pass
-// false to avoid that work.
+// (units, links, targets, triggers, …) are computed and returned, and each
+// Space's Component is included, as displayed by the space list command; callers
+// that only need the core Space records pass false to avoid that work.
 func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam string, summary bool) ([]*goclientnew.ExtendedSpace, error) {
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		return buildSelectList("Space", listColumnsFor("cub space list"), "", defaultSpaceColumns, spaceAliases, spaceCustomColumnDependencies, spaceBaseSelectFields)
 	})
 	var with []func(*goclientnew.ListSpacesParams)
+	include := ""
 	if summary {
 		with = append(with, func(p *goclientnew.ListSpacesParams) {
 			s := true
 			p.Summary = &s
 		})
+		include = "ComponentID"
 	}
 	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(whereFilter), cubapi.ListOpts{
 		Select:   cubapi.SelectFields(selectValue),
+		Include:  include,
 		Filter:   filterParam,
 		Contains: contains,
 	}, with...)

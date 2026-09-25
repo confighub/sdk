@@ -4,6 +4,7 @@
 package cliutil
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
@@ -38,7 +39,7 @@ func TestQueryFlagsPredicate(t *testing.T) {
 		want string
 	}{
 		{"empty", QueryFlags{}, ""},
-		{"one label", QueryFlags{Component: "checkout"}, "Space.Labels.Component = 'checkout'"},
+		{"one label", QueryFlags{Environment: "prod"}, "Space.Labels.Environment = 'prod'"},
 		{"raw only", QueryFlags{Where: "Slug LIKE 'x%'"}, "Slug LIKE 'x%'"},
 		{
 			"raw and labels are ANDed, raw first",
@@ -47,8 +48,8 @@ func TestQueryFlagsPredicate(t *testing.T) {
 		},
 		{
 			"every label, in a stable order",
-			QueryFlags{Component: "c", Environment: "e", Region: "r", Owner: "o", Layer: "l", Variant: "v"},
-			"Space.Labels.Component = 'c' AND Space.Labels.Environment = 'e' AND " +
+			QueryFlags{Environment: "e", Region: "r", Owner: "o", Layer: "l", Variant: "v"},
+			"Space.Labels.Environment = 'e' AND " +
 				"Space.Labels.Region = 'r' AND Space.Labels.Owner = 'o' AND " +
 				"Space.Labels.Layer = 'l' AND Space.Labels.Variant = 'v'",
 		},
@@ -75,8 +76,44 @@ func TestQueryFlagsPredicateRejectsUnsendableValue(t *testing.T) {
 	} else if !strings.Contains(err.Error(), "--owner") {
 		t.Errorf("error does not name the flag: %v", err)
 	}
-	if _, err := (QueryFlags{Component: `back\slash`}).Predicate(); err == nil {
-		t.Error("a backslashed component was accepted")
+	if _, err := (QueryFlags{Region: `back\slash`}).Predicate(); err == nil {
+		t.Error("a backslashed region was accepted")
+	}
+}
+
+// --component scopes by the Space's ComponentID: an ID is used as given, and a
+// slug is looked up with ResolveComponent, which a tool without one cannot do.
+func TestQueryFlagsPredicateComponent(t *testing.T) {
+	const componentID = "6f1c1d2e-3b4a-4c5d-8e9f-0a1b2c3d4e5f"
+	resolve := func(slug string) (string, error) {
+		if slug == "checkout" {
+			return componentID, nil
+		}
+		return "", errors.New("not found")
+	}
+	want := "Space.ComponentID = '" + componentID + "'"
+
+	if got, err := (QueryFlags{Component: componentID}).Predicate(); err != nil || got != want {
+		t.Errorf("by ID: got %q, %v; want %q", got, err, want)
+	}
+	if got, err := (QueryFlags{Component: "checkout", ResolveComponent: resolve}).Predicate(); err != nil || got != want {
+		t.Errorf("by slug: got %q, %v; want %q", got, err, want)
+	}
+	if got, err := (QueryFlags{Component: "checkout", Environment: "prod", ResolveComponent: resolve}).Predicate(); err != nil ||
+		got != want+" AND Space.Labels.Environment = 'prod'" {
+		t.Errorf("with a label: got %q, %v", got, err)
+	}
+	if _, err := (QueryFlags{Component: "checkout"}).Predicate(); err == nil {
+		t.Error("a slug was accepted without ResolveComponent")
+	} else if !strings.Contains(err.Error(), "--component") {
+		t.Errorf("error does not name the flag: %v", err)
+	}
+	if _, err := (QueryFlags{Component: "missing", ResolveComponent: resolve}).Predicate(); err == nil {
+		t.Error("a slug ResolveComponent could not find was accepted")
+	}
+	notAnID := func(string) (string, error) { return "x' OR '1'='1", nil }
+	if _, err := (QueryFlags{Component: "checkout", ResolveComponent: notAnID}).Predicate(); err == nil {
+		t.Error("a ResolveComponent result that is not an ID was accepted")
 	}
 }
 

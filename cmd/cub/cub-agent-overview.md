@@ -51,7 +51,7 @@ confirm the token is actually accepted.
 - `-O, --output-file <path>`: Write raw payload to a file. Accepts `{space}`, `{unit}`, `{section}` placeholders for per-unit file paths in bulk operations.
 - `--no-headers`: Omit header rows on list commands.
 - `--columns <fields>` or `-o custom-columns=<spec>`: Select columns on list commands that support dynamic columns.
-- `--where "EXPRESSION"`: Filter results using simple relational expressions. The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`. String pattern operators include `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, and `NOT LIKE` and `!~~` for negated pattern matching. String regex operators include `~` for regex matching, `~*` for case-insensitive regex, and `!~`/`!~*` for regex not matching. Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. Pointer types support `IS NULL` and `IS NOT NULL` to check for presence. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. Arrays support the `?` operator to to match any element of the array, as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`. An attribute naming a list of other entities is filtered on their attributes with a `*` segment, as in `FromLink.*.Slug = 'upgrade-app'` or `Triggers.*.Slug LIKE 'validate-%'`, which holds when any element satisfies it; without the `*` such a reference is an error, since it names no single value to compare. Maps support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Maps also support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence, as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists). The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `Slug IN ('slugone', 'slugtwo')` or `Labels.Environment IN ('production', 'staging')`. An example conjunction is: `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`. See the [Query Language Grammar](#query-language-grammar) section for the formal syntax specification.
+- `--where "EXPRESSION"`: Filter results using simple relational expressions. The specified string is an expression for the purpose of filtering the list of entities returned. The expression syntax was inspired by SQL, but does not support full SQL syntax currently. It supports conjunctions using `AND` of relational expressions of the form _attribute_ _operator_ _attribute_or_literal_. The attribute names are case-sensitive and PascalCase, as in the JSON encoding. Supported attributes for each entity are allow-listed, and documented in swagger. All entities that include the attributes support `CreatedAt`, `UpdatedAt`, `DisplayName`, `Slug`, and ID fields. `Labels` are supported, using a dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`. String pattern operators include `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, and `NOT LIKE` and `!~~` for negated pattern matching. String regex operators include `~` for regex matching, `~*` for case-insensitive regex, and `!~`/`!~*` for regex not matching. Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`. UUIDs and boolean attributes support equality and inequality only. Pointer types support `IS NULL` and `IS NOT NULL` to check for presence. String literals are quoted with single quotes, such as `'string'`. UUID and time literals must be quoted as string literals, as in `'7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Time literals use the same form as when serialized as JSON, such as: `CreatedAt > '2025-02-18T23:16:34'`. Integer and boolean literals are also supported for attributes of those types. Arrays support the `?` operator to to match any element of the array, as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`. Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`. An attribute naming a list of other entities is filtered on their attributes with a `*` segment, as in `FromLink.*.Slug = 'upgrade-app'` or `Triggers.*.Slug LIKE 'validate-%'`, which holds when any element satisfies it; without the `*` such a reference is an error, since it names no single value to compare. Maps support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`. Maps also support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence, as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists). The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `Slug IN ('slugone', 'slugtwo')` or `Labels.Environment IN ('production', 'staging')`. An example conjunction is: `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`. See the [Query Language Grammar](#query-language-grammar) section for the formal syntax specification.
 - `--from-stdin`: Read JSON input from stdin for passing to the ConfigHub API
 - `--verbose`: Show detailed output, additive with default output
 - `--debug`: Show API calls
@@ -152,10 +152,10 @@ The following constraints apply but are not expressible in pure EBNF:
 --where "Labels.tier = 'Backend'"
 
 # Array containment
---where "ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'"
+--where "FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'"
 
 # Array length
---where "LEN(ApprovedBy) > 0"
+--where "LEN(FromLinkID) > 0"
 
 # ValidationErrors map access
 --where "ValidationErrors.low-cost/vet-cel = true"
@@ -332,11 +332,11 @@ cub unit edit --space SPACE_SLUG UNIT_SLUG
 cub unit create --space SPACE_SLUG --from-stdin VARIANT_SLUG \
   --upstream-unit SOURCE_UNIT --upstream-space SOURCE_SPACE < metadata.json
 
-# Apply unit to live infrastructure
-cub unit apply --space SPACE_SLUG UNIT_SLUG
+# Approve the units in a space: an Attestation a change workflow can require
+cub variant approve SPACE_SLUG
 
-# Approve unit for deployment
-cub unit approve --space SPACE_SLUG UNIT_SLUG
+# Publish a Release of the space, which Argo CD / Flux pull
+cub release publish SPACE_SLUG
 ```
 
 #### Kubernetes
@@ -447,7 +447,6 @@ for every function, and marks deprecated names in their descriptions.
 - `vet-placeholders`: Verify no placeholder values remain
 - `vet-schemas`: OpenAPI schema validation
 - `vet-cel EXPRESSION`: Custom CEL validation, with the Kubernetes CEL libraries and structured per-path failures
-- `vet-approvedby COUNT`: Check if sufficient approvals exist
 - `vet-format`, `vet-merge-keys`: YAML hygiene and duplicate merge keys
 - `vet-no-merge-conflicts`: No merge left changes withheld on this unit
 - `where-filter RESOURCE_TYPE EXPRESSION`: Filter resources by criteria
@@ -457,7 +456,7 @@ for every function, and marks deprecated names in their descriptions.
 `yq` (use `get-yq`), `yq-i` (use `set-yq`), `set-image`/`get-image` (use
 `set-container-image`/`get-container-image`), `set-image-reference` (use
 `set-container-image-reference`), `cel-validate` (use `vet-cel`),
-`no-placeholders` (use `vet-placeholders`), `is-approved` (use `vet-approvedby`).
+`no-placeholders` (use `vet-placeholders`).
 
 ### Advanced Usage Patterns
 
@@ -488,9 +487,6 @@ cub unit list --space SPACE_SLUG --where 'HeadRevisionNum > LastReleasedRevision
 # Find units created after specific time
 cub unit list --space SPACE_SLUG --where "CreatedAt > '2025-01-01T00:00:00'"
 
-# Find approved units
-cub unit list --space SPACE_SLUG --where 'LEN(ApprovedBy) > 0'
-
 # Find units with Kubernetes Deployments that could run as root (--resource-type is optional; omitting it searches all resource types)
 cub unit list --space "*" --resource-type apps/v1/Deployment --where-data "spec.template.spec.containers.*.|securityContext.runAsNonRoot != true"
 ```
@@ -498,10 +494,6 @@ cub unit list --space "*" --resource-type apps/v1/Deployment --where-data "spec.
 #### Triggers (Policy Enforcement)
 
 ```bash
-# Require approval before apply
-cub trigger create --space SPACE_SLUG require-approval Mutation \
-  "Kubernetes/YAML" vet-approvedby 1
-
 # Validate no placeholders remain
 cub trigger create --space SPACE_SLUG vet-placeholders Mutation \
   "Kubernetes/YAML" vet-placeholders
@@ -539,8 +531,7 @@ Every mutating invocation should carry `--change-desc` and `-o mutations`.
 ### To Validate Configuration:
 
 1. **No placeholders**: `cub function vet --space SPACE vet-placeholders`
-2. **Approval status**: `cub function vet --space SPACE vet-approvedby MIN_COUNT`
-3. **Resource filtering**: `cub function vet --space SPACE where-filter RESOURCE_TYPE 'EXPRESSION'`
+2. **Resource filtering**: `cub function vet --space SPACE where-filter RESOURCE_TYPE 'EXPRESSION'`
 
 ## Supported Configuration Formats
 
@@ -595,11 +586,11 @@ cub unit get --space myspace myapp
 # Validate configuration
 cub function vet --space myspace --unit myapp vet-schemas
 
-# Approve unit
-cub unit approve --space myspace myapp
+# Approve the space's units
+cub variant approve myspace
 
-# Apply to live infrastructure
-cub unit apply --space myspace myapp
+# Publish a Release of the space
+cub release publish myspace
 ```
 
 ### 4. Editing Units Locally

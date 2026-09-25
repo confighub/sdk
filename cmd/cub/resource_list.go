@@ -27,7 +27,7 @@ TargetID mirrors the containing unit's, so it selects resources by where they wi
 Resources of units with no target have no TargetID.
 
 Attributes of the containing unit and space are addressed with a prefix -- Unit.Slug,
-Space.Labels.Component, Space.Labels.Environment -- and can be combined with resource and data
+Space.ComponentID, Space.Labels.Environment -- and can be combined with resource and data
 predicates. Only the fields a filter names are fetched for those entities, so filtering on the
 unit's slug does not drag the unit's configuration data along.
 
@@ -53,8 +53,11 @@ Examples:
 
   # Filter by the resource's own Kubernetes labels, or by its space's labels
   cub resource list --space "*" --where "Data.metadata.labels.app = 'checkout'"
-  cub resource list --space "*" --where "Space.Labels.Component = 'checkout'"
   cub resource list --space "*" --where "Space.Labels.Environment = 'prod' AND ResourceType = 'v1/Service'"
+
+  # Filter by its space's Component
+  COMPONENT_ID=$(cub component get checkout -o jq=.ComponentID)
+  cub resource list --space "*" --where "Space.ComponentID = '$COMPONENT_ID'"
 
   # Find Deployments running more than one replica
   cub resource list --space "*" --where "ResourceType = 'apps/v1/Deployment' AND Data.spec.replicas > 1"

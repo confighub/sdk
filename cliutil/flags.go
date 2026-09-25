@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -37,14 +38,20 @@ type QueryFlags struct {
 	Contains string
 	Select   string
 
-	// Space-label scopes, registered by [QueryFlags.BindSpaceLabels]. These are
-	// the standard Space labels, the ones the `cub variant` commands use.
+	// Space scopes, registered by [QueryFlags.BindSpaceLabels]. Component names
+	// the Component the Space is a Variant of, by slug or ID; the rest are the
+	// standard Space labels, the ones the `cub variant` commands use.
 	Component   string
 	Environment string
 	Region      string
 	Owner       string
 	Layer       string
 	Variant     string
+
+	// ResolveComponent returns the ComponentID of the Component with the given
+	// slug. This package does not depend on the API client, so a tool that binds
+	// --component sets it from its own; without it, --component accepts only an ID.
+	ResolveComponent func(slug string) (string, error)
 
 	extra []*labelScope
 }
@@ -107,8 +114,8 @@ func (q *QueryFlags) Label(flag, spaceLabel, usage string) {
 // scoping, and only the matching Units come back. These flags are shorthands
 // over --where for the scopes that come up most.
 //
-// They scope by a label on the Space, which is where the standard labels live.
-// That costs something: the server compiles a term naming the Unit's own columns
+// --component scopes by the Space's Component, and the rest by a label on the
+// Space, which is where the standard labels live. That costs something: the server compiles a term naming the Unit's own columns
 // into SQL, but a term prefixed with another entity it cannot, so it expands the
 // Space for every row the query returned and evaluates the term afterwards. The
 // answer is the same either way. Where a command has the choice -- a label the
@@ -116,7 +123,7 @@ func (q *QueryFlags) Label(flag, spaceLabel, usage string) {
 // do not.
 func (q *QueryFlags) BindSpaceLabels(cmd *cobra.Command) {
 	f := cmd.Flags()
-	f.StringVar(&q.Component, "component", "", "select Units whose Space has Labels.Component = <value>")
+	f.StringVar(&q.Component, "component", "", "select Units whose Space is a Variant of the Component <slug or id>")
 	f.StringVar(&q.Environment, "environment", "", "select Units whose Space has Labels.Environment = <value>")
 	f.StringVar(&q.Region, "region", "", "select Units whose Space has Labels.Region = <value>")
 	f.StringVar(&q.Owner, "owner", "", "select Units whose Space has Labels.Owner = <value>")
@@ -146,6 +153,13 @@ func (q QueryFlags) Predicate() (string, error) {
 	if q.Where != "" {
 		terms = append(terms, q.Where)
 	}
+	if q.Component != "" {
+		componentID, err := q.componentID()
+		if err != nil {
+			return "", err
+		}
+		terms = append(terms, fmt.Sprintf("Space.ComponentID = '%s'", componentID))
+	}
 	eq := func(flag, label, value string) error {
 		if value == "" {
 			return nil
@@ -157,7 +171,6 @@ func (q QueryFlags) Predicate() (string, error) {
 		return nil
 	}
 	for _, s := range []struct{ flag, label, value string }{
-		{"component", "Component", q.Component},
 		{"environment", "Environment", q.Environment},
 		{"region", "Region", q.Region},
 		{"owner", "Owner", q.Owner},
@@ -174,6 +187,26 @@ func (q QueryFlags) Predicate() (string, error) {
 		}
 	}
 	return strings.Join(terms, " AND "), nil
+}
+
+// componentID is the ComponentID --component names: the value itself when it is
+// an ID, and otherwise the ID ResolveComponent finds for it as a slug. What goes
+// into the predicate is always an ID, so it never carries a quote or backslash.
+func (q QueryFlags) componentID() (string, error) {
+	if _, err := uuid.Parse(q.Component); err == nil {
+		return q.Component, nil
+	}
+	if q.ResolveComponent == nil {
+		return "", fmt.Errorf("--component %q is not a Component ID, and this command cannot look up a Component by slug", q.Component)
+	}
+	componentID, err := q.ResolveComponent(q.Component)
+	if err != nil {
+		return "", fmt.Errorf("--component %q: %w", q.Component, err)
+	}
+	if _, err := uuid.Parse(componentID); err != nil {
+		return "", fmt.Errorf("--component %q resolved to %q, which is not a Component ID", q.Component, componentID)
+	}
+	return componentID, nil
 }
 
 // ProfilesSpaceFlag registers --profiles-space, the Space holding a tool's stored

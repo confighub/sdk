@@ -76,6 +76,12 @@ type Settings struct {
 	// it themselves. cub neither writes nor reads it: which space a command
 	// runs in comes from the command line.
 	DefaultSpace string `yaml:"defaultSpace,omitempty" json:"defaultSpace,omitempty"`
+
+	// UIURL is where the web UI for this context is served, when that is not the
+	// server itself. The server does not know where a UI runs, so links into one
+	// are the client's to build. Empty means the server URL, which is right
+	// wherever the UI is embedded in the server.
+	UIURL string `yaml:"uiURL,omitempty" json:"uiURL,omitempty"`
 }
 
 // Metadata holds optional, non-identifying context data.

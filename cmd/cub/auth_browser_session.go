@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os/exec"
 	"runtime"
 
@@ -28,7 +29,7 @@ var authBrowserSessionCmd = &cobra.Command{
 	Long: getCommandHelp(`Sign a browser in using this CLI's session.
 
 Asks the server for a single-use link and opens it. The link carries no
-credential of its own -- it is exchanged for a session cookie once and then
+credential of its own -- the web UI exchanges it for a session once and it then
 stops working, which is why it is safe to appear in a URL and why it expires
 quickly.
 
@@ -88,26 +89,44 @@ func authBrowserSessionCmdRun(cmd *cobra.Command, args []string) error {
 	if err := json.Unmarshal(body, &ticket); err != nil {
 		return fmt.Errorf("failed to parse the response: %w", err)
 	}
-	if ticket.URL == "" {
-		return fmt.Errorf("the server returned no login link")
+	link, err := browserSignInLink(ctx, ticket)
+	if err != nil {
+		return err
 	}
 
 	if browserSessionNoBrowser {
 		tprint("Open this link to sign in (valid for %d seconds, once):\n\n  %s\n",
-			ticket.ExpiresIn, ticket.URL)
+			ticket.ExpiresIn, link)
 		return nil
 	}
 
 	tprint("Opening the web UI signed in as %s.\nIf the browser does not open, use this link (valid for %d seconds, once):\n\n  %s\n",
-		ctx.Coordinate.ServerURL, ticket.ExpiresIn, ticket.URL)
+		ctx.Coordinate.ServerURL, ticket.ExpiresIn, link)
 
 	// A failure to launch a browser is not a failure of the command: the link
 	// was printed above and works either way. Headless hosts are the normal
 	// case for a self-hosted install reached over SSH.
-	if err := openBrowser(ticket.URL); err != nil {
+	if err := openBrowser(link); err != nil {
 		tprint("\nCould not open a browser automatically (%v). Use the link above.", err)
 	}
 	return nil
+}
+
+// browserSignInLink is the link that signs a browser in with ticket. With a UI URL
+// set on the context, it is that UI's sign-in page carrying the ticket in the
+// fragment, which the page redeems; the server does not know where that UI runs.
+// Otherwise it is the link the server built, which opens the UI it embeds.
+func browserSignInLink(ctx *Context, ticket browserSessionResponse) (string, error) {
+	if ctx.Settings.UIURL != "" {
+		if ticket.Ticket == "" {
+			return "", fmt.Errorf("the server returned no ticket")
+		}
+		return ctx.Settings.UIURL + "/cli-signin#ticket=" + url.QueryEscape(ticket.Ticket), nil
+	}
+	if ticket.URL == "" {
+		return "", fmt.Errorf("the server returned no login link")
+	}
+	return ticket.URL, nil
 }
 
 // openBrowser hands a URL to the platform's default handler.

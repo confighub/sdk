@@ -75,8 +75,9 @@ permissions can be scoped to this operation class via the command.
 
 Supply each declared parameter with a repeated --param flag:
 
+  COMPONENT_ID=$(cub component get checkout -o jq=.ComponentID)
   cub invocation invoke %s rbac-add-verb \
-    --space '*' --where "Space.Labels.Component = 'checkout'" \
+    --space '*' --where "Space.ComponentID = '$COMPONENT_ID'" \
     --param verb=create --param role=app-reader --param namespace=prod
 
 The supplied values are validated against the Invocation's declared Parameters

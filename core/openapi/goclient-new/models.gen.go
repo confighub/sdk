@@ -181,15 +181,6 @@ type ApiInfo struct {
 	WorkerPort string `json:"WorkerPort,omitempty" yaml:"WorkerPort,omitempty"`
 }
 
-// ApproveResponse defines model for ApproveResponse.
-type ApproveResponse struct {
-	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Message string         `json:"Message,omitempty" yaml:"Message,omitempty"`
-
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
-	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
-}
-
 // ArrayElementAliasMap defines model for ArrayElementAliasMap.
 type ArrayElementAliasMap map[string]map[string]string
 
@@ -810,8 +801,8 @@ type ChangeOrder struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -826,7 +817,7 @@ type ChangeOrder struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
@@ -1480,10 +1471,13 @@ type ExtendedRevision struct {
 // ExtendedSpace defines model for ExtendedSpace.
 type ExtendedSpace struct {
 	// AttributeFilter Defines an entity filter.
-	AttributeFilter *Filter        `json:"AttributeFilter,omitempty" yaml:"AttributeFilter,omitempty"`
-	Attributes      []Attribute    `json:"Attributes,omitempty" yaml:"Attributes,omitempty"`
-	Error           *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
-	GatedUnitCount  int64          `json:"GatedUnitCount,omitempty" yaml:"GatedUnitCount,omitempty"`
+	AttributeFilter *Filter     `json:"AttributeFilter,omitempty" yaml:"AttributeFilter,omitempty"`
+	Attributes      []Attribute `json:"Attributes,omitempty" yaml:"Attributes,omitempty"`
+
+	// Component The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.
+	Component      *Component     `json:"Component,omitempty" yaml:"Component,omitempty"`
+	Error          *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	GatedUnitCount int64          `json:"GatedUnitCount,omitempty" yaml:"GatedUnitCount,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
@@ -1511,7 +1505,6 @@ type ExtendedSpace struct {
 	// TriggerFilter Defines an entity filter.
 	TriggerFilter       *Filter   `json:"TriggerFilter,omitempty" yaml:"TriggerFilter,omitempty"`
 	Triggers            []Trigger `json:"Triggers,omitempty" yaml:"Triggers,omitempty"`
-	UnapprovedUnitCount int64     `json:"UnapprovedUnitCount,omitempty" yaml:"UnapprovedUnitCount,omitempty"`
 	UnlinkedUnitCount   int64     `json:"UnlinkedUnitCount,omitempty" yaml:"UnlinkedUnitCount,omitempty"`
 	UnreleasedUnitCount int64     `json:"UnreleasedUnitCount,omitempty" yaml:"UnreleasedUnitCount,omitempty"`
 	UpgradableUnitCount int64     `json:"UpgradableUnitCount,omitempty" yaml:"UpgradableUnitCount,omitempty"`
@@ -1600,9 +1593,6 @@ type ExtendedTrigger struct {
 
 // ExtendedUnit Unit with capability to extend additional related entities.
 type ExtendedUnit struct {
-	// ApprovedBy the users that have approved the latest revision of the config data.
-	ApprovedBy []User `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
-
 	// BridgeWorker BridgeWorker represents a bridge worker in ConfigHub.
 	// A bridge worker is a worker program that connects ConfigHub to external systems and targets.
 	// It acts as a bridge between ConfigHub and the infrastructure where configurations need
@@ -2981,9 +2971,6 @@ type Revision struct {
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
 
-	// ApprovedBy the users that have approved the latest version of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
-
 	// Attestations A set (map) of AttestationIDs of the Attestations covering this Revision: approvals, reviews, and other claims made about it. The string values have no particular meaning.
 	Attestations map[string]string `json:"Attestations,omitempty" yaml:"Attestations,omitempty"`
 	ChangeOrders map[string]string `json:"ChangeOrders,omitempty" yaml:"ChangeOrders,omitempty"`
@@ -3133,6 +3120,9 @@ type Space struct {
 	// AttributeIDs List of Attribute IDs the Space's function executor is built from: those that match the WhereAttribute and/or AttributeFilterID criteria, or, when neither is set, the Attributes in the Space. (readonly)
 	AttributeIDs []UUID `json:"AttributeIDs,omitempty" yaml:"AttributeIDs,omitempty"`
 
+	// ComponentID Reference to the Component this Space is a Variant of. (optional)
+	ComponentID *openapi_types.UUID `json:"ComponentID,omitempty" yaml:"ComponentID,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
@@ -3192,8 +3182,8 @@ type Space struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3231,8 +3221,8 @@ type Space struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3453,8 +3443,8 @@ type Target struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -3650,9 +3640,6 @@ type Unit struct {
 	// ApplyWarnings Deprecated: use ValidationWarnings, which this is a copy of. Returned for compatibility with clients written before the field was renamed; it cannot be set.
 	// Deprecated: this property has been marked as deprecated upstream, but no `x-deprecated-reason` was set
 	ApplyWarnings map[string]bool `json:"ApplyWarnings,omitempty" yaml:"ApplyWarnings,omitempty"`
-
-	// ApprovedBy The users that have approved the latest revision of the config data for the Unit.
-	ApprovedBy []UUID `json:"ApprovedBy,omitempty" yaml:"ApprovedBy,omitempty"`
 
 	// BridgeWorkerID ID of the BridgeWorker from the Target assigned to this Unit.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -4070,7 +4057,7 @@ type UploadComponentRequest struct {
 	// CreateNamespace Synthesize the release Namespace if the bundle lacks it. Off by default.
 	CreateNamespace bool `json:"CreateNamespace,omitempty" yaml:"CreateNamespace,omitempty"`
 
-	// DependsOn Names of the components this one depends on, recorded in the Space's DependsOn annotation. Requires a Variant Space label.
+	// DependsOn Names of the components this one depends on, recorded by ComponentID in the Space's DependsOn annotation. Each Component must already exist. Requires a Variant Space label.
 	DependsOn []string `json:"DependsOn,omitempty" yaml:"DependsOn,omitempty"`
 
 	// Name The component name.
@@ -4186,7 +4173,7 @@ type UploadRequest struct {
 	// SpaceLabels Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone.
 	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
 
-	// SpacePattern Slug pattern for created Spaces, over the Space's labels. Default {{.Labels.Component}}-{{.Labels.Variant}}.
+	// SpacePattern Slug pattern for created Spaces, over the Space's Component and labels. Default {{.Component.Slug}}-{{.Labels.Variant}}.
 	SpacePattern string `json:"SpacePattern,omitempty" yaml:"SpacePattern,omitempty"`
 }
 
@@ -4471,8 +4458,8 @@ type BulkDeleteComponentsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4577,8 +4564,8 @@ type BulkPatchComponentsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4658,8 +4645,8 @@ type BulkDeleteSpacesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4674,7 +4661,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4713,7 +4700,7 @@ type BulkDeleteSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4733,6 +4720,7 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations       *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	AttributeFilterID *openapi_types.UUID `json:"AttributeFilterID" yaml:"AttributeFilterID"`
+	ComponentID       *openapi_types.UUID `json:"ComponentID" yaml:"ComponentID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -4775,8 +4763,8 @@ type BulkPatchSpacesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4791,7 +4779,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4830,7 +4818,7 @@ type BulkPatchSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4844,6 +4832,7 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations       *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	AttributeFilterID *openapi_types.UUID `json:"AttributeFilterID" yaml:"AttributeFilterID"`
+	ComponentID       *openapi_types.UUID `json:"ComponentID" yaml:"ComponentID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -4886,8 +4875,8 @@ type BulkCreateSpacesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -4902,7 +4891,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4941,7 +4930,7 @@ type BulkCreateSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -4985,8 +4974,8 @@ type ListAllAttestationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5076,8 +5065,8 @@ type BulkDeleteAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5157,8 +5146,8 @@ type ListAllAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5274,8 +5263,8 @@ type BulkPatchAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5381,8 +5370,8 @@ type BulkCreateAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5462,8 +5451,8 @@ type BulkCreateAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5478,7 +5467,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -5522,8 +5511,8 @@ type BulkMoveAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5606,8 +5595,8 @@ type BulkDeleteBridgeWorkersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5690,8 +5679,8 @@ type ListAllBridgeWorkersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5809,8 +5798,8 @@ type BulkPatchBridgeWorkersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5890,8 +5879,8 @@ type ListQueuedOperationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -5962,8 +5951,8 @@ type BulkDeleteChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6046,8 +6035,8 @@ type ListAllChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6171,8 +6160,8 @@ type BulkPatchChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6289,8 +6278,8 @@ type BulkCreateChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6376,8 +6365,8 @@ type BulkCreateChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6392,7 +6381,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changeorders
 	//
@@ -6436,8 +6425,8 @@ type BulkDeleteChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6520,8 +6509,8 @@ type ListAllChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6633,8 +6622,8 @@ type BulkPatchChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6736,8 +6725,8 @@ type BulkCreateChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6823,8 +6812,8 @@ type BulkCreateChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6839,7 +6828,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -6883,8 +6872,8 @@ type BulkMoveChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -6967,8 +6956,8 @@ type BulkDeleteChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7048,8 +7037,8 @@ type ListAllChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7172,8 +7161,8 @@ type BulkPatchChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7286,8 +7275,8 @@ type BulkCreateChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7373,8 +7362,8 @@ type BulkCreateChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7389,7 +7378,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning change workflows
 	//
@@ -7433,8 +7422,8 @@ type BulkMoveChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7517,8 +7506,8 @@ type ListComponentsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7661,8 +7650,8 @@ type BulkDeleteFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7742,8 +7731,8 @@ type ListAllFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7865,8 +7854,8 @@ type BulkPatchFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -7972,8 +7961,8 @@ type BulkCreateFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8059,8 +8048,8 @@ type BulkCreateFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8075,7 +8064,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -8119,8 +8108,8 @@ type BulkMoveFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8206,8 +8195,8 @@ type ListOrgFunctionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8275,8 +8264,8 @@ type InvokeFunctionsOnOrgParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8291,7 +8280,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -8356,8 +8345,8 @@ type BulkDeleteInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8439,8 +8428,8 @@ type ListAllInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8557,8 +8546,8 @@ type BulkPatchInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8665,8 +8654,8 @@ type BulkCreateInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8754,8 +8743,8 @@ type BulkCreateInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8770,7 +8759,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -8814,8 +8803,8 @@ type BulkMoveInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8898,8 +8887,8 @@ type BulkDeleteLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -8981,8 +8970,8 @@ type SearchListLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9115,8 +9104,8 @@ type BulkPatchLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9244,8 +9233,8 @@ type BulkCreateLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9301,8 +9290,8 @@ type BulkCreateLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9342,8 +9331,8 @@ type BulkCreateLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9389,8 +9378,8 @@ type ListOrganizationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9508,8 +9497,8 @@ type ListOrganizationMembersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9589,8 +9578,8 @@ type ListAllReleasesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9680,8 +9669,8 @@ type ListAllResourcesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9798,8 +9787,8 @@ type ListAllRevisionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9814,7 +9803,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -9880,7 +9869,7 @@ type ListAllRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -9922,8 +9911,8 @@ type SearchRevisionDataParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -9938,7 +9927,7 @@ type SearchRevisionDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -10004,7 +9993,7 @@ type SearchRevisionDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10046,8 +10035,8 @@ type SearchRevisionMutationSourcesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10062,7 +10051,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -10128,7 +10117,7 @@ type SearchRevisionMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10170,8 +10159,8 @@ type ListSpacesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10186,7 +10175,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10225,7 +10214,7 @@ type ListSpacesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10268,7 +10257,7 @@ type GetSpaceParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Space are AttributeFilterID, AttributeIDs, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
+	// Supported attributes for Space are AttributeFilterID, AttributeIDs, ComponentID, OrganizationID, ReleaseTargetID, TriggerFilterID, TriggerIDs.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -10292,6 +10281,7 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations       *map[string]*string `json:"Annotations" yaml:"Annotations"`
 	AttributeFilterID *openapi_types.UUID `json:"AttributeFilterID" yaml:"AttributeFilterID"`
+	ComponentID       *openapi_types.UUID `json:"ComponentID" yaml:"ComponentID"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -10346,8 +10336,8 @@ type ListExtendedAttestationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10465,8 +10455,8 @@ type ListAttributesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10610,8 +10600,8 @@ type ListBridgeWorkersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10760,8 +10750,8 @@ type ListChangeOrdersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -10931,8 +10921,8 @@ type ListChangeSetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11078,8 +11068,8 @@ type ListChangeWorkflowsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11230,8 +11220,8 @@ type ListFiltersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11387,8 +11377,8 @@ type ListFunctionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11459,8 +11449,8 @@ type InvokeFunctionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11475,7 +11465,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -11540,8 +11530,8 @@ type ListInvocationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11686,8 +11676,8 @@ type ListLinksParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11854,8 +11844,8 @@ type ListExtendedReleasesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -11988,8 +11978,8 @@ type ListTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12134,8 +12124,8 @@ type ListTargetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12304,8 +12294,8 @@ type ListTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12474,8 +12464,8 @@ type ListUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12490,7 +12480,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -12531,7 +12521,7 @@ type ListUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12604,7 +12594,7 @@ type GetUnitParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -12722,8 +12712,8 @@ type PatchUnitParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12836,8 +12826,8 @@ type UpdateUnitParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -12886,12 +12876,6 @@ type UpdateUnitParams struct {
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-}
-
-// ApproveUnitParams defines parameters for ApproveUnit.
-type ApproveUnitParams struct {
-	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
-	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
 }
 
 // UploadUnitDataParams defines parameters for UploadUnitData.
@@ -12953,8 +12937,8 @@ type ListExtendedMutationsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13068,8 +13052,8 @@ type ListExtendedResourcesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13233,8 +13217,8 @@ type ListExtendedRevisionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13249,7 +13233,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -13315,7 +13299,7 @@ type ListExtendedRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13356,7 +13340,7 @@ type GetExtendedRevisionParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, ApprovedBy, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13386,8 +13370,8 @@ type ListUnitActionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13458,8 +13442,8 @@ type ListUnitEventsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13571,8 +13555,8 @@ type ListViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13717,8 +13701,8 @@ type BulkDeleteTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13801,8 +13785,8 @@ type ListAllTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -13913,8 +13897,8 @@ type BulkPatchTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14015,8 +13999,8 @@ type BulkCreateTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14102,8 +14086,8 @@ type BulkCreateTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14118,7 +14102,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -14162,8 +14146,8 @@ type BulkMoveTagsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14246,8 +14230,8 @@ type BulkDeleteTargetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14330,8 +14314,8 @@ type ListAllTargetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14454,8 +14438,8 @@ type BulkPatchTargetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14538,8 +14522,8 @@ type BulkMoveTargetsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14622,8 +14606,8 @@ type BulkDeleteTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14705,8 +14689,8 @@ type ListAllTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14847,8 +14831,8 @@ type BulkPatchTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -14979,8 +14963,8 @@ type BulkCreateTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15062,8 +15046,8 @@ type BulkCreateTriggersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15078,7 +15062,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -15122,8 +15106,8 @@ type BulkDeleteUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15138,7 +15122,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15179,7 +15163,7 @@ type BulkDeleteUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15208,8 +15192,8 @@ type ListAllUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15224,7 +15208,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15265,7 +15249,7 @@ type ListAllUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15362,8 +15346,8 @@ type BulkPatchUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15378,7 +15362,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15419,7 +15403,7 @@ type BulkPatchUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15481,8 +15465,8 @@ type BulkPatchUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15590,8 +15574,8 @@ type BulkCreateUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15606,7 +15590,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15647,7 +15631,7 @@ type BulkCreateUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15679,8 +15663,8 @@ type BulkCreateUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15695,7 +15679,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -15736,8 +15720,8 @@ type BulkCreateUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15766,92 +15750,6 @@ type BulkCreateUnitsParams struct {
 	Syncback *bool `form:"syncback,omitempty" json:"syncback,omitempty" yaml:"syncback,omitempty"`
 }
 
-// BulkApproveUnitsParams defines parameters for BulkApproveUnits.
-type BulkApproveUnitsParams struct {
-	// Where The specified string is an expression for the purpose of filtering
-	// the list of Units returned. The expression syntax was inspired by SQL.
-	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
-	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
-	// as in the JSON encoding.
-	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
-	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
-	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
-	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
-	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
-	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
-	// UUIDs and boolean attributes support equality and inequality only.
-	// UUID and time literals must be quoted as string literals.
-	// String literals are quoted with single quotes, such as `'string'`.
-	// Time literals use the same form as when serialized as JSON,
-	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
-	// Integer and boolean literals are also supported for attributes of those types.
-	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
-	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
-	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
-	// Without the `*` such a reference is an error, since it names no single value to compare.
-	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
-	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
-	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
-	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
-	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
-	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
-	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
-	// Conjunctions are supported using the `AND` operator.
-	// An example conjunction is:
-	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
-	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
-	//
-	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
-	//
-	// The whole string must be query-encoded.
-	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
-
-	// Filter UUID of a Filter entity to apply to the Unit list.
-	//
-	// The Filter must be in the same Organization as the user credentials.
-	//
-	// The Filter's From field must match the entity type being filtered (Unit).
-	//
-	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
-	//
-	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
-	//
-	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
-	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
-
-	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
-	//
-	// The search is case-insensitive and uses pattern matching to find entities containing the text.
-	//
-	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
-	//
-	// For map fields (like Labels and Annotations), the search matches both map keys and values.
-	//
-	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
-	//
-	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
-	//
-	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
-	//
-	// The whole string must be query-encoded.
-	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
-
-	// Include Include clause for expanding related entities in the response for Unit.
-	// The attribute names are case-sensitive, PascalCase, and
-	// expected in a comma-separated list format as in the JSON encoding.
-	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
-	//
-	// The whole string must be query-encoded.
-	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
-
-	// Revision Revision to approve (defaults to HeadRevisionNum). Can be a revision number, 'LastReleasedRevisionNum', 'Tag:uuid', 'ChangeSet:uuid', etc.
-	Revision *string `form:"revision,omitempty" json:"revision,omitempty" yaml:"revision,omitempty"`
-}
-
 // BulkCancelUnitsParams defines parameters for BulkCancelUnits.
 type BulkCancelUnitsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -15872,8 +15770,8 @@ type BulkCancelUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15888,7 +15786,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15929,7 +15827,7 @@ type BulkCancelUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -15955,8 +15853,8 @@ type BulkMoveUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -15971,7 +15869,7 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16012,7 +15910,7 @@ type BulkMoveUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16041,8 +15939,8 @@ type BulkTagUnitsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16057,7 +15955,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16098,7 +15996,7 @@ type BulkTagUnitsParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16124,8 +16022,8 @@ type ListAllUnitActionsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16196,8 +16094,8 @@ type SearchUnitDataParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16212,7 +16110,7 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16253,7 +16151,7 @@ type SearchUnitDataParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16310,8 +16208,8 @@ type ListAllUnitEventsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16413,8 +16311,8 @@ type SearchUnitMutationSourcesParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16429,7 +16327,7 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ApprovedBy, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16470,7 +16368,7 @@ type SearchUnitMutationSourcesParams struct {
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
 	//
-	// Supported attributes for Unit are ApprovedBy, BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+	// Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -16536,8 +16434,8 @@ type ListUsersParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16608,8 +16506,8 @@ type BulkDeleteViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16689,8 +16587,8 @@ type ListAllViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16807,8 +16705,8 @@ type BulkPatchViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -16915,8 +16813,8 @@ type BulkCreateViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -17002,8 +16900,8 @@ type BulkCreateViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.
@@ -17018,7 +16916,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// Where expression to select destination spaces for cloning views
 	//
@@ -17062,8 +16960,8 @@ type BulkMoveViewsParams struct {
 	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
 	// Integer and boolean literals are also supported for attributes of those types.
 	// Arrays support the `?` operator to to match any element of the array,
-	// as in `ApprovedBy ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
-	// Arrays can perform LEN() to check for length, as in `LEN(ApprovedBy) > 0`.
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
 	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
 	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
 	// Without the `*` such a reference is an error, since it names no single value to compare.

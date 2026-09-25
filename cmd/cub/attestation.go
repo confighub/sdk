@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -181,4 +182,63 @@ func apiFindAttestation(id uuid.UUID) (*goclientnew.ExtendedAttestation, error) 
 		return nil, fmt.Errorf("attestation %s not found", id)
 	}
 	return found[0], nil
+}
+
+// describeRevisionAttestations says what the Attestations covering a Revision claim, one per
+// line: type, result, who recorded it and when, and whether it has been revoked since. A
+// Revision carries only the IDs, so the Attestations and any revocations naming them are listed
+// from its Space. Covering is not satisfying a requirement: expiry, eligibility and the author
+// exclusion are decided by the ChangeWorkflow that reads them.
+func describeRevisionAttestations(spaceID goclientnew.UUID, attestationIDs map[string]string) (string, error) {
+	if len(attestationIDs) == 0 {
+		return "", nil
+	}
+	ids := make([]goclientnew.UUID, 0, len(attestationIDs))
+	for id := range attestationIDs {
+		parsed, err := uuid.Parse(id)
+		if err != nil {
+			return "", errors.Wrapf(err, "invalid attestation id %q", id)
+		}
+		ids = append(ids, parsed)
+	}
+	attestations, err := cubapi.ListAttestations(ctx, cubClient, cubapi.NewWhere("").SpaceID(spaceID).In("AttestationID", ids), cubapi.ListOpts{})
+	if err != nil {
+		return "", err
+	}
+	revocations, err := cubapi.ListAttestations(ctx, cubClient, cubapi.NewWhere("").SpaceID(spaceID).In("RevokedAttestationID", ids), cubapi.ListOpts{})
+	if err != nil {
+		return "", err
+	}
+	revoked := map[goclientnew.UUID]bool{}
+	for _, revocation := range revocations {
+		if revocation.Attestation != nil && revocation.Attestation.RevokedAttestationID != nil {
+			revoked[*revocation.Attestation.RevokedAttestationID] = true
+		}
+	}
+	covering := make([]*goclientnew.Attestation, 0, len(attestations))
+	for _, ea := range attestations {
+		if ea.Attestation != nil {
+			covering = append(covering, ea.Attestation)
+		}
+	}
+	sort.Slice(covering, func(i, j int) bool { return covering[i].CreatedAt.Before(covering[j].CreatedAt) })
+	usernames := map[goclientnew.UUID]string{}
+	lines := make([]string, 0, len(covering))
+	for _, a := range covering {
+		username, ok := usernames[a.UserID]
+		if !ok {
+			username = a.UserID.String()
+			if user, err := apiGetUser(username); err == nil && user != nil && user.Username != "" {
+				username = user.Username
+			}
+			usernames[a.UserID] = username
+		}
+		line := fmt.Sprintf("%s %s by %s at %s (%s)", a.Type, a.Result, username,
+			a.CreatedAt.UTC().Format(time.RFC3339), a.AttestationID)
+		if revoked[a.AttestationID] {
+			line += ", revoked"
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n"), nil
 }

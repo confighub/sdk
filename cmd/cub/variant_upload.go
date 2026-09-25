@@ -170,14 +170,14 @@ Examples:
 }
 
 func init() {
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.component, "component", "", "value for the well-known \"Component\" Space label (required)")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.component, "component", "", "slug of the Component the Space is a Variant of, created if it does not exist (required)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.variant, "variant", "base", "value for the well-known \"Variant\" Space label")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.stage, "stage", "", "value for the well-known \"Stage\" Space label (e.g. Canary)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.environment, "environment", "", "value for the well-known \"Environment\" Space label (e.g. Prod)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.region, "region", "", "value for the well-known \"Region\" Space label (e.g. us-east1)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.layer, "layer", "", "value for the well-known \"Layer\" Space label (e.g. App)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.owner, "owner", "", "value for the well-known \"Owner\" Space label (e.g. Engineering)")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.spacePattern, "space-pattern", "template:{{.Labels.Component}}-{{.Labels.Variant}}", "Go template (prefix 'template:') for the Space slug, evaluated over .Labels")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.spacePattern, "space-pattern", "template:{{.Component.Slug}}-{{.Labels.Variant}}", "Go template (prefix 'template:') for the Space slug, evaluated over .Component and .Labels")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.space, "space", "", "explicit Space slug; overrides --space-pattern")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceName, "source-name", "", "ownership name for the Units, Links, and Invocations this upload writes; defaults to --component")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "the release namespace: where namespaced resources that name no namespace, and cluster-scoped resources, belong")
@@ -225,8 +225,7 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	labels := map[string]string{
-		"Component": a.component,
-		"Variant":   a.variant,
+		"Variant": a.variant,
 	}
 	for _, kv := range a.spaceLabels {
 		key, value, ok := strings.Cut(kv, "=")
@@ -264,7 +263,11 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	if a.target != "" {
 		spaceSlug := a.space
 		if spaceSlug == "" {
-			if spaceSlug, err = renderSpacePattern(a.spacePattern, labels); err != nil {
+			spaceComponent, componentErr := uploadComponent(a.component)
+			if componentErr != nil {
+				return componentErr
+			}
+			if spaceSlug, err = renderSpacePattern(a.spacePattern, spaceComponent, labels); err != nil {
 				return err
 			}
 			spaceSlug = makeSlug(spaceSlug)
@@ -657,17 +660,36 @@ func errString(e *goclientnew.ResponseError) string {
 	return "unknown error"
 }
 
+// uploadComponent is the Component the upload's Space is a Variant of: the one
+// --component names, or, before the upload has created it, an unsaved one with
+// that slug.
+func uploadComponent(name string) (*goclientnew.Component, error) {
+	entity, err := resolveComponent(name, "")
+	if err != nil {
+		if cubapi.IsNotFoundError(err) {
+			return &goclientnew.Component{Slug: name}, nil
+		}
+		return nil, err
+	}
+	return entity.Component, nil
+}
+
 // renderSpacePattern evaluates a --space-pattern (optionally prefixed "template:")
-// over the well-known Space labels. The server renders the pattern itself; this
-// is used only to scope a bare --target slug to the Space being written.
-func renderSpacePattern(pattern string, labels map[string]string) (string, error) {
+// over the Space's Component and the well-known Space labels. The server renders
+// the pattern itself; this is used only to scope a bare --target slug to the
+// Space being written.
+func renderSpacePattern(pattern string, component *goclientnew.Component, labels map[string]string) (string, error) {
 	pattern = strings.TrimPrefix(pattern, "template:")
 	t, err := template.New("space").Parse(pattern)
 	if err != nil {
 		return "", fmt.Errorf("invalid --space-pattern: %w", err)
 	}
 	var b strings.Builder
-	if err := t.Execute(&b, struct{ Labels map[string]string }{Labels: labels}); err != nil {
+	data := struct {
+		Component *goclientnew.Component
+		Labels    map[string]string
+	}{Component: component, Labels: labels}
+	if err := t.Execute(&b, data); err != nil {
 		return "", fmt.Errorf("evaluate --space-pattern: %w", err)
 	}
 	return strings.TrimSpace(b.String()), nil

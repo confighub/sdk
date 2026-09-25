@@ -6,96 +6,60 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { getAccessToken } from '@/auth/sdk';
 
-import { instanceUrl, isBearerMode } from '@/auth/config';
+import { instanceUrl } from '@/auth/config';
 import { handleUnauthorized } from '@/auth/session';
 
 // fetchBaseQuery uses URLSearchParams, which already escapes query parameters.
 // https://redux-toolkit.js.org/rtk-query/api/fetchBaseQuery
 // https://developer.mozilla.org/en-US/docs/Web/API/URLSearchParams
 // https://github.com/reduxjs/redux-toolkit/pull/4568
-const baseQuery = fetchBaseQuery({
-  baseUrl: instanceUrl('/api'),
-  // Cookie mode: the session rides as HttpOnly cookies, so send them. Bearer mode
-  // must not: the API answers cross-origin with Access-Control-Allow-Origin: *,
-  // and a browser refuses that combination for a credentialed request.
-  credentials: isBearerMode() ? 'same-origin' : 'include',
-  isJsonContentType: (headers) => {
-    const ct = headers.get('Content-Type') ?? '';
-    return ct.includes('json');
-  },
-  // Decide how to read a response from what the server says it is, rather than assuming JSON.
-  // The configuration endpoints serve the document itself as application/octet-stream, and the
-  // default 'json' handler JSON.parses every body -- which fails on YAML and surfaces as a
-  // parsing error with no data, i.e. an empty config editor. 'content-type' routes through
-  // isJsonContentType above, so those come back as text and everything else is unchanged.
-  responseHandler: 'content-type',
-  prepareHeaders: (headers, { endpoint }) => {
-    if (isBearerMode()) {
+//
+// Built on first request rather than at import: the URL depends on the runtime
+// config, and a module that only imports these endpoints (a Node-side spec) has
+// no window to read it from.
+let baseQuery: ReturnType<typeof fetchBaseQuery> | undefined;
+const getBaseQuery = () =>
+  (baseQuery ??= fetchBaseQuery({
+    baseUrl: instanceUrl('/api'),
+    // No cookies: the API answers cross-origin with Access-Control-Allow-Origin: *,
+    // and a browser refuses that combination for a credentialed request.
+    credentials: 'same-origin',
+    isJsonContentType: (headers) => {
+      const ct = headers.get('Content-Type') ?? '';
+      return ct.includes('json');
+    },
+    // Decide how to read a response from what the server says it is, rather than assuming JSON.
+    // The configuration endpoints serve the document itself as application/octet-stream, and the
+    // default 'json' handler JSON.parses every body -- which fails on YAML and surfaces as a
+    // parsing error with no data, i.e. an empty config editor. 'content-type' routes through
+    // isJsonContentType above, so those come back as text and everything else is unchanged.
+    responseHandler: 'content-type',
+    prepareHeaders: (headers, { endpoint }) => {
       const token = getAccessToken();
       if (token) headers.set('Authorization', `Bearer ${token}`);
-    }
-    // Set content type for operations that require merge-patch+json
-    if (
-      endpoint.startsWith('patch') ||
-      endpoint.startsWith('bulkPatch') ||
-      endpoint.startsWith('bulkCreate') ||
-      endpoint.startsWith('patchView')
-    ) {
-      headers.set('Content-Type', 'application/merge-patch+json');
-    }
-    return headers;
-  },
-});
-
-export const CLI_SIGN_IN_PATH = '/cli-signin';
-
-/**
- * Whether this instance has an identity provider, from /api/info.
- *
- * Clients dispatch on the auth mechanism the server advertises rather than on a
- * mode name, and an instance with no provider reports an empty AuthServer.
- *
- * Asked once and memoised: it cannot change without the server restarting, and
- * a 401 storm should not produce one request each. A failure here is treated as
- * "there is a provider", which keeps an unreachable /api/info behaving exactly
- * as it did before this existed.
- */
-let identityProviderPresence: Promise<boolean> | undefined;
-
-const hasIdentityProvider = (): Promise<boolean> => {
-  identityProviderPresence ??= fetch('/api/info', { credentials: 'include' })
-    .then((response) => (response.ok ? response.json() : null))
-    .then((info: { AuthServer?: string } | null) =>
-      info ? Boolean(info.AuthServer) : true,
-    )
-    .catch(() => true);
-  return identityProviderPresence;
-};
+      // Set content type for operations that require merge-patch+json
+      if (
+        endpoint.startsWith('patch') ||
+        endpoint.startsWith('bulkPatch') ||
+        endpoint.startsWith('bulkCreate') ||
+        endpoint.startsWith('patchView')
+      ) {
+        headers.set('Content-Type', 'application/merge-patch+json');
+      }
+      return headers;
+    },
+  }));
 
 const baseQueryWithReauth: BaseQueryFn<
   string | FetchArgs,
   unknown,
   FetchBaseQueryError
 > = async (args, api, extraOptions) => {
-  let result = await baseQuery(args, api, extraOptions);
+  const result = await getBaseQuery()(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401 && isBearerMode()) {
+  if (result.error && result.error.status === 401) {
     // The token is stale or gone; the auth layer decides how to recover.
     handleUnauthorized();
-  } else if (result.error && result.error.status === 401) {
-    // Unauthorized. Where to send them depends on whether this instance has an
-    // identity provider; only asked here, on the path that needs the answer.
-    if (await hasIdentityProvider()) {
-      const redirectUri = encodeURIComponent(`${window.location.origin}/auth/callback`);
-      window.location.href =
-        '/auth/login?state=' +
-        window.location.pathname +
-        (window.location.search ?? '') +
-        '&redirect_uri=' +
-        redirectUri;
-    } else if (window.location.pathname !== CLI_SIGN_IN_PATH) {
-      window.location.href = CLI_SIGN_IN_PATH;
-    }
   }
 
   if (result.error && result.error.status === 403) {
@@ -112,15 +76,10 @@ const baseQueryWithReauth: BaseQueryFn<
     const errorMessage = errorData?.message || '';
     const isPendingApproval = errorMessage.includes('pending approval');
 
-    if (isPendingApproval && isBearerMode()) {
+    if (isPendingApproval) {
       // The page's "try again" starts a fresh login, which is what picks up the
       // approval; there is no server session to end first.
       window.location.replace('/pending-approval');
-    } else if (isPendingApproval) {
-      // For pending approval, log out the user first so they get a fresh JWT when approved
-      // The return_to parameter will bring them back to the pending approval page
-      const returnTo = encodeURIComponent(`${window.location.origin}/pending-approval`);
-      window.location.href = `/auth/logout?return_to=${returnTo}`;
     } else {
       // Regular access denied - just show the access denied page
       window.location.replace('/access-denied');

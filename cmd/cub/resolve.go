@@ -149,6 +149,16 @@ func resolveTargetID(ref string) (uuid.UUID, error) {
 	return target.Target.TargetID, nil
 }
 
+// resolveComponentID resolves a Component by slug or ID. A Component is not in a
+// Space, so it selects no SpaceID.
+func resolveComponentID(ref string) (uuid.UUID, error) {
+	component, err := resolveComponent(ref, "ComponentID,Slug")
+	if err != nil {
+		return uuid.Nil, err
+	}
+	return component.Component.ComponentID, nil
+}
+
 func resolveFilterID(ref string) (uuid.UUID, error) {
 	filter, err := resolveFilter(ref, defaultSpaceID(), idSelect("FilterID"))
 	if err != nil {

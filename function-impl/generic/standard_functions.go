@@ -44,8 +44,6 @@ func RegisterStandardFunctions(fh handler.FunctionRegistry, converter configkit.
 	registerSelectWhereResource(fh, converter, resourceProvider)
 	registerYQ(fh, converter, resourceProvider)
 	registerYQI(fh, converter, resourceProvider)
-	registerIsApproved(fh, converter, resourceProvider)
-	registerVetApprovedBy(fh, converter, resourceProvider)
 	registerVetNoMergeConflicts(fh, converter, resourceProvider)
 	registerEnsureContext(fh, converter, resourceProvider)
 	registerUpsertResource(fh, converter, resourceProvider)

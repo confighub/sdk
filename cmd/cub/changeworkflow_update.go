@@ -19,10 +19,10 @@ var changeworkflowUpdateCmd = &cobra.Command{
 	Short: "Update a change workflow or multiple change workflows",
 	Long: getCommandHelp(`Update a change workflow or multiple change workflows using bulk operations.
 
-A workflow is edited in place rather than versioned, and a promotion reads it as it stands. Editing
-one part way through a rollout therefore changes the rules a change already started under; a
-rollout that must not move is served by cloning the workflow and pointing the new change orders at
-the clone.
+A workflow is edited in place rather than versioned. A change order takes a copy of its workflow
+when it is created and is promoted and released against that copy, so an edit applies to the change
+orders created after it and changes nothing about a rollout already under way. To move a change
+under the edited rules, create a new change order for it.
 
 Single change workflow update:
 `+"```"+`

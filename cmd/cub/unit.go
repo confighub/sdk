@@ -30,7 +30,7 @@ Unit lifecycle workflow:
 1. Create units from configuration files ('unit create')
 2. Inspect and modify units using functions ('function do')
 3. Validate configuration ('function do' with validation functions)
-4. Approve units for deployment ('unit approve')
+4. Approve the space's changes ('variant approve') where its change workflow requires it
 5. Publish a Release for the space ('release publish'), which Argo CD / Flux pull
 
 Key commands for agents:

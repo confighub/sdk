@@ -52,7 +52,7 @@ Agent inspection workflow:
 Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
 - Revision tracking: HeadRevisionNum vs LastReleasedRevisionNum shows pending changes
-- Approval state: ApprovedBy list and ValidationErrors status
+- Validation state: ValidationErrors, and the Attestations covering the head Revision
 - Configuration data: Actual YAML/HCL content via 'cub unit data'
 
 Important flags for agents:
@@ -70,8 +70,8 @@ Common agent patterns:
   # Check if unit has pending changes
   cub unit get my-app --space prod -o jq='.Unit.HeadRevisionNum > .Unit.LastReleasedRevisionNum'
 
-  # Get approval status
-  cub unit get my-app --space prod -o jq='.Unit.ApprovedBy | length'
+  # Check whether the unit is gated
+  cub unit get my-app --space prod -o jq='.Unit.ValidationErrors'
 
 Use the slug or UUID to identify the unit. Slugs are more human-readable and typically preferred.`
 
@@ -220,15 +220,19 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			view.Append([]string{"Validation Warnings", validationErrorsToString(unitDetails.Unit.ValidationWarnings)})
 		}
 
-		if len(unitDetails.ApprovedBy) != 0 {
-			usernames := make([]string, 0, len(unitDetails.ApprovedBy))
-			for _, approver := range unitDetails.ApprovedBy {
-				usernames = append(usernames, approver.Username)
+		// Attestations are made of Revisions, not Units, so these are the ones recorded of the
+		// head. An earlier Revision with the same content is covered too, which `cub revision
+		// list --where "LEN(Attestations) > 0"` shows.
+		if unitDetails.Unit.HeadRevisionNum > 0 {
+			head, err := apiGetRevisionFromNumberInSpace(int64(unitDetails.Unit.HeadRevisionNum),
+				unitDetails.Unit.UnitID.String(), unitDetails.Unit.SpaceID.String(), "RevisionNum,Attestations,SpaceID")
+			if err == nil && len(head.Attestations) != 0 {
+				attestations, err := describeRevisionAttestations(head.SpaceID, head.Attestations)
+				if err != nil {
+					attestations = fmt.Sprintf("%d, which could not be read: %v", len(head.Attestations), err)
+				}
+				view.Append([]string{"Head Attestations", attestations})
 			}
-			sort.Strings(usernames)
-			view.Append([]string{"Approved By", strings.Join(usernames, ", ")})
-		} else if len(unitDetails.Unit.ApprovedBy) != 0 {
-			view.Append([]string{"Approved By", strings.Join(resolveUsernames(unitDetails.Unit.ApprovedBy), ", ")})
 		}
 
 		if len(unitDetails.Unit.Values) != 0 {
@@ -364,7 +368,7 @@ func displayUnitDetails(unitDetails *goclientnew.Unit) {
 	displayExtendedUnitDetails(extendedUnit)
 }
 
-// unitGetInclude is what `cub unit get` expands, which is the list's set plus the two a single
-// Unit is worth the extra joins for: the Space the upstream is in, and the users who approved.
-// The list pays those per row and shows neither.
-const unitGetInclude = unitListInclude + ",UpstreamSpaceID,ApprovedBy"
+// unitGetInclude is what `cub unit get` expands, which is the list's set plus the one a single
+// Unit is worth the extra join for: the Space the upstream is in. The list pays that per row and
+// does not show it.
+const unitGetInclude = unitListInclude + ",UpstreamSpaceID"
