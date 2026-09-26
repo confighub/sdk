@@ -341,9 +341,12 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChangeOrder, dryRun bool) {
 	counts := map[string]int{}
 	var clones, outside []string
+	createdInSpace := 0
 	for _, unit := range space.Units {
 		counts[unit.Action]++
 		switch {
+		case unit.Action == promoteUnitActionMark && unit.Reason == "CreatedInSpace":
+			createdInSpace++
 		case unit.Action == promoteUnitActionClone:
 			clones = append(clones, unit.Slug)
 		case unit.Action == promoteUnitActionSkip && unit.Reason == "CreatedAfterChangeOrder":
@@ -373,8 +376,11 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 	if n := counts[promoteUnitActionRevive]; n > 0 {
 		tprint("  %d of them revived, as their upstream units have content again", n)
 	}
-	if n := counts[promoteUnitActionMark]; n > 0 {
+	if n := counts[promoteUnitActionMark] - createdInSpace; n > 0 {
 		tprint("Marked %d unit(s) the change order covers and carries no changes for", n)
+	}
+	if createdInSpace > 0 {
+		tprint("Marked %d unit(s) created in this space as part of the change order", createdInSpace)
 	}
 	if n := counts[promoteUnitActionInvoke]; n > 0 {
 		tprint("Ran change order %s on %d unit(s)", promoteChangeOrderSlug, n)

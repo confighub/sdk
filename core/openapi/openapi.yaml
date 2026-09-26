@@ -38211,7 +38211,9 @@ components:
           x-go-type-skip-optional-pointer: true
         Reason:
           description: 'For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder,
-            or AlreadyTaken.'
+            AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder
+            does not cover it. For Mark: CreatedInSpace, when the Unit was created
+            in this Space and the ChangeOrder is scoped over it.'
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -38223,6 +38225,7 @@ components:
           format: uuid
           type: string
         UpstreamUnitID:
+          description: Absent for a Unit created in this Space.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string

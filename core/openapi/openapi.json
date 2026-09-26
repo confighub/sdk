@@ -41274,7 +41274,7 @@
           },
           "Reason": {
             "type": "string",
-            "description": "For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, or AlreadyTaken.",
+            "description": "For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it.",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -41289,6 +41289,7 @@
           },
           "UpstreamUnitID": {
             "type": "string",
+            "description": "Absent for a Unit created in this Space.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           }

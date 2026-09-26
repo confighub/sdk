@@ -2607,12 +2607,14 @@ type PromoteUnitResult struct {
 	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
 	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
 
-	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, or AlreadyTaken.
+	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it.
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Slug   string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
 	// UnitID Absent for a clone a dry run would create.
-	UnitID         *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UpstreamUnitID Absent for a Unit created in this Space.
 	UpstreamUnitID *openapi_types.UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
 }
 
