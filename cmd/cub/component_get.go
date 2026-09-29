@@ -24,6 +24,9 @@ Examples:
 
   # Get component details in JSON format
   cub component get --json my-app
+
+  # Get the component's ID
+  cub component get my-app -o jq=.Component.ComponentID
 `+"```"+`
 `, ""),
 	RunE: componentGetCmdRun,
@@ -39,8 +42,14 @@ func componentGetCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	displayGetResults(extendedComponent.Component, displayComponentEntityDetails)
+	displayGetResults(extendedComponent, displayExtendedComponentDetails)
 	return nil
+}
+
+// displayExtendedComponentDetails renders what get returns: the Component wrapped the way every
+// other get's entity is, so -o json and -o jq read it as .Component, as list does.
+func displayExtendedComponentDetails(extendedComponent *goclientnew.ExtendedComponent) {
+	displayComponentEntityDetails(extendedComponent.Component)
 }
 
 func allowedChangeWorkflowIDsToString(allowed []goclientnew.UUID) string {

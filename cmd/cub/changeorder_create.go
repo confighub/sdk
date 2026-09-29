@@ -41,7 +41,7 @@ Examples:
     --in-scope-space staging,prod-use2,prod-usw2
 
   # The list is a list, so work it out however you like and pass the answer
-  COMPONENT_ID=$(cub component get my-app -o jq=.ComponentID)
+  COMPONENT_ID=$(cub component get my-app -o jq=.Component.ComponentID)
   SPACES=$(cub space list --quiet --no-headers -o name --where "ComponentID = '$COMPONENT_ID'" | paste -sd, -)
   cub changeorder create --space my-space bump-base-image --in-scope-space "$SPACES"
 

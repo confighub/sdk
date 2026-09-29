@@ -28,7 +28,7 @@ Examples:
   cub unit cancel --space my-space --where "Status = 'Progressing'"
 
   # Cancel operations for one component's units in dev
-  COMPONENT_ID=$(cub component get api -o jq=.ComponentID)
+  COMPONENT_ID=$(cub component get api -o jq=.Component.ComponentID)
   cub unit cancel --space "*" --where "Space.ComponentID = '$COMPONENT_ID' AND Space.Labels.Environment = 'dev'"
 
   # Cancel operations for specific units by slug

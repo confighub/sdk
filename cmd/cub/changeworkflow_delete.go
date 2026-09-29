@@ -32,7 +32,7 @@ Delete multiple change workflows at once based on search criteria.
 Examples:
 `+"```"+`
   # Delete the workflows of a retired component's spaces
-  COMPONENT_ID=$(cub component get legacy-app -o jq=.ComponentID)
+  COMPONENT_ID=$(cub component get legacy-app -o jq=.Component.ComponentID)
   cub changeworkflow delete --space "*" --where "Space.ComponentID = '$COMPONENT_ID'"
 
   # Delete specific change workflows by slug

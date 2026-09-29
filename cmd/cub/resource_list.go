@@ -56,7 +56,7 @@ Examples:
   cub resource list --space "*" --where "Space.Labels.Environment = 'prod' AND ResourceType = 'v1/Service'"
 
   # Filter by its space's Component
-  COMPONENT_ID=$(cub component get checkout -o jq=.ComponentID)
+  COMPONENT_ID=$(cub component get checkout -o jq=.Component.ComponentID)
   cub resource list --space "*" --where "Space.ComponentID = '$COMPONENT_ID'"
 
   # Find Deployments running more than one replica

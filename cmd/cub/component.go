@@ -54,7 +54,7 @@ changes are promoted downstream.`
 upload' sets and 'cub variant create' inherits from the upstream space.
 
 The equivalent raw query is:
-  COMPONENT_ID=$(cub component get my-app -o jq=.ComponentID)
+  COMPONENT_ID=$(cub component get my-app -o jq=.Component.ComponentID)
   cub space list --where "ComponentID = '$COMPONENT_ID'"
 
 'component open' is interactive — it launches a browser — so prefer 'component list' and the space
