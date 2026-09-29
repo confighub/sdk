@@ -3136,7 +3136,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -3299,7 +3299,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -3429,7 +3429,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -3706,7 +3706,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6647,6 +6647,147 @@
           },
           "500": {
             "description": "Something went wrong while processing Component.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/demote": {
+      "post": {
+        "tags": [
+          "Demote"
+        ],
+        "summary": "Undo an aborted ChangeOrder in the Spaces it reached",
+        "description": "Restores each Unit the ChangeOrder's start Tag marks to the Revision it was at before the change, in every Space the ChangeOrder reached, or those WhereSpace, SpaceFilterID and TargetStage select. The ChangeOrder must have an AbortedReason. A Unit already restored is passed over, and a Unit the ChangeOrder carried nothing for is marked without a Revision being made. Revisions made after the change that restoring drops are reported. Demoting again changes nothing.",
+        "operationId": "Demote",
+        "parameters": [
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "Plan the demotion and return the same response without writing anything.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DemoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoteResult"
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Multi-Status: some Unit writes failed, each carrying its own error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoteResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Demote request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Demote not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Demote data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "The plan differs from ExpectedPlan. Nothing was written.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Demote.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15767,7 +15908,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ChangeOrders returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -25810,11 +25951,20 @@
           {
             "name": "change_order",
             "in": "query",
-            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
+            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
             "required": false,
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "prior_revisions",
+            "in": "query",
+            "description": "With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -26225,11 +26375,20 @@
           {
             "name": "change_order",
             "in": "query",
-            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
+            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
             "required": false,
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "prior_revisions",
+            "in": "query",
+            "description": "With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -32932,11 +33091,20 @@
           {
             "name": "change_order",
             "in": "query",
-            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
+            "description": "ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.",
             "required": false,
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "prior_revisions",
+            "in": "query",
+            "description": "With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.",
+            "required": false,
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -37684,6 +37852,14 @@
             "description": "Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.",
             "x-go-type-skip-optional-pointer": true
           },
+          "PromotionFailures": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderPromotionFailure"
+            },
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "PromotionOverrides": {
             "type": "array",
             "items": {
@@ -37799,7 +37975,7 @@
           },
           "UpdateType": {
             "type": "string",
-            "description": "UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened.",
+            "description": "UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's component into it: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.",
             "x-go-type-skip-optional-pointer": true
           },
           "UpdatedAt": {
@@ -37838,6 +38014,90 @@
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
+          }
+        }
+      },
+      "ChangeOrderPromotionFailure": {
+        "type": "object",
+        "properties": {
+          "FailedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Spaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderPromotionFailureSpace"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "TargetStage": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ChangeOrderPromotionFailureSpace": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Error": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Stage": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderPromotionFailureUnit"
+            },
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ChangeOrderPromotionFailureUnit": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Slug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           }
         }
       },
@@ -38560,6 +38820,187 @@
           }
         },
         "description": "Response for successful delete operation"
+      },
+      "DemoteRequest": {
+        "required": [
+          "ChangeOrderID"
+        ],
+        "type": "object",
+        "properties": {
+          "ChangeDescription": {
+            "type": "string",
+            "description": "Recorded on each restored Revision. Defaults to naming the ChangeOrder undone.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeOrderID": {
+            "type": "string",
+            "description": "The ChangeOrder to undo. It must have an AbortedReason. Which Units are restored is the Units its start Tag marks.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ChangeSetID": {
+            "type": "string",
+            "description": "An existing open ChangeSet to record every write in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "ExpectedPlan": {
+            "type": "string",
+            "description": "The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceFilterID": {
+            "type": "string",
+            "description": "A Filter over Spaces narrowing the Spaces to demote.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "TargetStage": {
+            "type": "string",
+            "description": "A Stage of the ChangeOrder's ChangeWorkflow whose Spaces to demote.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "WhereSpace": {
+            "type": "string",
+            "description": "A where expression narrowing the Spaces to demote. Without any selector, every Space the ChangeOrder marked is demoted.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "DemoteResult": {
+        "type": "object",
+        "properties": {
+          "ChangeOrderID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DryRun": {
+            "type": "boolean",
+            "description": "True when nothing was written.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Plan": {
+            "type": "string",
+            "description": "Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Spaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemoteSpaceResult"
+            },
+            "description": "Downstream Spaces first.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "DemoteSpaceResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Demote, Unchanged, Skipped, or Failed.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "Reason": {
+            "type": "string",
+            "description": "Why the Space was Skipped.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Stage": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Units": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DemoteUnitResult"
+            },
+            "description": "The Units the ChangeOrder's start Tag marks in the Space.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "DemoteUnitResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Restore, Mark, or Unchanged.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DropsFromRevisionNum": {
+            "type": "integer",
+            "description": "The first Revision after the change that restoring drops, when the head had moved past where the change arrived.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DropsToRevisionNum": {
+            "type": "integer",
+            "description": "The last Revision that restoring drops.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "EndRevisionNum": {
+            "type": "integer",
+            "description": "The Revision the change arrived at.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "Mutations": {
+            "$ref": "#/components/schemas/ResourceMutationList"
+          },
+          "PreviousHeadMutationNum": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "PreviousHeadRevisionNum": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Reason": {
+            "type": "string",
+            "description": "For Unchanged: AlreadyRestored.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Slug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "StartRevisionNum": {
+            "type": "integer",
+            "description": "The Revision the change started from, which the Unit is restored to.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "ErrorItem": {
         "type": "object",
@@ -41090,6 +41531,16 @@
             "description": "Why the gates were overridden. Required with Force.",
             "x-go-type-skip-optional-pointer": true
           },
+          "PriorRevisions": {
+            "enum": [
+              "Include",
+              "Skip",
+              "Error"
+            ],
+            "type": "string",
+            "description": "With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include (the default) merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start; Error refuses, naming the Revisions. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "SpaceFilterID": {
             "type": "string",
             "description": "A Filter over Spaces selecting the Spaces to promote. Intersected with the other selectors.",
@@ -41250,7 +41701,7 @@
         "properties": {
           "Action": {
             "type": "string",
-            "description": "Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.",
+            "description": "Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.",
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
@@ -41258,6 +41709,19 @@
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
+          },
+          "HeadRevisionNum": {
+            "type": "integer",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LinkIDs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UUID"
+            },
+            "description": "For a Resolve, and a Mark made by one, the Links resolved.",
+            "x-go-type-skip-optional-pointer": true
           },
           "Mutations": {
             "$ref": "#/components/schemas/ResourceMutationList"
@@ -41274,7 +41738,7 @@
           },
           "Reason": {
             "type": "string",
-            "description": "For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it.",
+            "description": "For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it. For an applied Upgrade or Resolve: NoChange, when the Unit already held the change, so no Revision was made and the ChangeOrder's Tags mark its head.",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {
@@ -41289,7 +41753,7 @@
           },
           "UpstreamUnitID": {
             "type": "string",
-            "description": "Absent for a Unit created in this Space.",
+            "description": "Absent for a Unit created in this Space, and for a Resolve over Links to more than one Unit.",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           }

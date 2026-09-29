@@ -58,11 +58,8 @@ func unitOpenCmdRun(_ *cobra.Command, args []string) error {
 		}
 		return openWebUI(cubapi.GetUnitListURL(webUIServerURL()))
 	}
-	// The unit list page is org-wide, so this command is OrgLevel, but resolving
-	// a unit slug still needs one concrete space.
-	if selectedSpaceID == "*" {
-		return errors.New("space is required to open a specific unit. Set with --space option or set in context with the context sub-command")
-	}
+	// Without --space the lookup is organization-wide: "space/slug" names the
+	// space, and a bare slug found in more than one space is refused by the resolver.
 	unit, err := resolveUnit(args[0], selectedSpaceID, "UnitID,SpaceID")
 	if err != nil {
 		return err

@@ -4,40 +4,57 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"sort"
 	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 var variantDemoteArgs struct {
 	changeDescription string
 	changeorderSlug   string
+	changesetSlug     string
+	whereSpace        string
+	filterSpace       string
+	targetStage       string
+	expectedPlan      string
 	dryRun            bool
 }
 
+// What the server reports it did, or would do, to a Space and a Unit.
+const (
+	demoteSpaceActionSkipped = "Skipped"
+	demoteSpaceActionFailed  = "Failed"
+
+	demoteUnitActionRestore   = "Restore"
+	demoteUnitActionMark      = "Mark"
+	demoteUnitActionUnchanged = "Unchanged"
+)
+
 var variantDemoteCmd = &cobra.Command{
-	Use:         "demote <space>",
-	Short:       "Undo a change order in a space, restoring the revisions before it",
+	Use:         "demote [<space>]",
+	Short:       "Undo a change order, restoring the revisions before it",
 	Annotations: map[string]string{"OrgLevel": ""},
-	Long: getCommandHelp(`Undo a change order in one space, restoring each unit it marked to the revision
-that unit was at before the change.
+	Long: getCommandHelp(`Undo a change order in the spaces it reached, restoring each unit it marked to the
+revision that unit was at before the change.
 
 Aborting a change order says the change is not coming to the spaces still waiting for it. It
 changes nothing about the ones that already took it, which is what leaves a fleet part-way
-through a change nobody is going to finish. Demote is what takes it back out, space by space.
+through a change nobody is going to finish. Demote is what takes it back out.
+
+The spaces are the named space, or those --where-space, --filter-space and --target-stage select
+among the spaces the change order reached. With none of them, demote takes the change order out
+of every space it reached, including the one it was made in. A selected space it never reached is
+reported and left alone.
 
 The change order must have an AbortedReason. Setting it is the decision that the change is not
 coming; undoing one nobody has said that about is a race with whoever is still promoting it.
 
 Which units are restored is the change order's answer rather than a selection of your own: the
-units of this space its start tag marks. A unit it covered but carried no changes for is marked
+units of each space its start tag marks. A unit it covered but carried no changes for is marked
 as restored without a revision being made -- there is nothing of it here to undo, and the
 revisions after it, if any, are somebody else's change.
 
@@ -53,13 +70,12 @@ change order's State reads Restored once every space that took it has been, and 
 once every space that had released it has released the restored revisions.
 
 The change order is named the way any entity in another space is: a bare slug resolves in the space
-being demoted, which is where the change order resides only when that space is where the change was
-made, and a <space>/<slug> or a UUID names one anywhere else -- which is what a variant's is, since
-it lives upstream, possibly several hops up.
+being demoted, or in the selected space when no space is named, and a <space>/<slug> or a UUID names
+one anywhere else -- which is what a variant's is, since it lives upstream, possibly several hops
+up.
 
-Demote does not promote the restored revisions onward, and does not restore the spaces downstream
-of this one. Each is demoted on its own account, because what it goes back to has to be released
-where the change was released. What demote does do is advance the merge pointers of the links that
+Demote does not promote the restored revisions onward. Each space is restored on its own account,
+because what it goes back to has to be released where the change was released. What demote does do is advance the merge pointers of the links that
 follow this space's units onto the restored revisions, so that a later upgrade does not replay the
 change that was just taken out.
 
@@ -72,7 +88,9 @@ Publishing is separate, as it is for promotion: "cub release publish" is what ta
 revisions to a cluster.
 
 A unit whose head has moved past where the change order ended has changes the restore will drop,
-and they are reported before anything is written. Nothing re-applies them: the restored revisions
+and they are reported, by --dry-run before anything is written. To apply exactly what a dry run
+showed, pass its Plan (-o jq=.Plan) as --expected-plan: nothing is written if the demotion would
+now do anything different. Nothing re-applies them: the restored revisions
 are expected to be released first, and re-applying them is a forward change to make afterwards.
 
 Examples:
@@ -85,15 +103,26 @@ Examples:
 
   # Undo it in a variant, naming the change order in the space it was made in
   cub variant demote web-prod --change-order web-base/release-42 --change-desc "back out 1.42"
+
+  # Undo it everywhere it reached
+  cub variant demote --change-order web-base/release-42
+
+  # Undo it in the spaces of one stage of its change workflow
+  cub variant demote --change-order web-base/release-42 --target-stage prod
 `+"```"+`
 `, ""),
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: variantDemoteCmdRun,
 }
 
 func init() {
 	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.changeorderSlug, "change-order", "", "change order to undo (required): a bare slug resolves in the space being demoted, which is where it resides only when that space is where the change was made; a variant's is <space>/<slug> or a UUID")
 	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.changeDescription, "change-desc", "", "change description recorded on the restored revisions")
+	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.changesetSlug, "changeset", "", "changeset to record the restored revisions in")
+	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.whereSpace, "where-space", "", "where expression narrowing the spaces the change order reached, instead of naming one")
+	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.filterSpace, "filter-space", "", "filter over spaces narrowing the spaces the change order reached")
+	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow whose spaces to demote")
+	variantDemoteCmd.Flags().StringVar(&variantDemoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same demotion returned; nothing is written if the demotion would now do anything different")
 	variantDemoteCmd.Flags().BoolVar(&variantDemoteArgs.dryRun, "dry-run", false, "report the units that would be restored, and the later revisions the restore would drop, without changing anything")
 	addStandardDisplayFlags(variantDemoteCmd)
 	variantCmd.AddCommand(variantDemoteCmd)
@@ -103,255 +132,210 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantDemoteArgs.changeorderSlug == "" {
 		return errors.New("demote needs --change-order: what it undoes is one named change, and which units that is comes from the change order")
 	}
-	space, err := resolveSpace(args[0], "*")
-	if err != nil {
-		return err
+	if len(args) > 0 && (variantDemoteArgs.whereSpace != "" || variantDemoteArgs.filterSpace != "") {
+		return errors.New("name the space to demote or select spaces with --where-space and --filter-space, not both")
+	}
+	req := goclientnew.DemoteRequest{
+		ChangeDescription: variantDemoteArgs.changeDescription,
+		WhereSpace:        variantDemoteArgs.whereSpace,
+		TargetStage:       variantDemoteArgs.targetStage,
+		ExpectedPlan:      variantDemoteArgs.expectedPlan,
 	}
 
-	// Demote names its space positionally rather than through --space, so the selected space is
-	// whatever the context defaults to -- possibly nothing. Point it at the space being demoted:
-	// the helpers that render mutations resolve units through it, and one of them parses it as a
-	// UUID.
-	selectedSpaceID = space.Space.SpaceID.String()
-	selectedSpaceSlug = space.Space.Slug
-
-	// A change order resides in the space the change was made in, which is this space only when
-	// the source of the change is what is being undone. A variant's is upstream of it, and may be
-	// several hops upstream, so it is named the way every other entity in another space is:
-	// <space>/<slug>, or by UUID.
+	// A change order resides in the space the change was made in, which is the space being
+	// demoted only when the source of the change is what is being undone. A variant's is upstream
+	// of it, and may be several hops upstream, so it is named the way every other entity in
+	// another space is: <space>/<slug>, or by UUID. A bare slug resolves in the space named, or
+	// in the selected space.
+	if len(args) > 0 {
+		space, err := resolveSpace(args[0], "*")
+		if err != nil {
+			return err
+		}
+		req.WhereSpace = fmt.Sprintf("SpaceID = '%s'", space.Space.SpaceID)
+		// The helpers that render mutations resolve units through the selected space.
+		selectedSpaceID = space.Space.SpaceID.String()
+		selectedSpaceSlug = space.Space.Slug
+	}
 	changeOrder, err := changeOrderByRef(variantDemoteArgs.changeorderSlug)
 	if err != nil {
 		return err
 	}
-	// Refused by the server too. Saying it here means the caller hears it before the units are
-	// listed, and hears it once rather than once per unit.
-	if changeOrder.AbortedReason == "" {
-		return errors.Newf("change order '%s' has not been aborted; set its AbortedReason to say why the change is not coming, then demote:\n  cub changeorder update --space %s %s --aborted-reason \"<why>\"",
-			changeOrder.Slug, changeOrder.SpaceID, changeOrder.Slug)
+	req.ChangeOrderID = changeOrder.ChangeOrderID
+	if variantDemoteArgs.filterSpace != "" {
+		filterID, err := resolveFilterID(variantDemoteArgs.filterSpace)
+		if err != nil {
+			return err
+		}
+		req.SpaceFilterID = &filterID
+	}
+	if variantDemoteArgs.changesetSlug != "" {
+		changeSetID, err := resolveChangeSetID(variantDemoteArgs.changesetSlug)
+		if err != nil {
+			return errors.Wrap(err, "failed to get changeset")
+		}
+		req.ChangeSetID = &changeSetID
 	}
 
-	marked, alreadyUndone, err := demoteMarkedUnits(space.Space.SpaceID, changeOrder)
+	var with []func(*goclientnew.DemoteParams)
+	if shouldDisplayMutations() {
+		with = append(with, cubapi.WithDemoteMutations)
+	}
+	result, err := cubapi.Demote(ctx, cubClient, req, variantDemoteArgs.dryRun, with...)
 	if err != nil {
 		return err
 	}
-	if alreadyUndone > 0 && !jsonOutput && outputFormat == "" {
-		tprint("Leaving %d unit(s) of %s alone: change order %s has already been taken back out of them",
-			alreadyUndone, space.Space.Slug, changeOrder.Slug)
+	if !renderPayload(result) {
+		displayDemoteResult(result, changeOrder.Slug)
 	}
-	if len(marked) == 0 {
-		if !jsonOutput && outputFormat == "" {
-			if alreadyUndone > 0 {
-				tprint("Nothing left to restore in %s", space.Space.Slug)
-			} else {
-				tprint("Change order %s marks no unit of %s, so there is nothing to restore there",
-					changeOrder.Slug, space.Space.Slug)
+	// Demote waits for the triggers of what it wrote, since publishing the restored revisions is
+	// what comes next. A dry run changed nothing, so there is nothing to wait for.
+	if !variantDemoteArgs.dryRun {
+		if err := awaitDemotedUnits(result); err != nil {
+			return err
+		}
+	}
+	return demoteResultError(result, len(args) > 0)
+}
+
+// displayDemoteResult prints what the demotion did, or on a dry run would do, space by space.
+func displayDemoteResult(result *goclientnew.DemoteResult, changeOrderSlug string) {
+	showText := !isAlternativeOutput()
+	dryRun := variantDemoteArgs.dryRun
+	for i := range result.Spaces {
+		space := &result.Spaces[i]
+		if space.Action == demoteSpaceActionFailed {
+			continue
+		}
+		if space.Action == demoteSpaceActionSkipped {
+			if showText {
+				tprint("Change order %s marks no unit of %s, so there is nothing to restore there", changeOrderSlug, space.SpaceSlug)
 			}
-		}
-		return nil
-	}
-	demoteReportDroppedRevisions(marked)
-
-	return demoteRestoreUnits(space.Space.SpaceID, changeOrder, marked)
-}
-
-// demotedUnit is one unit of the space being demoted, and what the change order left on it.
-type demotedUnit struct {
-	unitID uuid.UUID
-	slug   string
-	// startRevisionNum is the revision the unit was at before the change, which the change order's
-	// start tag marks and which restoring goes back to.
-	startRevisionNum int64
-	// endRevisionNum is the revision the change arrived at here, which the change order's end tag
-	// marks. Revisions after it are later changes, and restoring drops them.
-	endRevisionNum  int64
-	headRevisionNum int64
-}
-
-// demoteMarkedUnits finds the units of a space this demote restores, and reports how many it leaves
-// alone because they have already been restored.
-//
-// The marks are the answer rather than a where clause of ours. A change order covers the units the
-// change is about, including the ones it carried no changes for, and which those are was decided
-// when its scope was fixed; a selection made here would be a second description of that set, and
-// the server refuses a unit the change order never marked rather than passing it over.
-//
-// A unit carrying the change order's restore tag has already had it taken back out. The server
-// passes such a unit over, and leaving it out here is what keeps what demote reports -- the count,
-// and which later revisions it says it would drop -- describing what it is going to do.
-func demoteMarkedUnits(spaceID uuid.UUID, changeOrder *goclientnew.ChangeOrder) ([]*demotedUnit, int, error) {
-	started, err := demoteRevisionsWithTag(spaceID, changeOrder.StartTagID)
-	if err != nil {
-		return nil, 0, err
-	}
-	if len(started) == 0 {
-		return nil, 0, nil
-	}
-	ended, err := demoteRevisionsWithTag(spaceID, changeOrder.EndTagID)
-	if err != nil {
-		return nil, 0, err
-	}
-	// Empty until something has been restored, which is every change order that has only ever
-	// moved forwards. An unset UUID reads back as the zero one rather than being absent.
-	undone := map[uuid.UUID]int64{}
-	if changeOrder.RestoreTagID != uuid.Nil {
-		undone, err = demoteRevisionsWithTag(spaceID, changeOrder.RestoreTagID)
-		if err != nil {
-			return nil, 0, err
-		}
-	}
-
-	units, err := apiListUnits(spaceID.String(), "", "UnitID,Slug,HeadRevisionNum")
-	if err != nil {
-		return nil, 0, err
-	}
-	marked := make([]*demotedUnit, 0, len(started))
-	alreadyUndone := 0
-	for _, unit := range units {
-		if _, isMarked := started[unit.UnitID]; !isMarked {
 			continue
 		}
-		if _, isUndone := undone[unit.UnitID]; isUndone {
-			alreadyUndone++
-			continue
+		if showText {
+			if len(result.Spaces) > 1 {
+				tprint("Demoting %s...", space.SpaceSlug)
+			}
+			displayDemoteSpaceSummary(space, changeOrderSlug, dryRun)
 		}
-		marked = append(marked, &demotedUnit{
-			unitID:           unit.UnitID,
-			slug:             unit.Slug,
-			startRevisionNum: started[unit.UnitID],
-			endRevisionNum:   ended[unit.UnitID],
-			headRevisionNum:  unit.HeadRevisionNum,
-		})
+		if shouldDisplayMutations() {
+			displayDemoteSpaceMutations(space, dryRun)
+		}
 	}
-	sort.Slice(marked, func(i, j int) bool { return marked[i].slug < marked[j].slug })
-	return marked, alreadyUndone, nil
 }
 
-// demoteRevisionsWithTag maps each unit of a space to the revision of it a tag marks. A tag marks
-// at most one revision of a unit, which is what makes this a map rather than a list.
-func demoteRevisionsWithTag(spaceID uuid.UUID, tagID uuid.UUID) (map[uuid.UUID]int64, error) {
-	where := fmt.Sprintf("SpaceID = '%s' AND Tags ? '%s'", spaceID.String(), tagID.String())
-	revisions, err := apiSearchListRevisions(where, "UnitID,RevisionNum,SpaceID,OrganizationID,RevisionID", "")
-	if err != nil {
-		return nil, err
-	}
-	marked := make(map[uuid.UUID]int64, len(revisions))
-	for _, extended := range revisions {
-		if extended.Revision == nil {
-			continue
-		}
-		marked[extended.Revision.UnitID] = extended.Revision.RevisionNum
-	}
-	return marked, nil
-}
-
-// demoteReportDroppedRevisions says which later changes the restore takes out with the change
-// order's.
-//
-// A unit whose head has moved past where the change order ended has revisions the restore does not
-// keep: it goes back to the state before the change, and everything after it goes with it. Nothing
-// re-applies them, because the restored revisions are expected to be released first -- re-applying
-// what was dropped is a forward change to make after that, with whatever the release said in hand.
-//
-// A unit the change order carried nothing for is left where it is, so whatever came after its mark
-// stays, and it is not reported here.
-func demoteReportDroppedRevisions(marked []*demotedUnit) {
+// displayDemoteSpaceSummary prints one space's units by what was done to them, and the later
+// changes the restores drop.
+func displayDemoteSpaceSummary(space *goclientnew.DemoteSpaceResult, changeOrderSlug string, dryRun bool) {
+	counts := map[string]int{}
 	var dropped []string
-	for _, unit := range marked {
-		if unit.endRevisionNum == 0 || unit.headRevisionNum <= unit.endRevisionNum {
-			continue
+	for _, unit := range space.Units {
+		counts[unit.Action]++
+		if unit.Error != nil {
+			tprint("Failed to restore unit %s", unit.Slug)
+			displayResponseError(unit.Error)
 		}
-		// A unit the change order carried nothing for has its two tags on one revision and is
-		// not restored at all, so the revisions after that one are not this undoing's to drop.
-		if unit.startRevisionNum == unit.endRevisionNum {
-			continue
+		switch {
+		case unit.DropsFromRevisionNum == 0:
+		case unit.DropsFromRevisionNum == unit.DropsToRevisionNum:
+			dropped = append(dropped, fmt.Sprintf("  %s: revision %d", unit.Slug, unit.DropsFromRevisionNum))
+		default:
+			dropped = append(dropped, fmt.Sprintf("  %s: revisions %d-%d", unit.Slug, unit.DropsFromRevisionNum, unit.DropsToRevisionNum))
 		}
-		if unit.headRevisionNum == unit.endRevisionNum+1 {
-			dropped = append(dropped, fmt.Sprintf("  %s: revision %d", unit.slug, unit.headRevisionNum))
-			continue
-		}
-		dropped = append(dropped, fmt.Sprintf("  %s: revisions %d-%d", unit.slug,
-			unit.endRevisionNum+1, unit.headRevisionNum))
 	}
-	if len(dropped) == 0 {
+	if n := counts[demoteUnitActionUnchanged]; n > 0 {
+		tprint("Leaving %d unit(s) of %s alone: change order %s has already been taken back out of them",
+			n, space.SpaceSlug, changeOrderSlug)
+	}
+	restored, marked := counts[demoteUnitActionRestore], counts[demoteUnitActionMark]
+	if restored+marked == 0 {
+		tprint("Nothing left to restore in %s", space.SpaceSlug)
 		return
 	}
-	if !jsonOutput && outputFormat == "" {
+	if len(dropped) > 0 {
 		verb := "drops"
-		if variantDemoteArgs.dryRun {
+		if dryRun {
 			verb = "would drop"
 		}
 		tprint("Warning: restoring %s changes made after the change order, which nothing re-applies:\n%s",
 			verb, strings.Join(dropped, "\n"))
 	}
+	verb := "Restored"
+	if dryRun {
+		verb = "Would restore"
+	}
+	tprint("%s %d unit(s) to the revisions before change order %s", verb, restored, changeOrderSlug)
+	if marked > 0 {
+		verb = "Marked"
+		if dryRun {
+			verb = "Would mark"
+		}
+		tprint("%s %d unit(s) the change order carried nothing for as restored, without a new revision", verb, marked)
+	}
 }
 
-// demoteRestoreUnits restores the marked units to the revision before the change order.
-//
-// One bulk request, naming the change order on it: that is what mints and places the restore tag,
-// what advances the merge pointers of the links that follow each restored unit, and what makes a unit
-// the change order never marked an error rather than a unit passed over.
-func demoteRestoreUnits(spaceID uuid.UUID, changeOrder *goclientnew.ChangeOrder, marked []*demotedUnit) error {
-	// Demote waits for triggers, except on a dry run: nothing is changed, so there is nothing to
-	// wait for.
-	wait = !variantDemoteArgs.dryRun
-
-	if !jsonOutput && outputFormat == "" {
-		verb := "Restoring"
-		if variantDemoteArgs.dryRun {
-			verb = "Would restore"
+// displayDemoteSpaceMutations prints the mutations each restore made, or would make.
+func displayDemoteSpaceMutations(space *goclientnew.DemoteSpaceResult, dryRun bool) {
+	// The helpers that fetch prior values resolve units through the selected space.
+	selectedSpaceID = space.SpaceID.String()
+	selectedSpaceSlug = space.SpaceSlug
+	for i := range space.Units {
+		unit := &space.Units[i]
+		if unit.Error != nil || unit.Mutations == nil {
+			continue
 		}
-		tprint("%s %d unit(s) to the revisions before change order %s...", verb, len(marked), changeOrder.Slug)
+		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
+		lookupMutationsUnitID = unit.UnitID.String()
+		lookupMutationsSpaceID = space.SpaceID.String()
+		priorRevision := "dry-run"
+		if !dryRun {
+			priorRevision = fmt.Sprintf("%s/%d", unit.Slug, unit.PreviousHeadRevisionNum)
+		}
+		displayResourceMutationList(unit.Mutations, true, unit.PreviousHeadMutationNum, "restore", priorRevision)
 	}
+}
 
-	ids := make([]string, 0, len(marked))
-	for _, unit := range marked {
-		ids = append(ids, "'"+unit.unitID.String()+"'")
+// awaitDemotedUnits waits for the triggers of every unit the demotion restored.
+func awaitDemotedUnits(result *goclientnew.DemoteResult) error {
+	for i := range result.Spaces {
+		space := &result.Spaces[i]
+		for _, unit := range space.Units {
+			if unit.Error != nil || unit.Action != demoteUnitActionRestore {
+				continue
+			}
+			unitDetails, err := resolveUnit(unit.UnitID.String(), space.SpaceID.String(), "*")
+			if err != nil {
+				return err
+			}
+			if err := awaitTriggersRemoval(unitDetails.Unit); err != nil {
+				return err
+			}
+		}
 	}
-	where := fmt.Sprintf("SpaceID = '%s' AND UnitID IN (%s)", spaceID.String(), strings.Join(ids, ", "))
-	restore := "Before:ChangeOrder:" + changeOrder.ChangeOrderID.String()
-	include := "UnitEventID,TargetID,UpstreamUnitID,SpaceID"
-	params := &goclientnew.BulkPatchUnitsParams{Where: &where, Include: &include, Restore: &restore}
-	params.ChangeOrder = &changeOrder.ChangeOrderID
-	if variantDemoteArgs.dryRun {
-		params.DryRun = &variantDemoteArgs.dryRun
-	}
+	return nil
+}
 
-	// Naming what a revision is for is the whole of what a change description does, and "restored
-	// the revision before the change order's start tag" says less than the change order's name.
-	description := variantDemoteArgs.changeDescription
-	if description == "" {
-		description = fmt.Sprintf("Undo change order %s", changeOrder.Slug)
+// demoteResultError fails the command when anything the demotion tried did not land, naming what
+// failed.
+func demoteResultError(result *goclientnew.DemoteResult, namedSpace bool) error {
+	var errs []error
+	for i := range result.Spaces {
+		space := &result.Spaces[i]
+		if space.Error != nil {
+			errs = append(errs, errors.Newf("failed to demote %s: %s", space.SpaceSlug, space.Error.Message))
+		}
+		for _, unit := range space.Units {
+			if unit.Error != nil {
+				errs = append(errs, errors.Newf("failed to restore unit %s of %s: %s", unit.Slug, space.SpaceSlug, unit.Error.Message))
+			}
+		}
 	}
-	patchData, err := EnhancePatchData([]byte("null"), nil, nil, nil, nil, func(patchMap map[string]interface{}) {
-		patchMap["LastChangeDescription"] = description
-	})
-	if err != nil {
-		return err
+	if len(errs) == 0 {
+		return nil
 	}
-
-	// Snapshot prior unit state before the patch so the mutation display can tell what the
-	// restore takes back out from what was already there.
-	var priorUnits map[string]priorUnitInfo
-	if shouldDisplayMutations() {
-		priorUnits = savePriorUnitInfoInSpace(spaceID.String(), where, false)
-		// A dry run stores nothing, so what it produced comes back on the response or not at
-		// all. Appended to the expansions this request already asked for, because include is one
-		// list: replacing it would trade them for the configuration.
-		withWriteResult := include + "," + *includeWriteResult()
-		params.Include = &withWriteResult
+	if namedSpace || len(result.Spaces) == 1 {
+		return errors.Join(errs...)
 	}
-
-	bulkRes, err := cubClientNew.BulkPatchUnitsWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchData))
-	if cubapi.IsAPIError(err, bulkRes) {
-		return cubapi.InterpretErrorGeneric(err, bulkRes)
-	}
-	responses, statusCode := bulkUnitResponses(bulkRes.JSON200, bulkRes.JSON207)
-	if responses == nil {
-		return fmt.Errorf("unexpected response from bulk patch API")
-	}
-	bulkErr := handleBulkCreateOrUpdateResponse(responses, statusCode, "restore", "")
-	if shouldDisplayMutations() {
-		displayMutationsForBulkUnitUpdate(responses, priorUnits, false, variantDemoteArgs.dryRun, "restore")
-	}
-	return bulkErr
+	return errors.Wrapf(errors.Join(errs...), "demoting %d space(s)", len(result.Spaces))
 }

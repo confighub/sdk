@@ -169,7 +169,7 @@ Key flags for agents:
 - --replace-from-stdin: Replace entire metadata from stdin
 - --restore: Restore to a revision using: revision number (positive/negative), revision ID (UUID), Tag:slug, ChangeSet:slug, ChangeOrder:slug (Before:ChangeOrder:slug undoes a promotion), or special values (HeadRevisionNum/LastReleasedRevisionNum)
 - --upgrade: Upgrade to match the latest version of upstream unit
-- --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. An aborted change order is promoted nowhere. With --restore Before:ChangeOrder:<slug>, undo it: the change order must have an AbortedReason, the restored revisions carry its restore tag, a unit already carrying that tag is passed over, the links that follow each restored unit are advanced onto the restored revision, and a unit it never marked is an error
+- --change-order: With --upgrade or --resolve, promote a change order: it supplies both ends of the range, units its source doesn't cover are passed over, and a unit that has merged past where it starts is an error. A unit short of it takes the source revisions before the start first, unmarked, unless --prior-revisions says Skip or Error. An aborted change order is promoted nowhere. With --restore Before:ChangeOrder:<slug>, undo it: the change order must have an AbortedReason, the restored revisions carry its restore tag, a unit already carrying that tag is passed over, the links that follow each restored unit are advanced onto the restored revision, and a unit it never marked is an error
 - --merge-source: Source unit for 3-way merge (slug, UUID, or "Self" for self-merge)
 - --merge-base: Base revision for merge (uses same format as --restore)
 - --merge-end: End revision for merge (uses same format as --restore). Also usable with --upgrade or --resolve to stop short of the source's head -- name the ChangeSet or Tag that ends the change you want, so a change still being made upstream is left behind
@@ -206,6 +206,7 @@ var (
 	mergeEnableSubtraction bool
 	protectChange          bool
 	squashMerge            bool
+	priorRevisions         string
 	whereMutation          string
 	filterMutation         string
 	tag                    string
@@ -216,7 +217,8 @@ func init() {
 	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
-	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, and a unit that isn't where it starts is an error. With --restore Before:ChangeOrder:<slug> it is the change order being undone instead: it must have an AbortedReason, the restore must name the same change order, the revisions restored are marked with the change order's restore tag, a unit already carrying that tag is passed over, and the merge pointers of the links that follow each restored unit are advanced onto the restored revision. \"cub variant demote\" is that over a whole space")
+	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. With --restore Before:ChangeOrder:<slug> it is the change order being undone instead: it must have an AbortedReason, the restore must name the same change order, the revisions restored are marked with the change order's restore tag, a unit already carrying that tag is passed over, and the merge pointers of the links that follow each restored unit are advanced onto the restored revision. \"cub variant demote\" is that over a whole space")
+	unitUpdateCmd.Flags().StringVar(&priorRevisions, "prior-revisions", "", "with --change-order and --upgrade or --resolve, what to do for a unit that has not merged as far as the change order's start on its source -- typically because a link in the source's space, such as a TransformPaths link, wrote revisions after the unit last merged: Include (the default) merges those revisions first, as revisions that do not carry the change order, and puts the start tag after them; Skip merges only the change order's range, as though the unit had already merged as far as its start; Error refuses, naming the unit, the link, and the revisions")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
@@ -384,6 +386,9 @@ func checkConflictingArgs(args []string) bool {
 		if tag != "" {
 			failOnError(fmt.Errorf("--tag cannot be used with --change-order; the change order tags the revisions it promotes and the ones that undo it"))
 		}
+	}
+	if priorRevisions != "" && (changeorderSlug == "" || restore != "") {
+		failOnError(fmt.Errorf("--prior-revisions can only be used with --change-order, to promote it with --upgrade or --resolve"))
 	}
 
 	if optionsSet > 1 {
@@ -596,6 +601,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	if squashMerge {
 		newParams.Squash = &squashMerge
+	}
+	if priorRevisions != "" {
+		newParams.PriorRevisions = &priorRevisions
 	}
 	if mergeEnableSubtraction {
 		newParams.MergeEnableSubtraction = &mergeEnableSubtraction
@@ -1055,6 +1063,9 @@ func runBulkUnitUpdate() error {
 	}
 	if squashMerge {
 		params.Squash = &squashMerge
+	}
+	if priorRevisions != "" {
+		params.PriorRevisions = &priorRevisions
 	}
 	if mergeEnableSubtraction {
 		params.MergeEnableSubtraction = &mergeEnableSubtraction

@@ -26,13 +26,20 @@ const (
 	promoteUnitActionRevive  = "Revive"
 	promoteUnitActionClone   = "Clone"
 	promoteUnitActionInvoke  = "Invoke"
+	promoteUnitActionResolve = "Resolve"
 	promoteUnitActionSkip    = "Skip"
 
-	promoteLinkActionCreate = "Create"
+	promoteLinkActionCreate    = "Create"
+	promoteLinkActionUnchanged = "Unchanged"
+	promoteLinkActionSkip      = "Skip"
+	promoteLinkActionOrphaned  = "Orphaned"
 )
 
 // promoteChangeOrderSlug is the slug of the change order being promoted, for messages.
 var promoteChangeOrderSlug string
+
+// promoteChangeOrderUpdateType is how the change order being promoted propagates, for messages.
+var promoteChangeOrderUpdateType string
 
 var variantPromoteArgs struct {
 	changeDescription string
@@ -43,8 +50,10 @@ var variantPromoteArgs struct {
 	filterSpace       string
 	dryRun            bool
 	squash            bool
+	priorRevisions    string
 	force             bool
 	forceReason       string
+	expectedPlan      string
 }
 
 var variantPromoteCmd = &cobra.Command{
@@ -64,12 +73,19 @@ with that upstream:
      linking each clone to its upstream unit. When the variant space has a Namespace label, which
      "cub variant create --namespace" sets, set-namespace places the clones, and revived units,
      in that namespace.
-  3. Copy the new units' non-UpgradeUnit links, retargeting a link to its downstream copy when it
-     points at another unit in the upstream space. A link that already points into this variant
-     is left alone rather than copied into it.
+  3. Copy the upstream space's links, other than UpgradeUnit links, that the variant does not have
+     yet, from the variant's copy of each unit, retargeting a link to the downstream copy of the
+     unit it points at when that unit is in the upstream space. That covers a link added upstream
+     between units the variant already has, not only the links of the units just added. A link
+     that already points into this variant is left alone rather than copied into it. A link the
+     variant has with no record of being copied, connecting the same units the same way, is
+     adopted as the copy rather than duplicated. A copied link whose upstream link has since been
+     deleted is reported as orphaned and left in place.
 
 Promoting again changes nothing. Use --dry-run to preview what would be upgraded and added, and
-add -o mutations to see the changes.
+add -o mutations to see the changes, including the content of the units that would be added. To
+apply exactly what was previewed, pass the dry run's Plan (-o jq=.Plan) as --expected-plan:
+nothing is written if the promotion would now do anything different.
 
 The spaces to promote are the positional space, or those --where-space and --filter-space select,
 or those a change order is headed for. Selectors combine: naming a stage and --where-space
@@ -83,8 +99,13 @@ up both: the range arrives as one rebased diff in one revision.
 
 --change-order promotes a named change rather than everything the upstream has reached. The
 change order fixed its range when it was created, so the upgrade stops where it ends, a unit
-it does not cover is passed over, and a unit that is not where it starts is an error rather
-than a merge of a different range. A unit it covers but has no changes for is marked and not
+it does not cover is passed over, and a unit that has merged past where it starts is an error
+rather than a merge of a different range. A unit short of where it starts has not merged some
+upstream revisions that are not the change order's -- typically ones a link in the upstream
+space, such as a TransformPaths link, wrote after the unit last merged. --prior-revisions says
+what to do with them: Include (the default) merges them first, as revisions that do not carry
+the change order; Skip leaves them out, as though the unit had already merged them; Error
+refuses, naming the unit, the link, and each revision. A unit it covers but has no changes for is marked and not
 changed: its start and end tags land on the same revision. That is what lets
 "cub release publish --revision ChangeOrder:<slug>" pin every unit of the space. Three things
 follow from what a change order is:
@@ -158,14 +179,16 @@ Examples:
 func init() {
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeDescription, "change-desc", "", "change description recorded on the upgraded and cloned units")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changesetSlug, "changeset", "", "changeset to associate the upgraded and cloned units with")
-	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, and a unit that is not where it starts is an error. A bare slug resolves in the upstream space of the space being promoted, or in the selected space otherwise. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are listed rather than cloned")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.changeorderSlug, "change-order", "", "change order to promote instead of everything the upstream has reached: it supplies the range, units it does not cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. A bare slug resolves in the upstream space of the space being promoted, or in the selected space otherwise. Units the variant does not have yet are cloned at the change order's start and then upgraded through it; ones created upstream after the change order was fixed are outside it and are listed rather than cloned")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.targetStage, "target-stage", "", "stage of the change order's ChangeWorkflow to promote into, promoting every variant the stage selects: it requires --change-order, the gates of the stage ahead are checked once for the whole stage, and a variant that fails is reported without stopping the ones after it. A space or --where-space narrows the stage. Without it, --change-order alone advances the change into the first stage it has not reached")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.whereSpace, "where-space", "", "where expression selecting the spaces to promote, instead of naming one")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.filterSpace, "filter-space", "", "filter over spaces selecting the spaces to promote")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.dryRun, "dry-run", false, "preview the units that would be upgraded and added without changing anything")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.squash, "squash", false, "merge each unit's range as one rebased diff in one revision instead of walking it: by default a promotion re-runs the upstream's recorded function invocations against each unit where it can, and records one revision per upstream revision that has an effect there")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.priorRevisions, "prior-revisions", "", "with --change-order, what to do for a unit that has not merged as far as the change order's start on its upstream: Include (the default) merges the upstream revisions before the start first, as revisions that do not carry the change order; Skip merges only the change order's range, as though the unit had already merged as far as its start; Error refuses, naming the unit, the link, and the revisions")
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "promote past ChangeWorkflow gates that do not hold; requires --force-reason, and is recorded on the change order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.forceReason, "force-reason", "", "why the gates are overridden; required with --force")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same promotion returned; nothing is written if the promotion would now do anything different")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
 }
@@ -178,6 +201,9 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 && !haveSelector && variantPromoteArgs.changeorderSlug == "" {
 		return errors.New("promote needs the space to promote into, --where-space or --filter-space to select spaces, or --change-order to advance a change order through the stages of its ChangeWorkflow")
 	}
+	if variantPromoteArgs.priorRevisions != "" && variantPromoteArgs.changeorderSlug == "" {
+		return errors.New("--prior-revisions requires --change-order: it says where a unit starts taking the change order's range")
+	}
 	if variantPromoteArgs.force && variantPromoteArgs.forceReason == "" {
 		return errors.New("--force requires --force-reason: an override of the gates is recorded with the reason for it")
 	}
@@ -189,6 +215,8 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		Force:             variantPromoteArgs.force,
 		ForceReason:       variantPromoteArgs.forceReason,
 		WhereSpace:        variantPromoteArgs.whereSpace,
+		ExpectedPlan:      variantPromoteArgs.expectedPlan,
+		PriorRevisions:    goclientnew.PromoteRequestPriorRevisions(variantPromoteArgs.priorRevisions),
 	}
 
 	// A bare change order slug resolves where the change was authored: the upstream of the space
@@ -215,6 +243,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		req.ChangeOrderID = &changeOrder.ChangeOrder.ChangeOrderID
 		promoteChangeOrderSlug = changeOrder.ChangeOrder.Slug
+		promoteChangeOrderUpdateType = string(changeOrder.ChangeOrder.UpdateType)
 	}
 	if variantPromoteArgs.filterSpace != "" {
 		filterID, err := resolveFilterID(variantPromoteArgs.filterSpace)
@@ -341,20 +370,25 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChangeOrder, dryRun bool) {
 	counts := map[string]int{}
 	var clones, outside []string
-	createdInSpace := 0
+	createdInSpace, noChange := 0, 0
 	for _, unit := range space.Units {
+		// A unit whose write failed was not upgraded, added, or marked, so it is reported and
+		// left out of the counts.
+		if unit.Error != nil {
+			tprint("Failed to promote unit %s", unit.Slug)
+			displayResponseError(unit.Error)
+			continue
+		}
 		counts[unit.Action]++
 		switch {
 		case unit.Action == promoteUnitActionMark && unit.Reason == "CreatedInSpace":
 			createdInSpace++
+		case (unit.Action == promoteUnitActionUpgrade || unit.Action == promoteUnitActionResolve) && unit.Reason == "NoChange":
+			noChange++
 		case unit.Action == promoteUnitActionClone:
 			clones = append(clones, unit.Slug)
 		case unit.Action == promoteUnitActionSkip && unit.Reason == "CreatedAfterChangeOrder":
 			outside = append(outside, unit.Slug)
-		}
-		if unit.Error != nil {
-			tprint("Failed to promote unit %s", unit.Slug)
-			displayResponseError(unit.Error)
 		}
 	}
 	verb := "Upgraded"
@@ -365,9 +399,20 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 	}
 	upgraded := counts[promoteUnitActionUpgrade] + counts[promoteUnitActionEmpty] +
 		counts[promoteUnitActionRevive]
-	// An invocation runs in place, with no upstream to be behind or to add units from.
-	invoked := space.UpstreamSpaceID == nil
-	if !invoked {
+	// An invocation runs in place, and a change order over other links takes from wherever
+	// they point: neither has an upstream to be behind or to add units from.
+	followsLinks := counts[promoteUnitActionResolve] > 0 ||
+		(withChangeOrder && promoteChangeOrderUpdateType != "" && promoteChangeOrderUpdateType != "UpgradeUnit" &&
+			promoteChangeOrderUpdateType != "Invoke")
+	invoked := space.UpstreamSpaceID == nil || followsLinks
+	if followsLinks {
+		resolveVerb := "Resolved"
+		if dryRun {
+			resolveVerb = "Would resolve"
+		}
+		tprint("%s the %s links of %d unit(s) with the change order", resolveVerb, promoteChangeOrderUpdateType,
+			counts[promoteUnitActionResolve])
+	} else if !invoked {
 		tprint("%s %d unit(s) behind their upstream", verb, upgraded)
 	}
 	if n := counts[promoteUnitActionEmpty]; n > 0 {
@@ -375,6 +420,9 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 	}
 	if n := counts[promoteUnitActionRevive]; n > 0 {
 		tprint("  %d of them revived, as their upstream units have content again", n)
+	}
+	if noChange > 0 {
+		tprint("  %d of them already had the change, and were marked without a new revision", noChange)
 	}
 	if n := counts[promoteUnitActionMark] - createdInSpace; n > 0 {
 		tprint("Marked %d unit(s) the change order covers and carries no changes for", n)
@@ -401,10 +449,18 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 			tprint("  - %s", slug)
 		}
 	}
-	links := 0
+	links, adopted := 0, 0
+	var skippedLinks, orphaned []string
 	for _, link := range space.Links {
-		if link.Action == promoteLinkActionCreate {
+		switch {
+		case link.Action == promoteLinkActionCreate:
 			links++
+		case link.Action == promoteLinkActionUnchanged && link.Reason == "Adopted":
+			adopted++
+		case link.Action == promoteLinkActionSkip:
+			skippedLinks = append(skippedLinks, fmt.Sprintf("%s: %s", link.Slug, link.Reason))
+		case link.Action == promoteLinkActionOrphaned:
+			orphaned = append(orphaned, link.Slug)
 		}
 		if link.Error != nil {
 			tprint("Failed to copy link %s", link.Slug)
@@ -413,9 +469,28 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 	}
 	if links > 0 {
 		if dryRun {
-			tprint("Would copy %d link(s) from the added units", links)
+			tprint("Would copy %d link(s) from upstream", links)
 		} else {
-			tprint("Copied %d link(s) from the added units", links)
+			tprint("Copied %d link(s) from upstream", links)
+		}
+	}
+	if adopted > 0 {
+		if dryRun {
+			tprint("Would record %d existing link(s) as the copies of the upstream links they match", adopted)
+		} else {
+			tprint("Recorded %d existing link(s) as the copies of the upstream links they match", adopted)
+		}
+	}
+	if len(skippedLinks) > 0 {
+		tprint("Not copying %d link(s):", len(skippedLinks))
+		for _, line := range skippedLinks {
+			tprint("  - %s", line)
+		}
+	}
+	if len(orphaned) > 0 {
+		tprint("Leaving %d link(s) whose upstream link was deleted:", len(orphaned))
+		for _, slug := range orphaned {
+			tprint("  - %s", slug)
 		}
 	}
 }
@@ -428,7 +503,7 @@ func displayPromoteSpaceMutations(space *goclientnew.PromoteSpaceResult, withCha
 	first := true
 	for i := range space.Units {
 		unit := &space.Units[i]
-		if unit.Error != nil || unit.UnitID == nil || unit.Mutations == nil {
+		if unit.Error != nil || unit.Mutations == nil {
 			continue
 		}
 		if !first {
@@ -436,7 +511,11 @@ func displayPromoteSpaceMutations(space *goclientnew.PromoteSpaceResult, withCha
 		}
 		first = false
 		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
-		lookupMutationsUnitID = unit.UnitID.String()
+		// A unit a dry run would clone does not exist yet, so it has no earlier values to show.
+		lookupMutationsUnitID = ""
+		if unit.UnitID != nil {
+			lookupMutationsUnitID = unit.UnitID.String()
+		}
 		lookupMutationsSpaceID = space.SpaceID.String()
 		priorRevision := "dry-run"
 		if !dryRun {

@@ -4,6 +4,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -63,7 +65,7 @@ Examples:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.Stale", "Link.UpstreamLinkID"}
+var defaultLinkColumns = []string{"Link.Slug", "Space.Slug", "FromUnit.Slug", "ToUnit.Slug", "ToSpace.Slug", "Link.UpdateType", "Link.AutoUpdate", "Link.Stale", "Link.UpstreamLinkID", "Link.UpstreamLastMergedRevisionNum", "Link.DownstreamLastMergedRevisionNum"}
 
 // linkListInclude is the Include parameter for link list queries.
 const linkListInclude = "SpaceID,FromUnitID,ToUnitID,ToSpaceID"
@@ -112,9 +114,14 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 	if displayRequestedColumns(extendedLinks, linkAliases, nil) {
 		return
 	}
+	wide := effectiveOutput().Kind == OutputWide
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Stale", "Upstream-Link-ID"})
+		header := []string{"Name", "Space", "From-Unit", "To-Unit", "To-Space", "Update-Type", "Auto-Update", "Stale"}
+		if wide {
+			header = append(header, "Upstream-Merged-Rev", "Downstream-Merged-Rev", "Upstream-Link-ID")
+		}
+		table.SetHeader(header)
 	}
 	for _, extendedLink := range extendedLinks {
 		link := extendedLink.Link
@@ -144,11 +151,7 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 		if link.Stale {
 			stale = "true"
 		}
-		upstreamLinkID := ""
-		if link.UpstreamLinkID != nil {
-			upstreamLinkID = link.UpstreamLinkID.String()
-		}
-		table.Append([]string{
+		row := []string{
 			link.Slug,
 			space,
 			fromUnitSlug,
@@ -157,8 +160,19 @@ func displayLinkList(extendedLinks []*goclientnew.ExtendedLink) {
 			link.UpdateType,
 			autoUpdate,
 			stale,
-			upstreamLinkID,
-		})
+		}
+		if wide {
+			upstreamLinkID := ""
+			if link.UpstreamLinkID != nil {
+				upstreamLinkID = link.UpstreamLinkID.String()
+			}
+			row = append(row,
+				fmt.Sprintf("%d", link.UpstreamLastMergedRevisionNum),
+				fmt.Sprintf("%d", link.DownstreamLastMergedRevisionNum),
+				upstreamLinkID,
+			)
+		}
+		table.Append(row)
 	}
 	table.Render()
 }

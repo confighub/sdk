@@ -3265,7 +3265,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3441,7 +3441,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3602,7 +3602,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -3875,7 +3875,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -6879,6 +6879,102 @@ paths:
       summary: Update Component
       tags:
       - Component
+  /demote:
+    post:
+      description: Restores each Unit the ChangeOrder's start Tag marks to the Revision
+        it was at before the change, in every Space the ChangeOrder reached, or those
+        WhereSpace, SpaceFilterID and TargetStage select. The ChangeOrder must have
+        an AbortedReason. A Unit already restored is passed over, and a Unit the ChangeOrder
+        carried nothing for is marked without a Revision being made. Revisions made
+        after the change that restoring drops are reported. Demoting again changes
+        nothing.
+      operationId: Demote
+      parameters:
+      - description: Plan the demotion and return the same response without writing
+          anything.
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      - description: 'Comma-separated parts of the result to return in addition to
+          the actions: Mutations for what each restore changed, or on a dry run would
+          change.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoteRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoteResult'
+          description: OK
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DemoteResult'
+          description: 'Multi-Status: some Unit writes failed, each carrying its own
+            error'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Demote request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Demote not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Demote data conflict. Data has changed since last read.
+        "412":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The plan differs from ExpectedPlan. Nothing was written.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Demote.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Undo an aborted ChangeOrder in the Spaces it reached
+      tags:
+      - Demote
   /filter:
     delete:
       description: Delete multiple filters selected by query parameters
@@ -15296,7 +15392,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+          Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 
           The whole string must be query-encoded.
         in: query
@@ -23331,37 +23427,56 @@ paths:
           ends of the merge and merge_end is refused alongside it. A Unit whose source
           the change order does not cover is passed over rather than failed, which
           is what lets a bulk upgrade name a whole Space and take only the Units the
-          change is in. A Unit whose last merged revision is not where the change
+          change is in. A Unit whose last merged revision is past where the change
           order starts is an error, since merging anyway would replay what it already
-          has or skip what it does not, and with resolve a selected Link whose UpdateType
-          the change order does not follow is an error too. The revisions the promotion
-          creates carry the ChangeOrder, and its start Tag is placed on the revision
-          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
-          undoes it whether it landed as one revision or as one per source revision.
-          With restore the change order is being undone rather than promoted: the
-          restore must be ''Before:ChangeOrder:'' the same change order, the change
-          order must have an AbortedReason -- undoing a change nobody has said is
-          not coming is a race with whoever is still promoting it -- and a Unit the
-          change order never marked is an error rather than passed over, since naming
-          it says the Unit is part of the undoing. The first restore mints the change
-          order''s restore Tag and records it as RestoreTagID; every restore after
-          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
-          A Unit the change order carried nothing for takes the restore Tag on the
-          revision its start and end Tags are already on, and no revision is made.
-          A Unit already carrying the restore Tag has had the change order taken back
-          out of it and is passed over, since undoing one in a Unit happens once as
-          promoting it into one does -- so the revisions a Unit has taken since it
-          was undone are its own work rather than this undoing''s to drop. Restoring
-          also advances the merge pointers of the Links of the change order''s UpdateType
-          that follow the restored Unit onto the revision the restore made, so a later
-          upgrade does not replay the change that was just taken out; the downstream
-          Units are not restored with it, since each has to be restored and released
-          on its own account.'
+          has; one that is short of it is handled as prior_revisions says. With resolve
+          a selected Link whose UpdateType the change order does not follow is an
+          error too. The revisions the promotion creates carry the ChangeOrder, and
+          its start Tag is placed on the revision before them and its end Tag on the
+          one it arrives at, so ''restore Before:ChangeOrder:uuid'' undoes it whether
+          it landed as one revision or as one per source revision. With restore the
+          change order is being undone rather than promoted: the restore must be ''Before:ChangeOrder:''
+          the same change order, the change order must have an AbortedReason -- undoing
+          a change nobody has said is not coming is a race with whoever is still promoting
+          it -- and a Unit the change order never marked is an error rather than passed
+          over, since naming it says the Unit is part of the undoing. The first restore
+          mints the change order''s restore Tag and records it as RestoreTagID; every
+          restore after that marks with the same Tag, which is what RestoredSpaceIDs
+          is read off. A Unit the change order carried nothing for takes the restore
+          Tag on the revision its start and end Tags are already on, and no revision
+          is made. A Unit already carrying the restore Tag has had the change order
+          taken back out of it and is passed over, since undoing one in a Unit happens
+          once as promoting it into one does -- so the revisions a Unit has taken
+          since it was undone are its own work rather than this undoing''s to drop.
+          Restoring also advances the merge pointers of the Links of the change order''s
+          UpdateType that follow the restored Unit onto the revision the restore made,
+          so a later upgrade does not replay the change that was just taken out; the
+          downstream Units are not restored with it, since each has to be restored
+          and released on its own account.'
         in: query
         name: change_order
         required: false
         schema:
           format: uuid
+          type: string
+      - description: 'With change_order, when promoting it by upgrade or resolve:
+          what to do for a Unit whose last merged revision of its source is before
+          the revision the change order starts at there -- typically because a Link
+          in the source''s Space, such as a TransformPaths Link, wrote revisions after
+          the Unit last merged, and those revisions are not the change order''s. Include
+          (the default) merges them first, walking them one source revision at a time
+          even with squash, as revisions that do not carry the change order, and places
+          the change order''s start Tag on the revision they leave, so ''restore Before:ChangeOrder:uuid''
+          keeps them. Skip merges only the change order''s range, as though the Unit''s
+          merge pointer had already been advanced to the change order''s start, so
+          what those revisions changed does not reach the Unit. Error refuses, naming
+          the Unit, the Link, and each of those revisions with the operation and Link
+          that made it. A Unit that has already merged past the change order''s start
+          is an error whatever this says.'
+        in: query
+        name: prior_revisions
+        required: false
+        schema:
           type: string
       - description: User-defined category for the Mutation. Must be alphanumeric,
           at most 64 characters. The prefix 'ConfigHub' is reserved.
@@ -23799,37 +23914,56 @@ paths:
           ends of the merge and merge_end is refused alongside it. A Unit whose source
           the change order does not cover is passed over rather than failed, which
           is what lets a bulk upgrade name a whole Space and take only the Units the
-          change is in. A Unit whose last merged revision is not where the change
+          change is in. A Unit whose last merged revision is past where the change
           order starts is an error, since merging anyway would replay what it already
-          has or skip what it does not, and with resolve a selected Link whose UpdateType
-          the change order does not follow is an error too. The revisions the promotion
-          creates carry the ChangeOrder, and its start Tag is placed on the revision
-          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
-          undoes it whether it landed as one revision or as one per source revision.
-          With restore the change order is being undone rather than promoted: the
-          restore must be ''Before:ChangeOrder:'' the same change order, the change
-          order must have an AbortedReason -- undoing a change nobody has said is
-          not coming is a race with whoever is still promoting it -- and a Unit the
-          change order never marked is an error rather than passed over, since naming
-          it says the Unit is part of the undoing. The first restore mints the change
-          order''s restore Tag and records it as RestoreTagID; every restore after
-          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
-          A Unit the change order carried nothing for takes the restore Tag on the
-          revision its start and end Tags are already on, and no revision is made.
-          A Unit already carrying the restore Tag has had the change order taken back
-          out of it and is passed over, since undoing one in a Unit happens once as
-          promoting it into one does -- so the revisions a Unit has taken since it
-          was undone are its own work rather than this undoing''s to drop. Restoring
-          also advances the merge pointers of the Links of the change order''s UpdateType
-          that follow the restored Unit onto the revision the restore made, so a later
-          upgrade does not replay the change that was just taken out; the downstream
-          Units are not restored with it, since each has to be restored and released
-          on its own account.'
+          has; one that is short of it is handled as prior_revisions says. With resolve
+          a selected Link whose UpdateType the change order does not follow is an
+          error too. The revisions the promotion creates carry the ChangeOrder, and
+          its start Tag is placed on the revision before them and its end Tag on the
+          one it arrives at, so ''restore Before:ChangeOrder:uuid'' undoes it whether
+          it landed as one revision or as one per source revision. With restore the
+          change order is being undone rather than promoted: the restore must be ''Before:ChangeOrder:''
+          the same change order, the change order must have an AbortedReason -- undoing
+          a change nobody has said is not coming is a race with whoever is still promoting
+          it -- and a Unit the change order never marked is an error rather than passed
+          over, since naming it says the Unit is part of the undoing. The first restore
+          mints the change order''s restore Tag and records it as RestoreTagID; every
+          restore after that marks with the same Tag, which is what RestoredSpaceIDs
+          is read off. A Unit the change order carried nothing for takes the restore
+          Tag on the revision its start and end Tags are already on, and no revision
+          is made. A Unit already carrying the restore Tag has had the change order
+          taken back out of it and is passed over, since undoing one in a Unit happens
+          once as promoting it into one does -- so the revisions a Unit has taken
+          since it was undone are its own work rather than this undoing''s to drop.
+          Restoring also advances the merge pointers of the Links of the change order''s
+          UpdateType that follow the restored Unit onto the revision the restore made,
+          so a later upgrade does not replay the change that was just taken out; the
+          downstream Units are not restored with it, since each has to be restored
+          and released on its own account.'
         in: query
         name: change_order
         required: false
         schema:
           format: uuid
+          type: string
+      - description: 'With change_order, when promoting it by upgrade or resolve:
+          what to do for a Unit whose last merged revision of its source is before
+          the revision the change order starts at there -- typically because a Link
+          in the source''s Space, such as a TransformPaths Link, wrote revisions after
+          the Unit last merged, and those revisions are not the change order''s. Include
+          (the default) merges them first, walking them one source revision at a time
+          even with squash, as revisions that do not carry the change order, and places
+          the change order''s start Tag on the revision they leave, so ''restore Before:ChangeOrder:uuid''
+          keeps them. Skip merges only the change order''s range, as though the Unit''s
+          merge pointer had already been advanced to the change order''s start, so
+          what those revisions changed does not reach the Unit. Error refuses, naming
+          the Unit, the Link, and each of those revisions with the operation and Link
+          that made it. A Unit that has already merged past the change order''s start
+          is an error whatever this says.'
+        in: query
+        name: prior_revisions
+        required: false
+        schema:
           type: string
       - description: User-defined category for the Mutation. Must be alphanumeric,
           at most 64 characters. The prefix 'ConfigHub' is reserved.
@@ -30373,37 +30507,56 @@ paths:
           ends of the merge and merge_end is refused alongside it. A Unit whose source
           the change order does not cover is passed over rather than failed, which
           is what lets a bulk upgrade name a whole Space and take only the Units the
-          change is in. A Unit whose last merged revision is not where the change
+          change is in. A Unit whose last merged revision is past where the change
           order starts is an error, since merging anyway would replay what it already
-          has or skip what it does not, and with resolve a selected Link whose UpdateType
-          the change order does not follow is an error too. The revisions the promotion
-          creates carry the ChangeOrder, and its start Tag is placed on the revision
-          before them and its end Tag on the one it arrives at, so ''restore Before:ChangeOrder:uuid''
-          undoes it whether it landed as one revision or as one per source revision.
-          With restore the change order is being undone rather than promoted: the
-          restore must be ''Before:ChangeOrder:'' the same change order, the change
-          order must have an AbortedReason -- undoing a change nobody has said is
-          not coming is a race with whoever is still promoting it -- and a Unit the
-          change order never marked is an error rather than passed over, since naming
-          it says the Unit is part of the undoing. The first restore mints the change
-          order''s restore Tag and records it as RestoreTagID; every restore after
-          that marks with the same Tag, which is what RestoredSpaceIDs is read off.
-          A Unit the change order carried nothing for takes the restore Tag on the
-          revision its start and end Tags are already on, and no revision is made.
-          A Unit already carrying the restore Tag has had the change order taken back
-          out of it and is passed over, since undoing one in a Unit happens once as
-          promoting it into one does -- so the revisions a Unit has taken since it
-          was undone are its own work rather than this undoing''s to drop. Restoring
-          also advances the merge pointers of the Links of the change order''s UpdateType
-          that follow the restored Unit onto the revision the restore made, so a later
-          upgrade does not replay the change that was just taken out; the downstream
-          Units are not restored with it, since each has to be restored and released
-          on its own account.'
+          has; one that is short of it is handled as prior_revisions says. With resolve
+          a selected Link whose UpdateType the change order does not follow is an
+          error too. The revisions the promotion creates carry the ChangeOrder, and
+          its start Tag is placed on the revision before them and its end Tag on the
+          one it arrives at, so ''restore Before:ChangeOrder:uuid'' undoes it whether
+          it landed as one revision or as one per source revision. With restore the
+          change order is being undone rather than promoted: the restore must be ''Before:ChangeOrder:''
+          the same change order, the change order must have an AbortedReason -- undoing
+          a change nobody has said is not coming is a race with whoever is still promoting
+          it -- and a Unit the change order never marked is an error rather than passed
+          over, since naming it says the Unit is part of the undoing. The first restore
+          mints the change order''s restore Tag and records it as RestoreTagID; every
+          restore after that marks with the same Tag, which is what RestoredSpaceIDs
+          is read off. A Unit the change order carried nothing for takes the restore
+          Tag on the revision its start and end Tags are already on, and no revision
+          is made. A Unit already carrying the restore Tag has had the change order
+          taken back out of it and is passed over, since undoing one in a Unit happens
+          once as promoting it into one does -- so the revisions a Unit has taken
+          since it was undone are its own work rather than this undoing''s to drop.
+          Restoring also advances the merge pointers of the Links of the change order''s
+          UpdateType that follow the restored Unit onto the revision the restore made,
+          so a later upgrade does not replay the change that was just taken out; the
+          downstream Units are not restored with it, since each has to be restored
+          and released on its own account.'
         in: query
         name: change_order
         required: false
         schema:
           format: uuid
+          type: string
+      - description: 'With change_order, when promoting it by upgrade or resolve:
+          what to do for a Unit whose last merged revision of its source is before
+          the revision the change order starts at there -- typically because a Link
+          in the source''s Space, such as a TransformPaths Link, wrote revisions after
+          the Unit last merged, and those revisions are not the change order''s. Include
+          (the default) merges them first, walking them one source revision at a time
+          even with squash, as revisions that do not carry the change order, and places
+          the change order''s start Tag on the revision they leave, so ''restore Before:ChangeOrder:uuid''
+          keeps them. Skip merges only the change order''s range, as though the Unit''s
+          merge pointer had already been advanced to the change order''s start, so
+          what those revisions changed does not reach the Unit. Error refuses, naming
+          the Unit, the Link, and each of those revisions with the operation and Link
+          that made it. A Unit that has already merged past the change order''s start
+          is an error whatever this says.'
+        in: query
+        name: prior_revisions
+        required: false
+        schema:
           type: string
       - description: User-defined category for the Mutation. Must be alphanumeric,
           at most 64 characters. The prefix 'ConfigHub' is reserved.
@@ -35142,6 +35295,12 @@ components:
             set for the whole ChangeOrder, not one per Space. Immutable.
           type: object
           x-go-type-skip-optional-pointer: true
+        PromotionFailures:
+          items:
+            $ref: '#/components/schemas/ChangeOrderPromotionFailure'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         PromotionOverrides:
           items:
             $ref: '#/components/schemas/ChangeOrderPromotionOverride'
@@ -35270,7 +35429,12 @@ components:
             the clone lineage, is the default, and MergeUnits is the other Link type
             it follows; both take the change from Revisions the source Unit already
             has. Invoke is the third: the change is one Invocation run in each Space
-            in scope, and the ChangeOrder is created before any of it has happened.'
+            in scope, and the ChangeOrder is created before any of it has happened.
+            Insert, Upsert, and TransformPaths carry a change to Units outside the
+            ChangeOrder''s component into it: every Space in scope resolves its Links
+            of that type to those Units at the Revision each was at when the ChangeOrder
+            was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs,
+            or a selection that fills it in, is required.'
           type: string
           x-go-type-skip-optional-pointer: true
         UpdatedAt:
@@ -35345,6 +35509,68 @@ components:
           $ref: '#/components/schemas/ChangeOrder'
         Error:
           $ref: '#/components/schemas/ResponseError'
+      type: object
+    ChangeOrderPromotionFailure:
+      properties:
+        FailedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Spaces:
+          items:
+            $ref: '#/components/schemas/ChangeOrderPromotionFailureSpace'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        TargetStage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ChangeOrderPromotionFailureSpace:
+      properties:
+        Action:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Stage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Units:
+          items:
+            $ref: '#/components/schemas/ChangeOrderPromotionFailureUnit'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ChangeOrderPromotionFailureUnit:
+      properties:
+        Error:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
       type: object
     ChangeOrderPromotionOverride:
       properties:
@@ -35964,6 +36190,154 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Message:
           description: Response message.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DemoteRequest:
+      properties:
+        ChangeDescription:
+          description: Recorded on each restored Revision. Defaults to naming the
+            ChangeOrder undone.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeOrderID:
+          description: The ChangeOrder to undo. It must have an AbortedReason. Which
+            Units are restored is the Units its start Tag marks.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChangeSetID:
+          description: An existing open ChangeSet to record every write in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        ExpectedPlan:
+          description: The Plan a previous dry run returned. If the plan now differs,
+            nothing is written and the request fails with 412.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceFilterID:
+          description: A Filter over Spaces narrowing the Spaces to demote.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        TargetStage:
+          description: A Stage of the ChangeOrder's ChangeWorkflow whose Spaces to
+            demote.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        WhereSpace:
+          description: A where expression narrowing the Spaces to demote. Without
+            any selector, every Space the ChangeOrder marked is demoted.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      required:
+      - ChangeOrderID
+      type: object
+    DemoteResult:
+      properties:
+        ChangeOrderID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DryRun:
+          description: True when nothing was written.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Plan:
+          description: Digest of the planned actions. Send it as ExpectedPlan to apply
+            exactly this plan.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Spaces:
+          description: Downstream Spaces first.
+          items:
+            $ref: '#/components/schemas/DemoteSpaceResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DemoteSpaceResult:
+      properties:
+        Action:
+          description: Demote, Unchanged, Skipped, or Failed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Reason:
+          description: Why the Space was Skipped.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Stage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Units:
+          description: The Units the ChangeOrder's start Tag marks in the Space.
+          items:
+            $ref: '#/components/schemas/DemoteUnitResult'
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DemoteUnitResult:
+      properties:
+        Action:
+          description: Restore, Mark, or Unchanged.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DropsFromRevisionNum:
+          description: The first Revision after the change that restoring drops, when
+            the head had moved past where the change arrived.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        DropsToRevisionNum:
+          description: The last Revision that restoring drops.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        EndRevisionNum:
+          description: The Revision the change arrived at.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Mutations:
+          $ref: '#/components/schemas/ResourceMutationList'
+        PreviousHeadMutationNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        PreviousHeadRevisionNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: 'For Unchanged: AlreadyRestored.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        StartRevisionNum:
+          description: The Revision the change started from, which the Unit is restored
+            to.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -38058,6 +38432,24 @@ components:
           description: Why the gates were overridden. Required with Force.
           type: string
           x-go-type-skip-optional-pointer: true
+        PriorRevisions:
+          description: With a ChangeOrder, what to do for a Unit whose last merged
+            upstream Revision is before the ChangeOrder's start there -- typically
+            because a Link in the upstream Space, such as a TransformPaths Link, wrote
+            Revisions after the Unit last merged. Include (the default) merges those
+            Revisions first, as Revisions of their own that do not carry the ChangeOrder,
+            and then the ChangeOrder's range; Skip merges only the ChangeOrder's range,
+            as though the Unit had already merged as far as its start; Error refuses,
+            naming the Revisions. A Unit that has merged past the ChangeOrder's start
+            is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths
+            ChangeOrder, whose Links read their sources as they are at its end rather
+            than merging a range.
+          enum:
+          - Include
+          - Skip
+          - Error
+          type: string
+          x-go-type-skip-optional-pointer: true
         SpaceFilterID:
           description: A Filter over Spaces selecting the Spaces to promote. Intersected
             with the other selectors.
@@ -38191,14 +38583,24 @@ components:
     PromoteUnitResult:
       properties:
         Action:
-          description: Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or
-            Skip.
+          description: Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged,
+            or Skip.
           type: string
           x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
         Error:
           $ref: '#/components/schemas/ResponseError'
+        HeadRevisionNum:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        LinkIDs:
+          description: For a Resolve, and a Mark made by one, the Links resolved.
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
+          x-go-type-skip-optional-pointer: true
         Mutations:
           $ref: '#/components/schemas/ResourceMutationList'
         PreviousHeadMutationNum:
@@ -38213,7 +38615,9 @@ components:
           description: 'For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder,
             AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder
             does not cover it. For Mark: CreatedInSpace, when the Unit was created
-            in this Space and the ChangeOrder is scoped over it.'
+            in this Space and the ChangeOrder is scoped over it. For an applied Upgrade
+            or Resolve: NoChange, when the Unit already held the change, so no Revision
+            was made and the ChangeOrder''s Tags mark its head.'
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -38225,7 +38629,8 @@ components:
           format: uuid
           type: string
         UpstreamUnitID:
-          description: Absent for a Unit created in this Space.
+          description: Absent for a Unit created in this Space, and for a Resolve
+            over Links to more than one Unit.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string

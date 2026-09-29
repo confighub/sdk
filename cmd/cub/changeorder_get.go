@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -125,7 +126,7 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 		view.Append([]string{"Aborted Reason", changeorderDetails.AbortedReason})
 	}
 	if len(changeorderDetails.SkippedUnits) > 0 {
-		view.Append([]string{"Skipped Units", changeorderSkippedUnits(changeorderDetails.SkippedUnits, changeorderDetails.SpaceID.String())})
+		view.Append([]string{"Skipped Units", changeorderSkippedUnits(changeorderDetails.SkippedUnits)})
 	}
 	// Where the change has got to, which the server derives when it reads the change order.
 	// In-scope first: it is what the other two are measured against.
@@ -133,6 +134,11 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	stage, completed := changeOrderRollout(changeorderDetails)
 	view.Append([]string{"Stage", stage})
 	view.Append([]string{"Completed", completed})
+	// Why a change order has not moved, when a promotion of it did not complete. The most recent
+	// one only: it is the one still being worked on, and -o json has the rest.
+	if n := len(changeorderDetails.PromotionFailures); n > 0 {
+		view.Append([]string{"Last Promotion Failure", changeorderPromotionFailure(changeorderDetails.PromotionFailures[n-1], n)})
+	}
 	// The selection, when there is one, is how the server worked out the in-scope spaces.
 	if changeorderDetails.WhereSpace != "" {
 		view.Append([]string{"Where Space", changeorderDetails.WhereSpace})
@@ -155,6 +161,27 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	view.Render()
 }
 
+// changeorderPromotionFailure renders one recorded failure: when, and each Space and Unit it
+// failed in with its error, one per line.
+func changeorderPromotionFailure(failure goclientnew.ChangeOrderPromotionFailure, recorded int) string {
+	lines := []string{failure.FailedAt.Format(time.RFC3339)}
+	if recorded > 1 {
+		lines[0] += fmt.Sprintf(" (%d recorded; -o json lists them all)", recorded)
+	}
+	for _, space := range failure.Spaces {
+		switch {
+		case space.Error != "":
+			lines = append(lines, fmt.Sprintf("%s: %s", space.SpaceSlug, space.Error))
+		case space.Reason != "":
+			lines = append(lines, fmt.Sprintf("%s: %s: %s", space.SpaceSlug, space.Action, space.Reason))
+		}
+		for _, unit := range space.Units {
+			lines = append(lines, fmt.Sprintf("%s/%s: %s", space.SpaceSlug, unit.Slug, unit.Error))
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 // changeorderParameters renders the values supplied for a parameterized invocation, in name order
 // so that the same set reads the same way twice.
 func changeorderParameters(parameters map[string]any) string {
@@ -173,13 +200,14 @@ func changeorderParameters(parameters map[string]any) string {
 // changeorderSkippedUnits renders what the change order covers nothing of, by unit slug and
 // reason. The server stores the reason against the unit's id, since a slug can be renamed.
 // The generated client keys a uuid-keyed map by string, since JSON object keys are strings.
-func changeorderSkippedUnits(skipped map[string]string, spaceID string) string {
+func changeorderSkippedUnits(skipped map[string]string) string {
 	lines := make([]string, 0, len(skipped))
 	for unitID, reason := range skipped {
 		name := unitID
-		// A skipped unit is always in the change order's own space -- they are the units the
-		// derivation walked.
-		if unit, err := resolveUnit(unitID, spaceID, "UnitID,Slug"); err == nil && unit != nil {
+		// Looked up by id across the organization: the units the derivation walked are the change
+		// order's own space's, except a fan-out change order's, which are its sources outside the
+		// component.
+		if unit, err := resolveUnit(unitID, "", "UnitID,Slug"); err == nil && unit != nil {
 			name = unit.Unit.Slug
 		}
 		lines = append(lines, fmt.Sprintf("%s (%s)", name, reason))

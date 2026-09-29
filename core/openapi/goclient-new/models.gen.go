@@ -61,6 +61,13 @@ const (
 	Update  MutationType = "Update"
 )
 
+// Defines values for PromoteRequestPriorRevisions.
+const (
+	Error   PromoteRequestPriorRevisions = "Error"
+	Include PromoteRequestPriorRevisions = "Include"
+	Skip    PromoteRequestPriorRevisions = "Skip"
+)
+
 // Defines values for QueuedOperationStatus.
 const (
 	QueuedOperationStatusAborted      QueuedOperationStatus = "Aborted"
@@ -728,6 +735,7 @@ type ChangeOrder struct {
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
 	Parameters         map[string]interface{}         `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	PromotionFailures  []ChangeOrderPromotionFailure  `json:"PromotionFailures,omitempty" yaml:"PromotionFailures,omitempty"`
 	PromotionOverrides []ChangeOrderPromotionOverride `json:"PromotionOverrides,omitempty" yaml:"PromotionOverrides,omitempty"`
 
 	// ReleasedRestoredSpaceIDs ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read.
@@ -772,7 +780,7 @@ type ChangeOrder struct {
 	// UnitFilterID UnitFilterID references a Filter (with From=Unit) narrowing the same selection as WhereUnit, conjoined with it. Refused on the other UpdateTypes. Immutable.
 	UnitFilterID *openapi_types.UUID `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
-	// UpdateType UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened.
+	// UpdateType UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's component into it: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -829,6 +837,32 @@ type ChangeOrderCreateOrUpdateResponse struct {
 	// ChangeOrder Defines a change's identity as it moves between Spaces.
 	ChangeOrder *ChangeOrder   `json:"ChangeOrder,omitempty" yaml:"ChangeOrder,omitempty"`
 	Error       *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+}
+
+// ChangeOrderPromotionFailure defines model for ChangeOrderPromotionFailure.
+type ChangeOrderPromotionFailure struct {
+	FailedAt    time.Time                          `json:"FailedAt,omitempty" yaml:"FailedAt,omitempty"`
+	Spaces      []ChangeOrderPromotionFailureSpace `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+	TargetStage string                             `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
+	UserID      openapi_types.UUID                 `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+}
+
+// ChangeOrderPromotionFailureSpace defines model for ChangeOrderPromotionFailureSpace.
+type ChangeOrderPromotionFailureSpace struct {
+	Action    string                            `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error     string                            `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Reason    string                            `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	SpaceID   openapi_types.UUID                `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug string                            `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	Stage     string                            `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+	Units     []ChangeOrderPromotionFailureUnit `json:"Units,omitempty" yaml:"Units,omitempty"`
+}
+
+// ChangeOrderPromotionFailureUnit defines model for ChangeOrderPromotionFailureUnit.
+type ChangeOrderPromotionFailureUnit struct {
+	Error  string              `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Slug   string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // ChangeOrderPromotionOverride defines model for ChangeOrderPromotionOverride.
@@ -1137,6 +1171,87 @@ type DeleteResponse struct {
 
 	// Message Response message.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+}
+
+// DemoteRequest defines model for DemoteRequest.
+type DemoteRequest struct {
+	// ChangeDescription Recorded on each restored Revision. Defaults to naming the ChangeOrder undone.
+	ChangeDescription string `json:"ChangeDescription,omitempty" yaml:"ChangeDescription,omitempty"`
+
+	// ChangeOrderID The ChangeOrder to undo. It must have an AbortedReason. Which Units are restored is the Units its start Tag marks.
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID" yaml:"ChangeOrderID"`
+
+	// ChangeSetID An existing open ChangeSet to record every write in.
+	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+
+	// ExpectedPlan The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412.
+	ExpectedPlan string `json:"ExpectedPlan,omitempty" yaml:"ExpectedPlan,omitempty"`
+
+	// SpaceFilterID A Filter over Spaces narrowing the Spaces to demote.
+	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
+
+	// TargetStage A Stage of the ChangeOrder's ChangeWorkflow whose Spaces to demote.
+	TargetStage string `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
+
+	// WhereSpace A where expression narrowing the Spaces to demote. Without any selector, every Space the ChangeOrder marked is demoted.
+	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
+}
+
+// DemoteResult defines model for DemoteResult.
+type DemoteResult struct {
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// DryRun True when nothing was written.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
+
+	// Plan Digest of the planned actions. Send it as ExpectedPlan to apply exactly this plan.
+	Plan string `json:"Plan,omitempty" yaml:"Plan,omitempty"`
+
+	// Spaces Downstream Spaces first.
+	Spaces []DemoteSpaceResult `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+}
+
+// DemoteSpaceResult defines model for DemoteSpaceResult.
+type DemoteSpaceResult struct {
+	// Action Demote, Unchanged, Skipped, or Failed.
+	Action string         `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Error  *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Reason Why the Space was Skipped.
+	Reason    string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	SpaceID   openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+	SpaceSlug string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+	Stage     string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+
+	// Units The Units the ChangeOrder's start Tag marks in the Space.
+	Units []DemoteUnitResult `json:"Units,omitempty" yaml:"Units,omitempty"`
+}
+
+// DemoteUnitResult defines model for DemoteUnitResult.
+type DemoteUnitResult struct {
+	// Action Restore, Mark, or Unchanged.
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// DropsFromRevisionNum The first Revision after the change that restoring drops, when the head had moved past where the change arrived.
+	DropsFromRevisionNum int64 `json:"DropsFromRevisionNum,omitempty" yaml:"DropsFromRevisionNum,omitempty"`
+
+	// DropsToRevisionNum The last Revision that restoring drops.
+	DropsToRevisionNum int64 `json:"DropsToRevisionNum,omitempty" yaml:"DropsToRevisionNum,omitempty"`
+
+	// EndRevisionNum The Revision the change arrived at.
+	EndRevisionNum          int64                 `json:"EndRevisionNum,omitempty" yaml:"EndRevisionNum,omitempty"`
+	Error                   *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Mutations               *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
+	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
+	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
+
+	// Reason For Unchanged: AlreadyRestored.
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Slug   string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+
+	// StartRevisionNum The Revision the change started from, which the Unit is restored to.
+	StartRevisionNum int64              `json:"StartRevisionNum,omitempty" yaml:"StartRevisionNum,omitempty"`
+	UnitID           openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // ErrorItem defines model for ErrorItem.
@@ -2530,6 +2645,9 @@ type PromoteRequest struct {
 	// ForceReason Why the gates were overridden. Required with Force.
 	ForceReason string `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
 
+	// PriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include (the default) merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start; Error refuses, naming the Revisions. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
+	PriorRevisions PromoteRequestPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
+
 	// SpaceFilterID A Filter over Spaces selecting the Spaces to promote. Intersected with the other selectors.
 	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
 
@@ -2542,6 +2660,9 @@ type PromoteRequest struct {
 	// WhereSpace A where expression selecting the Spaces to promote. Intersected with the other selectors.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
 }
+
+// PromoteRequestPriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include (the default) merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start; Error refuses, naming the Revisions. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
+type PromoteRequestPriorRevisions string
 
 // PromoteResult defines model for PromoteResult.
 type PromoteResult struct {
@@ -2599,22 +2720,26 @@ type PromoteStageResult struct {
 
 // PromoteUnitResult defines model for PromoteUnitResult.
 type PromoteUnitResult struct {
-	// Action Upgrade, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
-	Action                  string                `json:"Action,omitempty" yaml:"Action,omitempty"`
-	Conflicts               *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Error                   *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	// Action Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
+	Action          string                `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Conflicts       *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	HeadRevisionNum int64                 `json:"HeadRevisionNum,omitempty" yaml:"HeadRevisionNum,omitempty"`
+
+	// LinkIDs For a Resolve, and a Mark made by one, the Links resolved.
+	LinkIDs                 []UUID                `json:"LinkIDs,omitempty" yaml:"LinkIDs,omitempty"`
 	Mutations               *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
 	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
 
-	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it.
+	// Reason For Skip and Unchanged: NotCovered, CreatedAfterChangeOrder, AlreadyTaken, or, for a Unit created in this Space, why the ChangeOrder does not cover it. For Mark: CreatedInSpace, when the Unit was created in this Space and the ChangeOrder is scoped over it. For an applied Upgrade or Resolve: NoChange, when the Unit already held the change, so no Revision was made and the ChangeOrder's Tags mark its head.
 	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	Slug   string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
 	// UnitID Absent for a clone a dry run would create.
 	UnitID *openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 
-	// UpstreamUnitID Absent for a Unit created in this Space.
+	// UpstreamUnitID Absent for a Unit created in this Space, and for a Resolve over Links to more than one Unit.
 	UpstreamUnitID *openapi_types.UUID `json:"UpstreamUnitID,omitempty" yaml:"UpstreamUnitID,omitempty"`
 }
 
@@ -5967,7 +6092,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6051,7 +6176,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6176,7 +6301,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6294,7 +6419,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7628,6 +7753,15 @@ type PatchComponentApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// DemoteParams defines parameters for Demote.
+type DemoteParams struct {
+	// DryRun Plan the demotion and return the same response without writing anything.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
 // BulkDeleteFiltersParams defines parameters for BulkDeleteFilters.
@@ -10766,7 +10900,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12754,8 +12888,11 @@ type PatchUnitParams struct {
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
-	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
+
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.
+	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -12868,8 +13005,11 @@ type UpdateUnitParams struct {
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
-	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
+
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.
+	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -15507,8 +15647,11 @@ type BulkPatchUnitsParams struct {
 	// ChangeSetId Must match ChangeSetID of affected Units if config Data is changed unless in dry run mode
 	ChangeSetId *openapi_types.UUID `form:"change_set_id,omitempty" json:"change_set_id,omitempty" yaml:"change_set_id,omitempty"`
 
-	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is not where the change order starts is an error, since merging anyway would replay what it already has or skip what it does not, and with resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
+	// ChangeOrder ChangeOrder to promote, with upgrade or resolve, or to undo, with restore. The change order fixed the range when it was created -- the interval on each source Unit, marked with its Tags -- so it supplies both ends of the merge and merge_end is refused alongside it. A Unit whose source the change order does not cover is passed over rather than failed, which is what lets a bulk upgrade name a whole Space and take only the Units the change is in. A Unit whose last merged revision is past where the change order starts is an error, since merging anyway would replay what it already has; one that is short of it is handled as prior_revisions says. With resolve a selected Link whose UpdateType the change order does not follow is an error too. The revisions the promotion creates carry the ChangeOrder, and its start Tag is placed on the revision before them and its end Tag on the one it arrives at, so 'restore Before:ChangeOrder:uuid' undoes it whether it landed as one revision or as one per source revision. With restore the change order is being undone rather than promoted: the restore must be 'Before:ChangeOrder:' the same change order, the change order must have an AbortedReason -- undoing a change nobody has said is not coming is a race with whoever is still promoting it -- and a Unit the change order never marked is an error rather than passed over, since naming it says the Unit is part of the undoing. The first restore mints the change order's restore Tag and records it as RestoreTagID; every restore after that marks with the same Tag, which is what RestoredSpaceIDs is read off. A Unit the change order carried nothing for takes the restore Tag on the revision its start and end Tags are already on, and no revision is made. A Unit already carrying the restore Tag has had the change order taken back out of it and is passed over, since undoing one in a Unit happens once as promoting it into one does -- so the revisions a Unit has taken since it was undone are its own work rather than this undoing's to drop. Restoring also advances the merge pointers of the Links of the change order's UpdateType that follow the restored Unit onto the revision the restore made, so a later upgrade does not replay the change that was just taken out; the downstream Units are not restored with it, since each has to be restored and released on its own account.
 	ChangeOrder *openapi_types.UUID `form:"change_order,omitempty" json:"change_order,omitempty" yaml:"change_order,omitempty"`
+
+	// PriorRevisions With change_order, when promoting it by upgrade or resolve: what to do for a Unit whose last merged revision of its source is before the revision the change order starts at there -- typically because a Link in the source's Space, such as a TransformPaths Link, wrote revisions after the Unit last merged, and those revisions are not the change order's. Include (the default) merges them first, walking them one source revision at a time even with squash, as revisions that do not carry the change order, and places the change order's start Tag on the revision they leave, so 'restore Before:ChangeOrder:uuid' keeps them. Skip merges only the change order's range, as though the Unit's merge pointer had already been advanced to the change order's start, so what those revisions changed does not reach the Unit. Error refuses, naming the Unit, the Link, and each of those revisions with the operation and Link that made it. A Unit that has already merged past the change order's start is an error whatever this says.
+	PriorRevisions *string `form:"prior_revisions,omitempty" json:"prior_revisions,omitempty" yaml:"prior_revisions,omitempty"`
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
@@ -17083,6 +17226,9 @@ type PatchComponentApplicationMergePatchPlusJSONRequestBody PatchComponentApplic
 
 // UpdateComponentJSONRequestBody defines body for UpdateComponent for application/json ContentType.
 type UpdateComponentJSONRequestBody = Component
+
+// DemoteJSONRequestBody defines body for Demote for application/json ContentType.
+type DemoteJSONRequestBody = DemoteRequest
 
 // BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchFilters for application/merge-patch+json ContentType.
 type BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody BulkPatchFiltersApplicationMergePatchPlusJSONBody

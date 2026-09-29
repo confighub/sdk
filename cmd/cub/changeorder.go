@@ -27,8 +27,10 @@ Creating one decides what the change is; promoting one takes it into a target:
   cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
       --upgrade --change-order my-base/release-42 --change-desc "Take release-42"
 
-The change order supplies the range, so units it does not cover are passed over and a unit that is
-not where it starts is an error. It marks what it promoted, so one restore undoes it:
+The change order supplies the range, so units it does not cover are passed over and a unit that has
+merged past where it starts is an error. A unit short of it merges the revisions before the start
+first, unmarked, unless --prior-revisions says Skip or Error. It marks what it promoted, so one
+restore undoes it:
 
   cub unit update --patch --space my-dev --where "Slug LIKE '%'" \
       --restore Before:ChangeOrder:my-base/release-42 --change-desc "Roll release-42 back"

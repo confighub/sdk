@@ -247,6 +247,11 @@ type ClientInterface interface {
 
 	UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DemoteWithBody request with any body
+	DemoteWithBody(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Demote(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteFilters request
 	BulkDeleteFilters(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -1667,6 +1672,30 @@ func (c *Client) UpdateComponentWithBody(ctx context.Context, componentId openap
 
 func (c *Client) UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateComponentRequest(c.Server, componentId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DemoteWithBody(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDemoteRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Demote(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDemoteRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -9148,6 +9177,84 @@ func NewUpdateComponentRequestWithBody(server string, componentId openapi_types.
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDemoteRequest calls the generic Demote builder with application/json body
+func NewDemoteRequest(server string, params *DemoteParams, body DemoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDemoteRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewDemoteRequestWithBody generates requests for Demote with any type of body
+func NewDemoteRequestWithBody(server string, params *DemoteParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/demote")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -20654,6 +20761,22 @@ func NewPatchUnitRequestWithBody(server string, spaceId openapi_types.UUID, unit
 
 		}
 
+		if params.PriorRevisions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "prior_revisions", runtime.ParamLocationQuery, *params.PriorRevisions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Subgroup != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "subgroup", runtime.ParamLocationQuery, *params.Subgroup); err != nil {
@@ -21037,6 +21160,22 @@ func NewUpdateUnitRequestWithBody(server string, spaceId openapi_types.UUID, uni
 		if params.ChangeOrder != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "change_order", runtime.ParamLocationQuery, *params.ChangeOrder); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PriorRevisions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "prior_revisions", runtime.ParamLocationQuery, *params.PriorRevisions); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25739,6 +25878,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 
 		}
 
+		if params.PriorRevisions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "prior_revisions", runtime.ParamLocationQuery, *params.PriorRevisions); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Subgroup != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "subgroup", runtime.ParamLocationQuery, *params.Subgroup); err != nil {
@@ -28195,6 +28350,11 @@ type ClientWithResponsesInterface interface {
 
 	UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
 
+	// DemoteWithBodyWithResponse request with any body
+	DemoteWithBodyWithResponse(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DemoteResponse, error)
+
+	DemoteWithResponse(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*DemoteResponse, error)
+
 	// BulkDeleteFiltersWithResponse request
 	BulkDeleteFiltersWithResponse(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*BulkDeleteFiltersResponse, error)
 
@@ -30040,6 +30200,37 @@ func (r UpdateComponentResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateComponentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DemoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DemoteResult
+	JSON207      *DemoteResult
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON412      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DemoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DemoteResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -36075,6 +36266,23 @@ func (c *ClientWithResponses) UpdateComponentWithResponse(ctx context.Context, c
 	return ParseUpdateComponentResponse(rsp)
 }
 
+// DemoteWithBodyWithResponse request with arbitrary body returning *DemoteResponse
+func (c *ClientWithResponses) DemoteWithBodyWithResponse(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DemoteResponse, error) {
+	rsp, err := c.DemoteWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDemoteResponse(rsp)
+}
+
+func (c *ClientWithResponses) DemoteWithResponse(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*DemoteResponse, error) {
+	rsp, err := c.Demote(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDemoteResponse(rsp)
+}
+
 // BulkDeleteFiltersWithResponse request returning *BulkDeleteFiltersResponse
 func (c *ClientWithResponses) BulkDeleteFiltersWithResponse(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*BulkDeleteFiltersResponse, error) {
 	rsp, err := c.BulkDeleteFilters(ctx, params, reqEditors...)
@@ -41369,6 +41577,95 @@ func ParseUpdateComponentResponse(rsp *http.Response) (*UpdateComponentResponse,
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDemoteResponse parses an HTTP response from a DemoteWithResponse call
+func ParseDemoteResponse(rsp *http.Response) (*DemoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DemoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DemoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest DemoteResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 412:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON412 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
