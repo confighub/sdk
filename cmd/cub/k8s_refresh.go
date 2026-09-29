@@ -285,15 +285,10 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 	// and what they became -- so refresh shows it unless the caller asked for another shape.
 	showDrift := shouldDisplayMutations() || (!isAlternativeOutput() && !quiet)
 
-	var priorUnits map[string]priorUnitInfo
 	where := fmt.Sprintf("UnitID = '%s'", unit.UnitID.String())
 	savedSpaceID := selectedSpaceID
 	selectedSpaceID = spaceID
 	defer func() { selectedSpaceID = savedSpaceID }()
-
-	if showDrift {
-		priorUnits = savePriorUnitInfoInSpace(spaceID, where, false)
-	}
 
 	clearance, err := clearanceJSON()
 	if err != nil {
@@ -304,11 +299,12 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 		return err
 	}
 	resp, err := invokeFunctionsOnUnits(&invokeArgs{
-		Where:     where,
-		DryRun:    k8sRefreshArgs.dryRun,
-		Clearance: clearance,
-		Guards:    guards,
-		Body:      body,
+		Where:       where,
+		DryRun:      k8sRefreshArgs.dryRun,
+		Clearance:   clearance,
+		Guards:      guards,
+		Body:        body,
+		IncludeDiff: showDrift,
 	})
 	if err != nil {
 		return err
@@ -326,7 +322,7 @@ func applyClusterDrift(unit *goclientnew.Unit, spaceID, resourceType, name strin
 		reportRefreshConflicts(resp)
 	}
 	if showDrift {
-		displayMutationsFromFunctionResponse(resp, k8sRefreshArgs.dryRun, priorUnits, "refresh")
+		displayDiffsFromFunctionResponse(resp, "refresh")
 	}
 	return nil
 }

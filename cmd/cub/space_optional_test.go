@@ -24,7 +24,7 @@ var referenceOperandCommands = []string{
 	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
 	"unit get", "view get", "worker get",
-	"unit blame", "unit conflicts", "unit data", "unit diff", "unit edit", "unit mutation-sources",
+	"unit blame", "unit conflicts", "unit data", "unit diff", "unit data-edit", "unit mutation-sources",
 	"unit set-guard", "unit set-protection",
 	"revision get", "revision data", "mutation get", "mutation list", "release get",
 	"attestation get", "attestation revoke",

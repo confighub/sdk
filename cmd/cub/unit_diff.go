@@ -5,6 +5,8 @@ package main
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strconv"
 	"strings"
 
@@ -55,7 +57,9 @@ Output Formats:
   - Default: Line-numbered format with color
   - Unified: Use -u for unified diff format (like git diff)
   - Color: Use -c to enable color in unified diff
-  - Mutations: Use -o mutations for structured mutation display
+  - Mutations: Use -o mutations for a structured diff, path by path, that matches list
+    elements by merge key -- containers and environment variables by name -- rather than by
+    position; -o json, yaml, jq=<expr> or yq=<expr> print that diff as data
 
 Examples:
 `+"```"+`
@@ -80,6 +84,9 @@ Examples:
   # Cross-unit diff
   cub unit diff my-unit --with-unit other-unit
 
+  # What uploading a local file would change, against the head or --from
+  cub unit diff my-unit --file my-unit.yaml
+
   # Show mutations instead of text diff
   cub unit diff my-unit -o mutations
 `+"```"+`
@@ -94,6 +101,7 @@ var unitDiffArgs struct {
 	fromRev          string
 	toRev            string
 	withUnit         string
+	file             string
 	displayMutations bool
 }
 
@@ -103,11 +111,11 @@ func init() {
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.fromRev, "from", defaultFrom, "source revision (defaults to LastReleasedRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.toRev, "to", defaultTo, "target revision (defaults to HeadRevisionNum)")
 	unitDiffCmd.Flags().StringVar(&unitDiffArgs.withUnit, "with-unit", "", "second unit for cross-unit diff (slug, space/slug, or UUID)")
-	// Register -o locally with a constrained description: unit diff produces a
-	// text or mutations diff, not a structured entity payload, so json/yaml/jq/yq
-	// don't apply here.
+	unitDiffCmd.Flags().StringVar(&unitDiffArgs.file, "file", "", "diff the unit, at its head or --from, against this local file (- for stdin)")
+	// Register -o locally with a constrained description: unit diff produces a text or a
+	// structured diff, and json/yaml/jq/yq print the structured one as data.
 	unitDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
-		`Output format. Only "mutations" is supported; replaces the text diff with a resource-mutations diff.`)
+		`Output format: "mutations" replaces the text diff with a structured, path-by-path diff; json, yaml, jq=<expr> and yq=<expr> print that diff as data.`)
 	unitDiffCmd.Flags().BoolVar(&unitDiffArgs.displayMutations, "display-mutations", false, "display resource mutations instead of text diff")
 	_ = unitDiffCmd.Flags().MarkDeprecated("display-mutations", "use -o mutations")
 	enableOptionalSpace(unitDiffCmd)
@@ -393,9 +401,28 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	revFrom := unitDiffArgs.fromRev
 	revTo := unitDiffArgs.toRev
 
-	// Validate -o: only "mutations" is meaningful for this command.
-	if outputFormat != "" && outputFormat != "mutations" {
-		return fmt.Errorf(`"cub unit diff" only accepts "-o mutations"; %q is not supported`, outputFormat)
+	// Validate -o: a text diff, a structured diff, or the structured diff as data.
+	outputSpec, err := parseOutputFormat(outputFormat)
+	if err != nil {
+		return err
+	}
+	switch outputSpec.Kind {
+	case OutputDefault, OutputMutations, OutputJSON, OutputYAML, OutputJQ, OutputYQ:
+	default:
+		return fmt.Errorf(`"cub unit diff" accepts -o mutations, json, yaml, jq=<expr> and yq=<expr>; %q is not supported`, outputFormat)
+	}
+	structuredDiff := unitDiffArgs.displayMutations || outputSpec.Kind != OutputDefault
+
+	if unitDiffArgs.file != "" {
+		if unitDiffArgs.withUnit != "" || len(args) > 1 || unitDiffArgs.toRev != defaultTo {
+			return fmt.Errorf("--file is the to side, so it cannot be combined with --with-unit, --to, or revision arguments")
+		}
+		// What uploading the file would change is a comparison with what the unit holds now,
+		// not with what was last released.
+		if unitDiffArgs.fromRev == defaultFrom {
+			unitDiffArgs.fromRev = defaultTo
+		}
+		return runFileDiff(unitSlug, unitDiffArgs.fromRev, unitDiffArgs.file, structuredDiff)
 	}
 
 	// Comparing two units means comparing what they say now, so the from side defaults to
@@ -503,16 +530,26 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("failed to get revision %d data: %v", revToNum, err)
 	}
 
-	if unitDiffArgs.displayMutations || outputFormat == "mutations" {
-		// Display mutations instead of text diff
-		lookupMutationsUnitID = toUnit.UnitID.String()
-		lookupMutationsSpaceID = toUnit.SpaceID.String()
-		displayMutationsFromDryRun(fromData, changedRevision{
-			SpaceID:    toUnit.SpaceID,
-			UnitID:     toUnit.UnitID,
-			RevisionID: revToData.RevisionID,
-			Data:       toData,
-		}, "diff")
+	if structuredDiff && toUnit.UnitID == unit.Unit.UnitID {
+		unitDiff, err := fetchUnitDiff(unit.Unit.SpaceID, unit.Unit.UnitID,
+			strconv.FormatInt(revFromNum, 10), strconv.FormatInt(revToNum, 10))
+		if err != nil {
+			return err
+		}
+		if !renderPayload(unitDiff) {
+			displayConfigDiff(unitDiff.Diff)
+		}
+	} else if structuredDiff {
+		result, err := diffConfigurations(goclientnew.DiffRequest{
+			From: unitDiffSide(unit.Unit.UnitID, revFromNum),
+			To:   unitDiffSide(toUnit.UnitID, revToNum),
+		})
+		if err != nil {
+			return err
+		}
+		if !renderPayload(result) {
+			displayConfigDiff(result.Diff)
+		}
 	} else {
 		// Compute text diff
 		diffSegments := ComputeStructuredDiff(fromData, toData)
@@ -587,4 +624,64 @@ func apiGetRevisionFromUUID(revisionUUID string, unitID string, spaceID string) 
 		return nil, fmt.Errorf("revision %s not found", revisionUUID)
 	}
 	return revisions[0].Revision, nil
+}
+
+// runFileDiff diffs a unit, at the Revision fromRev names, against a local file: what uploading
+// the file would change.
+func runFileDiff(unitSlug, fromRev, file string, structuredDiff bool) error {
+	var fileData []byte
+	var err error
+	if file == "-" {
+		fileData, err = io.ReadAll(os.Stdin)
+	} else {
+		fileData, err = os.ReadFile(file)
+	}
+	if err != nil {
+		return fmt.Errorf("failed to read %s: %w", file, err)
+	}
+	unit, err := resolveUnit(unitSlug, selectedSpaceID, "*")
+	if err != nil {
+		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
+	}
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(fromRev, serverResolvedRevision, unit.Unit.HeadRevisionNum)
+	if err != nil {
+		return err
+	}
+	revFromNum, err := resolveFormattedRevision(fromFormatted, fromIsUUID, unit.Unit)
+	if err != nil {
+		return err
+	}
+	if revFromNum == 0 {
+		return fmt.Errorf("revision %s not found or is invalid", fromRev)
+	}
+
+	if structuredDiff {
+		result, err := diffConfigurations(goclientnew.DiffRequest{
+			From: unitDiffSide(unit.Unit.UnitID, revFromNum),
+			To:   inlineDiffSide(fileData, unit.Unit.ToolchainType),
+		})
+		if err != nil {
+			return err
+		}
+		if !renderPayload(result) {
+			displayConfigDiff(result.Diff)
+		}
+		return nil
+	}
+
+	revision, err := apiGetRevisionFromNumberInSpace(revFromNum, unit.Unit.UnitID.String(), unit.Unit.SpaceID.String(), "*")
+	if err != nil {
+		return fmt.Errorf("failed to get revision %d of %s: %v", revFromNum, unitSlug, err)
+	}
+	fromData, err := fetchRevisionData(unit.Unit.SpaceID, unit.Unit.UnitID, revision.RevisionID)
+	if err != nil {
+		return fmt.Errorf("failed to get revision %d data: %v", revFromNum, err)
+	}
+	diffSegments := ComputeStructuredDiff(fromData, string(fileData))
+	if unitDiffArgs.unifiedDiff {
+		printUnifiedDiff(diffSegments, formatDiffLabel(unit.Unit.SpaceSlug, unitSlug, revFromNum), file, unitDiffArgs.colorOutput)
+	} else {
+		printNumberedDiff(diffSegments)
+	}
+	return nil
 }

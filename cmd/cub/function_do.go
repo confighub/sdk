@@ -478,7 +478,7 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 // head.
 func invokeFunctionsOnRevisionID(spaceID, unitID, revisionID uuid.UUID, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	newParams := &goclientnew.InvokeFunctionsParams{}
-	newParams.Include = invokeIncludeConfigData()
+	newParams.Include = invokeIncludes(false)
 	unitUUID := goclientnew.UUID(unitID)
 	revisionUUID := goclientnew.UUID(revisionID)
 	newParams.UnitId = &unitUUID
@@ -522,6 +522,9 @@ type invokeArgs struct {
 	// Guards names the reasons this invocation states about the paths it writes, so a later
 	// operation must be cleared for them.
 	Guards      string
+	// IncludeDiff asks for the Diff of what the invocation changes even when -o mutations was
+	// not given, for a command that shows it by default.
+	IncludeDiff bool
 	ChangeSetID uuid.UUID
 	Body        *goclientnew.FunctionInvocationsRequest
 }
@@ -533,7 +536,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	// SpaceOptional command) has nothing to parse as a UUID.
 	if selectedSpaceID == "" || selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
-		newParams.Include = invokeIncludeConfigData()
+		newParams.Include = invokeIncludes(invokeArgs.IncludeDiff)
 		if executorSpace != "" {
 			newParams.ExecutorSpace = &executorSpace
 		}
@@ -582,7 +585,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
-		newParams.Include = invokeIncludeConfigData()
+		newParams.Include = invokeIncludes(invokeArgs.IncludeDiff)
 		if invokeArgs.Where != "" {
 			newParams.Where = &invokeArgs.Where
 		}
@@ -719,12 +722,6 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		return err
 	}
 
-	// Save prior HeadMutationNums if displaying mutations
-	var priorHeadMutationNums map[string]priorUnitInfo
-	if shouldDisplayMutations() {
-		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
-	}
-
 	// Handle revision flag
 	if revisionIdentifier != "" {
 		resp, err = invokeFunctionsOnRevision(revisionIdentifier, *newBody, dryRun)
@@ -792,7 +789,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		if len(args) > 0 {
 			funcDesc = args[0]
 		}
-		displayMutationsFromFunctionResponse(resp, dryRun, priorHeadMutationNums, funcDesc)
+		displayDiffsFromFunctionResponse(resp, funcDesc)
 	}
 
 	return nil

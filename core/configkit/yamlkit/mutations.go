@@ -1719,9 +1719,20 @@ func recordAddedSubtree(path string, doc *gaby.YamlDoc, functionIndex int64, pat
 // align with target-side paths in SubtractMutations) and the alias is
 // recorded so PatchMutations rewrites the merge-key field at apply time.
 func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap) {
+	computeMutationsForDocs(rootPath, diffLocation{}, previousDoc, modifiedDoc, functionIndex, pathMutationMap,
+		mergeKeyLookup, arrayOrders, arrayElementAliases, nil)
+}
+
+// computeMutationsForDocs is ComputeMutationsForDocs that also records, when recorder is
+// non-nil, what a display diff needs at each site it records a mutation. rootLocation is
+// where rootPath sits; locations are only tracked when recording.
+func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap, recorder *diffRecorder) {
+	recording := recorder != nil
+
 	// Define a traversal item for our stack
 	type traversalItem struct {
 		path        string
+		location    diffLocation
 		previousDoc *gaby.YamlDoc
 		modifiedDoc *gaby.YamlDoc
 	}
@@ -1729,6 +1740,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 	// Initialize the stack with the root traversal item
 	stack := []traversalItem{{
 		path:        rootPath,
+		location:    rootLocation,
 		previousDoc: previousDoc,
 		modifiedDoc: modifiedDoc,
 	}}
@@ -1741,6 +1753,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 		stack = stack[:last]
 
 		path := item.path
+		location := item.location
 		previousDoc := item.previousDoc
 		modifiedDoc := item.modifiedDoc
 
@@ -1757,7 +1770,13 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					Index:        functionIndex,
 					Value:        modifiedDoc.String(), // new data
 				}
+				recorder.record(path, location, api.DiffChangeTypeUpdate, previousDoc, modifiedDoc, "")
 				continue // process next stack element
+			}
+
+			var keyOrders map[string]diffOrder
+			if recording {
+				keyOrders = mapKeyOrders(previousDoc, modifiedDoc)
 			}
 
 			// Process all modified children
@@ -1769,15 +1788,24 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					currentPath = EscapeDotsInPathSegment(key)
 				}
 
+				var childLocation diffLocation
+				if recording {
+					childLocation = location.field(key, keyOrders[key])
+				}
+
 				previousChild, present := previousChildren[key]
 				if !present {
 					recordAddedSubtree(currentPath, modifiedChild, functionIndex, pathMutationMap)
+					// A diff shows the added subtree as one value, where the mutations
+					// record each of its leaves (see recordAddedSubtree).
+					recorder.record(currentPath, childLocation, api.DiffChangeTypeAdd, nil, modifiedChild, "")
 					continue // process next stack element
 				}
 
 				// Instead of recursion, push this item to the stack
 				stack = append(stack, traversalItem{
 					path:        currentPath,
+					location:    childLocation,
 					previousDoc: previousChild,
 					modifiedDoc: modifiedChild,
 				})
@@ -1797,6 +1825,10 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					MutationType: api.MutationTypeDelete,
 					Index:        functionIndex,
 					Value:        previousChild.String(), // deleted data
+				}
+				if recording {
+					recorder.record(currentPath, location.field(key, keyOrders[key]),
+						api.DiffChangeTypeDelete, previousChild, nil, "")
 				}
 			}
 		} else if modifiedArrayChildren := modifiedDoc.Children(); modifiedArrayChildren != nil {
@@ -1826,6 +1858,10 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 							Index:        functionIndex,
 							Value:        previousChild.String(), // deleted data
 						}
+						if recording {
+							recorder.record(currentPath, location.field(key, mapKeyOrders(previousDoc, modifiedDoc)[key]),
+								api.DiffChangeTypeDelete, previousChild, nil, "")
+						}
 					}
 				} else {
 					// The whole path was changed.
@@ -1834,6 +1870,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						Index:        functionIndex,
 						Value:        modifiedDoc.String(), // new data
 					}
+					recorder.record(path, location, api.DiffChangeTypeUpdate, previousDoc, modifiedDoc, "")
 				}
 				continue // process next stack element
 			}
@@ -1846,6 +1883,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					Index:        functionIndex,
 					Value:        modifiedDoc.String(), // new data
 				}
+				recorder.record(path, location, api.DiffChangeTypeUpdate, previousDoc, modifiedDoc, "")
 				continue // process next stack element
 			}
 
@@ -1885,8 +1923,12 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					}
 				}
 
-				// Track which previous elements were matched.
+				// Track which previous elements were matched, and to which modified element.
 				previousMatched := make([]bool, len(previousArrayChildren))
+				previousToModified := make([]int, len(previousArrayChildren))
+				for i := range previousToModified {
+					previousToModified[i] = -1
+				}
 
 				for modifiedIndex, modifiedChild := range modifiedArrayChildren {
 					modifiedKeyValues, hasKeyValues := MergeKeyValues(modifiedChild, mergeKeys)
@@ -1899,10 +1941,21 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 								Index:        functionIndex,
 								Value:        modifiedChild.String(),
 							}
+							if recording {
+								recorder.record(currentPath, location.element(nil, nil, -1, modifiedIndex,
+									diffOrder{pos: float64(modifiedIndex)}), api.DiffChangeTypeAdd, nil, modifiedChild, "")
+							}
 						} else if !previousMatched[modifiedIndex] {
 							previousMatched[modifiedIndex] = true
+							previousToModified[modifiedIndex] = modifiedIndex
+							var childLocation diffLocation
+							if recording {
+								childLocation = location.element(nil, nil, modifiedIndex, modifiedIndex,
+									diffOrder{pos: float64(modifiedIndex)})
+							}
 							stack = append(stack, traversalItem{
 								path:        currentPath,
+								location:    childLocation,
 								previousDoc: previousArrayChildren[modifiedIndex],
 								modifiedDoc: modifiedChild,
 							})
@@ -1917,8 +1970,15 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						// modified index for positional context.
 						currentPath := path + "." + AssociativePathSegment(mergeKeys, modifiedKeyValues, modifiedIndex)
 						previousMatched[prev.index] = true
+						previousToModified[prev.index] = modifiedIndex
+						var childLocation diffLocation
+						if recording {
+							childLocation = location.element(mergeKeys, modifiedKeyValues, prev.index, modifiedIndex,
+								diffOrder{pos: float64(modifiedIndex)})
+						}
 						stack = append(stack, traversalItem{
 							path:        currentPath,
+							location:    childLocation,
 							previousDoc: prev.doc,
 							modifiedDoc: modifiedChild,
 						})
@@ -1953,6 +2013,14 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					var bestPrevArrayOrders api.ArrayOrderMap
 					var bestPrevAliases api.ArrayElementAliasMap
 					var bestPrevKeyValue string
+					var bestPrevRecorder *diffRecorder
+					var modifiedElementLocation diffLocation
+					if recording {
+						// The element's changes are shown under its new merge-key value, which
+						// is how the To side names it.
+						modifiedElementLocation = location.element(mergeKeys, splitMergeKeyIdentity(pa.keyValue, mergeKeys),
+							-1, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
+					}
 					for prevIdx := range previousArrayChildren {
 						if previousMatched[prevIdx] {
 							continue
@@ -1967,7 +2035,15 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						tmpArrayOrders := api.ArrayOrderMap{}
 						tmpAliases := api.ArrayElementAliasMap{}
 						subPath := path + "." + AssociativePathSegment(mergeKeys, prevKeyValues, pa.modifiedIndex)
-						ComputeMutationsForDocs(subPath, prevChild, pa.modifiedChild, functionIndex, tmpPathMap, mergeKeyLookup, tmpArrayOrders, tmpAliases)
+						var tmpRecorder *diffRecorder
+						var subLocation diffLocation
+						if recording {
+							tmpRecorder = newDiffRecorder()
+							subLocation = location.element(mergeKeys, splitMergeKeyIdentity(pa.keyValue, mergeKeys),
+								prevIdx, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
+						}
+						computeMutationsForDocs(subPath, subLocation, prevChild, pa.modifiedChild, functionIndex, tmpPathMap,
+							mergeKeyLookup, tmpArrayOrders, tmpAliases, tmpRecorder)
 						// Cost is the leaf-value count of the sub-diff so a
 						// mutation whose Value is a whole subtree (e.g., an
 						// Add/Delete of a container or env-var block) is
@@ -1980,6 +2056,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 							bestPrevArrayOrders = tmpArrayOrders
 							bestPrevAliases = tmpAliases
 							bestPrevKeyValue = prevKeyValue
+							bestPrevRecorder = tmpRecorder
 						}
 					}
 
@@ -2030,10 +2107,12 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 							Index:        functionIndex,
 							Value:        pa.modifiedChild.String(),
 						}
+						recorder.record(currentPath, modifiedElementLocation, api.DiffChangeTypeAdd, nil, pa.modifiedChild, "")
 						continue
 					}
 
 					previousMatched[bestPrevIdx] = true
+					previousToModified[bestPrevIdx] = pa.modifiedIndex
 					// Drop the merge-key field's path Update from the sub-diff:
 					// the rename is applied via the ArrayElementAliases rename
 					// pass at the end of applyPathMutations. Leaving an
@@ -2045,6 +2124,16 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					delete(bestPrevPathMap, mergeKeyFieldPath)
 					for p, m := range bestPrevPathMap {
 						pathMutationMap[p] = m
+					}
+					if recording {
+						// The merge-key field's change is shown as the element's Rename.
+						delete(bestPrevRecorder.changes, mergeKeyFieldPath)
+						recorder.merge(bestPrevRecorder)
+						renameLocation := location.element(mergeKeys, splitMergeKeyIdentity(pa.keyValue, mergeKeys),
+							bestPrevIdx, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
+						renamePath := path + "." + AssociativePathSegment(
+							mergeKeys, splitMergeKeyIdentity(bestPrevKeyValue, mergeKeys), pa.modifiedIndex)
+						recorder.recordText(renamePath, renameLocation, api.DiffChangeTypeRename, bestPrevKeyValue, pa.keyValue)
 					}
 					if arrayOrders != nil {
 						for p, o := range bestPrevArrayOrders {
@@ -2074,7 +2163,8 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						continue
 					}
 					var currentPath string
-					if keyValues, ok := MergeKeyValues(child, mergeKeys); ok {
+					keyValues, hasKeyValues := MergeKeyValues(child, mergeKeys)
+					if hasKeyValues {
 						currentPath = path + "." + AssociativePathSegment(mergeKeys, keyValues, i)
 					} else {
 						currentPath = path + "." + strconv.Itoa(i)
@@ -2083,6 +2173,14 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						MutationType: api.MutationTypeDelete,
 						Index:        functionIndex,
 						Value:        child.String(),
+					}
+					if recording {
+						var elementKeys []string
+						if hasKeyValues {
+							elementKeys = mergeKeys
+						}
+						recorder.record(currentPath, location.element(elementKeys, keyValues, i, -1,
+							removedElementOrder(i, previousToModified)), api.DiffChangeTypeDelete, child, nil, "")
 					}
 				}
 
@@ -2093,20 +2191,44 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 				if arrayOrders != nil && len(modifiedKeySeq) > 0 && !slices.Equal(modifiedKeySeq, previousKeySeq) {
 					arrayOrders[api.ResolvedPath(path)] = modifiedKeySeq
 				}
+				// A diff reports a reorder only when elements on both sides changed their
+				// relative order: an added or removed element changes the sequence above
+				// without moving anything, and is reported as itself.
+				if recording {
+					if reordered, previousCommon, modifiedCommon := reorderedCommonKeys(previousKeySeq, modifiedKeySeq); reordered {
+						recorder.recordText(path, location, api.DiffChangeTypeReorder,
+							keySequenceText(previousCommon), keySequenceText(modifiedCommon))
+					}
+				}
 			} else {
 				// Non-associative array: match elements by position, but recognize
 				// elements that were removed or inserted rather than diffing index
 				// against index blindly. See alignArrayElements.
 				alignment := alignArrayElements(previousArrayChildren, modifiedArrayChildren, path, mergeKeyLookup)
+				var previousToModified []int
+				if recording {
+					previousToModified = make([]int, len(previousArrayChildren))
+					for i := range previousToModified {
+						previousToModified[i] = -1
+					}
+					for _, pair := range alignment.pairs {
+						previousToModified[pair[0]] = pair[1]
+					}
+				}
 
 				// Matched elements are addressed by their PREVIOUS index. The patch is
 				// replayed onto a target that shares the previous configuration's shape,
 				// so previous indices are the ones that resolve there, and they line up
 				// with the target's own diff against the same base.
 				for _, pair := range alignment.pairs {
+					var childLocation diffLocation
+					if recording {
+						childLocation = location.element(nil, nil, pair[0], pair[1], diffOrder{pos: float64(pair[1])})
+					}
 					stack = append(stack, traversalItem{
 						path: path + "." + AnchoredPathSegment(
 							previousArrayChildren, pair[0], true),
+						location:    childLocation,
 						previousDoc: previousArrayChildren[pair[0]],
 						modifiedDoc: modifiedArrayChildren[pair[1]],
 					})
@@ -2119,6 +2241,11 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						MutationType: api.MutationTypeDelete,
 						Index:        functionIndex,
 						Value:        previousArrayChildren[index].String(), // previous data
+					}
+					if recording {
+						recorder.record(currentPath, location.element(nil, nil, index, -1,
+							removedElementOrder(index, previousToModified)), api.DiffChangeTypeDelete,
+							previousArrayChildren[index], nil, "")
 					}
 				}
 
@@ -2134,6 +2261,10 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 						MutationType: api.MutationTypeAdd,
 						Index:        functionIndex,
 						Value:        modifiedArrayChildren[index].String(), // new data
+					}
+					if recording {
+						recorder.record(currentPath, location.element(nil, nil, -1, index,
+							diffOrder{pos: float64(index)}), api.DiffChangeTypeAdd, nil, modifiedArrayChildren[index], "")
 					}
 				}
 			}
@@ -2161,6 +2292,7 @@ func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifie
 					}
 				}
 				pathMutationMap[api.ResolvedPath(path)] = mutation
+				recorder.record(path, location, api.DiffChangeTypeUpdate, previousDoc, modifiedDoc, mutation.Patch)
 			}
 		}
 	}
@@ -2214,6 +2346,23 @@ func diffResourcePair(previousDoc, modifiedDoc *gaby.YamlDoc, modifiedResourceTy
 	return diff
 }
 
+// diffResourcePairRecorded is diffResourcePair that also records the pair's changes for a
+// display diff.
+func diffResourcePairRecorded(previousDoc, modifiedDoc *gaby.YamlDoc, modifiedResourceType api.ResourceType,
+	functionIndex int64, resourceProvider ResourceProvider, recorder *diffRecorder) resourcePairDiff {
+	diff := resourcePairDiff{
+		pathMutationMap:     api.MutationMap{},
+		arrayOrders:         api.ArrayOrderMap{},
+		arrayElementAliases: api.ArrayElementAliasMap{},
+	}
+	mergeKeyLookup := MergeKeyLookup(func(path string) ([]string, bool) {
+		return resourceProvider.MergeKeysForPath(modifiedResourceType, path)
+	})
+	computeMutationsForDocs("", diffLocation{}, previousDoc, modifiedDoc, functionIndex,
+		diff.pathMutationMap, mergeKeyLookup, diff.arrayOrders, diff.arrayElementAliases, recorder)
+	return diff
+}
+
 // renameMatchScore normalizes the cost of pairing two resources by the largest cost that
 // pairing could have had — every leaf value on the previous side removed and every leaf
 // value on the modified side added. Both the numerator (mutationMapCost) and the
@@ -2230,48 +2379,23 @@ func renameMatchScore(cost int, previousDoc, modifiedDoc *gaby.YamlDoc) float64 
 	return float64(cost) / float64(maxCost)
 }
 
-// ComputeMutations performs a kind of diff between two configuration Units where it determines what
-// modifications were made at the resource/element level and at the path level. They are recorded in a
-// way that can be accumulated and updated over subsequent edits and transformations.
-func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, functionIndex int64, resourceProvider ResourceProvider) (api.ResourceMutationList, error) {
-	// There are limits in how accurately we can determine the correspondence between resources/elements
-	// across revisions. Once resources/elements change too significantly, they will be determined to be
-	// distinct. Some properties, such as the ResourceCategory, ResourceType, and ResourceName, carry more
-	// significance than other attributes. Also, presence of paths (keys) should carry more weight than values.
-	// Line diffs use surrounding lines for context to identify matches, which sometimes works well,
-	// but also can be fragile, such as in the case of insertions of partially similar blocks, or minor
-	// changes in syntax, such as presence or absence of trailing commas.
-	// Since we don't expect a vast number of resources/elements per unit, an algorithm that is quadratic in
-	// numbers of resources/elements, such as using Jaccard Similarity or Levenshtein Distance, is acceptable.
-	// As opposed to some kind of higher-dimensional vector distance using embeddings.
-	// https://www.geeksforgeeks.org/jaccard-similarity/ -- intersection size divided by union size
-	// https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/ -- number of edits
-	// We use ComputeMutationsForDocs to measure the distance between a candidate pair, normalized by the
-	// size of the larger of the two resources (renameMatchScore).
-	// Of course, we should optimize for the common case that resources are modified in their same positions
-	// and are not renamed nor have types changed.
-	// I decided not to impose a canonical order based on resource name because it would cause resources to
-	// move when they are renamed, such as during cloning.
-	//
-	// Matching runs in two passes over the whole resource lists, rather than picking a match for each
-	// modified resource in isolation:
-	//
-	//  1. Exact matches, by full name or by name without scope. Doing all of these first means a fuzzy
-	//     match can never claim a resource that some other modified resource matches by name.
-	//  2. Rename matching over whatever is left, best pair first: every remaining candidate pairing is
-	//     scored, the scores are sorted, and pairs are accepted in that order, each resource being
-	//     claimed at most once. This is the same shape as git's rename detection, and it is why the
-	//     search is not a first-fit scan: with first-fit, the first modified resource to be considered
-	//     takes the best previous resource it can find even when a later one is a far better match for
-	//     it.
-	//
-	// A resource that ends up unmatched on the modified side is an Add; on the previous side, a Delete.
+// resourceMatching pairs the resources of a previous configuration with those of a modified
+// one. matchedPrevious[modifiedDocIndex] is the previous doc it was paired with, or -1.
+type resourceMatching struct {
+	previousInfos   []*api.ResourceInfo
+	modifiedInfos   []*api.ResourceInfo
+	matchedPrevious []int
+	previousMatched []bool
+}
 
+// matchResources pairs resources as ComputeMutations describes: exact names first, then
+// renames, best pair first.
+func matchResources(previousParsedData, modifiedParsedData gaby.Container, functionIndex int64, resourceProvider ResourceProvider) (resourceMatching, error) {
 	previousInfos := make([]*api.ResourceInfo, len(previousParsedData))
 	for previousDocIndex := range previousParsedData {
 		info, err := GetResourceInfo(previousParsedData[previousDocIndex], resourceProvider)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("error in previous resource/element %d", previousDocIndex))
+			return resourceMatching{}, errors.Wrap(err, fmt.Sprintf("error in previous resource/element %d", previousDocIndex))
 		}
 		previousInfos[previousDocIndex] = info
 	}
@@ -2279,7 +2403,7 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 	for modifiedDocIndex := range modifiedParsedData {
 		info, err := GetResourceInfo(modifiedParsedData[modifiedDocIndex], resourceProvider)
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("error in modified resource/element %d", modifiedDocIndex))
+			return resourceMatching{}, errors.Wrap(err, fmt.Sprintf("error in modified resource/element %d", modifiedDocIndex))
 		}
 		modifiedInfos[modifiedDocIndex] = info
 	}
@@ -2383,6 +2507,58 @@ func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, fun
 			}
 		}
 	}
+
+	return resourceMatching{
+		previousInfos:   previousInfos,
+		modifiedInfos:   modifiedInfos,
+		matchedPrevious: matchedPrevious,
+		previousMatched: previousMatched,
+	}, nil
+}
+
+// ComputeMutations performs a kind of diff between two configuration Units where it determines what
+// modifications were made at the resource/element level and at the path level. They are recorded in a
+// way that can be accumulated and updated over subsequent edits and transformations.
+func ComputeMutations(previousParsedData, modifiedParsedData gaby.Container, functionIndex int64, resourceProvider ResourceProvider) (api.ResourceMutationList, error) {
+	// There are limits in how accurately we can determine the correspondence between resources/elements
+	// across revisions. Once resources/elements change too significantly, they will be determined to be
+	// distinct. Some properties, such as the ResourceCategory, ResourceType, and ResourceName, carry more
+	// significance than other attributes. Also, presence of paths (keys) should carry more weight than values.
+	// Line diffs use surrounding lines for context to identify matches, which sometimes works well,
+	// but also can be fragile, such as in the case of insertions of partially similar blocks, or minor
+	// changes in syntax, such as presence or absence of trailing commas.
+	// Since we don't expect a vast number of resources/elements per unit, an algorithm that is quadratic in
+	// numbers of resources/elements, such as using Jaccard Similarity or Levenshtein Distance, is acceptable.
+	// As opposed to some kind of higher-dimensional vector distance using embeddings.
+	// https://www.geeksforgeeks.org/jaccard-similarity/ -- intersection size divided by union size
+	// https://www.geeksforgeeks.org/introduction-to-levenshtein-distance/ -- number of edits
+	// We use ComputeMutationsForDocs to measure the distance between a candidate pair, normalized by the
+	// size of the larger of the two resources (renameMatchScore).
+	// Of course, we should optimize for the common case that resources are modified in their same positions
+	// and are not renamed nor have types changed.
+	// I decided not to impose a canonical order based on resource name because it would cause resources to
+	// move when they are renamed, such as during cloning.
+	//
+	// Matching runs in two passes over the whole resource lists, rather than picking a match for each
+	// modified resource in isolation:
+	//
+	//  1. Exact matches, by full name or by name without scope. Doing all of these first means a fuzzy
+	//     match can never claim a resource that some other modified resource matches by name.
+	//  2. Rename matching over whatever is left, best pair first: every remaining candidate pairing is
+	//     scored, the scores are sorted, and pairs are accepted in that order, each resource being
+	//     claimed at most once. This is the same shape as git's rename detection, and it is why the
+	//     search is not a first-fit scan: with first-fit, the first modified resource to be considered
+	//     takes the best previous resource it can find even when a later one is a far better match for
+	//     it.
+	//
+	// A resource that ends up unmatched on the modified side is an Add; on the previous side, a Delete.
+
+	matching, err := matchResources(previousParsedData, modifiedParsedData, functionIndex, resourceProvider)
+	if err != nil {
+		return nil, err
+	}
+	previousInfos, modifiedInfos := matching.previousInfos, matching.modifiedInfos
+	matchedPrevious, previousMatched := matching.matchedPrevious, matching.previousMatched
 
 	// Emit one mutation per modified resource, in modified order.
 	mutations := api.ResourceMutationList{}

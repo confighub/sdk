@@ -84,6 +84,21 @@ func Promote(ctx context.Context, c *Client, req goclientnew.PromoteRequest, dry
 // WithPromoteMutations asks a promotion for each Unit write's Mutations: what it changed, or on a
 // dry run what it would change.
 func WithPromoteMutations(params *goclientnew.PromoteParams) {
-	include := "Mutations"
-	params.Include = &include
+	params.Include = appendInclude(params.Include, "Mutations")
+}
+
+// WithPromoteDiff asks a promotion for each Unit write's Diff: what it changed, or on a dry run
+// what it would change, path by path with the values on both sides.
+func WithPromoteDiff(params *goclientnew.PromoteParams) {
+	params.Include = appendInclude(params.Include, "Diff")
+}
+
+// appendInclude adds a name to a comma-separated include parameter, so that the with mutators
+// combine rather than each replacing the last.
+func appendInclude(include *string, name string) *string {
+	if include == nil || *include == "" {
+		return &name
+	}
+	combined := *include + "," + name
+	return &combined
 }

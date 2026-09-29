@@ -195,7 +195,7 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = rev.UnitID.String()
 				lookupMutationsSpaceID = rev.SpaceID.String()
-				displayResourceMutationList(mutationSources, true, 0, "", "")
+				displayResourceMutationList(mutationSources)
 			} else {
 				displayJSON(mutationSources)
 			}

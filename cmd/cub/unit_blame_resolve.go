@@ -133,12 +133,14 @@ func (r *blameResolver) describe(unit *goclientnew.Unit, mutationNum int64) (*bl
 		MutationNum: m.MutationNum,
 	}
 
+	var source string
 	if revision, err := r.revision(unit, m.RevisionNum); err == nil && revision != nil {
 		origin.Description = revision.Description
 		origin.When = revision.CreatedAt
 		origin.User = r.username(revision.UserID)
+		source = revision.Source
 	}
-	origin.SetBy = blameSetBy(em, origin.Description)
+	origin.SetBy = blameSetBy(em, origin.Description, source)
 
 	// The walk continues only where the Mutation's expansion resolved the upstream
 	// unit for us. A MergeSourceID with no expansion names a unit this caller cannot
@@ -153,8 +155,9 @@ func (r *blameResolver) describe(unit *goclientnew.Unit, mutationNum int64) (*bl
 // blameSetBy names the operation behind a mutation, most specific first. A function
 // name is the best answer; a merge with none is named by the external source the
 // change description carries, which is how "MergeExternal; from helm template ..."
-// becomes "helm template ...".
-func blameSetBy(em *goclientnew.ExtendedMutation, description string) string {
+// becomes "helm template ...". What is left -- an update that wrote the data it was
+// given, a restore -- is named by the operation that made the Revision, its Source.
+func blameSetBy(em *goclientnew.ExtendedMutation, description, source string) string {
 	m := em.Mutation
 	if m.FunctionInvocation.FunctionName != "" {
 		return m.FunctionInvocation.FunctionName
@@ -174,7 +177,7 @@ func blameSetBy(em *goclientnew.ExtendedMutation, description string) string {
 	if em.MergeSource != nil {
 		return "merge from " + em.MergeSource.Slug
 	}
-	return ""
+	return source
 }
 
 // externalSourceFromDescription pulls the source out of the change description an

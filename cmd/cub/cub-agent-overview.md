@@ -326,7 +326,7 @@ cub unit list --space SPACE_SLUG --where "Labels.tier = 'Backend'"
 cub unit get --space SPACE_SLUG UNIT_SLUG
 
 # Edit unit configuration
-cub unit edit --space SPACE_SLUG UNIT_SLUG
+cub unit data-edit --space SPACE_SLUG UNIT_SLUG
 
 # Clone unit from another space
 cub unit create --space SPACE_SLUG --from-stdin VARIANT_SLUG \

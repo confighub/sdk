@@ -26,7 +26,7 @@ import (
 // UploadUnitResult's Error. Only a request that wrote nothing at all is an error.
 //
 // The with mutators run after dryRun is applied, for the rest of the parameters:
-// [WithUploadMutations] asks for what each Unit write changed.
+// [WithUploadMutations] and [WithUploadDiff] ask for what each Unit write changed.
 func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRun bool,
 	with ...func(*goclientnew.UploadParams)) (*goclientnew.UploadResult, error) {
 	params := &goclientnew.UploadParams{}
@@ -57,6 +57,12 @@ func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRu
 // on a dry run what it would change. A dry run that asks runs the merges it would
 // otherwise skip, so it costs more than a plan of actions alone.
 func WithUploadMutations(params *goclientnew.UploadParams) {
-	include := "Mutations"
-	params.Include = &include
+	params.Include = appendInclude(params.Include, "Mutations")
+}
+
+// WithUploadDiff asks an upload for each Unit write's Diff: what it changed, or on a dry run
+// what it would change, path by path with the values on both sides. Like WithUploadMutations, a
+// dry run that asks runs the merges it would otherwise skip.
+func WithUploadDiff(params *goclientnew.UploadParams) {
+	params.Include = appendInclude(params.Include, "Diff")
 }

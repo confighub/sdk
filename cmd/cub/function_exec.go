@@ -215,23 +215,6 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		file = args[0]
 	}
 
-	// Save prior HeadMutationNums if displaying mutations
-	var priorHeadMutationNums map[string]priorUnitInfo
-	if shouldDisplayMutations() {
-		// Build effective WHERE clause
-		var effectiveWhere string
-		if len(unitIdentifiers) > 0 {
-			whereClause, err := buildWhereClauseFromUnits(unitIdentifiers)
-			if err != nil {
-				return err
-			}
-			effectiveWhere = whereClause
-		} else {
-			effectiveWhere = where
-		}
-		priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, "")
-	}
-
 	resp, execBody, err := executeFunctionsFromFile(file, where, unitIdentifiers)
 	if err != nil {
 		return err
@@ -262,7 +245,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		if file != "" && file != "-" {
 			execDesc = "function exec " + file
 		}
-		displayMutationsFromFunctionResponse(resp, dryRun, priorHeadMutationNums, execDesc)
+		displayDiffsFromFunctionResponse(resp, execDesc)
 	}
 
 	return nil

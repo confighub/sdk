@@ -252,6 +252,11 @@ type ClientInterface interface {
 
 	Demote(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// DiffConfigurationsWithBody request with any body
+	DiffConfigurationsWithBody(ctx context.Context, params *DiffConfigurationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DiffConfigurations(ctx context.Context, params *DiffConfigurationsParams, body DiffConfigurationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// BulkDeleteFilters request
 	BulkDeleteFilters(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -775,6 +780,9 @@ type ClientInterface interface {
 	// UploadUnitDataWithBody request with any body
 	UploadUnitDataWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *UploadUnitDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetUnitDiff request
+	GetUnitDiff(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// SetUnitGuardWithBody request with any body
 	SetUnitGuardWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -935,6 +943,9 @@ type ClientInterface interface {
 
 	// SearchUnitData request
 	SearchUnitData(ctx context.Context, params *SearchUnitDataParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SearchUnitDiff request
+	SearchUnitDiff(ctx context.Context, params *SearchUnitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAllUnitEvents request
 	ListAllUnitEvents(ctx context.Context, params *ListAllUnitEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1696,6 +1707,30 @@ func (c *Client) DemoteWithBody(ctx context.Context, params *DemoteParams, conte
 
 func (c *Client) Demote(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewDemoteRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DiffConfigurationsWithBody(ctx context.Context, params *DiffConfigurationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiffConfigurationsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DiffConfigurations(ctx context.Context, params *DiffConfigurationsParams, body DiffConfigurationsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDiffConfigurationsRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4034,6 +4069,18 @@ func (c *Client) UploadUnitDataWithBody(ctx context.Context, spaceId openapi_typ
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetUnitDiff(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetUnitDiffRequest(c.Server, spaceId, unitId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) SetUnitGuardWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetUnitGuardRequestWithBody(c.Server, spaceId, unitId, contentType, body)
 	if err != nil {
@@ -4732,6 +4779,18 @@ func (c *Client) ListAllUnitActions(ctx context.Context, params *ListAllUnitActi
 
 func (c *Client) SearchUnitData(ctx context.Context, params *SearchUnitDataParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSearchUnitDataRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) SearchUnitDiff(ctx context.Context, params *SearchUnitDiffParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSearchUnitDiffRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -9238,6 +9297,84 @@ func NewDemoteRequestWithBody(server string, params *DemoteParams, contentType s
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDiffConfigurationsRequest calls the generic DiffConfigurations builder with application/json body
+func NewDiffConfigurationsRequest(server string, params *DiffConfigurationsParams, body DiffConfigurationsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDiffConfigurationsRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewDiffConfigurationsRequestWithBody generates requests for DiffConfigurations with any type of body
+func NewDiffConfigurationsRequestWithBody(server string, params *DiffConfigurationsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/diff")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereResource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_resource", runtime.ParamLocationQuery, *params.WhereResource); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -21570,6 +21707,117 @@ func NewUploadUnitDataRequestWithBody(server string, spaceId openapi_types.UUID,
 	return req, nil
 }
 
+// NewGetUnitDiffRequest generates requests for GetUnitDiff
+func NewGetUnitDiffRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitDiffParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/diff", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.From != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from", runtime.ParamLocationQuery, *params.From); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.To != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "to", runtime.ParamLocationQuery, *params.To); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereResource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_resource", runtime.ParamLocationQuery, *params.WhereResource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSetUnitGuardRequest calls the generic SetUnitGuard builder with application/json body
 func NewSetUnitGuardRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, body SetUnitGuardJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -26816,6 +27064,263 @@ func NewSearchUnitDataRequest(server string, params *SearchUnitDataParams) (*htt
 	return req, nil
 }
 
+// NewSearchUnitDiffRequest generates requests for SearchUnitDiff
+func NewSearchUnitDiffRequest(server string, params *SearchUnitDiffParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/unit_diff")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.ResourceType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "resource_type", runtime.ParamLocationQuery, *params.ResourceType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereData != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data", runtime.ParamLocationQuery, *params.WhereData); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereDataEngine != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_data_engine", runtime.ParamLocationQuery, *params.WhereDataEngine); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereTrigger != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_trigger", runtime.ParamLocationQuery, *params.WhereTrigger); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TriggerFilter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "trigger_filter", runtime.ParamLocationQuery, *params.TriggerFilter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.TriggersPassed != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "triggers_passed", runtime.ParamLocationQuery, *params.TriggersPassed); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.View != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "view", runtime.ParamLocationQuery, *params.View); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.From != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from", runtime.ParamLocationQuery, *params.From); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.To != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "to", runtime.ParamLocationQuery, *params.To); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereResource != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_resource", runtime.ParamLocationQuery, *params.WhereResource); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListAllUnitEventsRequest generates requests for ListAllUnitEvents
 func NewListAllUnitEventsRequest(server string, params *ListAllUnitEventsParams) (*http.Request, error) {
 	var err error
@@ -28355,6 +28860,11 @@ type ClientWithResponsesInterface interface {
 
 	DemoteWithResponse(ctx context.Context, params *DemoteParams, body DemoteJSONRequestBody, reqEditors ...RequestEditorFn) (*DemoteResponse, error)
 
+	// DiffConfigurationsWithBodyWithResponse request with any body
+	DiffConfigurationsWithBodyWithResponse(ctx context.Context, params *DiffConfigurationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiffConfigurationsResponse, error)
+
+	DiffConfigurationsWithResponse(ctx context.Context, params *DiffConfigurationsParams, body DiffConfigurationsJSONRequestBody, reqEditors ...RequestEditorFn) (*DiffConfigurationsResponse, error)
+
 	// BulkDeleteFiltersWithResponse request
 	BulkDeleteFiltersWithResponse(ctx context.Context, params *BulkDeleteFiltersParams, reqEditors ...RequestEditorFn) (*BulkDeleteFiltersResponse, error)
 
@@ -28878,6 +29388,9 @@ type ClientWithResponsesInterface interface {
 	// UploadUnitDataWithBodyWithResponse request with any body
 	UploadUnitDataWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *UploadUnitDataParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UploadUnitDataResponse, error)
 
+	// GetUnitDiffWithResponse request
+	GetUnitDiffWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitDiffParams, reqEditors ...RequestEditorFn) (*GetUnitDiffResponse, error)
+
 	// SetUnitGuardWithBodyWithResponse request with any body
 	SetUnitGuardWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error)
 
@@ -29038,6 +29551,9 @@ type ClientWithResponsesInterface interface {
 
 	// SearchUnitDataWithResponse request
 	SearchUnitDataWithResponse(ctx context.Context, params *SearchUnitDataParams, reqEditors ...RequestEditorFn) (*SearchUnitDataResponse, error)
+
+	// SearchUnitDiffWithResponse request
+	SearchUnitDiffWithResponse(ctx context.Context, params *SearchUnitDiffParams, reqEditors ...RequestEditorFn) (*SearchUnitDiffResponse, error)
 
 	// ListAllUnitEventsWithResponse request
 	ListAllUnitEventsWithResponse(ctx context.Context, params *ListAllUnitEventsParams, reqEditors ...RequestEditorFn) (*ListAllUnitEventsResponse, error)
@@ -30231,6 +30747,35 @@ func (r DemoteResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r DemoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DiffConfigurationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DiffResult
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DiffConfigurationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DiffConfigurationsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -34134,6 +34679,34 @@ func (r UploadUnitDataResponse) StatusCode() int {
 	return 0
 }
 
+type GetUnitDiffResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *UnitDiff
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetUnitDiffResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetUnitDiffResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type SetUnitGuardResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -35384,6 +35957,34 @@ func (r SearchUnitDataResponse) StatusCode() int {
 	return 0
 }
 
+type SearchUnitDiffResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]UnitDiff
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r SearchUnitDiffResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SearchUnitDiffResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListAllUnitEventsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -36281,6 +36882,23 @@ func (c *ClientWithResponses) DemoteWithResponse(ctx context.Context, params *De
 		return nil, err
 	}
 	return ParseDemoteResponse(rsp)
+}
+
+// DiffConfigurationsWithBodyWithResponse request with arbitrary body returning *DiffConfigurationsResponse
+func (c *ClientWithResponses) DiffConfigurationsWithBodyWithResponse(ctx context.Context, params *DiffConfigurationsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DiffConfigurationsResponse, error) {
+	rsp, err := c.DiffConfigurationsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDiffConfigurationsResponse(rsp)
+}
+
+func (c *ClientWithResponses) DiffConfigurationsWithResponse(ctx context.Context, params *DiffConfigurationsParams, body DiffConfigurationsJSONRequestBody, reqEditors ...RequestEditorFn) (*DiffConfigurationsResponse, error) {
+	rsp, err := c.DiffConfigurations(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDiffConfigurationsResponse(rsp)
 }
 
 // BulkDeleteFiltersWithResponse request returning *BulkDeleteFiltersResponse
@@ -37970,6 +38588,15 @@ func (c *ClientWithResponses) UploadUnitDataWithBodyWithResponse(ctx context.Con
 	return ParseUploadUnitDataResponse(rsp)
 }
 
+// GetUnitDiffWithResponse request returning *GetUnitDiffResponse
+func (c *ClientWithResponses) GetUnitDiffWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *GetUnitDiffParams, reqEditors ...RequestEditorFn) (*GetUnitDiffResponse, error) {
+	rsp, err := c.GetUnitDiff(ctx, spaceId, unitId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetUnitDiffResponse(rsp)
+}
+
 // SetUnitGuardWithBodyWithResponse request with arbitrary body returning *SetUnitGuardResponse
 func (c *ClientWithResponses) SetUnitGuardWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetUnitGuardResponse, error) {
 	rsp, err := c.SetUnitGuardWithBody(ctx, spaceId, unitId, contentType, body, reqEditors...)
@@ -38483,6 +39110,15 @@ func (c *ClientWithResponses) SearchUnitDataWithResponse(ctx context.Context, pa
 		return nil, err
 	}
 	return ParseSearchUnitDataResponse(rsp)
+}
+
+// SearchUnitDiffWithResponse request returning *SearchUnitDiffResponse
+func (c *ClientWithResponses) SearchUnitDiffWithResponse(ctx context.Context, params *SearchUnitDiffParams, reqEditors ...RequestEditorFn) (*SearchUnitDiffResponse, error) {
+	rsp, err := c.SearchUnitDiff(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSearchUnitDiffResponse(rsp)
 }
 
 // ListAllUnitEventsWithResponse request returning *ListAllUnitEventsResponse
@@ -41666,6 +42302,81 @@ func ParseDemoteResponse(rsp *http.Response) (*DemoteResponse, error) {
 			return nil, err
 		}
 		response.JSON412 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDiffConfigurationsResponse parses an HTTP response from a DiffConfigurationsWithResponse call
+func ParseDiffConfigurationsResponse(rsp *http.Response) (*DiffConfigurationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DiffConfigurationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DiffResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -51685,6 +52396,74 @@ func ParseUploadUnitDataResponse(rsp *http.Response) (*UploadUnitDataResponse, e
 	return response, nil
 }
 
+// ParseGetUnitDiffResponse parses an HTTP response from a GetUnitDiffWithResponse call
+func ParseGetUnitDiffResponse(rsp *http.Response) (*GetUnitDiffResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetUnitDiffResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest UnitDiff
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseSetUnitGuardResponse parses an HTTP response from a SetUnitGuardWithResponse call
 func ParseSetUnitGuardResponse(rsp *http.Response) (*SetUnitGuardResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -54879,6 +55658,74 @@ func ParseSearchUnitDataResponse(rsp *http.Response) (*SearchUnitDataResponse, e
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []UnitData
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseSearchUnitDiffResponse parses an HTTP response from a SearchUnitDiffWithResponse call
+func ParseSearchUnitDiffResponse(rsp *http.Response) (*SearchUnitDiffResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SearchUnitDiffResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []UnitDiff
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

@@ -62,14 +62,14 @@ Output Formats:
   - Default: Line-numbered format with color, under a header naming each Unit
   - Unified: Use -u for unified diff format (like git diff)
   - Color: Use -c to enable color in unified diff
-  - Mutations: Use -o mutations for a structured mutation display
+  - Mutations: Use -o mutations for a structured diff
 
--o mutations shows what set each value rather than the lines that differ. A Unit's
-MutationNums are one sequence, so the Mutations recorded at the to side that the from side
-did not already carry are the ones the comparison is about, and those are what is listed;
-a Unit the from side does not have lists everything, an addition having no prior state.
-A Unit missing from the to side is named but lists nothing, since its removal is not
-recorded as a Mutation of it.
+-o mutations shows, for each Unit, the paths that differ with the value on each side, rather
+than the lines that differ. List elements are matched by merge key -- containers and
+environment variables by name -- as a merge matches them, so an element inserted ahead of
+others is one addition rather than a change to every element after it. The whole space is
+diffed by the server in one request. A Unit absent from one side shows as whole resources
+added or removed.
 
 Examples:
 `+"```"+`
@@ -99,7 +99,7 @@ func init() {
 	// Registered locally with a constrained description, as "cub unit diff" does: a diff is
 	// text or mutations, not a structured entity payload, so json/yaml/jq/yq do not apply.
 	variantDiffCmd.Flags().StringVarP(&outputFormat, "output", "o", "",
-		`Output format: "`+variantDiffOutputDefault+`" for the text diff, or "`+variantDiffOutputMutations+`" for a resource-mutations diff.`)
+		`Output format: "`+variantDiffOutputDefault+`" for the text diff, or "`+variantDiffOutputMutations+`" for a structured, path-by-path diff that matches list elements by merge key.`)
 	enableWhereFlag(variantDiffCmd)
 	enableQuietFlag(variantDiffCmd)
 	variantCmd.AddCommand(variantDiffCmd)
@@ -261,50 +261,46 @@ func fetchVariantDiffRevisions(spaceID uuid.UUID, revisionSpec string) (map[uuid
 	return byUnit, nil
 }
 
-// variantMutationsDiff prints, for each selected Unit, the Mutations between the two sides. It
-// is the -o mutations counterpart of variantTextDiff, and reports the same three outcomes --
-// changed, unchanged, at neither, over the same Revisions.
-//
-// Each Unit's two sides are handed to displayMutationsFromDryRun, so a Unit here is displayed
-// the way "cub unit diff -o mutations" displays it.
-func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, from, to variantDiffSide) error {
-	fromRevisions, err := fetchVariantDiffRevisions(space.SpaceID, from.revision)
-	if err != nil {
-		return errors.Wrapf(err, "failed to read %s", from.name)
+// variantMutationsDiff prints, for each selected Unit, the structured diff between the two
+// sides. It is the -o mutations counterpart of variantTextDiff, and reports the same three
+// outcomes -- changed, unchanged, at neither, over the same Revisions. One request diffs every
+// Unit, on the server, which matches array elements by merge key as a merge does.
+func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, selectionWhere string, from, to variantDiffSide) error {
+	whereClause := fmt.Sprintf("SpaceID = '%s'", space.SpaceID)
+	if selectionWhere != "" {
+		whereClause = selectionWhere + " AND " + whereClause
 	}
-	toRevisions, err := fetchVariantDiffRevisions(space.SpaceID, to.revision)
-	if err != nil {
-		return errors.Wrapf(err, "failed to read %s", to.name)
+	params := &goclientnew.SearchUnitDiffParams{Where: &whereClause, From: &from.revision, To: &to.revision}
+	res, err := cubClientNew.SearchUnitDiffWithResponse(ctx, params)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
+	}
+	diffs := map[uuid.UUID]*goclientnew.UnitDiff{}
+	if res.JSON200 != nil {
+		for i := range *res.JSON200 {
+			diffs[(*res.JSON200)[i].UnitID] = &(*res.JSON200)[i]
+		}
 	}
 
 	changed, unchanged, absent := 0, 0, 0
 	for _, unit := range units {
-		fromData, toData := fromRevisions[unit.UnitID], toRevisions[unit.UnitID]
-		if fromData == nil && toData == nil {
+		unitDiff := diffs[unit.UnitID]
+		if unitDiff == nil || (unitDiff.FromRevisionNum == 0 && unitDiff.ToRevisionNum == 0) {
 			absent++
 			continue
 		}
-		if variantDiffUnchanged(fromData, toData) {
+		if unitDiff.Error != nil {
+			return errors.Newf("failed to diff unit %s: %s", unit.Slug, unitDiff.Error.Message)
+		}
+		if unitDiff.Diff == nil || len(unitDiff.Diff.Resources) == 0 {
 			unchanged++
 			continue
 		}
 		changed++
-
-		fromLabel := variantDiffSideLabel(space.Slug, unit.Slug, fromData)
-		toLabel := variantDiffSideLabel(space.Slug, unit.Slug, toData)
+		fromLabel := variantDiffRevisionLabel(space.Slug, unit.Slug, unitDiff.FromRevisionNum)
+		toLabel := variantDiffRevisionLabel(space.Slug, unit.Slug, unitDiff.ToRevisionNum)
 		fmt.Printf("%s=== %s -> %s%s\n", colorDim, fromLabel, toLabel, colorReset)
-
-		// The Mutations displayed are of this Unit, so their details and old values resolve
-		// against it.
-		lookupMutationsUnitID = unit.UnitID.String()
-		lookupMutationsSpaceID = unit.SpaceID.String()
-		// A Unit the to side does not have contributes no Revision to compare against, which
-		// leaves the changed side empty rather than falling back to the Unit's head.
-		changed := changedRevision{SpaceID: unit.SpaceID, UnitID: unit.UnitID, Data: variantDiffData(toData)}
-		if toData != nil {
-			changed.RevisionID = toData.RevisionID
-		}
-		displayMutationsFromDryRun(variantDiffData(fromData), changed, "diff")
+		displayConfigDiff(unitDiff.Diff)
 	}
 
 	if !quiet {
@@ -312,6 +308,15 @@ func variantMutationsDiff(space *goclientnew.Space, units []*goclientnew.Unit, f
 			changed, len(units), from.name, to.name, space.Slug, unchanged, absent)
 	}
 	return nil
+}
+
+// variantDiffRevisionLabel names one side of a Unit's structured diff by its Revision number,
+// 0 meaning the Unit has no Revision there.
+func variantDiffRevisionLabel(spaceSlug, unitSlug string, revisionNum int64) string {
+	if revisionNum == 0 {
+		return fmt.Sprintf("%s/%s/absent", spaceSlug, unitSlug)
+	}
+	return formatDiffLabel(spaceSlug, unitSlug, revisionNum)
 }
 
 // variantDiffSideLabel names one side of a Unit's diff. A Unit with no Revision on a side --
@@ -363,7 +368,7 @@ func variantDiff(space *goclientnew.Space, selectionWhere string, from, to varia
 	})
 
 	if outputFormat == variantDiffOutputMutations {
-		return variantMutationsDiff(space, units, from, to)
+		return variantMutationsDiff(space, units, selectionWhere, from, to)
 	}
 	return variantTextDiff(space, units, from, to)
 }

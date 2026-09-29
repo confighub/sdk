@@ -15,22 +15,30 @@ import (
 	"github.com/google/uuid"
 )
 
-// invokeIncludeConfigData asks an invocation to return the configuration it produced, for the
-// output modes that are going to display it. The response carries the configuration only when
-// the invocation changed it -- right for the worker boundary, where re-sending what was just
-// sent is waste -- so displaying an unchanged one would otherwise cost a second request.
-// Requested only when needed, since most invocations do not want the document back.
-func invokeIncludeConfigData() *string {
-	if !dataOnly && !verbose && effectiveShow() != ShowData {
+// invokeIncludes asks an invocation for the parts of its result the output modes are going to
+// display: the configuration it produced, and the Diff of what it changed for -o mutations. The
+// response carries the configuration only when the invocation changed it -- right for the
+// worker boundary, where re-sending what was just sent is waste -- so displaying an unchanged
+// one would otherwise cost a second request. Each is requested only when needed, since most
+// invocations want neither.
+func invokeIncludes(includeDiff bool) *string {
+	var names []string
+	if dataOnly || verbose || effectiveShow() == ShowData {
+		names = append(names, "ConfigData")
+	}
+	if includeDiff || shouldDisplayMutations() {
+		names = append(names, "Diff")
+	}
+	if len(names) == 0 {
 		return nil
 	}
-	s := "ConfigData"
+	s := strings.Join(names, ",")
 	return &s
 }
 
 // responseConfigData returns the configuration a function response describes. It is on the
 // response when the invocation changed it, or when the caller asked for it with
-// invokeIncludeConfigData. The fetch is the fallback for neither: a caller that did not ask
+// invokeIncludes. The fetch is the fallback for neither: a caller that did not ask
 // and an invocation that changed nothing. Returns "" if there is no Unit to fetch from, which
 // is the Revision-invocation case.
 func responseConfigData(respMsg *goclientnew.FunctionInvocationsResponse) (string, error) {

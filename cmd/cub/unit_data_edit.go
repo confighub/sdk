@@ -15,24 +15,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var unitEditCmd = &cobra.Command{
-	Use:   "edit <name>",
+var unitDataEditCmd = &cobra.Command{
+	Use:   "data-edit <unit>",
 	Short: "Edit the config data of a unit in your system's editor",
-	Long: getCommandHelp(`This command will pull down the latest revision of this unit and open it the editor specified in the
-	        EDITOR environment variable or vi if the variable is not set. When the editor process exits,
-					the changes will be saved as a new revision. If the contents were not changed, then no update will be made`, ""),
+	Long: getCommandHelp(`Open the config data of a unit, as 'cub unit data' shows it, in the editor named by
+the EDITOR environment variable, or vi if it is not set. When the editor exits, the changes are
+saved as a new revision. If the data was not changed, no update is made.`, ""),
 	Args: cobra.ExactArgs(1),
-	RunE: unitEditCmdRun,
+	RunE: unitDataEditCmdRun,
 }
 
 func init() {
-	enableWaitFlag(unitEditCmd)
-	unitEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
-	enableOptionalSpace(unitEditCmd)
-	unitCmd.AddCommand(unitEditCmd)
+	enableWaitFlag(unitDataEditCmd)
+	unitDataEditCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with")
+	enableOptionalSpace(unitDataEditCmd)
+	unitCmd.AddCommand(unitDataEditCmd)
 }
 
-func unitEditCmdRun(cmd *cobra.Command, args []string) error {
+func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 	currentUnit, err := resolveUnit(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func unitEditCmdRun(cmd *cobra.Command, args []string) error {
 	if changesetSlug != "" {
 		if changesetSlug == "-" {
 			// Special value to remove the changeset (only valid in patch mode)
-			return errors.New("edit cannot remove a changeset")
+			return errors.New("data-edit cannot remove a changeset")
 		}
 		changesetUUID, err := resolveChangeSetID(changesetSlug)
 		if err != nil {

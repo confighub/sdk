@@ -79,7 +79,8 @@ which names the upstream unit without reading it.
 Columns:
   PATH      the field, in the same path syntax functions and links use
   VALUE     what is there now
-  SET BY    the function, external source, link, or trigger that wrote it
+  SET BY    the function, external source, link, or trigger that wrote it, or otherwise
+            the operation that made the revision, such as UpdateUnit
   WHERE     the space whose change it was, after following upstream
   REV       that space's revision number
   WHEN      how long ago
@@ -364,12 +365,20 @@ func quietSlog() func() {
 	return func() { slog.SetDefault(previous) }
 }
 
-// creditPath finds the MutationSources entry that wrote a path: its own, or the
-// resource-level entry covering everything the resource arrived with.
+// creditPath finds the MutationSources entry that wrote a path: its own, the closest
+// ancestor's, or the resource-level entry covering everything the resource arrived with.
+//
+// The ancestor is what credits a value that arrived inside a larger one. A change that
+// adds an array element or a map records one entry for the whole of it, not one per leaf,
+// so a leaf of an env var added later has no entry of its own; without the ancestor it
+// falls through to the resource and reads as having arrived when the Unit was created.
 func creditPath(mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore, path string) (*goclientnew.MutationInfo, bool) {
 	rm := matchBlameResource(mutationSources, resourceType, resourceName, resourceNameCore)
 	if rm != nil {
 		if info := lookupPathMutation(rm.PathMutationMap, path); info != nil {
+			return info, info.Protected
+		}
+		if info := lookupAncestorMutation(rm.PathMutationMap, path); info != nil {
 			return info, info.Protected
 		}
 		if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
@@ -403,6 +412,20 @@ func lookupPathMutation(pathMutationMap *goclientnew.MutationMap, path string) *
 		}
 		if authoredPath(key) == wanted {
 			return &info
+		}
+	}
+	return nil
+}
+
+// lookupAncestorMutation finds the entry of the closest ancestor of a path that wrote a
+// value there. A Delete is passed over: a value present now was not written by removing
+// what held it.
+func lookupAncestorMutation(pathMutationMap *goclientnew.MutationMap, path string) *goclientnew.MutationInfo {
+	segments := strings.Split(path, ".")
+	for n := len(segments) - 1; n > 0; n-- {
+		info := lookupPathMutation(pathMutationMap, strings.Join(segments[:n], "."))
+		if info != nil && *info.MutationType != goclientnew.Delete {
+			return info
 		}
 	}
 	return nil

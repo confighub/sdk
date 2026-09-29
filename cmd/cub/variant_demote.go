@@ -179,7 +179,7 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 
 	var with []func(*goclientnew.DemoteParams)
 	if shouldDisplayMutations() {
-		with = append(with, cubapi.WithDemoteMutations)
+		with = append(with, cubapi.WithDemoteDiff)
 	}
 	result, err := cubapi.Demote(ctx, cubClient, req, variantDemoteArgs.dryRun, with...)
 	if err != nil {
@@ -220,7 +220,7 @@ func displayDemoteResult(result *goclientnew.DemoteResult, changeOrderSlug strin
 			displayDemoteSpaceSummary(space, changeOrderSlug, dryRun)
 		}
 		if shouldDisplayMutations() {
-			displayDemoteSpaceMutations(space, dryRun)
+			displayDemoteSpaceMutations(space)
 		}
 	}
 }
@@ -275,24 +275,14 @@ func displayDemoteSpaceSummary(space *goclientnew.DemoteSpaceResult, changeOrder
 	}
 }
 
-// displayDemoteSpaceMutations prints the mutations each restore made, or would make.
-func displayDemoteSpaceMutations(space *goclientnew.DemoteSpaceResult, dryRun bool) {
-	// The helpers that fetch prior values resolve units through the selected space.
-	selectedSpaceID = space.SpaceID.String()
-	selectedSpaceSlug = space.SpaceSlug
+// displayDemoteSpaceMutations prints what each restore changed, or would change.
+func displayDemoteSpaceMutations(space *goclientnew.DemoteSpaceResult) {
 	for i := range space.Units {
 		unit := &space.Units[i]
-		if unit.Error != nil || unit.Mutations == nil {
+		if unit.Error != nil || unit.Diff == nil {
 			continue
 		}
-		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
-		lookupMutationsUnitID = unit.UnitID.String()
-		lookupMutationsSpaceID = space.SpaceID.String()
-		priorRevision := "dry-run"
-		if !dryRun {
-			priorRevision = fmt.Sprintf("%s/%d", unit.Slug, unit.PreviousHeadRevisionNum)
-		}
-		displayResourceMutationList(unit.Mutations, true, unit.PreviousHeadMutationNum, "restore", priorRevision)
+		displayUnitChanges(unit.Slug, "restore", unit.Diff)
 	}
 }
 

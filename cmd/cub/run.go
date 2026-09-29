@@ -252,12 +252,6 @@ func RegisterFunctionsAsCobraCommands() {
 						},
 					}
 
-					// Save prior HeadMutationNums if displaying mutations
-					var priorHeadMutationNums map[string]priorUnitInfo
-					if shouldDisplayMutations() {
-						priorHeadMutationNums = savePriorUnitInfoFromWhere(effectiveWhere, filterID)
-					}
-
 					clearance, cerr := clearanceJSON()
 					if cerr != nil {
 						return cerr
@@ -309,7 +303,7 @@ func RegisterFunctionsAsCobraCommands() {
 
 					// Display mutations if requested
 					if shouldDisplayMutations() {
-						displayMutationsFromFunctionResponse(respMsgs, dryRun, priorHeadMutationNums, cmdDef.FunctionName)
+						displayDiffsFromFunctionResponse(respMsgs, cmdDef.FunctionName)
 					}
 
 					return nil

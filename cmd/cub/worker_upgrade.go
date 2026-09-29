@@ -188,12 +188,6 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 		return nil
 	}
 
-	// Save prior HeadMutationNums if displaying mutations
-	var priorHeadMutationNums map[string]priorUnitInfo
-	if shouldDisplayMutations() {
-		priorHeadMutationNums = savePriorUnitInfoFromWhere(whereClause, "")
-	}
-
 	// Set the new image reference using set-image-reference function
 	setImageArgs := []string{"set-image-reference", "worker", targetImageReference}
 	setImageReq, err := initializeFunctionInvocationsRequest(setImageArgs)
@@ -229,7 +223,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 
 	if workerUpgradeArgs.dryRun {
 		if shouldDisplayMutations() {
-			displayMutationsFromFunctionResponse(setImageResp, true, priorHeadMutationNums, "set-image-reference")
+			displayDiffsFromFunctionResponse(setImageResp, "set-image-reference")
 		} else {
 			dataOnly = true
 			outputFunctionInvocationResponse(setImageResp)
@@ -250,7 +244,7 @@ func upgradeWorkerInUnit(unitSlug string, targetImageReference string) error {
 	}
 
 	if shouldDisplayMutations() {
-		displayMutationsFromFunctionResponse(setImageResp, false, priorHeadMutationNums, "set-image-reference")
+		displayDiffsFromFunctionResponse(setImageResp, "set-image-reference")
 	}
 
 	fmt.Printf("Successfully upgraded worker image from %s to %s in unit %s\n", currentImageReference, targetImageReference, unitSlug)

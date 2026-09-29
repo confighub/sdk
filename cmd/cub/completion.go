@@ -227,7 +227,7 @@ var refArgKinds = map[string][]*refKind{
 	"trigger get":   {kindTrigger}, "trigger update": {kindTrigger}, "trigger delete": {kindTrigger},
 	"unit get": {kindUnit}, "unit update": {kindUnit}, "unit delete": {kindUnit}, "unit open": {kindUnit},
 	"unit blame": {kindUnit}, "unit cancel": {kindUnit}, "unit conflicts": {kindUnit},
-	"unit data": {kindUnit}, "unit diff": {kindUnit}, "unit edit": {kindUnit}, "unit mutation-sources": {kindUnit},
+	"unit data": {kindUnit}, "unit diff": {kindUnit}, "unit data-edit": {kindUnit}, "unit mutation-sources": {kindUnit},
 	"unit set-guard": {kindUnit}, "unit set-protection": {kindUnit},
 	"unit set-target":  {kindUnit, kindTarget},
 	"unit tag":         {kindTag},

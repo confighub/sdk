@@ -47,6 +47,11 @@ func Demote(ctx context.Context, c *Client, req goclientnew.DemoteRequest, dryRu
 // WithDemoteMutations asks a demotion for each restore's Mutations: what it changed, or on a dry
 // run what it would change.
 func WithDemoteMutations(params *goclientnew.DemoteParams) {
-	include := "Mutations"
-	params.Include = &include
+	params.Include = appendInclude(params.Include, "Mutations")
+}
+
+// WithDemoteDiff asks a demotion for each restore's Diff: what it changed, or on a dry run what
+// it would change, path by path with the values on both sides.
+func WithDemoteDiff(params *goclientnew.DemoteParams) {
+	params.Include = appendInclude(params.Include, "Diff")
 }

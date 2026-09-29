@@ -438,13 +438,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentUnit := currentUnitEnvelope.Unit
 	spaceID := currentUnit.SpaceID
 
-	// Save prior state for distinguishing new vs prior mutations and fetching old values
-	priorHeadMutationNum := currentUnit.HeadMutationNum
-	priorRevisionNum := currentUnit.HeadRevisionNum
 	unitSlug := currentUnit.Slug
-	// The configuration this update replaces, read before it is replaced. A restore shows
-	// the difference against it, and it is no longer carried on the Unit.
-	priorData := ""
 	newConfigData := ""
 	// Whether the caller supplied a configuration, as opposed to what it was. Emptying a
 	// Unit is a real operation -- `cub variant upload --prune` withdraws the resources an
@@ -732,12 +726,10 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// Perform the update
 
 	if shouldDisplayMutations() {
-		priorData, _ = fetchUnitData(currentUnit.SpaceID, currentUnit.UnitID)
-		// A dry run stores nothing, so the configuration it computed comes back on the
-		// response or not at all. Asked for on every mutation display rather than only the
-		// dry-run ones, so the two take the same path and the real write's copy saves the
-		// read it would otherwise make.
-		newParams.Include = includeWriteResult()
+		// A dry run stores nothing, so what it would change comes back on the response or
+		// not at all. Asked for on every mutation display rather than only the dry-run ones,
+		// so the two take the same path.
+		newParams.Include = includeWriteDiff()
 	}
 
 	var writeResult *goclientnew.UnitCreateOrUpdateResponse
@@ -796,45 +788,14 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	displayUpdateResults(unitDetails, "unit", args[0], unitDetails.UnitID.String(), displayUnitDetails)
 
-	// Display mutations if requested
+	// Display what the update changed, or would change, if requested.
 	if shouldDisplayMutations() {
 		tprintRaw("")
 		configFile := ""
 		if len(args) > 1 {
 			configFile = args[1]
 		}
-		updateDesc := unitUpdateChangeDescription(configFile)
-		if restore != "" {
-			// Restore snapshots the revision's MutationSources onto the unit
-			// (same indices as the restored revision), so the usual split
-			// display can't tell new vs prior. Compute the diff on the fly
-			// to show the user what changed because of this restore.
-			lookupMutationsUnitID = unitDetails.UnitID.String()
-			lookupMutationsSpaceID = unitDetails.SpaceID.String()
-			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
-			// The configuration the restore produced. It comes off the response, which is
-			// the only place a dry run's exists -- reading it back from the Unit would get
-			// the pre-restore data the dry run deliberately did not replace, and diff it
-			// against itself.
-			restoredData := writeResult.ConfigData
-			if restoredData == "" {
-				tprintErr("The server returned no config data for the restore")
-			} else {
-				displayMutationsForRestore(priorData, restoredData, unitDetails.SpaceID.String(), dryRun, priorRevision, updateDesc)
-			}
-		} else if dryRun {
-			// Nothing was stored, so the mutations the update would have produced are the
-			// ones on the returned Unit, and the configuration is the one on the response.
-			displayMutationsForDryRun(writeResult, priorHeadMutationNum, updateDesc)
-		} else {
-			// Fetch updated unit to get the latest MutationSources
-			updatedUnit, err := resolveUnit(unitDetails.UnitID.String(), unitDetails.SpaceID.String(), "*")
-			if err != nil {
-				return err
-			}
-			priorRevision := fmt.Sprintf("%s/%d", unitSlug, priorRevisionNum)
-			displayMutationsForUnit(updatedUnit.Unit, priorHeadMutationNum, updateDesc, priorRevision)
-		}
+		displayUnitChanges(unitSlug, unitUpdateChangeDescription(configFile), writeResult.Diff)
 	}
 
 	return nil
@@ -1079,13 +1040,11 @@ func runBulkUnitUpdate() error {
 
 	// Save prior unit state so mutation display can tell new changes from prior ones.
 	// Restore additionally needs the pre-update data to compute its diff.
-	var priorUnits map[string]priorUnitInfo
 	if shouldDisplayMutations() {
-		priorUnits = savePriorUnitInfoFromWhereWithData(effectiveWhere, restore != "")
 		// A dry run stores nothing, so what it produced comes back on the response or not
 		// at all. Appended to the expansions this command already asked for, because include
 		// is one list: replacing it would trade them for the configuration.
-		withWriteResult := include + "," + *includeWriteResult()
+		withWriteResult := include + "," + *includeWriteDiff()
 		params.Include = &withWriteResult
 	}
 
@@ -1119,7 +1078,7 @@ func runBulkUnitUpdate() error {
 
 	// Display mutations if requested, for the units that were updated successfully
 	if shouldDisplayMutations() {
-		displayMutationsForBulkUnitUpdate(responses, priorUnits, restore != "", dryRun, unitUpdateChangeDescription(""))
+		displayDiffsForUnitWrites(responses, unitUpdateChangeDescription(""))
 	}
 
 	return bulkErr

@@ -262,7 +262,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 
 	var with []func(*goclientnew.PromoteParams)
 	if shouldDisplayMutations() {
-		with = append(with, cubapi.WithPromoteMutations)
+		with = append(with, cubapi.WithPromoteDiff)
 	}
 	result, err := cubapi.Promote(ctx, cubClient, req, variantPromoteArgs.dryRun, with...)
 	if err != nil {
@@ -361,7 +361,7 @@ func displayPromoteResult(result *goclientnew.PromoteResult) {
 			displayPromoteSpaceSummary(space, result.ChangeOrderID != nil, dryRun)
 		}
 		if shouldDisplayMutations() {
-			displayPromoteSpaceMutations(space, result.ChangeOrderID != nil, dryRun)
+			displayPromoteSpaceMutations(space, result.ChangeOrderID != nil)
 		}
 	}
 }
@@ -495,36 +495,19 @@ func displayPromoteSpaceSummary(space *goclientnew.PromoteSpaceResult, withChang
 	}
 }
 
-// displayPromoteSpaceMutations prints the mutations each unit's write made, or would make.
-func displayPromoteSpaceMutations(space *goclientnew.PromoteSpaceResult, withChangeOrder, dryRun bool) {
-	// The helpers that fetch prior values resolve units through the selected space.
-	selectedSpaceID = space.SpaceID.String()
-	selectedSpaceSlug = space.SpaceSlug
+// displayPromoteSpaceMutations prints what each unit's write changed, or would change.
+func displayPromoteSpaceMutations(space *goclientnew.PromoteSpaceResult, withChangeOrder bool) {
 	first := true
 	for i := range space.Units {
 		unit := &space.Units[i]
-		if unit.Error != nil || unit.Mutations == nil {
+		if unit.Error != nil || unit.Diff == nil {
 			continue
 		}
 		if !first {
 			tprintRaw("")
 		}
 		first = false
-		tprintRaw(fmt.Sprintf("Mutations for unit %s:", unit.Slug))
-		// A unit a dry run would clone does not exist yet, so it has no earlier values to show.
-		lookupMutationsUnitID = ""
-		if unit.UnitID != nil {
-			lookupMutationsUnitID = unit.UnitID.String()
-		}
-		lookupMutationsSpaceID = space.SpaceID.String()
-		priorRevision := "dry-run"
-		if !dryRun {
-			priorRevision = ""
-			if unit.PreviousHeadRevisionNum > 0 {
-				priorRevision = fmt.Sprintf("%s/%d", unit.Slug, unit.PreviousHeadRevisionNum)
-			}
-		}
-		displayResourceMutationList(unit.Mutations, true, unit.PreviousHeadMutationNum, "upgrade", priorRevision)
+		displayUnitChanges(unit.Slug, "promote", unit.Diff)
 	}
 	if first {
 		if withChangeOrder {

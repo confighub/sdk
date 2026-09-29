@@ -117,6 +117,35 @@ func TestLookupPathMutationSkipsNone(t *testing.T) {
 	}
 }
 
+// TestCreditPathUsesClosestAncestor: an env var added after the Unit was created is
+// recorded as one Add of the element, so its leaves have no entries of their own. They
+// are credited to that Add, not to the resource-level entry of the create.
+func TestCreditPathUsesClosestAncestor(t *testing.T) {
+	add, del := goclientnew.Add, goclientnew.Delete
+	pathMutations := goclientnew.MutationMap{
+		"spec.template.spec.containers.?name=app.env.?name=Z;@0": {MutationType: &add, Index: 4},
+		// An earlier removal of the whole container is not what wrote anything in it now.
+		"spec.template.spec.containers.?name=app": {MutationType: &del, Index: 2},
+	}
+	sources := goclientnew.ResourceMutationList{{
+		Resource:             &goclientnew.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "default/web"},
+		ResourceMutationInfo: &goclientnew.MutationInfo{MutationType: &add, Index: 1},
+		PathMutationMap:      &pathMutations,
+	}}
+
+	info, _ := creditPath(sources, "apps/v1/Deployment", "default/web", "web",
+		"spec.template.spec.containers.?name=app.env.?name=Z.value")
+	if info == nil || info.Index != 4 {
+		t.Fatalf("a leaf of an added element should be credited to the element's Add (4), got %+v", info)
+	}
+
+	info, _ = creditPath(sources, "apps/v1/Deployment", "default/web", "web",
+		"spec.template.spec.containers.?name=app.image")
+	if info == nil || info.Index != 1 {
+		t.Fatalf("a path whose only ancestor entry is a Delete should fall back to the resource (1), got %+v", info)
+	}
+}
+
 // TestMatchBlameResourceFallsBackToUnscopedName is what lets the upstream walk cross
 // a namespace fill-in: the base still says "confighubplaceholder/frontend" where the
 // variant says "apptique/frontend".
@@ -321,5 +350,23 @@ func TestOverlayBlameLeaves(t *testing.T) {
 	}
 	if len(merged) != 2 {
 		t.Errorf("overlay produced %d leaves, want 2: %+v", len(merged), merged)
+	}
+}
+
+// TestBlameSetByFallsBackToSource: an update that wrote the data it was given names no
+// function, merge, Link or Trigger, and was shown with nothing at all. The Revision says
+// which operation made it.
+func TestBlameSetByFallsBackToSource(t *testing.T) {
+	plain := &goclientnew.ExtendedMutation{Mutation: &goclientnew.Mutation{FunctionInvocation: &goclientnew.FunctionInvocation{}}}
+	if got := blameSetBy(plain, "UpdateUnit", "UpdateUnit"); got != "UpdateUnit" {
+		t.Errorf("a plain update should be named by its Revision's Source, got %q", got)
+	}
+	if got := blameSetBy(plain, "MergeExternal; from stdin", "MergeExternal"); got != "stdin" {
+		t.Errorf("an external merge should still be named by its source, got %q", got)
+	}
+	fn := &goclientnew.ExtendedMutation{Mutation: &goclientnew.Mutation{
+		FunctionInvocation: &goclientnew.FunctionInvocation{FunctionName: "set-replicas"}}}
+	if got := blameSetBy(fn, "", "Invoke"); got != "set-replicas" {
+		t.Errorf("a function should be named over the Source, got %q", got)
 	}
 }

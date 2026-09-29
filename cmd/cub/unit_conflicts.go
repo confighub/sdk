@@ -126,9 +126,6 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	priorHeadMutationNum := configUnit.Unit.HeadMutationNum
-	priorRevision := fmt.Sprintf("%s/%d", args[0], configUnit.Unit.HeadRevisionNum)
-
 	body := goclientnew.UnitConflictsRequest{Action: "Dismiss"}
 	if conflictsApply {
 		body.Action = "Apply"
@@ -171,16 +168,10 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 			fmt.Printf("No matching outstanding conflicts on unit %s\n", args[0])
 		}
 	}
-	// What the request wrote, or would write: a dry run returns the unit as it would be,
-	// MutationSources included, so the proposed change reads as the same per-path list a
-	// real one records.
+	// What the request wrote, or would write.
 	if conflictsApply && resp.Unit != nil && shouldDisplayMutations() {
 		tprintRaw("")
-		against := priorRevision
-		if dryRun {
-			against = "dry-run"
-		}
-		displayMutationsForUnit(resp.Unit, priorHeadMutationNum, "apply withheld merge changes", against)
+		displayUnitChanges(args[0], "apply withheld merge changes", resp.Diff)
 	}
 	if !dryRun && wait && resp.Unit != nil && (resp.Applied > 0 || resp.Dismissed > 0) {
 		if !quiet && !isAlternativeOutput() {

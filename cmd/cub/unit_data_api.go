@@ -200,12 +200,11 @@ func unitFromWrite(resp *goclientnew.UnitCreateOrUpdateResponse) (*goclientnew.U
 	return resp.Unit, nil
 }
 
-// includeWriteResult asks a write to return the configuration it produced and what set each
-// value in it. Only a dry run has no other source for them -- a real write stores what it made,
-// and the endpoints serve that -- but asking either way costs one parameter and means no caller
-// has to know which kind of write it is making.
-func includeWriteResult() *string {
-	s := "ConfigData,MutationSources"
+// includeWriteDiff asks a write to return the Diff of what it changed. Only a dry run has no
+// other source for it -- a real write's Revisions can be diffed afterwards -- but asking either
+// way costs one parameter and means no caller has to know which kind of write it is making.
+func includeWriteDiff() *string {
+	s := "Diff"
 	return &s
 }
 

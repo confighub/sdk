@@ -1159,6 +1159,12 @@ type ComponentCreateOrUpdateResponse struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
 
+// ConfigDiff defines model for ConfigDiff.
+type ConfigDiff struct {
+	// Resources One entry per resource that differs, in the To configuration's order; resources only on the From side follow where they were
+	Resources []ResourceDiff `json:"Resources" yaml:"Resources"`
+}
+
 // CreateUserKeyRequest defines model for CreateUserKeyRequest.
 type CreateUserKeyRequest struct {
 	Description string      `json:"Description,omitempty" yaml:"Description,omitempty"`
@@ -1230,7 +1236,8 @@ type DemoteSpaceResult struct {
 // DemoteUnitResult defines model for DemoteUnitResult.
 type DemoteUnitResult struct {
 	// Action Restore, Mark, or Unchanged.
-	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Action string      `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Diff   *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 
 	// DropsFromRevisionNum The first Revision after the change that restoring drops, when the head had moved past where the change arrived.
 	DropsFromRevisionNum int64 `json:"DropsFromRevisionNum,omitempty" yaml:"DropsFromRevisionNum,omitempty"`
@@ -1252,6 +1259,46 @@ type DemoteUnitResult struct {
 	// StartRevisionNum The Revision the change started from, which the Unit is restored to.
 	StartRevisionNum int64              `json:"StartRevisionNum,omitempty" yaml:"StartRevisionNum,omitempty"`
 	UnitID           openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// DiffRequest defines model for DiffRequest.
+type DiffRequest struct {
+	From *DiffSide `json:"From,omitempty" yaml:"From,omitempty"`
+	To   *DiffSide `json:"To,omitempty" yaml:"To,omitempty"`
+}
+
+// DiffResult defines model for DiffResult.
+type DiffResult struct {
+	Diff *ConfigDiff     `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	From *DiffSideResult `json:"From,omitempty" yaml:"From,omitempty"`
+	To   *DiffSideResult `json:"To,omitempty" yaml:"To,omitempty"`
+}
+
+// DiffSide defines model for DiffSide.
+type DiffSide struct {
+	// Data Configuration given inline, instead of a Unit's
+	Data string `json:"Data,omitempty" yaml:"Data,omitempty"`
+
+	// Revision The Unit's Revision, in the syntax unit update --restore takes; its head when omitted
+	Revision string `json:"Revision,omitempty" yaml:"Revision,omitempty"`
+
+	// ToolchainType The toolchain of inline Data; defaults to the other side's
+	ToolchainType string `json:"ToolchainType,omitempty" yaml:"ToolchainType,omitempty"`
+
+	// UnitID The Unit whose configuration this side is. Omitted for inline Data.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// DiffSideResult defines model for DiffSideResult.
+type DiffSideResult struct {
+	// RevisionNum The Revision the side resolved to, for a Unit side
+	RevisionNum int64 `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
+
+	// SpaceID The Space of the Unit, for a Unit side
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// UnitID The Unit, for a Unit side
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
 // ErrorItem defines model for ErrorItem.
@@ -1935,6 +1982,7 @@ type FunctionInvocationsResponse struct {
 
 	// DataHash SHA256 of the resulting configuration data, whether or not ConfigData is present
 	DataHash string         `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+	Diff     *ConfigDiff    `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 	Error    *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// HasNewMutations Functions produced new mutations (of type other than None)
@@ -2282,6 +2330,12 @@ type LinkCreateOrUpdateResponse struct {
 	Link *Link `json:"Link,omitempty" yaml:"Link,omitempty"`
 }
 
+// MergeKeyValue defines model for MergeKeyValue.
+type MergeKeyValue struct {
+	Key   string `json:"Key,omitempty" yaml:"Key,omitempty"`
+	Value string `json:"Value,omitempty" yaml:"Value,omitempty"`
+}
+
 // MoveRequest defines model for MoveRequest.
 type MoveRequest struct {
 	ToSpaceID openapi_types.UUID `json:"ToSpaceID,omitempty" yaml:"ToSpaceID,omitempty"`
@@ -2547,6 +2601,32 @@ type PathAnnotationList = []ResourcePathAnnotations
 // PathAnnotations defines model for PathAnnotations.
 type PathAnnotations map[string]map[string]string
 
+// PathChange defines model for PathChange.
+type PathChange struct {
+	Attribution *MutationInfo `json:"Attribution,omitempty" yaml:"Attribution,omitempty"`
+
+	// ChangeType Add, Delete, Update, Replace, Reorder, or Rename
+	ChangeType string `json:"ChangeType,omitempty" yaml:"ChangeType,omitempty"`
+
+	// DisplayPath The path in configuration path syntax, as --path arguments and where filters take it, with each unkeyed array element named by its index
+	DisplayPath string `json:"DisplayPath,omitempty" yaml:"DisplayPath,omitempty"`
+
+	// FromValue The value on the From side: a scalar's text, or a YAML block for a map or array
+	FromValue string `json:"FromValue,omitempty" yaml:"FromValue,omitempty"`
+
+	// Patch A unified line diff, for multi-line string values
+	Patch string `json:"Patch,omitempty" yaml:"Patch,omitempty"`
+
+	// Path The path as MutationSources and patch functions record it
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Segments The path split into its segments, for rendering without parsing the path syntax
+	Segments []PathSegment `json:"Segments" yaml:"Segments"`
+
+	// ToValue The value on the To side: a scalar's text, or a YAML block for a map or array
+	ToValue string `json:"ToValue,omitempty" yaml:"ToValue,omitempty"`
+}
+
 // PathExpression defines model for PathExpression.
 type PathExpression struct {
 	// DataType Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type.
@@ -2564,6 +2644,21 @@ type PathExpression struct {
 	// Path Unresolved path within Resource to write via set-attributes
 	Path     string        `json:"Path,omitempty" yaml:"Path,omitempty"`
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+}
+
+// PathSegment defines model for PathSegment.
+type PathSegment struct {
+	// Field The map key, for a map segment
+	Field string `json:"Field,omitempty" yaml:"Field,omitempty"`
+
+	// FromIndex The element's index on the From side; -1 for a map key or an element absent there
+	FromIndex int `json:"FromIndex,omitempty" yaml:"FromIndex,omitempty"`
+
+	// MergeKeys The merge keys that identify the element, for an element of a merge-keyed array
+	MergeKeys []MergeKeyValue `json:"MergeKeys,omitempty" yaml:"MergeKeys,omitempty"`
+
+	// ToIndex The element's index on the To side; -1 for a map key or an element absent there
+	ToIndex int `json:"ToIndex,omitempty" yaml:"ToIndex,omitempty"`
 }
 
 // PathToVisitorInfoType defines model for PathToVisitorInfoType.
@@ -2723,6 +2818,7 @@ type PromoteUnitResult struct {
 	// Action Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
 	Action          string                `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Conflicts       *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Diff            *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
 	HeadRevisionNum int64                 `json:"HeadRevisionNum,omitempty" yaml:"HeadRevisionNum,omitempty"`
 
@@ -2940,6 +3036,23 @@ type Resource struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// ResourceDiff defines model for ResourceDiff.
+type ResourceDiff struct {
+	Attribution *MutationInfo `json:"Attribution,omitempty" yaml:"Attribution,omitempty"`
+	ChangeType  *MutationType `json:"ChangeType,omitempty" yaml:"ChangeType,omitempty"`
+
+	// Changes Changes within the resource, for an Update, in document order
+	Changes []PathChange `json:"Changes,omitempty" yaml:"Changes,omitempty"`
+
+	// FromValue The whole resource, for a Delete
+	FromValue        string        `json:"FromValue,omitempty" yaml:"FromValue,omitempty"`
+	PreviousResource *ResourceInfo `json:"PreviousResource,omitempty" yaml:"PreviousResource,omitempty"`
+	Resource         *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// ToValue The whole resource, for an Add
+	ToValue string `json:"ToValue,omitempty" yaml:"ToValue,omitempty"`
 }
 
 // ResourceGuards defines model for ResourceGuards.
@@ -3994,6 +4107,7 @@ type UnitConflictsResponse struct {
 	// Applied Number of conflicts whose withheld change was applied
 	Applied   int                   `json:"Applied,omitempty" yaml:"Applied,omitempty"`
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Diff      *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 
 	// Dismissed Number of conflicts dropped without changing the configuration data
 	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
@@ -4008,6 +4122,7 @@ type UnitCreateOrUpdateResponse struct {
 	// ConfigData The configuration the operation produced; returned when include names ConfigData.
 	ConfigData      string                       `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
 	Conflicts       *MutationConflictList        `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Diff            *ConfigDiff                  `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 	Error           *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Links           []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
 	MutationSources *ResourceMutationList        `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
@@ -4037,6 +4152,24 @@ type UnitData struct {
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UnitID Unique identifier of the Unit.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// UnitDiff defines model for UnitDiff.
+type UnitDiff struct {
+	Diff  *ConfigDiff    `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// FromRevisionNum The Revision on the From side; 0 when the Unit has none there and the diff is against nothing
+	FromRevisionNum int64 `json:"FromRevisionNum,omitempty" yaml:"FromRevisionNum,omitempty"`
+
+	// SpaceID The Space of the Unit
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// ToRevisionNum The Revision on the To side; 0 when the Unit has none there and the diff is against nothing
+	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
+
+	// UnitID The Unit
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
 }
 
@@ -4374,6 +4507,7 @@ type UploadUnitResult struct {
 	// Action Create, Update, Unchanged, Empty, Revive, or Adopt.
 	Action    string                `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	Diff      *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 	Error     *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
@@ -7760,8 +7894,17 @@ type DemoteParams struct {
 	// DryRun Plan the demotion and return the same response without writing anything.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+}
+
+// DiffConfigurationsParams defines parameters for DiffConfigurations.
+type DiffConfigurationsParams struct {
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WhereResource Limit the diff to the resources this where expression selects on either side.
+	WhereResource *string `form:"where_resource,omitempty" json:"where_resource,omitempty" yaml:"where_resource,omitempty"`
 }
 
 // BulkDeleteFiltersParams defines parameters for BulkDeleteFilters.
@@ -8434,7 +8577,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.
+	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
@@ -9688,7 +9831,7 @@ type PromoteParams struct {
 	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. On a dry run it runs the merges a plan otherwise skips, so it is returned only when named.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. On a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -11619,7 +11762,7 @@ type InvokeFunctionsParams struct {
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.
+	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
@@ -12712,7 +12855,7 @@ type CreateUnitParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -12897,7 +13040,7 @@ type PatchUnitParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -13014,7 +13157,7 @@ type UpdateUnitParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -13023,7 +13166,7 @@ type UploadUnitDataParams struct {
 	// LastChangeDescription Human-readable description of this change, copied to the Revision it creates.
 	LastChangeDescription *string `form:"last_change_description,omitempty" json:"last_change_description,omitempty" yaml:"last_change_description,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
+	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
@@ -13055,6 +13198,21 @@ type UploadUnitDataParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+}
+
+// GetUnitDiffParams defines parameters for GetUnitDiff.
+type GetUnitDiffParams struct {
+	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>, any of them optionally prefixed with Before:.
+	From *string `form:"from,omitempty" json:"from,omitempty" yaml:"from,omitempty"`
+
+	// To The Revision on the To side, in the same syntax as from.
+	To *string `form:"to,omitempty" json:"to,omitempty" yaml:"to,omitempty"`
+
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WhereResource Limit the diff to the resources this where expression selects on either side.
+	WhereResource *string `form:"where_resource,omitempty" json:"where_resource,omitempty" yaml:"where_resource,omitempty"`
 }
 
 // ListExtendedMutationsParams defines parameters for ListExtendedMutations.
@@ -16331,6 +16489,113 @@ type SearchUnitDataParams struct {
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
+// SearchUnitDiffParams defines parameters for SearchUnitDiff.
+type SearchUnitDiffParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Unit list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Unit).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
+	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
+
+	// WhereData Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas > 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.
+	WhereData *string `form:"where_data,omitempty" json:"where_data,omitempty" yaml:"where_data,omitempty"`
+
+	// WhereDataEngine Which engine answers where_data and resource_type: `sql` (the default) evaluates the expression against the stored resource projection in a single query, falling back to the function engine for the expressions it cannot translate; `function` invokes the where-filter function on each candidate Unit, reading every one's configuration; `shadow` runs both, answers with `function`, and logs any disagreement. Temporary: `function` is the escape hatch for one release, after which this parameter goes away.
+	WhereDataEngine *string `form:"where_data_engine,omitempty" json:"where_data_engine,omitempty" yaml:"where_data_engine,omitempty"`
+
+	// WhereTrigger Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).
+	WhereTrigger *string `form:"where_trigger,omitempty" json:"where_trigger,omitempty" yaml:"where_trigger,omitempty"`
+
+	// TriggerFilter Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.
+	TriggerFilter *string `form:"trigger_filter,omitempty" json:"trigger_filter,omitempty" yaml:"trigger_filter,omitempty"`
+
+	// TriggersPassed When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.
+	TriggersPassed *bool `form:"triggers_passed,omitempty" json:"triggers_passed,omitempty" yaml:"triggers_passed,omitempty"`
+
+	// View View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.
+	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
+
+	// From The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>, any of them optionally prefixed with Before:.
+	From *string `form:"from,omitempty" json:"from,omitempty" yaml:"from,omitempty"`
+
+	// To The Revision on the To side, in the same syntax as from.
+	To *string `form:"to,omitempty" json:"to,omitempty" yaml:"to,omitempty"`
+
+	// Include Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WhereResource Limit the diff to the resources this where expression selects on either side.
+	WhereResource *string `form:"where_resource,omitempty" json:"where_resource,omitempty" yaml:"where_resource,omitempty"`
+}
+
 // ListAllUnitEventsParams defines parameters for ListAllUnitEvents.
 type ListAllUnitEventsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -16553,7 +16818,7 @@ type UploadParams struct {
 	// DryRun Plan the upload and return the same response without writing anything.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. It costs something to return, and on a dry run it runs the merges a plan otherwise skips, so it is returned only when named.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -17229,6 +17494,9 @@ type UpdateComponentJSONRequestBody = Component
 
 // DemoteJSONRequestBody defines body for Demote for application/json ContentType.
 type DemoteJSONRequestBody = DemoteRequest
+
+// DiffConfigurationsJSONRequestBody defines body for DiffConfigurations for application/json ContentType.
+type DiffConfigurationsJSONRequestBody = DiffRequest
 
 // BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchFilters for application/merge-patch+json ContentType.
 type BulkPatchFiltersApplicationMergePatchPlusJSONRequestBody BulkPatchFiltersApplicationMergePatchPlusJSONBody

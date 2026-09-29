@@ -6899,7 +6899,8 @@ paths:
           type: boolean
       - description: 'Comma-separated parts of the result to return in addition to
           the actions: Mutations for what each restore changed, or on a dry run would
-          change.'
+          change, as entries of its MutationSources, and Diff for the same change
+          path by path with the values on both sides.'
         in: query
         name: include
         required: false
@@ -6975,6 +6976,88 @@ paths:
       summary: Undo an aborted ChangeOrder in the Spaces it reached
       tags:
       - Demote
+  /diff:
+    post:
+      description: Returns what changed from one configuration to another, path by
+        path with the values on both sides. Each side is a Unit, at a Revision or
+        its head, or configuration given inline, such as a local file or an unsaved
+        edit. The two sides may be Units in different Spaces, and must be of one toolchain.
+        It changes nothing; it is a POST because inline configuration does not fit
+        in a query string.
+      operationId: DiffConfigurations
+      parameters:
+      - description: 'Comma-separated: Attribution to attach to each changed path
+          the To side''s MutationSources entry, which says what set the new value,
+          and Unchanged to also list resources with no changes.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Limit the diff to the resources this where expression selects
+          on either side.
+        in: query
+        name: where_resource
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiffRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiffResult'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the difference between two configurations
+      tags:
+      - Unit
   /filter:
     delete:
       description: Delete multiple filters selected by query parameters
@@ -8298,7 +8381,8 @@ paths:
           the default: ConfigData for the configuration the invocation produced, carried
           whether or not the invocation changed it. Without it, the configuration
           is present only when the invocation changed it, and an unchanged result
-          is reported by DataHash alone.'
+          is reported by DataHash alone. Diff for what the invocation changed in each
+          Unit, path by path with the values on both sides.'
         in: query
         name: include
         required: false
@@ -11777,8 +11861,9 @@ paths:
           type: boolean
       - description: 'Comma-separated parts of the result to return in addition to
           the actions: Mutations for what each Unit write changed, or on a dry run
-          would change. On a dry run it runs the merges a plan otherwise skips, so
-          it is returned only when named.'
+          would change, as entries of its MutationSources, and Diff for the same change
+          path by path with the values on both sides. On a dry run either one runs
+          the merges a plan otherwise skips, so they are returned only when named.'
         in: query
         name: include
         required: false
@@ -18214,7 +18299,8 @@ paths:
           the default: ConfigData for the configuration the invocation produced, carried
           whether or not the invocation changed it. Without it, the configuration
           is present only when the invocation changed it, and an unchanged result
-          is reported by DataHash alone.'
+          is reported by DataHash alone. Diff for what the invocation changed in each
+          Unit, path by path with the values on both sides.'
         in: query
         name: include
         required: false
@@ -22905,10 +22991,12 @@ paths:
         schema:
           type: string
       - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, and MutationSources
-          for what set each value in it. Neither is a field of a Unit, and both cost
-          something to return, so they are returned only when named. A dry run stores
-          nothing, so this is the only way to see what it would have produced.'
+          the Unit: ConfigData for the configuration the operation produced, MutationSources
+          for what set each value in it, and Diff for what the operation changed,
+          path by path with the values on both sides. None is a field of a Unit, and
+          each costs something to return, so they are returned only when named. A
+          dry run stores nothing, so this is the only way to see what it would have
+          produced.'
         in: query
         name: include
         required: false
@@ -23486,10 +23574,12 @@ paths:
         schema:
           type: string
       - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, and MutationSources
-          for what set each value in it. Neither is a field of a Unit, and both cost
-          something to return, so they are returned only when named. A dry run stores
-          nothing, so this is the only way to see what it would have produced.'
+          the Unit: ConfigData for the configuration the operation produced, MutationSources
+          for what set each value in it, and Diff for what the operation changed,
+          path by path with the values on both sides. None is a field of a Unit, and
+          each costs something to return, so they are returned only when named. A
+          dry run stores nothing, so this is the only way to see what it would have
+          produced.'
         in: query
         name: include
         required: false
@@ -23973,10 +24063,12 @@ paths:
         schema:
           type: string
       - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, and MutationSources
-          for what set each value in it. Neither is a field of a Unit, and both cost
-          something to return, so they are returned only when named. A dry run stores
-          nothing, so this is the only way to see what it would have produced.'
+          the Unit: ConfigData for the configuration the operation produced, MutationSources
+          for what set each value in it, and Diff for what the operation changed,
+          path by path with the values on both sides. None is a field of a Unit, and
+          each costs something to return, so they are returned only when named. A
+          dry run stores nothing, so this is the only way to see what it would have
+          produced.'
         in: query
         name: include
         required: false
@@ -24222,10 +24314,12 @@ paths:
         schema:
           type: string
       - description: 'Comma-separated parts of the result to return in addition to
-          the Unit: ConfigData for the configuration the operation produced, and MutationSources
-          for what set each value in it. Neither is a field of a Unit, and both cost
-          something to return, so they are returned only when named. A dry run stores
-          nothing, so this is the only way to see what it would have produced.'
+          the Unit: ConfigData for the configuration the operation produced, MutationSources
+          for what set each value in it, and Diff for what the operation changed,
+          path by path with the values on both sides. None is a field of a Unit, and
+          each costs something to return, so they are returned only when named. A
+          dry run stores nothing, so this is the only way to see what it would have
+          produced.'
         in: query
         name: include
         required: false
@@ -24386,6 +24480,105 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Upload config data
+      tags:
+      - Unit
+  /space/{space_id}/unit/{unit_id}/diff:
+    get:
+      description: Returns what changed in a Unit's configuration between two Revisions,
+        path by path, with the values on both sides. Array elements are matched by
+        merge key and resources across renames, as merges match them. from and to
+        take the Revision selectors `unit update --restore` accepts; to defaults to
+        HeadRevisionNum and from to the Revision before to, so a request with neither
+        answers what the last change did.
+      operationId: GetUnitDiff
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'The Revision on the From side: a number, a Revision ID, HeadRevisionNum,
+          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>,
+          any of them optionally prefixed with Before:.'
+        in: query
+        name: from
+        required: false
+        schema:
+          type: string
+      - description: The Revision on the To side, in the same syntax as from.
+        in: query
+        name: to
+        required: false
+        schema:
+          type: string
+      - description: 'Comma-separated: Attribution to attach to each changed path
+          the To side''s MutationSources entry, which says what set the new value,
+          and Unchanged to also list resources with no changes.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Limit the diff to the resources this where expression selects
+          on either side.
+        in: query
+        name: where_resource
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnitDiff'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the difference between two Revisions of a Unit
       tags:
       - Unit
   /space/{space_id}/unit/{unit_id}/guard:
@@ -32062,6 +32255,260 @@ paths:
       summary: Get the config data of many Units across spaces
       tags:
       - Unit
+  /unit_diff:
+    get:
+      description: 'Returns, for every Unit the where clause selects, across every
+        Space in the organization, what changed in its configuration between the Revision
+        from names and the Revision to names, path by path with the values on both
+        sides. This is the bulk counterpart of the single-Unit diff subresource. from
+        and to must each pick out a Revision in every Unit: HeadRevisionNum, LastReleasedRevisionNum,
+        Tag:<id>, ChangeSet:<id> or ChangeOrder:<id>, optionally prefixed with Before:.
+        A Unit with no Revision a side names is absent on that side, and its diff
+        runs against nothing. Scope it to one Space with a where clause.'
+      operationId: SearchUnitDiff
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+
+          Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Unit list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Unit).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Unit include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: 'Resource type: Resource type to match for the desired ToolchainType,
+          for example apps/v1/Deployment'
+        in: query
+        name: resource_type
+        required: false
+        schema:
+          type: string
+      - description: 'Where data: The specified string is an expression for the purpose
+          of evaluating whether the configuration data matches the filter. It supports
+          conjunctions using `AND` of relational expressions of the form *path* *operator*
+          *literal*. The path specifications are dot-separated, for both map fields
+          and array indices, as in `spec.template.spec.containers.0.image = ''ghcr.io/headlamp-k8s/headlamp:latest''
+          AND spec.replicas > 1`. Path expressions support `*` for wildcard array
+          or map segments and `?key=value` syntax for associative matches of array
+          elements containing objects with a `key` attribute. Strings support the
+          following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`,
+          `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators:
+          `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE`
+          for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex
+          operators: `~` for regex matching, `~*` for case-insensitive regex, `!~`
+          and `!~*` for regex not matching (case-sensitive and insensitive). Integers
+          support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`,
+          `NOT IN`. Boolean values support equality and inequality only. The `IN`
+          and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `spec.template.spec.containers.0.image#reference IN ('':latest'',
+          '':arm64-latest'')`. The syntax `.|` splits the path: the left side selects,
+          and the right side is a property of what was selected. On the right side
+          of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image
+          != ''nginx''` selects the containers and asks that none of their images
+          be nginx, which a container with no image satisfies. Everywhere else a path
+          that is not present is not a match, `!=` included. String literals are quoted
+          with single quotes, such as `''string''`. Integer and boolean literals are
+          also supported for attributes of those types. The whole string must be query-encoded.'
+        in: query
+        name: where_data
+        required: false
+        schema:
+          type: string
+      - description: 'Which engine answers where_data and resource_type: `sql` (the
+          default) evaluates the expression against the stored resource projection
+          in a single query, falling back to the function engine for the expressions
+          it cannot translate; `function` invokes the where-filter function on each
+          candidate Unit, reading every one''s configuration; `shadow` runs both,
+          answers with `function`, and logs any disagreement. Temporary: `function`
+          is the escape hatch for one release, after which this parameter goes away.'
+        in: query
+        name: where_data_engine
+        required: false
+        schema:
+          type: string
+      - description: 'Where expression to match Triggers. Matched triggers are invoked
+          on each unit to filter by validation results. Use with triggers_passed to
+          control whether passing or failing units are returned (default: failing).'
+        in: query
+        name: where_trigger
+        required: false
+        schema:
+          type: string
+      - description: Filter UUID (with From=Trigger). The filter's matching triggers
+          are invoked on units to filter by validation results. Can be combined with
+          where_trigger.
+        in: query
+        name: trigger_filter
+        required: false
+        schema:
+          type: string
+      - description: When true, return units that pass trigger validation; when false
+          (default), return units that fail. Only applies when where_trigger or trigger_filter
+          is specified.
+        in: query
+        name: triggers_passed
+        required: false
+        schema:
+          type: boolean
+      - description: View slug or UUID. Applies the View's column definitions to extract
+          values for each unit. If the View has a FilterID, its filter is ANDed with
+          other filters. The View must have Of=Unit or a Filter with From=Unit.
+        in: query
+        name: view
+        required: false
+        schema:
+          type: string
+      - description: 'The Revision on the From side: a number, a Revision ID, HeadRevisionNum,
+          LastReleasedRevisionNum, Tag:<id>, ChangeSet:<id>, or ChangeOrder:<id>,
+          any of them optionally prefixed with Before:.'
+        in: query
+        name: from
+        required: false
+        schema:
+          type: string
+      - description: The Revision on the To side, in the same syntax as from.
+        in: query
+        name: to
+        required: false
+        schema:
+          type: string
+      - description: 'Comma-separated: Attribution to attach to each changed path
+          the To side''s MutationSources entry, which says what set the new value,
+          and Unchanged to also list resources with no changes.'
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Limit the diff to the resources this where expression selects
+          on either side.
+        in: query
+        name: where_resource
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnitDiff'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unit not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Unit.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the difference between two Revisions of many Units across spaces
+      tags:
+      - Unit
   /unit_event:
     get:
       description: Retrieves a list of UnitEvents across units in the Organization.
@@ -32521,8 +32968,10 @@ paths:
           type: boolean
       - description: 'Comma-separated parts of the result to return in addition to
           the actions: Mutations for what each Unit write changed, or on a dry run
-          would change. It costs something to return, and on a dry run it runs the
-          merges a plan otherwise skips, so it is returned only when named.'
+          would change, as entries of its MutationSources, and Diff for the same change
+          path by path with the values on both sides. They cost something to return,
+          and on a dry run either one runs the merges a plan otherwise skips, so they
+          are returned only when named.'
         in: query
         name: include
         required: false
@@ -36175,6 +36624,17 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
       type: object
+    ConfigDiff:
+      properties:
+        Resources:
+          description: One entry per resource that differs, in the To configuration's
+            order; resources only on the From side follow where they were
+          items:
+            $ref: '#/components/schemas/ResourceDiff'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+      type: object
     CreateUserKeyRequest:
       properties:
         Description:
@@ -36294,6 +36754,8 @@ components:
           description: Restore, Mark, or Unchanged.
           type: string
           x-go-type-skip-optional-pointer: true
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         DropsFromRevisionNum:
           description: The first Revision after the change that restoring drops, when
             the head had moved past where the change arrived.
@@ -36336,6 +36798,65 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         UnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DiffRequest:
+      properties:
+        From:
+          $ref: '#/components/schemas/DiffSide'
+        To:
+          $ref: '#/components/schemas/DiffSide'
+      type: object
+    DiffResult:
+      properties:
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
+        From:
+          $ref: '#/components/schemas/DiffSideResult'
+        To:
+          $ref: '#/components/schemas/DiffSideResult'
+      type: object
+    DiffSide:
+      properties:
+        Data:
+          description: Configuration given inline, instead of a Unit's
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Revision:
+          description: The Unit's Revision, in the syntax unit update --restore takes;
+            its head when omitted
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToolchainType:
+          description: The toolchain of inline Data; defaults to the other side's
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: The Unit whose configuration this side is. Omitted for inline
+            Data.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DiffSideResult:
+      properties:
+        RevisionNum:
+          description: The Revision the side resolved to, for a Unit side
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space of the Unit, for a Unit side
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: The Unit, for a Unit side
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -37110,6 +37631,8 @@ components:
             ConfigData is present
           type: string
           x-go-type-skip-optional-pointer: true
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         Error:
           $ref: '#/components/schemas/ResponseError'
         HasNewMutations:
@@ -37781,6 +38304,15 @@ components:
         Link:
           $ref: '#/components/schemas/Link'
       type: object
+    MergeKeyValue:
+      properties:
+        Key:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Value:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     MoveRequest:
       properties:
         ToSpaceID:
@@ -38269,6 +38801,47 @@ components:
           type: string
         type: object
       type: object
+    PathChange:
+      properties:
+        Attribution:
+          $ref: '#/components/schemas/MutationInfo'
+        ChangeType:
+          description: Add, Delete, Update, Replace, Reorder, or Rename
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DisplayPath:
+          description: The path in configuration path syntax, as --path arguments
+            and where filters take it, with each unkeyed array element named by its
+            index
+          type: string
+          x-go-type-skip-optional-pointer: true
+        FromValue:
+          description: 'The value on the From side: a scalar''s text, or a YAML block
+            for a map or array'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Patch:
+          description: A unified line diff, for multi-line string values
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: The path as MutationSources and patch functions record it
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Segments:
+          description: The path split into its segments, for rendering without parsing
+            the path syntax
+          items:
+            $ref: '#/components/schemas/PathSegment'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ToValue:
+          description: 'The value on the To side: a scalar''s text, or a YAML block
+            for a map or array'
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     PathExpression:
       properties:
         DataType:
@@ -38299,6 +38872,30 @@ components:
           x-go-type-skip-optional-pointer: true
         Resource:
           $ref: '#/components/schemas/ResourceInfo'
+      type: object
+    PathSegment:
+      properties:
+        Field:
+          description: The map key, for a map segment
+          type: string
+          x-go-type-skip-optional-pointer: true
+        FromIndex:
+          description: The element's index on the From side; -1 for a map key or an
+            element absent there
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        MergeKeys:
+          description: The merge keys that identify the element, for an element of
+            a merge-keyed array
+          items:
+            $ref: '#/components/schemas/MergeKeyValue'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        ToIndex:
+          description: The element's index on the To side; -1 for a map key or an
+            element absent there
+          type: integer
+          x-go-type-skip-optional-pointer: true
       type: object
     PathToVisitorInfoType:
       additionalProperties:
@@ -38589,6 +39186,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         Error:
           $ref: '#/components/schemas/ResponseError'
         HeadRevisionNum:
@@ -39070,6 +39669,31 @@ components:
           format: int64
           readOnly: false
           type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ResourceDiff:
+      properties:
+        Attribution:
+          $ref: '#/components/schemas/MutationInfo'
+        ChangeType:
+          $ref: '#/components/schemas/MutationType'
+        Changes:
+          description: Changes within the resource, for an Update, in document order
+          items:
+            $ref: '#/components/schemas/PathChange'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        FromValue:
+          description: The whole resource, for a Delete
+          type: string
+          x-go-type-skip-optional-pointer: true
+        PreviousResource:
+          $ref: '#/components/schemas/ResourceInfo'
+        Resource:
+          $ref: '#/components/schemas/ResourceInfo'
+        ToValue:
+          description: The whole resource, for an Add
+          type: string
           x-go-type-skip-optional-pointer: true
       type: object
     ResourceGuards:
@@ -41076,6 +41700,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         Dismissed:
           description: Number of conflicts dropped without changing the configuration
             data
@@ -41095,6 +41721,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Links:
@@ -41139,6 +41767,37 @@ components:
           x-go-type-skip-optional-pointer: true
         UnitID:
           description: Unique identifier of the Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UnitDiff:
+      properties:
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        FromRevisionNum:
+          description: The Revision on the From side; 0 when the Unit has none there
+            and the diff is against nothing
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space of the Unit
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToRevisionNum:
+          description: The Revision on the To side; 0 when the Unit has none there
+            and the diff is against nothing
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: The Unit
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -41753,6 +42412,8 @@ components:
           x-go-type-skip-optional-pointer: true
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
+        Diff:
+          $ref: '#/components/schemas/ConfigDiff'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Mutations:

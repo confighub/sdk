@@ -99,7 +99,7 @@ func unitGetCmdRun(cmd *cobra.Command, args []string) error {
 	// the current head revision. The deprecated --display-mutations flag
 	// remains additive and is handled inside displayExtendedUnitDetails.
 	if effectiveOutput().Kind == OutputMutations {
-		displayMutationsForUnit(unitDetails.Unit, 0, "", "")
+		displayMutationsForUnit(unitDetails.Unit)
 		return nil
 	}
 
@@ -326,7 +326,7 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			if shouldDisplayMutations() {
 				lookupMutationsUnitID = unitDetails.Unit.UnitID.String()
 				lookupMutationsSpaceID = unitDetails.Unit.SpaceID.String()
-				displayResourceMutationList(mutationSources, true, 0, "", "")
+				displayResourceMutationList(mutationSources)
 			} else {
 				displayJSON(mutationSources)
 			}

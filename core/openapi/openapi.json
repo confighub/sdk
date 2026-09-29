@@ -6679,7 +6679,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each restore changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides.",
             "required": false,
             "schema": {
               "type": "string"
@@ -6788,6 +6788,127 @@
           },
           "500": {
             "description": "Something went wrong while processing Demote.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/diff": {
+      "post": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get the difference between two configurations",
+        "description": "Returns what changed from one configuration to another, path by path with the values on both sides. Each side is a Unit, at a Revision or its head, or configuration given inline, such as a local file or an unsaved edit. The two sides may be Units in different Spaces, and must be of one toolchain. It changes nothing; it is a POST because inline configuration does not fit in a query string.",
+        "operationId": "DiffConfigurations",
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_resource",
+            "in": "query",
+            "description": "Limit the diff to the resources this where expression selects on either side.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiffRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiffResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Unit data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -7990,7 +8111,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.",
+            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.",
             "required": false,
             "schema": {
               "type": "string"
@@ -11783,7 +11904,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. On a dry run it runs the merges a plan otherwise skips, so it is returned only when named.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. On a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.",
             "required": false,
             "schema": {
               "type": "string"
@@ -19506,7 +19627,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone.",
+            "description": "Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.",
             "required": false,
             "schema": {
               "type": "string"
@@ -25382,7 +25503,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
             "required": false,
             "schema": {
               "type": "string"
@@ -25979,7 +26100,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
             "required": false,
             "schema": {
               "type": "string"
@@ -26403,7 +26524,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
             "required": false,
             "schema": {
               "type": "string"
@@ -26779,7 +26900,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, and MutationSources for what set each value in it. Neither is a field of a Unit, and both cost something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
             "required": false,
             "schema": {
               "type": "string"
@@ -26950,6 +27071,146 @@
           },
           "409": {
             "description": "Unit data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/unit/{unit_id}/diff": {
+      "get": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get the difference between two Revisions of a Unit",
+        "description": "Returns what changed in a Unit's configuration between two Revisions, path by path, with the values on both sides. Array elements are matched by merge key and resources across renames, as merges match them. from and to take the Revision selectors `unit update --restore` accepts; to defaults to HeadRevisionNum and from to the Revision before to, so a request with neither answers what the last change did.",
+        "operationId": "GetUnitDiff",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, or ChangeOrder:\u003cid\u003e, any of them optionally prefixed with Before:.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "The Revision on the To side, in the same syntax as from.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_resource",
+            "in": "query",
+            "description": "Limit the diff to the resources this where expression selects on either side.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnitDiff"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
             "content": {
               "application/json": {
                 "schema": {
@@ -34444,6 +34705,219 @@
         }
       }
     },
+    "/unit_diff": {
+      "get": {
+        "tags": [
+          "Unit"
+        ],
+        "summary": "Get the difference between two Revisions of many Units across spaces",
+        "description": "Returns, for every Unit the where clause selects, across every Space in the organization, what changed in its configuration between the Revision from names and the Revision to names, path by path with the values on both sides. This is the bulk counterpart of the single-Unit diff subresource. from and to must each pick out a Revision in every Unit: HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e or ChangeOrder:\u003cid\u003e, optionally prefixed with Before:. A Unit with no Revision a side names is absent on that side, and its diff runs against nothing. Scope it to one Space with a where clause.",
+        "operationId": "SearchUnitDiff",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.\n\nFinding all units created by cloning can be done using the expression `UpstreamRevisionNum \u003e 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum \u003e LastReleasedRevisionNum`.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the Unit list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (Unit).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for Unit include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resource_type",
+            "in": "query",
+            "description": "Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_data",
+            "in": "query",
+            "description": "Where data: The specified string is an expression for the purpose of evaluating whether the configuration data matches the filter. It supports conjunctions using `AND` of relational expressions of the form *path* *operator* *literal*. The path specifications are dot-separated, for both map fields and array indices, as in `spec.template.spec.containers.0.image = 'ghcr.io/headlamp-k8s/headlamp:latest' AND spec.replicas \u003e 1`. Path expressions support `*` for wildcard array or map segments and `?key=value` syntax for associative matches of array elements containing objects with a `key` attribute. Strings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `!~`, `~*`, `!~*`, `IN`, `NOT IN`. String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards, `ILIKE` for case-insensitive pattern matching, `!~~` for NOT LIKE. String regex operators: `~` for regex matching, `~*` for case-insensitive regex, `!~` and `!~*` for regex not matching (case-sensitive and insensitive). Integers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`. Boolean values support equality and inequality only. The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses, such as `spec.template.spec.containers.0.image#reference IN (':latest', ':arm64-latest')`. The syntax `.|` splits the path: the left side selects, and the right side is a property of what was selected. On the right side of a `.|`, and only there, `!=` is true when the property is absent: `spec.containers.*.|image != 'nginx'` selects the containers and asks that none of their images be nginx, which a container with no image satisfies. Everywhere else a path that is not present is not a match, `!=` included. String literals are quoted with single quotes, such as `'string'`. Integer and boolean literals are also supported for attributes of those types. The whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_data_engine",
+            "in": "query",
+            "description": "Which engine answers where_data and resource_type: `sql` (the default) evaluates the expression against the stored resource projection in a single query, falling back to the function engine for the expressions it cannot translate; `function` invokes the where-filter function on each candidate Unit, reading every one's configuration; `shadow` runs both, answers with `function`, and logs any disagreement. Temporary: `function` is the escape hatch for one release, after which this parameter goes away.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_trigger",
+            "in": "query",
+            "description": "Where expression to match Triggers. Matched triggers are invoked on each unit to filter by validation results. Use with triggers_passed to control whether passing or failing units are returned (default: failing).",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "trigger_filter",
+            "in": "query",
+            "description": "Filter UUID (with From=Trigger). The filter's matching triggers are invoked on units to filter by validation results. Can be combined with where_trigger.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "triggers_passed",
+            "in": "query",
+            "description": "When true, return units that pass trigger validation; when false (default), return units that fail. Only applies when where_trigger or trigger_filter is specified.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "description": "View slug or UUID. Applies the View's column definitions to extract values for each unit. If the View has a FilterID, its filter is ANDed with other filters. The View must have Of=Unit or a Filter with From=Unit.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "The Revision on the From side: a number, a Revision ID, HeadRevisionNum, LastReleasedRevisionNum, Tag:\u003cid\u003e, ChangeSet:\u003cid\u003e, or ChangeOrder:\u003cid\u003e, any of them optionally prefixed with Before:.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "The Revision on the To side, in the same syntax as from.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Comma-separated: Attribution to attach to each changed path the To side's MutationSources entry, which says what set the new value, and Unchanged to also list resources with no changes.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "where_resource",
+            "in": "query",
+            "description": "Limit the diff to the resources this where expression selects on either side.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UnitDiff"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unit request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unit not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Unit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/unit_event": {
       "get": {
         "tags": [
@@ -34817,7 +35291,7 @@
           {
             "name": "include",
             "in": "query",
-            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change. It costs something to return, and on a dry run it runs the merges a plan otherwise skips, so it is returned only when named.",
+            "description": "Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38795,6 +39269,20 @@
           }
         }
       },
+      "ConfigDiff": {
+        "type": "object",
+        "properties": {
+          "Resources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ResourceDiff"
+            },
+            "description": "One entry per resource that differs, in the To configuration's order; resources only on the From side follow where they were",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "CreateUserKeyRequest": {
         "type": "object",
         "properties": {
@@ -38945,6 +39433,9 @@
             "description": "Restore, Mark, or Unchanged.",
             "x-go-type-skip-optional-pointer": true
           },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
+          },
           "DropsFromRevisionNum": {
             "type": "integer",
             "description": "The first Revision after the change that restoring drops, when the head had moved past where the change arrived.",
@@ -38996,6 +39487,83 @@
           },
           "UnitID": {
             "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "DiffRequest": {
+        "type": "object",
+        "properties": {
+          "From": {
+            "$ref": "#/components/schemas/DiffSide"
+          },
+          "To": {
+            "$ref": "#/components/schemas/DiffSide"
+          }
+        }
+      },
+      "DiffResult": {
+        "type": "object",
+        "properties": {
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
+          },
+          "From": {
+            "$ref": "#/components/schemas/DiffSideResult"
+          },
+          "To": {
+            "$ref": "#/components/schemas/DiffSideResult"
+          }
+        }
+      },
+      "DiffSide": {
+        "type": "object",
+        "properties": {
+          "Data": {
+            "type": "string",
+            "description": "Configuration given inline, instead of a Unit's",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Revision": {
+            "type": "string",
+            "description": "The Unit's Revision, in the syntax unit update --restore takes; its head when omitted",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToolchainType": {
+            "type": "string",
+            "description": "The toolchain of inline Data; defaults to the other side's",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The Unit whose configuration this side is. Omitted for inline Data.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "DiffSideResult": {
+        "type": "object",
+        "properties": {
+          "RevisionNum": {
+            "type": "integer",
+            "description": "The Revision the side resolved to, for a Unit side",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space of the Unit, for a Unit side",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The Unit, for a Unit side",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
@@ -40014,6 +40582,9 @@
             "description": "SHA256 of the resulting configuration data, whether or not ConfigData is present",
             "x-go-type-skip-optional-pointer": true
           },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
+          },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
@@ -40751,6 +41322,19 @@
           }
         }
       },
+      "MergeKeyValue": {
+        "type": "object",
+        "properties": {
+          "Key": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Value": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "MoveRequest": {
         "type": "object",
         "properties": {
@@ -41329,6 +41913,53 @@
           }
         }
       },
+      "PathChange": {
+        "type": "object",
+        "properties": {
+          "Attribution": {
+            "$ref": "#/components/schemas/MutationInfo"
+          },
+          "ChangeType": {
+            "type": "string",
+            "description": "Add, Delete, Update, Replace, Reorder, or Rename",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "DisplayPath": {
+            "type": "string",
+            "description": "The path in configuration path syntax, as --path arguments and where filters take it, with each unkeyed array element named by its index",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FromValue": {
+            "type": "string",
+            "description": "The value on the From side: a scalar's text, or a YAML block for a map or array",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Patch": {
+            "type": "string",
+            "description": "A unified line diff, for multi-line string values",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "The path as MutationSources and patch functions record it",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Segments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathSegment"
+            },
+            "description": "The path split into its segments, for rendering without parsing the path syntax",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToValue": {
+            "type": "string",
+            "description": "The value on the To side: a scalar's text, or a YAML block for a map or array",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "PathExpression": {
         "type": "object",
         "properties": {
@@ -41362,6 +41993,34 @@
           },
           "Resource": {
             "$ref": "#/components/schemas/ResourceInfo"
+          }
+        }
+      },
+      "PathSegment": {
+        "type": "object",
+        "properties": {
+          "Field": {
+            "type": "string",
+            "description": "The map key, for a map segment",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FromIndex": {
+            "type": "integer",
+            "description": "The element's index on the From side; -1 for a map key or an element absent there",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "MergeKeys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MergeKeyValue"
+            },
+            "description": "The merge keys that identify the element, for an element of a merge-keyed array",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToIndex": {
+            "type": "integer",
+            "description": "The element's index on the To side; -1 for a map key or an element absent there",
+            "x-go-type-skip-optional-pointer": true
           }
         }
       },
@@ -41706,6 +42365,9 @@
           },
           "Conflicts": {
             "$ref": "#/components/schemas/MutationConflictList"
+          },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
@@ -42211,6 +42873,41 @@
           }
         },
         "description": "Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only."
+      },
+      "ResourceDiff": {
+        "type": "object",
+        "properties": {
+          "Attribution": {
+            "$ref": "#/components/schemas/MutationInfo"
+          },
+          "ChangeType": {
+            "$ref": "#/components/schemas/MutationType"
+          },
+          "Changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PathChange"
+            },
+            "description": "Changes within the resource, for an Update, in document order",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FromValue": {
+            "type": "string",
+            "description": "The whole resource, for a Delete",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "PreviousResource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfo"
+          },
+          "ToValue": {
+            "type": "string",
+            "description": "The whole resource, for an Add",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
       },
       "ResourceGuards": {
         "type": "object",
@@ -44266,6 +44963,9 @@
           "Conflicts": {
             "$ref": "#/components/schemas/MutationConflictList"
           },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
+          },
           "Dismissed": {
             "type": "integer",
             "description": "Number of conflicts dropped without changing the configuration data",
@@ -44289,6 +44989,9 @@
           },
           "Conflicts": {
             "$ref": "#/components/schemas/MutationConflictList"
+          },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
@@ -44347,6 +45050,43 @@
           "UnitID": {
             "type": "string",
             "description": "Unique identifier of the Unit.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UnitDiff": {
+        "type": "object",
+        "properties": {
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "FromRevisionNum": {
+            "type": "integer",
+            "description": "The Revision on the From side; 0 when the Unit has none there and the diff is against nothing",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space of the Unit",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToRevisionNum": {
+            "type": "integer",
+            "description": "The Revision on the To side; 0 when the Unit has none there and the diff is against nothing",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The Unit",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
@@ -45114,6 +45854,9 @@
           },
           "Conflicts": {
             "$ref": "#/components/schemas/MutationConflictList"
+          },
+          "Diff": {
+            "$ref": "#/components/schemas/ConfigDiff"
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
