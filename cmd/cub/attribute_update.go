@@ -53,11 +53,14 @@ var (
 
 func init() {
 	addStandardUpdateFlags(attributeUpdateCmd)
+	enableUpdatePermissionFlag(attributeUpdateCmd)
 	attributeUpdateCmd.Flags().StringVar(&attributeDescription, "description", "", "Description for the attribute")
 	attributeUpdateCmd.Flags().BoolVar(&attributePatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(attributeUpdateCmd)
 	enableFilterFlag(attributeUpdateCmd)
 	attributeUpdateCmd.Flags().StringSliceVar(&attributeIdentifiers, "attribute", []string{}, "target specific attributes by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	addBackingUnitFlags(attributeUpdateCmd, "Attribute", false, false)
+	addFromBackingUnitsFlags(attributeUpdateCmd, "Attribute", false)
 	attributeCmd.AddCommand(attributeUpdateCmd)
 }
 
@@ -125,7 +128,7 @@ func runBulkAttributeUpdate() error {
 		}
 	}
 
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -135,18 +138,22 @@ func runBulkAttributeUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	bulkRes, err := cubClientNew.BulkPatchAttributesWithBodyWithResponse(
 		ctx,
 		params,
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	return handleBulkAttributeCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "update", effectiveWhere)
@@ -173,7 +180,7 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(attrEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(attrEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -212,6 +219,9 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentAttr.Attribute.Permissions); err != nil {
+		return err
+	}
 
 	currentAttr.Attribute.SpaceID = spaceID
 
@@ -219,7 +229,7 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentAttr.Attribute.Description = attributeDescription
 	}
 
-	attrRes, err := cubClientNew.UpdateAttributeWithResponse(ctx, spaceID, currentAttr.Attribute.AttributeID, *currentAttr.Attribute)
+	attrRes, err := cubClientNew.UpdateAttributeWithResponse(ctx, spaceID, currentAttr.Attribute.AttributeID, &goclientnew.UpdateAttributeParams{DryRun: dryRunParam()}, *currentAttr.Attribute)
 	if cubapi.IsAPIError(err, attrRes) {
 		return cubapi.InterpretErrorGeneric(err, attrRes)
 	}
@@ -247,6 +257,7 @@ func patchAttribute(spaceID uuid.UUID, attrID uuid.UUID, patchData []byte) (*goc
 		ctx,
 		spaceID,
 		attrID,
+		&goclientnew.PatchAttributeParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

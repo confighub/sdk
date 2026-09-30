@@ -204,6 +204,27 @@ func TestResolveNotFoundNamesWhatWasSought(t *testing.T) {
 	}
 }
 
+// TestResolveOrgLevelNotFoundNamesNoSpace: a space or component is not in a
+// space, so its not-found error must not say it was sought in one.
+func TestResolveOrgLevelNotFoundNamesNoSpace(t *testing.T) {
+	var wheres []string
+	c := captureWhere(t, `[]`, &wheres)
+	opts := ResolveOpts{Space: goclientnew.UUID(uuid.MustParse(spaceUUID))}
+	_, spaceErr := ResolveSpace(context.Background(), c, ParseRef("ghost"), opts)
+	_, componentErr := ResolveComponent(context.Background(), c, ParseRef("ghost"), opts)
+	for _, tc := range []struct {
+		err  error
+		want string
+	}{
+		{spaceErr, `space "ghost" not found`},
+		{componentErr, `component "ghost" not found`},
+	} {
+		if tc.err == nil || tc.err.Error() != tc.want {
+			t.Errorf("err = %v, want %q", tc.err, tc.want)
+		}
+	}
+}
+
 func TestResolveEmptyRef(t *testing.T) {
 	var wheres []string
 	c := captureWhere(t, `[]`, &wheres)

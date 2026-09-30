@@ -144,9 +144,10 @@ func apiListAllInvocations(where cubapi.Where, selectParam string, filterParam s
 		return buildSelectList("Invocation", listColumnsFor("cub invocation list"), invocationListInclude, defaultInvocationColumns, invocationAliases, invocationCustomColumnDependencies, invocationBaseSelectFields)
 	})
 	return cubapi.ListInvocations(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  invocationListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       invocationListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

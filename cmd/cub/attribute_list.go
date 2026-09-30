@@ -130,9 +130,10 @@ func apiListAllAttributes(where cubapi.Where, selectParam string, filterParam st
 		return buildSelectList("Attribute", listColumnsFor("cub attribute list"), attributeListInclude, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, attributeBaseSelectFields)
 	})
 	return cubapi.ListAttributes(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  attributeListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       attributeListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

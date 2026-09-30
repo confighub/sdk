@@ -49,15 +49,17 @@ var (
 	filterPatch       bool
 	filterIdentifiers []string
 	filterUpdateArgs  struct {
-		whereField   string
-		whereData    string
-		resourceType string
-		fromSpace    string
+		whereField         string
+		includeHiddenField string
+		whereData          string
+		resourceType       string
+		fromSpace          string
 	}
 )
 
 func init() {
 	addStandardUpdateFlags(filterUpdateCmd)
+	enableUpdatePermissionFlag(filterUpdateCmd)
 	filterUpdateCmd.Flags().BoolVar(&filterPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(filterUpdateCmd)
 	enableFilterFlag(filterUpdateCmd)
@@ -65,10 +67,13 @@ func init() {
 
 	// Single update specific flags
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.whereField, "where-field", "", "where expression for filter entity")
+	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.includeHiddenField, "include-hidden-field", "", "HiddenReasons, comma-separated, or \"*\" for any: where the filter is applied to a list or a bulk operation, it also selects entities hidden for those reasons")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.whereData, "where-data", "", "where filter expression for configuration data (valid only for Units)")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.resourceType, "resource-type", "", "resource type to match (e.g., apps/v1/Deployment, valid only for Units)")
 	filterUpdateCmd.Flags().StringVar(&filterUpdateArgs.fromSpace, "from-space", "", "space to filter within (slug or UUID, only relevant for spaced entity types)")
 
+	addBackingUnitFlags(filterUpdateCmd, "Filter", false, false)
+	addFromBackingUnitsFlags(filterUpdateCmd, "Filter", false)
 	filterCmd.AddCommand(filterUpdateCmd)
 }
 
@@ -155,6 +160,9 @@ func runBulkFilterUpdate() error {
 		if filterUpdateArgs.whereField != "" {
 			patchMap["Where"] = filterUpdateArgs.whereField
 		}
+		if filterUpdateArgs.includeHiddenField != "" {
+			patchMap["IncludeHidden"] = filterUpdateArgs.includeHiddenField
+		}
 		if filterUpdateArgs.whereData != "" {
 			patchMap["WhereData"] = filterUpdateArgs.whereData
 		}
@@ -167,7 +175,7 @@ func runBulkFilterUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -178,10 +186,14 @@ func runBulkFilterUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchFiltersWithBodyWithResponse(
 		ctx,
@@ -189,8 +201,8 @@ func runBulkFilterUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -236,6 +248,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if filterUpdateArgs.whereField != "" {
 				patchMap["Where"] = filterUpdateArgs.whereField
 			}
+			if filterUpdateArgs.includeHiddenField != "" {
+				patchMap["IncludeHidden"] = filterUpdateArgs.includeHiddenField
+			}
 			if filterUpdateArgs.whereData != "" {
 				patchMap["WhereData"] = filterUpdateArgs.whereData
 			}
@@ -248,7 +263,7 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 
 		// Build patch data using consolidated function
-		patchJSON, err := BuildPatchData(enhancer)
+		patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 		if err != nil {
 			return err
 		}
@@ -289,6 +304,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentFilter.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&currentFilter.DeleteGates)
 	if err != nil {
 		return err
@@ -302,6 +320,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if filterUpdateArgs.whereField != "" {
 		currentFilter.Where = filterUpdateArgs.whereField
 	}
+	if filterUpdateArgs.includeHiddenField != "" {
+		currentFilter.IncludeHidden = filterUpdateArgs.includeHiddenField
+	}
 	if filterUpdateArgs.whereData != "" {
 		currentFilter.WhereData = filterUpdateArgs.whereData
 	}
@@ -312,7 +333,7 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentFilter.FromSpaceID = &fromSpaceID
 	}
 
-	filterRes, err := cubClientNew.UpdateFilterWithResponse(ctx, spaceID, currentFilter.FilterID, *currentFilter)
+	filterRes, err := cubClientNew.UpdateFilterWithResponse(ctx, spaceID, currentFilter.FilterID, &goclientnew.UpdateFilterParams{DryRun: dryRunParam()}, *currentFilter)
 	if cubapi.IsAPIError(err, filterRes) {
 		return cubapi.InterpretErrorGeneric(err, filterRes)
 	}
@@ -340,6 +361,7 @@ func patchFilter(spaceID uuid.UUID, filterID uuid.UUID, patchData []byte) (*gocl
 		ctx,
 		spaceID,
 		filterID,
+		&goclientnew.PatchFilterParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

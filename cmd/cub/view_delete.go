@@ -112,6 +112,7 @@ func runBulkViewDelete() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

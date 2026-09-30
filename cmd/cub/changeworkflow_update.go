@@ -65,6 +65,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(changeworkflowUpdateCmd)
+	enableUpdatePermissionFlag(changeworkflowUpdateCmd)
 	changeworkflowUpdateCmd.Flags().BoolVar(&changeworkflowPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(changeworkflowUpdateCmd)
 	enableFilterFlag(changeworkflowUpdateCmd)
@@ -74,6 +75,8 @@ func init() {
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.stages, "stage", nil, "replace the stages with the ones named (can be repeated or comma-separated), given in the order a change is promoted through them")
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated); requires --stage")
 
+	addBackingUnitFlags(changeworkflowUpdateCmd, "ChangeWorkflow", false, false)
+	addFromBackingUnitsFlags(changeworkflowUpdateCmd, "ChangeWorkflow", false)
 	changeworkflowCmd.AddCommand(changeworkflowUpdateCmd)
 }
 
@@ -162,7 +165,7 @@ func runBulkChangeWorkflowUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -173,10 +176,14 @@ func runBulkChangeWorkflowUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchChangeWorkflowsWithBodyWithResponse(
 		ctx,
@@ -184,8 +191,8 @@ func runBulkChangeWorkflowUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	return handleBulkChangeWorkflowCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "update", effectiveWhere)
@@ -237,7 +244,7 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(changeWorkflowEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(changeWorkflowEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -278,6 +285,9 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := setLabels(&currentChangeWorkflow.Labels); err != nil {
 		return err
 	}
+	if err := setPermissions(&currentChangeWorkflow.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentChangeWorkflow.SpaceID = spaceID
@@ -292,7 +302,7 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	changeWorkflowRes, err := cubClientNew.UpdateChangeWorkflowWithResponse(ctx, spaceID,
-		currentChangeWorkflow.ChangeWorkflowID, *currentChangeWorkflow)
+		currentChangeWorkflow.ChangeWorkflowID, &goclientnew.UpdateChangeWorkflowParams{DryRun: dryRunParam()}, *currentChangeWorkflow)
 	if cubapi.IsAPIError(err, changeWorkflowRes) {
 		return cubapi.InterpretErrorGeneric(err, changeWorkflowRes)
 	}
@@ -321,6 +331,7 @@ func patchChangeWorkflow(spaceID uuid.UUID, changeWorkflowID uuid.UUID, patchDat
 		ctx,
 		spaceID,
 		changeWorkflowID,
+		&goclientnew.PatchChangeWorkflowParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

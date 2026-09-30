@@ -68,11 +68,14 @@ var (
 
 func init() {
 	addStandardUpdateFlags(invocationUpdateCmd)
+	enableUpdatePermissionFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
 	enableFilterFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringSliceVar(&invocationIdentifiers, "invocation", []string{}, "target specific invocations by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	addBackingUnitFlags(invocationUpdateCmd, "Invocation", false, false)
+	addFromBackingUnitsFlags(invocationUpdateCmd, "Invocation", false)
 	invocationCmd.AddCommand(invocationUpdateCmd)
 }
 
@@ -158,7 +161,7 @@ func runBulkInvocationUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -169,10 +172,14 @@ func runBulkInvocationUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchInvocationsWithBodyWithResponse(
 		ctx,
@@ -180,8 +187,8 @@ func runBulkInvocationUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -242,7 +249,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(invocationEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(invocationEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -283,6 +290,9 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentInvocation.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentInvocation.SpaceID = spaceID
@@ -303,7 +313,7 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			Arguments:    parseFunctionArguments(args[3:]),
 		}}
 	}
-	invocationRes, err := cubClientNew.UpdateInvocationWithResponse(ctx, spaceID, currentInvocation.InvocationID, *currentInvocation)
+	invocationRes, err := cubClientNew.UpdateInvocationWithResponse(ctx, spaceID, currentInvocation.InvocationID, &goclientnew.UpdateInvocationParams{DryRun: dryRunParam()}, *currentInvocation)
 	if cubapi.IsAPIError(err, invocationRes) {
 		return cubapi.InterpretErrorGeneric(err, invocationRes)
 	}
@@ -331,6 +341,7 @@ func patchInvocation(spaceID uuid.UUID, invocationID uuid.UUID, patchData []byte
 		ctx,
 		spaceID,
 		invocationID,
+		&goclientnew.PatchInvocationParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

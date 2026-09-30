@@ -174,8 +174,8 @@ var unitCustomColumns = map[string]func(interface{}) string{
 }
 
 // unreleasedChangesColumn reports whether a Unit has changes that have not been
-// published in a Release. LastReleasedRevisionNum is advanced by `release publish`
-// (see internal/views/release_core.go), which is the apply point now.
+// published in a Release. LastReleasedRevisionNum is advanced by `release publish`, which is the
+// apply point now. Only Units with a Target are released, so the others never report changes.
 func unreleasedChangesColumn(obj interface{}) string {
 	if extendedUnit, ok := obj.(*goclientnew.ExtendedUnit); ok {
 		unit := extendedUnit.Unit
@@ -449,10 +449,11 @@ func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, 
 		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
 	})
 	return cubapi.ListUnits(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  unitListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       unitListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	}, func(p *goclientnew.ListAllUnitsParams) {
 		if resourceType != "" {
 			p.ResourceType = &resourceType

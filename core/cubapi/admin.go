@@ -143,7 +143,7 @@ func EnsureFilter(ctx context.Context, c *Client, filter goclientnew.Filter) (*g
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchFilterWithBodyWithResponse(ctx, filter.SpaceID, existing.Filter.FilterID,
+	res, err := c.API.PatchFilterWithBodyWithResponse(ctx, filter.SpaceID, existing.Filter.FilterID, &goclientnew.PatchFilterParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -165,7 +165,7 @@ func EnsureTrigger(ctx context.Context, c *Client, trigger goclientnew.Trigger) 
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchTriggerWithBodyWithResponse(ctx, trigger.SpaceID, existing.Trigger.TriggerID,
+	res, err := c.API.PatchTriggerWithBodyWithResponse(ctx, trigger.SpaceID, existing.Trigger.TriggerID, &goclientnew.PatchTriggerParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -188,7 +188,7 @@ func EnsureInvocation(ctx context.Context, c *Client, invocation goclientnew.Inv
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchInvocationWithBodyWithResponse(ctx, invocation.SpaceID, existing.Invocation.InvocationID,
+	res, err := c.API.PatchInvocationWithBodyWithResponse(ctx, invocation.SpaceID, existing.Invocation.InvocationID, &goclientnew.PatchInvocationParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -232,7 +232,7 @@ func EnsureBridgeWorker(ctx context.Context, c *Client, worker goclientnew.Bridg
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, existing.BridgeWorker.BridgeWorkerID,
+	res, err := c.API.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, existing.BridgeWorker.BridgeWorkerID, &goclientnew.PatchBridgeWorkerParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
@@ -255,7 +255,7 @@ func EnsureAttribute(ctx context.Context, c *Client, attribute goclientnew.Attri
 	if err != nil {
 		return nil, err
 	}
-	res, err := c.API.PatchAttributeWithBodyWithResponse(ctx, attribute.SpaceID, existing.Attribute.AttributeID,
+	res, err := c.API.PatchAttributeWithBodyWithResponse(ctx, attribute.SpaceID, existing.Attribute.AttributeID, &goclientnew.PatchAttributeParams{},
 		mergePatchContentType, bytes.NewReader(patch))
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)

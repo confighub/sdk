@@ -68,6 +68,7 @@ func displayExtendedFilterDetails(extendedFilter *goclientnew.ExtendedFilter) {
 	view.Append([]string{"Created At", filterDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", filterDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(filterDetails.Labels)})
+	appendBackingUnitRow(view, filterDetails.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(filterDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(filterDetails.Annotations)})
 	view.Append([]string{"Organization ID", filterDetails.OrganizationID.String()})
@@ -88,6 +89,9 @@ func displayExtendedFilterDetails(extendedFilter *goclientnew.ExtendedFilter) {
 	}
 	if filterDetails.ResourceType != "" {
 		view.Append([]string{"Resource Type", filterDetails.ResourceType})
+	}
+	if filterDetails.IncludeHidden != "" {
+		view.Append([]string{"Include Hidden", filterDetails.IncludeHidden})
 	}
 	if filterDetails.Hash != "" {
 		view.Append([]string{"Hash", filterDetails.Hash})

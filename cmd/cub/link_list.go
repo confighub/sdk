@@ -192,9 +192,10 @@ func apiListAllLinks(where cubapi.Where, selectParam string, filterParam string)
 		return buildSelectList("Link", listColumnsFor("cub link list"), linkListInclude, defaultLinkColumns, linkAliases, linkCustomColumnDependencies, linkBaseSelectFields)
 	})
 	return cubapi.ListLinks(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  linkListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       linkListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

@@ -164,6 +164,10 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		}
 
 		view.Append([]string{"Toolchain Type", unitDetails.Unit.ToolchainType})
+		appendBackedEntityRow(view, unitDetails.Unit)
+		if unitDetails.Unit.HiddenReason != "" {
+			view.Append([]string{"Hidden Reason", unitDetails.Unit.HiddenReason})
+		}
 		view.Append([]string{"Provider Type", unitDetails.Unit.ProviderType})
 
 		// Not implemented yet

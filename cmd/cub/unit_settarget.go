@@ -158,6 +158,7 @@ func runBulkUnitSetTarget(targetSlug string) error {
 	params := &goclientnew.BulkPatchUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

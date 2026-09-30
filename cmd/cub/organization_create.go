@@ -29,7 +29,7 @@ Examples:
 }
 
 func init() {
-	addStandardCreateFlags(organizationCreateCmd)
+	addCreateFlagsWithoutDryRun(organizationCreateCmd)
 	organizationCmd.AddCommand(organizationCreateCmd)
 }
 

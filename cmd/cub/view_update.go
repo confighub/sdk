@@ -62,6 +62,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(viewUpdateCmd)
+	enableUpdatePermissionFlag(viewUpdateCmd)
 	viewUpdateCmd.Flags().BoolVar(&viewPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(viewUpdateCmd)
 	enableFilterFlag(viewUpdateCmd)
@@ -74,6 +75,8 @@ func init() {
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.orderBy, "order-by", "", "column name to sort by")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.orderByDirection, "order-by-direction", "", "sort direction (ASC or DESC, only valid with --order-by)")
 
+	addBackingUnitFlags(viewUpdateCmd, "View", false, false)
+	addFromBackingUnitsFlags(viewUpdateCmd, "View", false)
 	viewCmd.AddCommand(viewUpdateCmd)
 }
 
@@ -194,7 +197,7 @@ func runBulkViewUpdate() error {
 		}
 	}
 
-	patchJSON, err := BuildPatchData(viewEnhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(viewEnhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -205,10 +208,14 @@ func runBulkViewUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchViewsWithBodyWithResponse(
 		ctx,
@@ -216,8 +223,8 @@ func runBulkViewUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -304,7 +311,7 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(viewEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(viewEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -345,6 +352,9 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentView.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentView.SpaceID = spaceID
@@ -381,7 +391,7 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentView.OrderByDirection = viewUpdateArgs.orderByDirection
 	}
 
-	viewRes, err := cubClientNew.UpdateViewWithResponse(ctx, spaceID, currentView.ViewID, *currentView)
+	viewRes, err := cubClientNew.UpdateViewWithResponse(ctx, spaceID, currentView.ViewID, &goclientnew.UpdateViewParams{DryRun: dryRunParam()}, *currentView)
 	if cubapi.IsAPIError(err, viewRes) {
 		return cubapi.InterpretErrorGeneric(err, viewRes)
 	}
@@ -409,6 +419,7 @@ func patchView(spaceID uuid.UUID, viewID uuid.UUID, patchData []byte) (*goclient
 		ctx,
 		spaceID,
 		viewID,
+		&goclientnew.PatchViewParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

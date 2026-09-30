@@ -103,6 +103,7 @@ func runBulkUnitCancel() error {
 	params := &goclientnew.BulkCancelUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -150,6 +151,7 @@ func unitCancelCmdRun(cmd *cobra.Command, args []string) error {
 	params := &goclientnew.BulkCancelUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 
 	// Call API
 	resp, err := cubClientNew.BulkCancelUnitsWithResponse(ctx, params)

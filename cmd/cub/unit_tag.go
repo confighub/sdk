@@ -155,6 +155,7 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 	params := &goclientnew.BulkTagUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

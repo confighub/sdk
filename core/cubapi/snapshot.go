@@ -93,7 +93,9 @@ func (u UnitMeta) Gated() bool { return u.GateCount > 0 }
 
 // Unreleased reports whether the unit's head revision has not been captured by a
 // release. Publishing a release advances LastReleasedRevisionNum, so it is the
-// field that answers "is what is authored here the thing that was published".
+// field that answers "is what is authored here the thing that was published". For
+// a backing Unit, which holds a ConfigHub entity's configuration and is never
+// released, it is the revision the entity last took.
 func (u UnitMeta) Unreleased() bool {
 	return u.LastReleasedRevisionNum == 0 || u.LastReleasedRevisionNum < u.HeadRevisionNum
 }

@@ -115,6 +115,7 @@ func displayExtendedChangeWorkflowDetails(extendedChangeWorkflow *goclientnew.Ex
 	view.Append([]string{"Created At", changeWorkflowDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", changeWorkflowDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(changeWorkflowDetails.Labels)})
+	appendBackingUnitRow(view, changeWorkflowDetails.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(changeWorkflowDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(changeWorkflowDetails.Annotations)})
 	view.Append([]string{"Organization ID", changeWorkflowDetails.OrganizationID.String()})

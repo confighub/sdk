@@ -478,6 +478,7 @@ func invokeFunctionsOnRevision(revisionIdentifier string, body goclientnew.Funct
 // head.
 func invokeFunctionsOnRevisionID(spaceID, unitID, revisionID uuid.UUID, body goclientnew.FunctionInvocationsRequest, dryRun bool) (*[]goclientnew.FunctionInvocationsResponse, error) {
 	newParams := &goclientnew.InvokeFunctionsParams{}
+	newParams.IncludeHidden = includeHiddenParam()
 	newParams.Include = invokeIncludes(false)
 	unitUUID := goclientnew.UUID(unitID)
 	revisionUUID := goclientnew.UUID(revisionID)
@@ -536,6 +537,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 	// SpaceOptional command) has nothing to parse as a UUID.
 	if selectedSpaceID == "" || selectedSpaceID == "*" {
 		newParams := &goclientnew.InvokeFunctionsOnOrgParams{}
+		newParams.IncludeHidden = includeHiddenParam()
 		newParams.Include = invokeIncludes(invokeArgs.IncludeDiff)
 		if executorSpace != "" {
 			newParams.ExecutorSpace = &executorSpace
@@ -585,6 +587,7 @@ func invokeFunctionsOnUnits(invokeArgs *invokeArgs) (*[]goclientnew.FunctionInvo
 		}
 	} else {
 		newParams := &goclientnew.InvokeFunctionsParams{}
+		newParams.IncludeHidden = includeHiddenParam()
 		newParams.Include = invokeIncludes(invokeArgs.IncludeDiff)
 		if invokeArgs.Where != "" {
 			newParams.Where = &invokeArgs.Where

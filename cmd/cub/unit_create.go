@@ -167,6 +167,7 @@ var unitCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(unitCreateCmd) // This already includes verbose, json, jq flags
+	enableCreatePermissionFlag(unitCreateCmd)
 	enableWaitFlag(unitCreateCmd)
 	enableWhereFlag(unitCreateCmd)
 	enableFilterFlag(unitCreateCmd)
@@ -390,6 +391,9 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newUnit.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newUnit.DeleteGates)
 	if err != nil {
 		return err
@@ -457,6 +461,7 @@ func runSingleUnitCreate(args []string) error {
 		newParams.MergeExternalSource = &unitCreateArgs.mergeExternalSource
 	}
 
+	newParams.DryRun = dryRunParam()
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if cubapi.IsAPIError(err, unitRes) {
 		return cubapi.InterpretErrorGeneric(err, unitRes)
@@ -471,7 +476,12 @@ func runSingleUnitCreate(args []string) error {
 	// followed by a write to its data endpoint. The Unit is left in place if the write
 	// fails: it exists, somebody may already be looking at it, and deleting it would be a
 	// worse outcome than an empty Unit the caller can write to again.
-	if configDataSupplied {
+	//
+	// A dry run creates nothing, so there is no Unit for the configuration to be written to, and
+	// only the create is tried.
+	if configDataSupplied && dryRun {
+		fmt.Fprintf(os.Stderr, "Dry run: the configuration was not tried, since writing it needs the unit to exist\n")
+	} else if configDataSupplied {
 		dataParams, paramErr := unitDataParamsFromCreate(newParams,
 			newUnit.LastChangeDescription, changeSetIDForDataWrite(newUnit))
 		if paramErr != nil {
@@ -487,7 +497,7 @@ func runSingleUnitCreate(args []string) error {
 		}
 	}
 
-	if wait {
+	if wait && !dryRun {
 		err = awaitTriggersRemoval(unitDetails)
 		if err != nil {
 			return err
@@ -551,7 +561,7 @@ func createBulkCreatePatch() ([]byte, error) {
 	}
 
 	// Build patch data using consolidated function
-	return BuildPatchData(enhancer)
+	return BuildPatchDataWithPermissions(enhancer, permissionFlag)
 }
 
 func runBulkUnitCreate() error {
@@ -586,6 +596,7 @@ func runBulkUnitCreate() error {
 	params := &goclientnew.BulkCreateUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -673,6 +684,7 @@ func runBulkUnitCreate() error {
 // merge-patch body, returning the responses and the HTTP status code (200 or 207).
 // Shared by `unit create` bulk mode and `variant create`.
 func bulkCreateUnits(params *goclientnew.BulkCreateUnitsParams, patchJSON []byte) (*[]goclientnew.UnitCreateOrUpdateResponse, int, error) {
+	params.DryRun = dryRunParam()
 	bulkRes, err := cubClientNew.BulkCreateUnitsWithBodyWithResponse(
 		ctx,
 		params,

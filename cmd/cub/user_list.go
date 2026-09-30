@@ -101,6 +101,9 @@ func apiListUsers(whereFilter string, filterParam string) ([]*goclientnew.User, 
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	// TODO: Add select parameter support when backend endpoint supports it
 	// Auto-select fields based on default display if no custom output format is specified
 	// if selectFields == "" {

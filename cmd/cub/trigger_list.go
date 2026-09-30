@@ -172,9 +172,10 @@ func apiListAllTriggers(where cubapi.Where, selectParam string, filterParam stri
 		return buildSelectList("Trigger", listColumnsFor("cub trigger list"), triggerListInclude, defaultTriggerColumns, triggerAliases, triggerCustomColumnDependencies, triggerBaseSelectFields)
 	})
 	return cubapi.ListTriggers(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  triggerListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       triggerListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

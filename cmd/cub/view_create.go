@@ -95,6 +95,7 @@ var viewCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(viewCreateCmd)
+	enableCreatePermissionFlag(viewCreateCmd)
 	enableWhereFlag(viewCreateCmd)
 	enableFilterFlag(viewCreateCmd)
 
@@ -114,6 +115,8 @@ func init() {
 	viewCreateCmd.Flags().StringSliceVar(&viewCreateArgs.viewSlugs, "view", []string{}, "target specific views by slug or UUID for bulk create (can be repeated or comma-separated)")
 	viewCreateCmd.Flags().StringVar(&viewCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
+	addBackingUnitFlags(viewCreateCmd, "View", false, true)
+	addFromBackingUnitsFlags(viewCreateCmd, "View", true)
 	viewCmd.AddCommand(viewCreateCmd)
 }
 
@@ -131,7 +134,7 @@ func checkViewCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(viewCreateArgs.destSpaces) == 0 && viewCreateArgs.whereSpace == "" && len(viewCreateArgs.namePrefixes) == 0 && len(viewCreateArgs.variantLabels) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(viewCreateArgs.destSpaces) == 0 && viewCreateArgs.whereSpace == "" && len(viewCreateArgs.namePrefixes) == 0 && len(viewCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
 		}
 
@@ -228,6 +231,9 @@ func runSingleViewCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -283,11 +289,13 @@ func runSingleViewCreate(args []string) error {
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateViewParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	viewRes, err := cubClientNew.CreateViewWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, viewRes) {
 		return cubapi.InterpretErrorGeneric(err, viewRes)
@@ -321,7 +329,7 @@ func runBulkViewCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for view)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -333,6 +341,14 @@ func runBulkViewCreate() error {
 	params := &goclientnew.BulkCreateViewsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -386,6 +402,7 @@ func runBulkViewCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateViewsWithBodyWithResponse(
 		ctx,
@@ -393,8 +410,8 @@ func runBulkViewCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

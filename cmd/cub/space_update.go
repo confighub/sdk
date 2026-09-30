@@ -58,15 +58,17 @@ func init() {
 	addStandardUpdateFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
-	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space; with neither it nor a trigger filter, the Triggers in the Space are (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	spaceUpdateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceUpdateCmd)
-	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
+	spaceUpdateCmd.Flags().BoolVar(&spaceUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers the space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed")
 	enableWhereFlag(spaceUpdateCmd)
 	enableFilterFlag(spaceUpdateCmd)
+	addBackingUnitFlags(spaceUpdateCmd, "Space", true, false)
+	addFromBackingUnitsFlags(spaceUpdateCmd, "Space", false)
 	spaceCmd.AddCommand(spaceUpdateCmd)
 }
 
@@ -253,7 +255,7 @@ func runSingleSpaceUpdate(args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(spaceUpdateArgs.permissions, newBody.Permissions)
+	err = applyPermissions(spaceUpdateArgs.permissions, &newBody.Permissions)
 	if err != nil {
 		return err
 	}
@@ -303,6 +305,7 @@ func runSingleSpaceUpdate(args []string) error {
 	if spaceUpdateArgs.refreshTriggers {
 		updateParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
 	}
+	updateParams.DryRun = dryRunParam()
 	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, updateParams, *newBody)
 	if cubapi.IsAPIError(err, spaceRes) {
 		return cubapi.InterpretErrorGeneric(err, spaceRes)
@@ -319,6 +322,7 @@ func patchSpace(spaceID uuid.UUID, patchData []byte) (*goclientnew.Space, error)
 	if spaceUpdateArgs.refreshTriggers {
 		patchParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
 	}
+	patchParams.DryRun = dryRunParam()
 	spaceRes, err := cubClientNew.PatchSpaceWithBodyWithResponse(
 		ctx,
 		spaceID,
@@ -424,6 +428,10 @@ func runBulkSpaceUpdate() error {
 	params := &goclientnew.BulkPatchSpacesParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
+	params.BackingUnitSpace = backingUnitSpaceParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -435,6 +443,7 @@ func runBulkSpaceUpdate() error {
 	include := "OrganizationID"
 	params.Include = &include
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API (organization-level API)
 	bulkRes, err := cubClientNew.BulkPatchSpacesWithBodyWithResponse(
 		ctx,

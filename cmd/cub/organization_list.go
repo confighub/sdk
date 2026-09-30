@@ -96,6 +96,9 @@ func apiListOrganizations(whereFilter string, selectParam string, filterParam st
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
 		baseFields := []string{"Slug", "OrganizationID"}
 		return buildSelectList("Organization", listColumnsFor("cub organization list"), "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)

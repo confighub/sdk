@@ -89,7 +89,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels","Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
 
 // spaceBaseSelectFields are the fields always returned by space list queries,
 // regardless of the requested columns.
@@ -259,9 +259,10 @@ func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam s
 		include = "ComponentID"
 	}
 	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(whereFilter), cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  include,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       include,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	}, with...)
 }

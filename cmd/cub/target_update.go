@@ -183,7 +183,7 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(targetUpdateArgs.permissions, currentTarget.Target.Permissions)
+	err = applyPermissions(targetUpdateArgs.permissions, &currentTarget.Target.Permissions)
 	if err != nil {
 		return err
 	}
@@ -214,6 +214,7 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if targetUpdateArgs.refreshTriggers {
 		updateParams.RefreshTriggers = &targetUpdateArgs.refreshTriggers
 	}
+	updateParams.DryRun = dryRunParam()
 	targetRes, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, currentTarget.Target.TargetID, updateParams, *currentTarget.Target)
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
@@ -308,6 +309,7 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 	if targetUpdateArgs.refreshTriggers {
 		patchParams.RefreshTriggers = &targetUpdateArgs.refreshTriggers
 	}
+	patchParams.DryRun = dryRunParam()
 	targetRes, err := cubClientNew.PatchTargetWithBodyWithResponse(ctx, spaceID, currentTarget.Target.TargetID, patchParams, "application/merge-patch+json", bytes.NewReader(patchJSON))
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
@@ -413,6 +415,7 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	params := &goclientnew.BulkPatchTargetsParams{}
+	params.IncludeHidden = includeHiddenParam()
 	if effectiveWhere != "" {
 		params.Where = &effectiveWhere
 	}
@@ -425,6 +428,7 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	include := "SpaceID,BridgeWorkerID"
 	params.Include = &include
 
+	params.DryRun = dryRunParam()
 	res, err := cubClientNew.BulkPatchTargetsWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchJSON))
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)

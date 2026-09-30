@@ -183,6 +183,9 @@ func apiSearchListUnitEvents(whereFilter string, filterParam string) ([]*goclien
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	eventsRes, err := cubClientNew.ListAllUnitEventsWithResponse(ctx, newParams)
 	if cubapi.IsAPIError(err, eventsRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, eventsRes)
@@ -210,6 +213,9 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, 
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
 	}
 	// TODO: Add select parameter support when backend endpoint supports it
 	// Auto-select fields based on default display if no custom output format is specified

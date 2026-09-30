@@ -151,9 +151,10 @@ func apiListAllChangeWorkflows(where cubapi.Where, selectParam string, filterPar
 			changeWorkflowAliases, changeWorkflowCustomColumnDependencies, changeWorkflowBaseSelectFields)
 	})
 	return cubapi.ListChangeWorkflows(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  changeWorkflowListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       changeWorkflowListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

@@ -78,6 +78,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(triggerUpdateCmd)
+	enableUpdatePermissionFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
 	triggerUpdateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ValidationWarnings instead of ValidationErrors")
@@ -93,11 +94,13 @@ func init() {
 	triggerUpdateCmd.Flags().StringSliceVar(&triggerIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	triggerUpdateCmd.Flags().StringVar(&invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerUpdateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
-	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit", "", "filter expression to restrict which Units this trigger applies to")
+	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit)")
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
 	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum)")
+	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
+	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
 	triggerCmd.AddCommand(triggerUpdateCmd)
 }
 
@@ -275,7 +278,7 @@ func runBulkTriggerUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -286,10 +289,14 @@ func runBulkTriggerUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchTriggersWithBodyWithResponse(
 		ctx,
@@ -297,8 +304,8 @@ func runBulkTriggerUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -436,7 +443,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(triggerEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(triggerEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -476,6 +483,9 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	err = setLabels(&currentTrigger.Trigger.Labels)
 	if err != nil {
+		return err
+	}
+	if err := setPermissions(&currentTrigger.Trigger.Permissions); err != nil {
 		return err
 	}
 
@@ -567,7 +577,7 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		currentTrigger.Trigger.FailOpenAfter = int(duration)
 	}
-	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, *currentTrigger.Trigger)
+	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, &goclientnew.UpdateTriggerParams{DryRun: dryRunParam()}, *currentTrigger.Trigger)
 	if cubapi.IsAPIError(err, triggerRes) {
 		return cubapi.InterpretErrorGeneric(err, triggerRes)
 	}
@@ -595,6 +605,7 @@ func patchTrigger(spaceID uuid.UUID, triggerID uuid.UUID, patchData []byte) (*go
 		ctx,
 		spaceID,
 		triggerID,
+		&goclientnew.PatchTriggerParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

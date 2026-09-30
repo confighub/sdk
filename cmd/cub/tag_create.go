@@ -78,6 +78,7 @@ var tagCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(tagCreateCmd)
+	enableCreatePermissionFlag(tagCreateCmd)
 	enableWhereFlag(tagCreateCmd)
 	enableFilterFlag(tagCreateCmd)
 
@@ -191,6 +192,9 @@ func runSingleTagCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -208,6 +212,7 @@ func runSingleTagCreate(args []string) error {
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	tagRes, err := cubClientNew.CreateTagWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, tagRes) {
 		return cubapi.InterpretErrorGeneric(err, tagRes)
@@ -241,7 +246,7 @@ func runBulkTagCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for tag)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -252,6 +257,7 @@ func runBulkTagCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -304,6 +310,7 @@ func runBulkTagCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateTagsWithBodyWithResponse(
 		ctx,
@@ -311,8 +318,8 @@ func runBulkTagCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

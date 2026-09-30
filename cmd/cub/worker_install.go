@@ -182,7 +182,7 @@ func workerInstallCmdRun(cmd *cobra.Command, args []string) error {
 		if err != nil {
 			return err
 		}
-		workerPatchRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, worker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(workerPatchJSON))
+		workerPatchRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, worker.SpaceID, worker.BridgeWorkerID, &goclientnew.PatchBridgeWorkerParams{}, "application/merge-patch+json", bytes.NewReader(workerPatchJSON))
 		if cubapi.IsAPIError(err, workerPatchRes) {
 			return cubapi.InterpretErrorGeneric(err, workerPatchRes)
 		}

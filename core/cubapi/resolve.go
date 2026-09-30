@@ -144,9 +144,12 @@ type resolver[E any] struct {
 	// include is the default expansion, matching what "cub <entity> get"
 	// displays. ResolveOpts.Include overrides it.
 	include string
-	list    func(context.Context, *Client, Where, ListOpts) ([]*E, error)
-	slugOf  func(*E) string
-	idOf    func(*E) goclientnew.UUID
+	// orgLevel marks an entity that does not reside in a space, so a failed
+	// lookup does not report which space was searched.
+	orgLevel bool
+	list     func(context.Context, *Client, Where, ListOpts) ([]*E, error)
+	slugOf   func(*E) string
+	idOf     func(*E) goclientnew.UUID
 }
 
 func (r resolver[E]) resolve(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*E, error) {
@@ -212,6 +215,8 @@ func (r resolver[E]) notFound(ref Ref, spaceID goclientnew.UUID) error {
 	switch {
 	case ref.IsID():
 		return fmt.Errorf("%s %s not found", r.entity, ref.Name)
+	case r.orgLevel:
+		return fmt.Errorf("%s %q not found", r.entity, ref.Name)
 	case spaceID == goclientnew.UUID{}:
 		return fmt.Errorf("%s %q not found in any space", r.entity, ref.Name)
 	default:
@@ -247,7 +252,7 @@ const (
 func ResolveSpace(ctx context.Context, c *Client, ref Ref, opts ResolveOpts,
 	with ...func(*goclientnew.ListSpacesParams)) (*goclientnew.ExtendedSpace, error) {
 	r := resolver[goclientnew.ExtendedSpace]{
-		entity: "space", idField: "SpaceID", include: spaceGetInclude,
+		entity: "space", idField: "SpaceID", include: spaceGetInclude, orgLevel: true,
 		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.ExtendedSpace, error) {
 			return ListSpaces(ctx, c, w, o, with...)
 		},
@@ -272,7 +277,7 @@ func ResolveSpace(ctx context.Context, c *Client, ref Ref, opts ResolveOpts,
 // organization-level, so ResolveOpts.Space is ignored.
 func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedComponent, error) {
 	r := resolver[goclientnew.ExtendedComponent]{
-		entity: "component", idField: "ComponentID", include: "",
+		entity: "component", idField: "ComponentID", include: "", orgLevel: true,
 		list: ListComponents,
 		slugOf: func(e *goclientnew.ExtendedComponent) string {
 			if e.Component == nil {

@@ -68,6 +68,7 @@ func displayComponentEntityDetails(component *goclientnew.Component) {
 	view.Append([]string{"Created At", component.CreatedAt.String()})
 	view.Append([]string{"Updated At", component.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(component.Labels)})
+	appendBackingUnitRow(view, component.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(component.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(component.Annotations)})
 	view.Append([]string{"Permissions", permissionsToString(component.Permissions)})

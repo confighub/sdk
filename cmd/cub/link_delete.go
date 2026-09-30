@@ -177,6 +177,7 @@ func callBulkDeleteLinks(effectiveWhere, filterID, containsClause string) (*gocl
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

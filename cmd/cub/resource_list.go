@@ -249,10 +249,11 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		return buildSelectList("Resource", listColumnsFor("cub resource list"), resourceListInclude, defaultResourceColumns, resourceAliases, resourceCustomColumnDependencies, resourceBaseSelectFields)
 	})
 	return cubapi.ListResources(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  resourceListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       resourceListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	}, func(params *goclientnew.ListAllResourcesParams) {
 		if resourceListRawData {
 			params.RawData = &resourceListRawData

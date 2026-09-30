@@ -55,9 +55,10 @@ func attestationListCmdRun(cmd *cobra.Command, args []string) error {
 		w = w.Eq("SpaceID", selectedSpaceID)
 	}
 	attestations, err := cubapi.ListAttestations(ctx, cubClient, w, cubapi.ListOpts{
-		Select:   attestationSelectValue(),
-		Filter:   filterID,
-		Contains: contains,
+		Select:        attestationSelectValue(),
+		Filter:        filterID,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 	if err != nil {
 		return err

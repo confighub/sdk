@@ -70,6 +70,7 @@ func init() {
 		"generate an Ed25519 keypair, store the private key under this alias (or path), and register the public half")
 	userKeyAddCmd.Flags().StringVar(&userKeyDescription, "description", "",
 		"note recording which host or pipeline holds the private key")
+	enableDryRunFlag(userKeyAddCmd)
 	enableOptionalSpace(userKeyAddCmd)
 	userKeyCmd.AddCommand(userKeyAddCmd)
 }
@@ -116,8 +117,11 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		// The private key is written before registration, not after. If the
 		// write fails there is nothing registered to clean up; the other order
 		// would leave a key trusted by the server whose private half was lost.
-		if err := writePrivateKey(generatedPath, generated.PrivateJWK); err != nil {
-			return err
+		// A dry run registers nothing, so it keeps nothing either.
+		if !dryRun {
+			if err := writePrivateKey(generatedPath, generated.PrivateJWK); err != nil {
+				return err
+			}
 		}
 		publicJWK = generated.PublicJWK
 	}
@@ -137,7 +141,7 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		// knowingly created. Removing it is safe precisely because nothing was
 		// registered -- and it can only be a file we made ourselves, since
 		// writePrivateKey creates exclusively.
-		if generatedPath != "" {
+		if generatedPath != "" && !dryRun {
 			if rmErr := os.Remove(generatedPath); rmErr != nil && !os.IsNotExist(rmErr) {
 				return fmt.Errorf("%w (and %s could not be removed: %v)", err, generatedPath, rmErr)
 			}
@@ -145,6 +149,14 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if dryRun {
+		if userKeyGenerate != "" {
+			fmt.Printf("Dry run: would write the private key to %s\n", generatedPath)
+		}
+		fmt.Printf("Dry run: would register key %s\n", kid)
+		displayGetResults(key, displayKeyDetails)
+		return nil
+	}
 	if userKeyGenerate != "" {
 		fmt.Printf("Private key written to %s\n", generatedPath)
 		// Printing the login line is not decoration: the alias is the only part
@@ -224,7 +236,7 @@ func apiCreateUserKey(userID uuid.UUID, publicJWK json.RawMessage, description s
 		PublicJWK:   jwk,
 		Description: description,
 	}
-	credentialRes, err := cubClientNew.CreateUserKeyWithResponse(ctx, userID.String(), body)
+	credentialRes, err := cubClientNew.CreateUserKeyWithResponse(ctx, userID.String(), &goclientnew.CreateUserKeyParams{DryRun: dryRunParam()}, body)
 	if cubapi.IsAPIError(err, credentialRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, credentialRes)
 	}

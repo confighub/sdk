@@ -33,10 +33,10 @@ to the upstream so it can later be upgraded as the upstream changes.`
 	agentContext := `A variant clones a whole space and its units in one step, equivalent to running
 'cub space create' in bulk mode followed by 'cub unit create' in bulk mode.
 
-The cloned space keeps its WhereTrigger, TriggerFilterID, Permissions, and DeleteGates from the
-upstream space. To customize units automatically as they are cloned, define PostClone triggers
-and select them via the upstream space's WhereTrigger or TriggerFilterID so they are copied to the
-downstream space and run during the clone. Trigger arguments can reference space metadata in Go
+The cloned space selects the Triggers the upstream space selects -- its own Triggers, when it
+selects none -- and keeps its Permissions and DeleteGates. To customize units automatically as
+they are cloned, define PostClone triggers in the upstream space, or select them with its
+WhereTrigger or TriggerFilterID, and they run during the clone. Trigger arguments can reference space metadata in Go
 templates, such as "template:{{.SpaceLabels.Region}}". Make any further changes after cloning.`
 
 	return getCommandHelp(baseHelp, agentContext)

@@ -14,6 +14,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// setPermissions applies --permission to permissions, creating them if the flag names any.
+func setPermissions(permissions **goclientnew.Permissions) error {
+	return applyPermissions(permissionFlag, permissions)
+}
+
+// applyPermissions applies permission strings, as parsePermissions reads them, to an entity's
+// Permissions, creating them if there are any to apply: an entity read or built without
+// Permissions has none to add to.
+func applyPermissions(permissionStrs []string, permissions **goclientnew.Permissions) error {
+	if len(permissionStrs) > 0 && *permissions == nil {
+		*permissions = &goclientnew.Permissions{}
+	}
+	return parsePermissions(permissionStrs, *permissions)
+}
+
 // parsePermissions parses permission strings in the format "Action:UserIDOrUsername" and populates a Permissions object.
 // Use "-Action:UserIDOrUsername" to remove a user from a permission (the user is removed from the UserIDs map).
 func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissions) error {

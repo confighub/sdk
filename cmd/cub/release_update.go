@@ -58,6 +58,7 @@ Examples:
 
 func init() {
 	addStandardUpdateFlags(releaseUpdateCmd)
+	enableUpdatePermissionFlag(releaseUpdateCmd)
 	releaseUpdateCmd.Flags().BoolVar(&releaseUpdateArgs.patch, "patch", false,
 		"use the patch API, sending only the changes; required to remove a label, annotation, or delete gate")
 	releaseCmd.AddCommand(releaseUpdateCmd)
@@ -126,8 +127,11 @@ func releaseUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err = setDeleteGates(&currentRelease.DeleteGates); err != nil {
 		return err
 	}
+	if err = setPermissions(&currentRelease.Permissions); err != nil {
+		return err
+	}
 
-	relRes, err := cubClientNew.UpdateReleaseWithResponse(ctx, spaceID, releaseID, *currentRelease)
+	relRes, err := cubClientNew.UpdateReleaseWithResponse(ctx, spaceID, releaseID, &goclientnew.UpdateReleaseParams{DryRun: dryRunParam()}, *currentRelease)
 	if cubapi.IsAPIError(err, relRes) {
 		return cubapi.InterpretErrorGeneric(err, relRes)
 	}
@@ -149,7 +153,7 @@ func runReleasePatch(releaseID uuid.UUID, identifier string) error {
 
 	// No enhancer: a Release has no patchable field of its own beyond the label,
 	// annotation and delete gate maps BuildPatchData already assembles.
-	patchData, err := BuildPatchData(nil)
+	patchData, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return fmt.Errorf("failed to build patch data: %w", err)
 	}
@@ -158,6 +162,7 @@ func runReleasePatch(releaseID uuid.UUID, identifier string) error {
 		ctx,
 		spaceID,
 		releaseID,
+		&goclientnew.PatchReleaseParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

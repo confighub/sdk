@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -187,6 +188,9 @@ func handleEntityMoveResponse(spec entityMove, results *[]goclientnew.MoveRespon
 		if len(result.MovedTagSlugs) > 0 {
 			tprint("  tags moved: %v", result.MovedTagSlugs)
 		}
+		for _, change := range result.SelectionChanges {
+			tprint("  %s", describeSelectionChange(change))
+		}
 	}
 	if failures > 0 {
 		if isDryRun {
@@ -195,6 +199,25 @@ func handleEntityMoveResponse(spec entityMove, results *[]goclientnew.MoveRespon
 		return fmt.Errorf("%d %s did not move", failures, spec.entityCount(failures))
 	}
 	return nil
+}
+
+// describeSelectionChange says how a Space's or Target's selection of a moved entity changes: at
+// once for one the move refreshes, and otherwise once it is refreshed.
+func describeSelectionChange(change goclientnew.SelectionChange) string {
+	name := change.Slug
+	if change.SpaceSlug != "" {
+		name = change.SpaceSlug + "/" + change.Slug
+	}
+	entity := strings.ToLower(change.EntityType)
+	switch {
+	case change.Refreshed && change.Selects:
+		return fmt.Sprintf("%s %s selects it (refreshed by the move)", entity, name)
+	case change.Refreshed:
+		return fmt.Sprintf("%s %s no longer selects it (refreshed by the move)", entity, name)
+	case change.Selects:
+		return fmt.Sprintf("%s %s selects it once refreshed", entity, name)
+	}
+	return fmt.Sprintf("%s %s stops selecting it once refreshed", entity, name)
 }
 
 func (spec entityMove) entityCount(n int) string {

@@ -94,6 +94,7 @@ func init() {
 		"select the spaces to approve in with a where expression over spaces")
 	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.dryRun, "dry-run", false,
 		"report what would be approved, and record nothing")
+	enableCreatePermissionFlag(variantApproveCmd)
 	addStandardDisplayFlags(variantApproveCmd)
 	variantCmd.AddCommand(variantApproveCmd)
 }
@@ -159,6 +160,9 @@ func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
 	// A release publishes the Units with a Target, so that is what approving for a release
 	// covers. A change is approved wherever it landed, Target or not.
 	selection.WhereUnit = variantApproveWhere(where, variantApproveArgs.all || changeOrderID != nil)
+	if err := setPermissions(&selection.Permissions); err != nil {
+		return err
+	}
 
 	result, err := cubapi.Attest(ctx, cubClient, selection, variantApproveArgs.dryRun)
 	if err != nil {

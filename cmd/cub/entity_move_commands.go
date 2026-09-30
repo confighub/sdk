@@ -19,7 +19,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromFilters,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveFiltersWithResponse(ctx, &goclientnew.BulkMoveFiltersParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -35,7 +35,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromViews,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveViewsWithResponse(ctx, &goclientnew.BulkMoveViewsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -51,7 +51,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromTags,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveTagsWithResponse(ctx, &goclientnew.BulkMoveTagsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -67,7 +67,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromChangeSets,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveChangeSetsWithResponse(ctx, &goclientnew.BulkMoveChangeSetsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -83,7 +83,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromChangeWorkflows,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveChangeWorkflowsWithResponse(ctx, &goclientnew.BulkMoveChangeWorkflowsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -99,7 +99,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromTargets,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveTargetsWithResponse(ctx, &goclientnew.BulkMoveTargetsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -115,7 +115,23 @@ func init() {
 		buildWhere:     buildWhereClauseFromInvocations,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveInvocationsWithResponse(ctx, &goclientnew.BulkMoveInvocationsParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+			if cubapi.IsAPIError(err, resp) {
+				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
+			}
+			return resp.StatusCode(), resp.JSON200, resp.JSON207, nil
+		},
+	})
+	addEntityMoveCommand(entityMove{
+		parent:         triggerCmd,
+		entity:         "trigger",
+		plural:         "triggers",
+		identifierFlag: "trigger",
+		about:          "The space a trigger leaves and the one it arrives in have their triggers refreshed.\nOther spaces and targets that select it keep invoking it until they are refreshed; the\nmove lists those whose selection of it changes. A trigger that runs a built-in function\nitself cannot move to a space with different attributes.",
+		buildWhere:     buildWhereClauseFromTriggers,
+		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
+			resp, err := cubClientNew.BulkMoveTriggersWithResponse(ctx, &goclientnew.BulkMoveTriggersParams{
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}
@@ -131,7 +147,7 @@ func init() {
 		buildWhere:     buildWhereClauseFromAttributes,
 		move: func(params entityMoveParams, body goclientnew.MoveRequest) (int, *[]goclientnew.MoveResponse, *[]goclientnew.MoveResponse, error) {
 			resp, err := cubClientNew.BulkMoveAttributesWithResponse(ctx, &goclientnew.BulkMoveAttributesParams{
-				Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
+				IncludeHidden: includeHiddenParam(), Where: &params.where, Filter: params.filter, DryRun: params.dryRun}, body)
 			if cubapi.IsAPIError(err, resp) {
 				return 0, nil, nil, cubapi.InterpretErrorGeneric(err, resp)
 			}

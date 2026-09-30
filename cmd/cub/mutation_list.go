@@ -204,6 +204,9 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	include := "SpaceID,RevisionID,MergeSourceID,LinkID,TriggerID,InvocationID"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {

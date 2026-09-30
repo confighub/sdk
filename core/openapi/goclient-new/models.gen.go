@@ -199,6 +199,7 @@ type AttestRequest struct {
 	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
 	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
 	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
+	Permissions            *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
 	Result                 string              `json:"Result,omitempty" yaml:"Result,omitempty"`
 	Revision               string              `json:"Revision,omitempty" yaml:"Revision,omitempty"`
@@ -249,11 +250,15 @@ type Attestation struct {
 	// ExpiresAt When the Attestation stops satisfying requirements. Optional.
 	ExpiresAt time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Note The attester's reason, in their own words.
 	Note string `json:"Note,omitempty" yaml:"Note,omitempty"`
 
 	// OrganizationID The Organization the Attestation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseID A published Release the claim is about.
 	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -293,6 +298,7 @@ type AttestationCreateRequest struct {
 	EvidenceAttestationIDs []UUID              `json:"EvidenceAttestationIDs,omitempty" yaml:"EvidenceAttestationIDs,omitempty"`
 	ExpiresAt              time.Time           `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
 	Note                   string              `json:"Note,omitempty" yaml:"Note,omitempty"`
+	Permissions            *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	ReleaseID              *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
 	Result                 string              `json:"Result,omitempty" yaml:"Result,omitempty"`
 	Revision               string              `json:"Revision,omitempty" yaml:"Revision,omitempty"`
@@ -333,7 +339,8 @@ type Attribute struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// AttributeID AttributeID uniquely identifies an attribute within the system.
-	AttributeID openapi_types.UUID `json:"AttributeID,omitempty" yaml:"AttributeID,omitempty"`
+	AttributeID   openapi_types.UUID  `json:"AttributeID,omitempty" yaml:"AttributeID,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -356,6 +363,9 @@ type Attribute struct {
 	// Hash Hash is a SHA256 hash of the attribute's defining properties. (readonly)
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
@@ -363,7 +373,8 @@ type Attribute struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters specifies the function parameters for the getter and setter functions.
-	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
+	Parameters  []FunctionParameter `json:"Parameters" yaml:"Parameters"`
+	Permissions *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ResourceTypePaths ResourceTypePaths maps resource types to their path-to-visitor-info mappings.
 	ResourceTypePaths []ResourceTypePathsEntry `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
@@ -381,7 +392,8 @@ type Attribute struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamAttributeID *openapi_types.UUID `json:"UpstreamAttributeID,omitempty" yaml:"UpstreamAttributeID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -583,6 +595,9 @@ type BridgeWorker struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// IPAddress IPAddress is the IP address from which the worker last connected.
 	IPAddress string `json:"IPAddress,omitempty" yaml:"IPAddress,omitempty"`
 
@@ -721,6 +736,9 @@ type ChangeOrder struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// InScopeSpaceIDs InScopeSpaceIDs is where the ChangeOrder is headed: the Spaces it propagates into, recorded as a list rather than asked again on each read. When WhereSpace or SpaceFilterID is set, the server writes it from that selection, and a write naming a different list is refused; otherwise the client supplies it. Empty names a change without saying where it is headed, in which case the Spaces the ChangeOrder's Links reach when its scope is derived are recorded instead; an Invoke ChangeOrder has no Links to fall back on and requires a non-empty list. ResolvedSpaceIDs and ReleasedSpaceIDs are measured against it. Changing it re-derives what the ChangeOrder covers.
 	InScopeSpaceIDs []UUID `json:"InScopeSpaceIDs,omitempty" yaml:"InScopeSpaceIDs,omitempty"`
 
@@ -735,6 +753,7 @@ type ChangeOrder struct {
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
 	Parameters         map[string]interface{}         `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions        *Permissions                   `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 	PromotionFailures  []ChangeOrderPromotionFailure  `json:"PromotionFailures,omitempty" yaml:"PromotionFailures,omitempty"`
 	PromotionOverrides []ChangeOrderPromotionOverride `json:"PromotionOverrides,omitempty" yaml:"PromotionOverrides,omitempty"`
 
@@ -823,7 +842,7 @@ type ChangeOrder struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
@@ -900,11 +919,15 @@ type ChangeSet struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -945,6 +968,7 @@ type ChangeWorkflow struct {
 
 	// AttestationPrerequisites The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.
 	AttestationPrerequisites []ChangeWorkflowAttestationPrerequisite `json:"AttestationPrerequisites,omitempty" yaml:"AttestationPrerequisites,omitempty"`
+	BackingUnitID            *openapi_types.UUID                     `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// ChangeWorkflowID ChangeWorkflowID uniquely identifies a change workflow within the system.
 	ChangeWorkflowID openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
@@ -965,11 +989,15 @@ type ChangeWorkflow struct {
 	EntityType string                    `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	Final      *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -984,7 +1012,8 @@ type ChangeWorkflow struct {
 	Stages []ChangeWorkflowStage `json:"Stages" yaml:"Stages"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt                time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamChangeWorkflowID *openapi_types.UUID `json:"UpstreamChangeWorkflowID,omitempty" yaml:"UpstreamChangeWorkflowID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1115,7 +1144,8 @@ type Component struct {
 	AllowedChangeWorkflowIDs []UUID `json:"AllowedChangeWorkflowIDs,omitempty" yaml:"AllowedChangeWorkflowIDs,omitempty"`
 
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// ChangeWorkflowRequired Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)
 	ChangeWorkflowRequired bool `json:"ChangeWorkflowRequired,omitempty" yaml:"ChangeWorkflowRequired,omitempty"`
@@ -1135,6 +1165,9 @@ type Component struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
@@ -1146,7 +1179,8 @@ type Component struct {
 	Slug string `json:"Slug" yaml:"Slug"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt           time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamComponentID *openapi_types.UUID `json:"UpstreamComponentID,omitempty" yaml:"UpstreamComponentID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -1299,6 +1333,27 @@ type DiffSideResult struct {
 
 	// UnitID The Unit, for a Unit side
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+}
+
+// EntityDocument defines model for EntityDocument.
+type EntityDocument struct {
+	// Document The entity's document, in YAML: the fields a write can set, with the entities it refers to named rather than identified by ID.
+	Document string `json:"Document" yaml:"Document"`
+
+	// Version The entity's Version when the document was rendered, which an edit of it sends back.
+	Version int64 `json:"Version" yaml:"Version"`
+}
+
+// EntityDocumentEdit defines model for EntityDocumentEdit.
+type EntityDocumentEdit struct {
+	// Base The document as it was read.
+	Base string `json:"Base" yaml:"Base"`
+
+	// Document The document as it was edited.
+	Document string `json:"Document" yaml:"Document"`
+
+	// Version The Version that came with the document read. The edit is refused if the entity's Version has changed since.
+	Version int64 `json:"Version" yaml:"Version"`
 }
 
 // ErrorItem defines model for ErrorItem.
@@ -1829,7 +1884,8 @@ type ExtendedView struct {
 // Filter Defines an entity filter.
 type Filter struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -1855,11 +1911,16 @@ type Filter struct {
 	// Hash SHA256 hash of the filter parameters encoded as hexadecimal. (readonly)
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason  string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+	IncludeHidden string `json:"IncludeHidden,omitempty" yaml:"IncludeHidden,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ResourceType Resource type to match for the desired ToolchainType, for example apps/v1/Deployment. Valid only for Units. (optional)
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
@@ -1874,7 +1935,8 @@ type Filter struct {
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamFilterID *openapi_types.UUID `json:"UpstreamFilterID,omitempty" yaml:"UpstreamFilterID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2140,7 +2202,8 @@ type GuardStamp map[string]string
 // Invocation Defines a stored, reusable call to one or more functions, executed in the order they are listed.
 type Invocation struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the functions specified by the Invocation. If unspecified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -2161,6 +2224,9 @@ type Invocation struct {
 	// Hash SHA256 hash of the functions and their arguments encoded as hexadecimal.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// InvocationID InvocationID uniquely identifies a invocation within the system.
 	InvocationID openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
@@ -2170,6 +2236,7 @@ type Invocation struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions    *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -2185,7 +2252,8 @@ type Invocation struct {
 	ToolchainType string `json:"ToolchainType" yaml:"ToolchainType"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt            time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamInvocationID *openapi_types.UUID `json:"UpstreamInvocationID,omitempty" yaml:"UpstreamInvocationID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -2217,9 +2285,10 @@ type Link struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done.
-	AutoUpdate bool         `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
-	Bindings   *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
-	Clearance  *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+	AutoUpdate    bool                `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
+	Bindings      *BindingList        `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
+	Clearance     *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -2249,6 +2318,9 @@ type Link struct {
 	// Hash SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
@@ -2260,6 +2332,7 @@ type Link struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Protect Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.
 	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
@@ -2343,11 +2416,12 @@ type MoveRequest struct {
 
 // MoveResponse defines model for MoveResponse.
 type MoveResponse struct {
-	EntityID      openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
-	Error         *ResponseError     `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Moved         bool               `json:"Moved,omitempty" yaml:"Moved,omitempty"`
-	MovedTagSlugs []string           `json:"MovedTagSlugs,omitempty" yaml:"MovedTagSlugs,omitempty"`
-	Slug          string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+	EntityID         openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+	Error            *ResponseError     `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Moved            bool               `json:"Moved,omitempty" yaml:"Moved,omitempty"`
+	MovedTagSlugs    []string           `json:"MovedTagSlugs,omitempty" yaml:"MovedTagSlugs,omitempty"`
+	SelectionChanges []SelectionChange  `json:"SelectionChanges,omitempty" yaml:"SelectionChanges,omitempty"`
+	Slug             string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 }
 
 // Mutation Mutation is a single source of mutation for a Revision.
@@ -2360,6 +2434,9 @@ type Mutation struct {
 	// EntityType The type of entity.
 	EntityType         string              `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// InvocationID InvocationID is the identifier of the function invoked, if there is a corresponding Invocation.
 	InvocationID     *openapi_types.UUID    `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
@@ -2537,6 +2614,9 @@ type Organization struct {
 
 	// ExternalID Unique identifier for the External Identity Provider record matching this organization.
 	ExternalID string `json:"ExternalID,omitempty" yaml:"ExternalID,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
@@ -2932,12 +3012,16 @@ type Release struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Published Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted.
 	Published bool `json:"Published,omitempty" yaml:"Published,omitempty"`
@@ -2981,7 +3065,8 @@ type ReleasePublishRequest struct {
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Permissions *Permissions      `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
@@ -2997,6 +3082,9 @@ type Resource struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -3232,6 +3320,9 @@ type Revision struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// NeededPaths Attribute paths this Revision's configuration needs from upstream Units via NeedsProvides Links.
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
@@ -3344,6 +3435,16 @@ type RevisionMutationSources struct {
 // Schema defines model for Schema.
 type Schema = interface{}
 
+// SelectionChange defines model for SelectionChange.
+type SelectionChange struct {
+	EntityID   openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+	EntityType string             `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	Refreshed  bool               `json:"Refreshed,omitempty" yaml:"Refreshed,omitempty"`
+	Selects    bool               `json:"Selects,omitempty" yaml:"Selects,omitempty"`
+	Slug       string             `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+	SpaceSlug  string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+}
+
 // Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 type Space struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -3356,7 +3457,8 @@ type Space struct {
 	AttributeHash string `json:"AttributeHash,omitempty" yaml:"AttributeHash,omitempty"`
 
 	// AttributeIDs List of Attribute IDs the Space's function executor is built from: those that match the WhereAttribute and/or AttributeFilterID criteria, or, when neither is set, the Attributes in the Space. (readonly)
-	AttributeIDs []UUID `json:"AttributeIDs,omitempty" yaml:"AttributeIDs,omitempty"`
+	AttributeIDs  []UUID              `json:"AttributeIDs,omitempty" yaml:"AttributeIDs,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// ComponentID Reference to the Component this Space is a Variant of. (optional)
 	ComponentID *openapi_types.UUID `json:"ComponentID,omitempty" yaml:"ComponentID,omitempty"`
@@ -3372,6 +3474,9 @@ type Space struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
@@ -3393,11 +3498,12 @@ type Space struct {
 	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID,omitempty" yaml:"TriggerFilterID,omitempty"`
 	TriggerHash     string              `json:"TriggerHash,omitempty" yaml:"TriggerHash,omitempty"`
 
-	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria. (readonly)
+	// TriggerIDs List of Trigger IDs that match the WhereTrigger and/or TriggerFilterID criteria, or, with neither, of the Triggers in the Space. (readonly)
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt       time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamSpaceID *openapi_types.UUID `json:"UpstreamSpaceID,omitempty" yaml:"UpstreamSpaceID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -3436,12 +3542,12 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	WhereAttribute string `json:"WhereAttribute,omitempty" yaml:"WhereAttribute,omitempty"`
 
-	// WhereTrigger Filter expression to identify Triggers that should be invoked on Units within this Space. The specified string is an expression for the purpose of filtering
+	// WhereTrigger Filter expression to identify Triggers that should be invoked on Units within this Space. With neither it nor TriggerFilterID, the Triggers in the Space are invoked; a clone of such a Space selects the Triggers in the Space it was cloned from. The specified string is an expression for the purpose of filtering
 	// the list of Triggers returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
 	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
@@ -3475,7 +3581,7 @@ type Space struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -3547,11 +3653,15 @@ type Tag struct {
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseID ReleaseID is the optional ID of the Release that made this Tag.
 	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -3611,6 +3721,9 @@ type Target struct {
 
 	// Facts Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as "Cluster." and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'.
 	Facts map[string]string `json:"Facts,omitempty" yaml:"Facts,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
@@ -3697,7 +3810,7 @@ type Target struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	WhereTrigger string `json:"WhereTrigger,omitempty" yaml:"WhereTrigger,omitempty"`
@@ -3750,7 +3863,8 @@ type Trigger struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// Arguments Function arguments
-	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
+	Arguments     []FunctionArgument  `json:"Arguments" yaml:"Arguments"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// BridgeWorkerID Unique identifier for a Bridge Worker to execute the function specified by the Trigger. If unspecified, use the builtin function executor.
 	BridgeWorkerID *openapi_types.UUID `json:"BridgeWorkerID,omitempty" yaml:"BridgeWorkerID,omitempty"`
@@ -3788,6 +3902,9 @@ type Trigger struct {
 	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// InvocationID InvocationID is the identifier of the function to be invoked, if there is a corresponding Invocation.
 	InvocationID *openapi_types.UUID `json:"InvocationID,omitempty" yaml:"InvocationID,omitempty"`
 
@@ -3801,7 +3918,8 @@ type Trigger struct {
 	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
+	Params      map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
+	Permissions *Permissions           `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Protect Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.
 	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
@@ -3826,7 +3944,8 @@ type Trigger struct {
 	UnitFilterID *openapi_types.UUID `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt         time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamTriggerID *openapi_types.UUID `json:"UpstreamTriggerID,omitempty" yaml:"UpstreamTriggerID,omitempty"`
 
 	// Validating Validating indicates whether this is a validating function (true) or not (false).
 	// 		When false, the function can be either mutating (modifying configuration) or readonly returning an AttributeValueList (extracting values without modification).
@@ -3925,13 +4044,16 @@ type Unit struct {
 	// HeadUnitEventNum Sequence number of the head unit event.
 	HeadUnitEventNum int64 `json:"HeadUnitEventNum,omitempty" yaml:"HeadUnitEventNum,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
 	LastChangeDescription string `json:"LastChangeDescription,omitempty" yaml:"LastChangeDescription,omitempty"`
 
-	// LastReleasedRevisionNum Sequence number of the last Revision published in a Release. 0 if no Revision has been released.
+	// LastReleasedRevisionNum Sequence number of the last Revision published in a Release, or for a backing Unit the last Revision its entity took. 0 if there is none.
 	LastReleasedRevisionNum int64 `json:"LastReleasedRevisionNum,omitempty" yaml:"LastReleasedRevisionNum,omitempty"`
 
 	// NeededPaths Attribute paths that this Unit needs from upstream Units via NeedsProvides Links. Computed from get-needed and stored on data updates.
@@ -3940,6 +4062,7 @@ type Unit struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
+	Permissions     *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ProvidedPaths Attribute paths that this Unit provides to downstream Units via NeedsProvides Links. Computed from get-provided and stored on data updates.
 	ProvidedPaths []AttributeInfo `json:"ProvidedPaths,omitempty" yaml:"ProvidedPaths,omitempty"`
@@ -4191,7 +4314,10 @@ type UnitEvent struct {
 
 	// EntityType The type of entity.
 	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-	Message    string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+	Message      string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
@@ -4543,6 +4669,9 @@ type User struct {
 	// ExternalID Unique identifier for the External Identity Provider record matching this User.
 	ExternalID string `json:"ExternalID,omitempty" yaml:"ExternalID,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// ProfilePictureURL The URL to get the profile avatar picture of the User.
 	ProfilePictureURL string `json:"ProfilePictureURL,omitempty" yaml:"ProfilePictureURL,omitempty"`
 
@@ -4602,7 +4731,8 @@ type ValidationResultList = []ValidationResult
 // View Defines an entity view.
 type View struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// Columns Columns to display, in order. (optional)
 	Columns []Column `json:"Columns,omitempty" yaml:"Columns,omitempty"`
@@ -4625,6 +4755,9 @@ type View struct {
 	// GroupBy Column to group by (optional).
 	GroupBy string `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
@@ -4639,6 +4772,7 @@ type View struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -4650,7 +4784,8 @@ type View struct {
 	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt      time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamViewID *openapi_types.UUID `json:"UpstreamViewID,omitempty" yaml:"UpstreamViewID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4733,7 +4868,7 @@ type BulkDeleteComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4768,6 +4903,15 @@ type BulkDeleteComponentsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Component.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -4791,6 +4935,9 @@ type BulkPatchComponentsApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
@@ -4839,7 +4986,7 @@ type BulkPatchComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4874,6 +5021,15 @@ type BulkPatchComponentsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Component.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -4882,6 +5038,18 @@ type BulkPatchComponentsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each Component written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Component's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// BackingUnitSpace The Space, by slug or ID, for the backing Units with_backing_units creates. Required with it: a Component is in no Space of its own to hold one.
+	BackingUnitSpace *string `form:"backing_unit_space,omitempty" json:"backing_unit_space,omitempty" yaml:"backing_unit_space,omitempty"`
+
+	// FromBackingUnits Patch each selected Component with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteSpacesParams defines parameters for BulkDeleteSpaces.
@@ -4920,7 +5088,7 @@ type BulkDeleteSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -4955,6 +5123,15 @@ type BulkDeleteSpacesParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Space.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -4986,6 +5163,9 @@ type BulkPatchSpacesApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
@@ -5038,7 +5218,7 @@ type BulkPatchSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5073,6 +5253,15 @@ type BulkPatchSpacesParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Space.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -5082,8 +5271,20 @@ type BulkPatchSpacesParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers If true, re-list the Triggers the Space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// WithBackingUnits Give each Space written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Space's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// BackingUnitSpace The Space, by slug or ID, for the backing Units with_backing_units creates. Required with it: a Space is in no Space of its own to hold one.
+	BackingUnitSpace *string `form:"backing_unit_space,omitempty" json:"backing_unit_space,omitempty" yaml:"backing_unit_space,omitempty"`
+
+	// FromBackingUnits Patch each selected Space with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkCreateSpaces.
@@ -5098,6 +5299,9 @@ type BulkCreateSpacesApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
@@ -5150,7 +5354,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5185,6 +5389,15 @@ type BulkCreateSpacesParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Space.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -5205,6 +5418,62 @@ type BulkCreateSpacesParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Space written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Space's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// BackingUnitSpace The Space, by slug or ID, for the backing Units with_backing_units creates. Required with it: a Space is in no Space of its own to hold one.
+	BackingUnitSpace *string `form:"backing_unit_space,omitempty" json:"backing_unit_space,omitempty" yaml:"backing_unit_space,omitempty"`
+
+	// FromBackingUnits Create Spaces from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // AttestParams defines parameters for Attest.
@@ -5249,7 +5518,7 @@ type ListAllAttestationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5302,6 +5571,15 @@ type ListAllAttestationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkDeleteAttributesParams defines parameters for BulkDeleteAttributes.
@@ -5340,7 +5618,7 @@ type BulkDeleteAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5374,6 +5652,15 @@ type BulkDeleteAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Attribute.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -5421,7 +5708,7 @@ type ListAllAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5474,6 +5761,15 @@ type ListAllAttributesParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchAttributesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchAttributes.
@@ -5489,10 +5785,14 @@ type BulkPatchAttributesApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels            *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters        *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-	ResourceTypePaths *[]map[string]interface{} `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
+	Labels            *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters        *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions       *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceTypePaths *[]map[string]interface{}           `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -5538,7 +5838,7 @@ type BulkPatchAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5573,6 +5873,15 @@ type BulkPatchAttributesParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Attribute.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -5581,6 +5890,15 @@ type BulkPatchAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each Attribute written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Attribute's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Attribute with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateAttributesApplicationMergePatchPlusJSONBody defines parameters for BulkCreateAttributes.
@@ -5596,10 +5914,14 @@ type BulkCreateAttributesApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels            *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters        *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-	ResourceTypePaths *[]map[string]interface{} `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
+	Labels            *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters        *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions       *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceTypePaths *[]map[string]interface{}           `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -5645,7 +5967,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5679,6 +6001,15 @@ type BulkCreateAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Attribute.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -5726,7 +6057,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning attributes
 	//
@@ -5748,6 +6079,59 @@ type BulkCreateAttributesParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Attribute written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Attribute's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Attributes from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveAttributesParams defines parameters for BulkMoveAttributes.
@@ -5786,7 +6170,7 @@ type BulkMoveAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5820,6 +6204,15 @@ type BulkMoveAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Attribute.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -5870,7 +6263,7 @@ type BulkDeleteBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -5904,6 +6297,15 @@ type BulkDeleteBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for BridgeWorker.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -5954,7 +6356,7 @@ type ListAllBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6008,6 +6410,15 @@ type ListAllBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Summary Include summary information in the response
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
@@ -6023,6 +6434,9 @@ type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
@@ -6073,7 +6487,7 @@ type BulkPatchBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6108,6 +6522,15 @@ type BulkPatchBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for BridgeWorker.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -6116,6 +6539,9 @@ type BulkPatchBridgeWorkersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListQueuedOperationsParams defines parameters for ListQueuedOperations.
@@ -6226,7 +6652,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6260,6 +6686,15 @@ type BulkDeleteChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeOrder.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -6310,7 +6745,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6363,6 +6798,15 @@ type ListAllChangeOrdersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeOrders.
@@ -6378,14 +6822,18 @@ type BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody struct {
 	Description *string           `json:"Description" yaml:"Description"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName     *string               `json:"DisplayName" yaml:"DisplayName"`
-	EndTagID        *openapi_types.UUID   `json:"EndTagID" yaml:"EndTagID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason    *string               `json:"HiddenReason" yaml:"HiddenReason"`
 	InScopeSpaceIDs *[]openapi_types.UUID `json:"InScopeSpaceIDs" yaml:"InScopeSpaceIDs"`
 	InvocationID    *openapi_types.UUID   `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string     `json:"Labels" yaml:"Labels"`
-	Parameters *map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *map[string]interface{}             `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -6435,7 +6883,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6470,6 +6918,15 @@ type BulkPatchChangeOrdersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for ChangeOrder.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -6481,6 +6938,9 @@ type BulkPatchChangeOrdersParams struct {
 
 	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers if the Spaces they select have changed, even if neither field has changed. Has no effect on a ChangeOrder with neither set.
 	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeOrders.
@@ -6496,14 +6956,18 @@ type BulkCreateChangeOrdersApplicationMergePatchPlusJSONBody struct {
 	Description *string           `json:"Description" yaml:"Description"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName     *string               `json:"DisplayName" yaml:"DisplayName"`
-	EndTagID        *openapi_types.UUID   `json:"EndTagID" yaml:"EndTagID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason    *string               `json:"HiddenReason" yaml:"HiddenReason"`
 	InScopeSpaceIDs *[]openapi_types.UUID `json:"InScopeSpaceIDs" yaml:"InScopeSpaceIDs"`
 	InvocationID    *openapi_types.UUID   `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string     `json:"Labels" yaml:"Labels"`
-	Parameters *map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *map[string]interface{}             `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -6553,7 +7017,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6587,6 +7051,15 @@ type BulkCreateChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeOrder.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -6640,7 +7113,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning changeorders
 	//
@@ -6662,6 +7135,9 @@ type BulkCreateChangeOrdersParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteChangeSetsParams defines parameters for BulkDeleteChangeSets.
@@ -6700,7 +7176,7 @@ type BulkDeleteChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6734,6 +7210,15 @@ type BulkDeleteChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeSet.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -6784,7 +7269,7 @@ type ListAllChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6837,6 +7322,15 @@ type ListAllChangeSetsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeSets.
@@ -6851,8 +7345,12 @@ type BulkPatchChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -6897,7 +7395,7 @@ type BulkPatchChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6932,6 +7430,15 @@ type BulkPatchChangeSetsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for ChangeSet.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -6940,6 +7447,9 @@ type BulkPatchChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeSets.
@@ -6954,8 +7464,12 @@ type BulkCreateChangeSetsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -7000,7 +7514,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7034,6 +7548,15 @@ type BulkCreateChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeSet.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -7087,7 +7610,7 @@ type BulkCreateChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning changesets
 	//
@@ -7109,6 +7632,9 @@ type BulkCreateChangeSetsParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveChangeSetsParams defines parameters for BulkMoveChangeSets.
@@ -7147,7 +7673,7 @@ type BulkMoveChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7181,6 +7707,15 @@ type BulkMoveChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeSet.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -7231,7 +7766,7 @@ type BulkDeleteChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7265,6 +7800,15 @@ type BulkDeleteChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeWorkflow.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -7312,7 +7856,7 @@ type ListAllChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7365,6 +7909,15 @@ type ListAllChangeWorkflowsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeWorkflows.
@@ -7387,8 +7940,12 @@ type BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -7436,7 +7993,7 @@ type BulkPatchChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7471,6 +8028,15 @@ type BulkPatchChangeWorkflowsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for ChangeWorkflow.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -7479,6 +8045,15 @@ type BulkPatchChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each ChangeWorkflow written a backing Unit if it has none: a ConfigHub/YAML Unit holding the ChangeWorkflow's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected ChangeWorkflow with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateChangeWorkflows.
@@ -7501,8 +8076,12 @@ type BulkCreateChangeWorkflowsApplicationMergePatchPlusJSONBody struct {
 	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -7550,7 +8129,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7584,6 +8163,15 @@ type BulkCreateChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeWorkflow.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -7637,7 +8225,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning change workflows
 	//
@@ -7659,6 +8247,59 @@ type BulkCreateChangeWorkflowsParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each ChangeWorkflow written a backing Unit if it has none: a ConfigHub/YAML Unit holding the ChangeWorkflow's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create ChangeWorkflows from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveChangeWorkflowsParams defines parameters for BulkMoveChangeWorkflows.
@@ -7697,7 +8338,7 @@ type BulkMoveChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7731,6 +8372,15 @@ type BulkMoveChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for ChangeWorkflow.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -7781,7 +8431,7 @@ type ListComponentsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, Slug, UpdatedAt.
+	// Supported attributes for filtering on Component: AllowedChangeWorkflowIDs, Annotations, BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, Slug, UpdatedAt, UpstreamComponentID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7834,12 +8484,30 @@ type ListComponentsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Component entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateComponentParams defines parameters for CreateComponent.
 type CreateComponentParams struct {
+	// WithBackingUnits Give each Component written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Component's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// BackingUnitSpace The Space, by slug or ID, for the backing Units with_backing_units creates. Required with it: a Component is in no Space of its own to hold one.
+	BackingUnitSpace *string `form:"backing_unit_space,omitempty" json:"backing_unit_space,omitempty" yaml:"backing_unit_space,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetComponentParams defines parameters for GetComponent.
@@ -7878,6 +8546,9 @@ type PatchComponentApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
@@ -7887,6 +8558,24 @@ type PatchComponentApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchComponentParams defines parameters for PatchComponent.
+type PatchComponentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateComponentParams defines parameters for UpdateComponent.
+type UpdateComponentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateComponentDocumentParams defines parameters for UpdateComponentDocument.
+type UpdateComponentDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DemoteParams defines parameters for Demote.
@@ -7943,7 +8632,7 @@ type BulkDeleteFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7977,6 +8666,15 @@ type BulkDeleteFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Filter.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -8024,7 +8722,7 @@ type ListAllFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8078,6 +8776,15 @@ type ListAllFiltersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
 
@@ -8098,9 +8805,14 @@ type BulkPatchFiltersApplicationMergePatchPlusJSONBody struct {
 	From        *string             `json:"From" yaml:"From"`
 	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason  *string `json:"HiddenReason" yaml:"HiddenReason"`
+	IncludeHidden *string `json:"IncludeHidden" yaml:"IncludeHidden"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
-	ResourceType *string             `json:"ResourceType" yaml:"ResourceType"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceType *string                             `json:"ResourceType" yaml:"ResourceType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -8147,7 +8859,7 @@ type BulkPatchFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8182,6 +8894,15 @@ type BulkPatchFiltersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Filter.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -8190,6 +8911,15 @@ type BulkPatchFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each Filter written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Filter's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Filter with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateFiltersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateFilters.
@@ -8205,9 +8935,14 @@ type BulkCreateFiltersApplicationMergePatchPlusJSONBody struct {
 	From        *string             `json:"From" yaml:"From"`
 	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason  *string `json:"HiddenReason" yaml:"HiddenReason"`
+	IncludeHidden *string `json:"IncludeHidden" yaml:"IncludeHidden"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
-	ResourceType *string             `json:"ResourceType" yaml:"ResourceType"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceType *string                             `json:"ResourceType" yaml:"ResourceType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -8254,7 +8989,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8288,6 +9023,15 @@ type BulkCreateFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Filter.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -8341,7 +9085,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning filters
 	//
@@ -8363,6 +9107,59 @@ type BulkCreateFiltersParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Filter written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Filter's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Filters from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveFiltersParams defines parameters for BulkMoveFilters.
@@ -8401,7 +9198,7 @@ type BulkMoveFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8435,6 +9232,15 @@ type BulkMoveFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Filter.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -8557,7 +9363,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -8576,6 +9382,15 @@ type InvokeFunctionsOnOrgParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -8638,7 +9453,7 @@ type BulkDeleteInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -8674,6 +9489,15 @@ type BulkDeleteInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Invocation.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -8721,7 +9545,7 @@ type ListAllInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -8776,6 +9600,15 @@ type ListAllInvocationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
@@ -8791,9 +9624,13 @@ type BulkPatchInvocationsApplicationMergePatchPlusJSONBody struct {
 	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
 	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -8839,7 +9676,7 @@ type BulkPatchInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -8876,6 +9713,15 @@ type BulkPatchInvocationsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Invocation.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -8884,6 +9730,15 @@ type BulkPatchInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each Invocation written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Invocation's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Invocation with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateInvocations.
@@ -8899,9 +9754,13 @@ type BulkCreateInvocationsApplicationMergePatchPlusJSONBody struct {
 	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
 	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -8947,7 +9806,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -8983,6 +9842,15 @@ type BulkCreateInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Invocation.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -9036,7 +9904,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning invocations
 	//
@@ -9058,6 +9926,59 @@ type BulkCreateInvocationsParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Invocation written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Invocation's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Invocations from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveInvocationsParams defines parameters for BulkMoveInvocations.
@@ -9096,7 +10017,7 @@ type BulkMoveInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9130,6 +10051,15 @@ type BulkMoveInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Invocation.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -9180,7 +10110,7 @@ type BulkDeleteLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -9216,6 +10146,15 @@ type BulkDeleteLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Link.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -9263,7 +10202,7 @@ type SearchListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9316,6 +10255,15 @@ type SearchListLinksParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchLinksApplicationMergePatchPlusJSONBody defines parameters for BulkPatchLinks.
@@ -9339,10 +10287,14 @@ type BulkPatchLinksApplicationMergePatchPlusJSONBody struct {
 	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
 	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
-	Protect                *bool               `json:"Protect" yaml:"Protect"`
+	Labels                 *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool                               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Permissions            *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect                *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -9397,7 +10349,7 @@ type BulkPatchLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// filter
 	//
@@ -9434,6 +10386,15 @@ type BulkPatchLinksParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Link.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -9445,6 +10406,15 @@ type BulkPatchLinksParams struct {
 
 	// Reverse Swap the FromUnit and ToUnit directions of the links
 	Reverse *bool `form:"reverse,omitempty" json:"reverse,omitempty" yaml:"reverse,omitempty"`
+
+	// WithBackingUnits Give each Link written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Link's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Link with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateLinksApplicationMergePatchPlusJSONBody defines parameters for BulkCreateLinks.
@@ -9468,10 +10438,14 @@ type BulkCreateLinksApplicationMergePatchPlusJSONBody struct {
 	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
 	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
-	Protect                *bool               `json:"Protect" yaml:"Protect"`
+	Labels                 *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool                               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Permissions            *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect                *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -9526,7 +10500,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// Where expression to select source links to copy
 	//
@@ -9583,7 +10557,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 	//
@@ -9624,7 +10598,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 	//
@@ -9633,6 +10607,68 @@ type BulkCreateLinksParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// WithBackingUnits Give each Link written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Link's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Links from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListOrganizationsParams defines parameters for ListOrganizations.
@@ -9671,7 +10707,7 @@ type ListOrganizationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, Labels, OrganizationID, Slug, UpdatedAt.
+	// Supported attributes for filtering on Organization: Annotations, CreatedAt, DeleteGates, DisplayName, EmailDomain, ExternalID, HiddenReason, Labels, OrganizationID, Slug, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9724,6 +10760,15 @@ type ListOrganizationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Organization entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateOrganizationParams defines parameters for CreateOrganization.
@@ -9752,6 +10797,12 @@ type GetOrganizationParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// UpdateOrganizationParams defines parameters for UpdateOrganization.
+type UpdateOrganizationParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListOrganizationMembersParams defines parameters for ListOrganizationMembers.
@@ -9871,7 +10922,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -9924,6 +10975,15 @@ type ListAllReleasesParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // ListAllResourcesParams defines parameters for ListAllResources.
@@ -9962,7 +11022,7 @@ type ListAllResourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
 	//
@@ -10018,6 +11078,15 @@ type ListAllResourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10028,7 +11097,7 @@ type ListAllResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10080,7 +11149,7 @@ type ListAllRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -10136,6 +11205,15 @@ type ListAllRevisionsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10146,7 +11224,7 @@ type ListAllRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10204,7 +11282,7 @@ type SearchRevisionDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -10260,6 +11338,15 @@ type SearchRevisionDataParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10270,7 +11357,7 @@ type SearchRevisionDataParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10328,7 +11415,7 @@ type SearchRevisionMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list tagged Revisions use `Tags ? '<tag-id>'`.
 	//
@@ -10384,6 +11471,15 @@ type SearchRevisionMutationSourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -10394,7 +11490,7 @@ type SearchRevisionMutationSourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -10452,7 +11548,7 @@ type ListSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10506,14 +11602,32 @@ type ListSpacesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Space entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Summary Return summarized entity data
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
 }
 
 // CreateSpaceParams defines parameters for CreateSpace.
 type CreateSpaceParams struct {
+	// WithBackingUnits Give each Space written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Space's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// BackingUnitSpace The Space, by slug or ID, for the backing Units with_backing_units creates. Required with it: a Space is in no Space of its own to hold one.
+	BackingUnitSpace *string `form:"backing_unit_space,omitempty" json:"backing_unit_space,omitempty" yaml:"backing_unit_space,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteSpaceParams defines parameters for DeleteSpace.
@@ -10566,6 +11680,9 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
@@ -10583,14 +11700,20 @@ type PatchSpaceApplicationMergePatchPlusJSONBody struct {
 
 // PatchSpaceParams defines parameters for PatchSpace.
 type PatchSpaceParams struct {
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers If true, re-list the Triggers the Space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // UpdateSpaceParams defines parameters for UpdateSpace.
 type UpdateSpaceParams struct {
-	// RefreshTriggers If true, re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
+	// RefreshTriggers If true, re-list the Triggers the Space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListExtendedAttestationsParams defines parameters for ListExtendedAttestations.
@@ -10629,7 +11752,7 @@ type ListExtendedAttestationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	// Supported attributes for filtering on Attestation: AttestationID, ChangeOrderID, Claims, CreatedAt, EvidenceAttestationIDs, ExpiresAt, HiddenReason, Note, OrganizationID, Permissions, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10682,6 +11805,15 @@ type ListExtendedAttestationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Attestation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateAttestationParams defines parameters for CreateAttestation.
@@ -10748,7 +11880,7 @@ type ListAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Attribute: Annotations, AttributeID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, Labels, OrganizationID, Parameters, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10801,12 +11933,27 @@ type ListAttributesParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Attribute entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateAttributeParams defines parameters for CreateAttribute.
 type CreateAttributeParams struct {
+	// WithBackingUnits Give each Attribute written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Attribute's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetAttributeParams defines parameters for GetAttribute.
@@ -10844,10 +11991,14 @@ type PatchAttributeApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels            *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters        *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
-	ResourceTypePaths *[]map[string]interface{} `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
+	Labels            *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters        *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions       *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceTypePaths *[]map[string]interface{}           `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -10855,6 +12006,24 @@ type PatchAttributeApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchAttributeParams defines parameters for PatchAttribute.
+type PatchAttributeParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateAttributeParams defines parameters for UpdateAttribute.
+type UpdateAttributeParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateAttributeDocumentParams defines parameters for UpdateAttributeDocument.
+type UpdateAttributeDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListBridgeWorkersParams defines parameters for ListBridgeWorkers.
@@ -10893,7 +12062,7 @@ type ListBridgeWorkersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
+	// Supported attributes for filtering on BridgeWorker: Annotations, BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrgRole, OrganizationID, Permissions, ProvidedInfo, Slug, SpaceID, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10946,12 +12115,24 @@ type ListBridgeWorkersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden BridgeWorker entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateBridgeWorkerParams defines parameters for CreateBridgeWorker.
 type CreateBridgeWorkerParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteBridgeWorkerParams defines parameters for DeleteBridgeWorker.
@@ -10994,6 +12175,9 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	OrgRole      *string                             `json:"OrgRole" yaml:"OrgRole"`
@@ -11005,6 +12189,18 @@ type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchBridgeWorkerParams defines parameters for PatchBridgeWorker.
+type PatchBridgeWorkerParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateBridgeWorkerParams defines parameters for UpdateBridgeWorker.
+type UpdateBridgeWorkerParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListChangeOrdersParams defines parameters for ListChangeOrders.
@@ -11043,7 +12239,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11096,12 +12292,24 @@ type ListChangeOrdersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeOrder entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateChangeOrderParams defines parameters for CreateChangeOrder.
 type CreateChangeOrderParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteChangeOrderParams defines parameters for DeleteChangeOrder.
@@ -11145,14 +12353,18 @@ type PatchChangeOrderApplicationMergePatchPlusJSONBody struct {
 	Description *string           `json:"Description" yaml:"Description"`
 
 	// DisplayName Friendly name for the entity.
-	DisplayName     *string               `json:"DisplayName" yaml:"DisplayName"`
-	EndTagID        *openapi_types.UUID   `json:"EndTagID" yaml:"EndTagID"`
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	EndTagID    *openapi_types.UUID `json:"EndTagID" yaml:"EndTagID"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason    *string               `json:"HiddenReason" yaml:"HiddenReason"`
 	InScopeSpaceIDs *[]openapi_types.UUID `json:"InScopeSpaceIDs" yaml:"InScopeSpaceIDs"`
 	InvocationID    *openapi_types.UUID   `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string     `json:"Labels" yaml:"Labels"`
-	Parameters *map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *map[string]interface{}             `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -11170,12 +12382,18 @@ type PatchChangeOrderApplicationMergePatchPlusJSONBody struct {
 type PatchChangeOrderParams struct {
 	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers if the Spaces they select have changed, even if neither field has changed. Has no effect on a ChangeOrder with neither set.
 	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // UpdateChangeOrderParams defines parameters for UpdateChangeOrder.
 type UpdateChangeOrderParams struct {
 	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers if the Spaces they select have changed, even if neither field has changed. Has no effect on a ChangeOrder with neither set.
 	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListChangeSetsParams defines parameters for ListChangeSets.
@@ -11214,7 +12432,7 @@ type ListChangeSetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, Labels, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	// Supported attributes for filtering on ChangeSet: Annotations, ChangeSetID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11267,12 +12485,24 @@ type ListChangeSetsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeSet entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateChangeSetParams defines parameters for CreateChangeSet.
 type CreateChangeSetParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteChangeSetParams defines parameters for DeleteChangeSet.
@@ -11315,14 +12545,30 @@ type PatchChangeSetApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchChangeSetParams defines parameters for PatchChangeSet.
+type PatchChangeSetParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateChangeSetParams defines parameters for UpdateChangeSet.
+type UpdateChangeSetParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListChangeWorkflowsParams defines parameters for ListChangeWorkflows.
@@ -11361,7 +12607,7 @@ type ListChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, Labels, OrganizationID, Slug, SpaceID, Stages, UpdatedAt.
+	// Supported attributes for filtering on ChangeWorkflow: Annotations, AttestationPrerequisites, BackingUnitID, ChangeWorkflowID, CreatedAt, CustomPrerequisites, DeleteGates, DisplayName, Final, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, Stages, UpdatedAt, UpstreamChangeWorkflowID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11414,12 +12660,27 @@ type ListChangeWorkflowsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ChangeWorkflow entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateChangeWorkflowParams defines parameters for CreateChangeWorkflow.
 type CreateChangeWorkflowParams struct {
+	// WithBackingUnits Give each ChangeWorkflow written a backing Unit if it has none: a ConfigHub/YAML Unit holding the ChangeWorkflow's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetChangeWorkflowParams defines parameters for GetChangeWorkflow.
@@ -11464,8 +12725,12 @@ type PatchChangeWorkflowApplicationMergePatchPlusJSONBody struct {
 	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
 	Final *map[string]interface{} `json:"Final" yaml:"Final"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -11475,6 +12740,30 @@ type PatchChangeWorkflowApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchChangeWorkflowParams defines parameters for PatchChangeWorkflow.
+type PatchChangeWorkflowParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateChangeWorkflowParams defines parameters for UpdateChangeWorkflow.
+type UpdateChangeWorkflowParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateChangeWorkflowDocumentParams defines parameters for UpdateChangeWorkflowDocument.
+type UpdateChangeWorkflowDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateSpaceDocumentParams defines parameters for UpdateSpaceDocument.
+type UpdateSpaceDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListFiltersParams defines parameters for ListFilters.
@@ -11513,7 +12802,7 @@ type ListFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Filter: Annotations, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, Labels, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, Where, WhereData.
+	// Supported attributes for filtering on Filter: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, Labels, OrganizationID, Permissions, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11567,6 +12856,15 @@ type ListFiltersParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Filter entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
 
@@ -11576,8 +12874,14 @@ type ListFiltersParams struct {
 
 // CreateFilterParams defines parameters for CreateFilter.
 type CreateFilterParams struct {
+	// WithBackingUnits Give each Filter written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Filter's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetFilterParams defines parameters for GetFilter.
@@ -11615,9 +12919,14 @@ type PatchFilterApplicationMergePatchPlusJSONBody struct {
 	From        *string             `json:"From" yaml:"From"`
 	FromSpaceID *openapi_types.UUID `json:"FromSpaceID" yaml:"FromSpaceID"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason  *string `json:"HiddenReason" yaml:"HiddenReason"`
+	IncludeHidden *string `json:"IncludeHidden" yaml:"IncludeHidden"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels       *map[string]*string `json:"Labels" yaml:"Labels"`
-	ResourceType *string             `json:"ResourceType" yaml:"ResourceType"`
+	Labels       *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions  *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ResourceType *string                             `json:"ResourceType" yaml:"ResourceType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -11626,6 +12935,24 @@ type PatchFilterApplicationMergePatchPlusJSONBody struct {
 	Version   *int    `json:"Version" yaml:"Version"`
 	Where     *string `json:"Where" yaml:"Where"`
 	WhereData *string `json:"WhereData" yaml:"WhereData"`
+}
+
+// PatchFilterParams defines parameters for PatchFilter.
+type PatchFilterParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateFilterParams defines parameters for UpdateFilter.
+type UpdateFilterParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateFilterDocumentParams defines parameters for UpdateFilterDocument.
+type UpdateFilterDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListFunctionsParams defines parameters for ListFunctions.
@@ -11742,7 +13069,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -11761,6 +13088,15 @@ type InvokeFunctionsParams struct {
 	//
 	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
 	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the default: ConfigData for the configuration the invocation produced, carried whether or not the invocation changed it. Without it, the configuration is present only when the invocation changed it, and an unchanged result is reported by DataHash alone. Diff for what the invocation changed in each Unit, path by path with the values on both sides.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
@@ -11823,7 +13159,7 @@ type ListInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Invocation: Annotations, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, InvocationID, Labels, OrganizationID, Parameters, Slug, SpaceID, ToolchainType, UpdatedAt.
+	// Supported attributes for filtering on Invocation: Annotations, BackingUnitID, BridgeWorkerID, CreatedAt, DeleteGates, DisplayName, FunctionInvocations, Hash, HiddenReason, InvocationID, Labels, OrganizationID, Parameters, Permissions, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
 	//
 	// The functions an Invocation calls are addressed with dot notation into `FunctionInvocations`: `FunctionInvocations.*.FunctionName = 'set-image'` matches an Invocation that calls set-image anywhere in its list, and `FunctionInvocations.0.FunctionName` addresses the first function it calls.
 	//
@@ -11878,12 +13214,27 @@ type ListInvocationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Invocation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateInvocationParams defines parameters for CreateInvocation.
 type CreateInvocationParams struct {
+	// WithBackingUnits Give each Invocation written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Invocation's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetInvocationParams defines parameters for GetInvocation.
@@ -11921,9 +13272,13 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 	DisplayName         *string                   `json:"DisplayName" yaml:"DisplayName"`
 	FunctionInvocations *[]map[string]interface{} `json:"FunctionInvocations" yaml:"FunctionInvocations"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     *map[string]*string       `json:"Labels" yaml:"Labels"`
-	Parameters *[]map[string]interface{} `json:"Parameters" yaml:"Parameters"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Parameters  *[]map[string]interface{}           `json:"Parameters" yaml:"Parameters"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string `json:"Slug" yaml:"Slug"`
@@ -11931,6 +13286,24 @@ type PatchInvocationApplicationMergePatchPlusJSONBody struct {
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchInvocationParams defines parameters for PatchInvocation.
+type PatchInvocationParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateInvocationParams defines parameters for UpdateInvocation.
+type UpdateInvocationParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateInvocationDocumentParams defines parameters for UpdateInvocationDocument.
+type UpdateInvocationDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListLinksParams defines parameters for ListLinks.
@@ -11969,7 +13342,7 @@ type ListLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12022,12 +13395,27 @@ type ListLinksParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Link entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateLinkParams defines parameters for CreateLink.
 type CreateLinkParams struct {
+	// WithBackingUnits Give each Link written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Link's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetLinkParams defines parameters for GetLink.
@@ -12073,10 +13461,14 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
 	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels                 *map[string]*string `json:"Labels" yaml:"Labels"`
-	MergeEnableSubtraction *bool               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
-	Protect                *bool               `json:"Protect" yaml:"Protect"`
+	Labels                 *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	MergeEnableSubtraction *bool                               `json:"MergeEnableSubtraction" yaml:"MergeEnableSubtraction"`
+	Permissions            *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect                *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug                          *string                   `json:"Slug" yaml:"Slug"`
@@ -12099,6 +13491,21 @@ type PatchLinkApplicationMergePatchPlusJSONBody struct {
 type PatchLinkParams struct {
 	// Reverse Swap the FromUnit and ToUnit directions of the link
 	Reverse *bool `form:"reverse,omitempty" json:"reverse,omitempty" yaml:"reverse,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateLinkParams defines parameters for UpdateLink.
+type UpdateLinkParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateLinkDocumentParams defines parameters for UpdateLinkDocument.
+type UpdateLinkDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListExtendedReleasesParams defines parameters for ListExtendedReleases.
@@ -12137,7 +13544,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, Labels, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12190,6 +13597,15 @@ type ListExtendedReleasesParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Release entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // DeleteReleaseParams defines parameters for DeleteRelease.
@@ -12228,11 +13644,27 @@ type PatchReleaseApplicationMergePatchPlusJSONBody struct {
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchReleaseParams defines parameters for PatchRelease.
+type PatchReleaseParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateReleaseParams defines parameters for UpdateRelease.
+type UpdateReleaseParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListTagsParams defines parameters for ListTags.
@@ -12271,7 +13703,7 @@ type ListTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12324,12 +13756,24 @@ type ListTagsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateTagParams defines parameters for CreateTag.
 type CreateTagParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteTagParams defines parameters for DeleteTag.
@@ -12371,14 +13815,30 @@ type PatchTagApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchTagParams defines parameters for PatchTag.
+type PatchTagParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateTagParams defines parameters for UpdateTag.
+type UpdateTagParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListTargetsParams defines parameters for ListTargets.
@@ -12417,7 +13877,7 @@ type ListTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12470,12 +13930,24 @@ type ListTargetsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateTargetParams defines parameters for CreateTarget.
 type CreateTargetParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteTargetParams defines parameters for DeleteTarget.
@@ -12521,6 +13993,9 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
 	Facts       *map[string]*string `json:"Facts" yaml:"Facts"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
 	LiveStateType *string                             `json:"LiveStateType" yaml:"LiveStateType"`
@@ -12543,12 +14018,18 @@ type PatchTargetApplicationMergePatchPlusJSONBody struct {
 type PatchTargetParams struct {
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // UpdateTargetParams defines parameters for UpdateTarget.
 type UpdateTargetParams struct {
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListTriggersParams defines parameters for ListTriggers.
@@ -12587,7 +14068,7 @@ type ListTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -12642,12 +14123,27 @@ type ListTriggersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateTriggerParams defines parameters for CreateTrigger.
 type CreateTriggerParams struct {
+	// WithBackingUnits Give each Trigger written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Trigger's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetTriggerParams defines parameters for GetTrigger.
@@ -12696,7 +14192,10 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string             `json:"HiddenReason" yaml:"HiddenReason"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -12704,8 +14203,9 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
-	Protect *bool                   `json:"Protect" yaml:"Protect"`
+	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect     *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -12719,6 +14219,24 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	// WhereResource Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).
 	WhereResource *string `json:"WhereResource" yaml:"WhereResource"`
 	WhereUnit     *string `json:"WhereUnit" yaml:"WhereUnit"`
+}
+
+// PatchTriggerParams defines parameters for PatchTrigger.
+type PatchTriggerParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateTriggerParams defines parameters for UpdateTrigger.
+type UpdateTriggerParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateTriggerDocumentParams defines parameters for UpdateTriggerDocument.
+type UpdateTriggerDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListUnitsParams defines parameters for ListUnits.
@@ -12757,7 +14275,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -12813,6 +14331,15 @@ type ListUnitsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
 
@@ -12857,6 +14384,9 @@ type CreateUnitParams struct {
 
 	// Include Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // DeleteUnitParams defines parameters for DeleteUnit.
@@ -12904,12 +14434,16 @@ type PatchUnitApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
-	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
-	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
+	LastChangeDescription *string                             `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType          *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -13005,7 +14539,7 @@ type PatchUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -13122,7 +14656,7 @@ type UpdateUnitParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -13251,7 +14785,7 @@ type ListExtendedMutationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// The function invoked is returned as a FunctionInvocation object, and `where` names its fields the same way: `FunctionInvocation.FunctionName`, `FunctionInvocation.Guards.<reason>`, and `FunctionInvocation.Arguments`, which is a list addressed with dot notation. `FunctionInvocation.Arguments.?ParameterName=container-image.Value LIKE 'nginx%'` reads the argument bound to a named parameter, `FunctionInvocation.Arguments.*.Value` matches any argument's value, and `FunctionInvocation.Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -13306,6 +14840,15 @@ type ListExtendedMutationsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Mutation entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // GetExtendedMutationParams defines parameters for GetExtendedMutation.
@@ -13366,7 +14909,7 @@ type ListExtendedResourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for filtering on Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Sub-paths of the JSON configuration data are addressed with dot notation, such as `Data.spec.replicas > 1`.
 	//
@@ -13422,6 +14965,15 @@ type ListExtendedResourcesParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Resource entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -13432,7 +14984,7 @@ type ListExtendedResourcesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13479,7 +15031,7 @@ type GetExtendedResourceParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13531,7 +15083,7 @@ type ListExtendedRevisionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// To list a tagged Revision use `Tags ? '<tag-id>'`.
 	//
@@ -13587,6 +15139,15 @@ type ListExtendedRevisionsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Revision entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
@@ -13597,7 +15158,7 @@ type ListExtendedRevisionsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13638,7 +15199,7 @@ type GetExtendedRevisionParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13756,7 +15317,7 @@ type ListUnitEventsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13801,7 +15362,7 @@ type ListUnitEventsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13809,6 +15370,15 @@ type ListUnitEventsParams struct {
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // GetUnitEventParams defines parameters for GetUnitEvent.
@@ -13823,7 +15393,7 @@ type GetUnitEventParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -13869,7 +15439,7 @@ type ListViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13922,12 +15492,27 @@ type ListViewsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // CreateViewParams defines parameters for CreateView.
 type CreateViewParams struct {
+	// WithBackingUnits Give each View written a backing Unit if it has none: a ConfigHub/YAML Unit holding the View's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // GetViewParams defines parameters for GetView.
@@ -13966,17 +15551,39 @@ type PatchViewApplicationMergePatchPlusJSONBody struct {
 	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
 	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
-	Of               *string             `json:"Of" yaml:"Of"`
-	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
-	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Labels           *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Of               *string                             `json:"Of" yaml:"Of"`
+	OrderBy          *string                             `json:"OrderBy" yaml:"OrderBy"`
+	OrderByDirection *string                             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Permissions      *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchViewParams defines parameters for PatchView.
+type PatchViewParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateViewParams defines parameters for UpdateView.
+type UpdateViewParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateViewDocumentParams defines parameters for UpdateViewDocument.
+type UpdateViewDocumentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteTagsParams defines parameters for BulkDeleteTags.
@@ -14015,7 +15622,7 @@ type BulkDeleteTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14049,6 +15656,15 @@ type BulkDeleteTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Tag.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -14099,7 +15715,7 @@ type ListAllTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14152,6 +15768,15 @@ type ListAllTagsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchTagsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTags.
@@ -14165,8 +15790,12 @@ type BulkPatchTagsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -14211,7 +15840,7 @@ type BulkPatchTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14246,6 +15875,15 @@ type BulkPatchTagsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Tag.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -14254,6 +15892,9 @@ type BulkPatchTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateTagsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateTags.
@@ -14267,8 +15908,12 @@ type BulkCreateTagsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -14313,7 +15958,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14347,6 +15992,15 @@ type BulkCreateTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Tag.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -14400,7 +16054,7 @@ type BulkCreateTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning tags
 	//
@@ -14422,6 +16076,9 @@ type BulkCreateTagsParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveTagsParams defines parameters for BulkMoveTags.
@@ -14460,7 +16117,7 @@ type BulkMoveTagsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	// Supported attributes for filtering on Tag: Annotations, ChangeOrderID, ChangeSetID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14494,6 +16151,15 @@ type BulkMoveTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Tag entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Tag.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -14544,7 +16210,7 @@ type BulkDeleteTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14578,6 +16244,15 @@ type BulkDeleteTargetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Target.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -14628,7 +16303,7 @@ type ListAllTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14681,6 +16356,15 @@ type ListAllTargetsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTargets.
@@ -14697,6 +16381,9 @@ type BulkPatchTargetsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
 	Facts       *map[string]*string `json:"Facts" yaml:"Facts"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels        *map[string]*string                 `json:"Labels" yaml:"Labels"`
@@ -14752,7 +16439,7 @@ type BulkPatchTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14787,6 +16474,15 @@ type BulkPatchTargetsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Target.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -14798,6 +16494,9 @@ type BulkPatchTargetsParams struct {
 
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveTargetsParams defines parameters for BulkMoveTargets.
@@ -14836,7 +16535,7 @@ type BulkMoveTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14870,6 +16569,15 @@ type BulkMoveTargetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Target.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -14920,7 +16628,7 @@ type BulkDeleteTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -14956,6 +16664,15 @@ type BulkDeleteTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Trigger.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -15003,7 +16720,7 @@ type ListAllTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -15058,6 +16775,15 @@ type ListAllTriggersParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTriggers.
@@ -15084,7 +16810,10 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string             `json:"HiddenReason" yaml:"HiddenReason"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -15092,8 +16821,9 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
-	Protect *bool                   `json:"Protect" yaml:"Protect"`
+	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect     *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -15145,7 +16875,7 @@ type BulkPatchTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -15182,6 +16912,15 @@ type BulkPatchTriggersParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for Trigger.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -15190,6 +16929,15 @@ type BulkPatchTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each Trigger written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Trigger's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Trigger with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkCreateTriggers.
@@ -15216,7 +16964,10 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	FunctionName *string `json:"FunctionName" yaml:"FunctionName"`
 
 	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
-	Guards       *map[string]*string `json:"Guards" yaml:"Guards"`
+	Guards *map[string]*string `json:"Guards" yaml:"Guards"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string             `json:"HiddenReason" yaml:"HiddenReason"`
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
@@ -15224,8 +16975,9 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params  *map[string]interface{} `json:"Params" yaml:"Params"`
-	Protect *bool                   `json:"Protect" yaml:"Protect"`
+	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect     *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -15277,7 +17029,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Trigger: Annotations, Arguments, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, InvocationID, Labels, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, Validating, Warn, WhereResource, WhereUnit.
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
 	//
 	// A Trigger returns the function it invokes inline rather than in a FunctionInvocation object, so `where` names FunctionName and Arguments directly. The arguments are addressed with dot notation into `Arguments`, which is a list: `Arguments.?ParameterName=attribute-name.Value = 'owner'` reads the argument bound to a named parameter, `Arguments.*.Value` matches any argument's value, and `Arguments.0.Value` addresses the first argument. Arguments passed positionally have no ParameterName.
 	//
@@ -15313,6 +17065,15 @@ type BulkCreateTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Trigger.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -15360,7 +17121,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning triggers
 	//
@@ -15382,6 +17143,152 @@ type BulkCreateTriggersParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each Trigger written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Trigger's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Triggers from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkMoveTriggersParams defines parameters for BulkMoveTriggers.
+type BulkMoveTriggersParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Triggers returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Trigger list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Trigger).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Trigger include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Trigger entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Trigger.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Trigger are BridgeWorkerID, InvocationID, OrganizationID, SpaceID, UnitFilterID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// DryRun Report what the move would do, and what would stop it, without moving anything
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteUnitsParams defines parameters for BulkDeleteUnits.
@@ -15420,7 +17327,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15456,6 +17363,15 @@ type BulkDeleteUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -15506,7 +17422,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15562,6 +17478,15 @@ type ListAllUnitsParams struct {
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
 
@@ -15601,12 +17526,16 @@ type BulkPatchUnitsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
-	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
-	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
+	LastChangeDescription *string                             `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType          *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -15660,7 +17589,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15696,6 +17625,15 @@ type BulkPatchUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -15779,7 +17717,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	// Supported attributes for filtering on Mutation: BridgeWorkerID, CreatedAt, FunctionInvocation.Arguments, FunctionInvocation.Clearance, FunctionInvocation.FunctionName, FunctionInvocation.Guards, FunctionInvocation.WhereResource, FunctionName, HiddenReason, InvocationID, InvocationParams, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, SpaceID, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
 	//
 	// Selects Mutations of this Unit whose paths the merge must not overwrite, unioned with the Protected values stored on the Unit's MutationSources.
 	//
@@ -15832,12 +17770,16 @@ type BulkCreateUnitsApplicationMergePatchPlusJSONBody struct {
 	// DisplayName Friendly name for the entity.
 	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels *map[string]*string `json:"Labels" yaml:"Labels"`
 
 	// LastChangeDescription LastChangeDescription is a human-readable description of the last change. This description is copied to the new Revision when the Data is changed.
-	LastChangeDescription *string `json:"LastChangeDescription" yaml:"LastChangeDescription"`
-	ProviderType          *string `json:"ProviderType" yaml:"ProviderType"`
+	LastChangeDescription *string                             `json:"LastChangeDescription" yaml:"LastChangeDescription"`
+	Permissions           *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	ProviderType          *string                             `json:"ProviderType" yaml:"ProviderType"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -15891,7 +17833,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -15927,6 +17869,15 @@ type BulkCreateUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -15980,7 +17931,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning units
 	//
@@ -16037,7 +17988,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Link: Annotations, AutoUpdate, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
 	// Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 	//
@@ -16049,6 +18000,9 @@ type BulkCreateUnitsParams struct {
 
 	// Syncback Also create a MergeUnits Link from each upstream Unit back to its clone, alongside the UpgradeUnit Link a clone always gets. The upgrade Link carries changes from the upstream Unit into the clone; this one carries them the other way, which is what makes a clone usable as a draft: change it, review it, then resolve the Link (resolve=Link:...) on the upstream Unit to merge the change home. A Unit may be the source of several of these -- one per outstanding draft -- so each is named for the clone it takes changes from (syncback-<space>-<unit>) rather than for the Unit they all point at. The Link is created in the upstream Unit's Space, which the caller must be allowed to create Links in. Requires upstream_unit_id (or, in bulk, a source Unit to clone).
 	Syncback *bool `form:"syncback,omitempty" json:"syncback,omitempty" yaml:"syncback,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCancelUnitsParams defines parameters for BulkCancelUnits.
@@ -16087,7 +18041,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16123,6 +18077,15 @@ type BulkCancelUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -16170,7 +18133,7 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16206,6 +18169,15 @@ type BulkMoveUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -16256,7 +18228,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16292,6 +18264,15 @@ type BulkTagUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for Unit.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -16411,7 +18392,7 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16466,6 +18447,15 @@ type SearchUnitDataParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -16525,7 +18515,7 @@ type SearchUnitDiffParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16561,6 +18551,15 @@ type SearchUnitDiffParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -16632,7 +18631,7 @@ type ListAllUnitEventsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for filtering on UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -16677,7 +18676,7 @@ type ListAllUnitEventsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -16685,6 +18684,15 @@ type ListAllUnitEventsParams struct {
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// DistinctOn Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
 	//
@@ -16735,7 +18743,7 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -16790,6 +18798,15 @@ type SearchUnitMutationSourcesParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden Unit entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -16858,7 +18875,7 @@ type ListUsersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on User: CreatedAt, DisplayName, ExternalID, Slug, UpdatedAt, UserID, Username.
+	// Supported attributes for filtering on User: CreatedAt, DisplayName, ExternalID, HiddenReason, Slug, UpdatedAt, UserID, Username.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -16892,6 +18909,21 @@ type ListUsersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden User entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+}
+
+// CreateUserKeyParams defines parameters for CreateUserKey.
+type CreateUserKeyParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkDeleteViewsParams defines parameters for BulkDeleteViews.
@@ -16930,7 +18962,7 @@ type BulkDeleteViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -16964,6 +18996,15 @@ type BulkDeleteViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for View.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -17011,7 +19052,7 @@ type ListAllViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17064,6 +19105,15 @@ type ListAllViewsParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 }
 
 // BulkPatchViewsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchViews.
@@ -17080,11 +19130,15 @@ type BulkPatchViewsApplicationMergePatchPlusJSONBody struct {
 	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
 	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
-	Of               *string             `json:"Of" yaml:"Of"`
-	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
-	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Labels           *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Of               *string                             `json:"Of" yaml:"Of"`
+	OrderBy          *string                             `json:"OrderBy" yaml:"OrderBy"`
+	OrderByDirection *string                             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Permissions      *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -17129,7 +19183,7 @@ type BulkPatchViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17164,6 +19218,15 @@ type BulkPatchViewsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
 	// Include Include clause for expanding related entities in the response for View.
 	// The attribute names are case-sensitive, PascalCase, and
 	// expected in a comma-separated list format as in the JSON encoding.
@@ -17172,6 +19235,15 @@ type BulkPatchViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// WithBackingUnits Give each View written a backing Unit if it has none: a ConfigHub/YAML Unit holding the View's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected View with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkCreateViewsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateViews.
@@ -17188,11 +19260,15 @@ type BulkCreateViewsApplicationMergePatchPlusJSONBody struct {
 	FilterID    *openapi_types.UUID `json:"FilterID" yaml:"FilterID"`
 	GroupBy     *string             `json:"GroupBy" yaml:"GroupBy"`
 
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels           *map[string]*string `json:"Labels" yaml:"Labels"`
-	Of               *string             `json:"Of" yaml:"Of"`
-	OrderBy          *string             `json:"OrderBy" yaml:"OrderBy"`
-	OrderByDirection *string             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Labels           *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Of               *string                             `json:"Of" yaml:"Of"`
+	OrderBy          *string                             `json:"OrderBy" yaml:"OrderBy"`
+	OrderByDirection *string                             `json:"OrderByDirection" yaml:"OrderByDirection"`
+	Permissions      *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug *string `json:"Slug" yaml:"Slug"`
@@ -17237,7 +19313,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17271,6 +19347,15 @@ type BulkCreateViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for View.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -17324,7 +19409,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, ComponentID, CreatedAt, DeleteGates, DisplayName, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
 	// Where expression to select destination spaces for cloning views
 	//
@@ -17346,6 +19431,59 @@ type BulkCreateViewsParams struct {
 
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// WithBackingUnits Give each View written a backing Unit if it has none: a ConfigHub/YAML Unit holding the View's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Views from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // BulkMoveViewsParams defines parameters for BulkMoveViews.
@@ -17384,7 +19522,7 @@ type BulkMoveViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on View: Annotations, Columns, CreatedAt, DisplayName, FilterID, GroupBy, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, ViewID.
+	// Supported attributes for filtering on View: Annotations, BackingUnitID, Columns, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Labels, Of, OrderBy, OrderByDirection, OrganizationID, Permissions, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17418,6 +19556,15 @@ type BulkMoveViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden View entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
 	// Include Include clause for expanding related entities in the response for View.
 	// The attribute names are case-sensitive, PascalCase, and
@@ -17492,6 +19639,9 @@ type PatchComponentApplicationMergePatchPlusJSONRequestBody PatchComponentApplic
 // UpdateComponentJSONRequestBody defines body for UpdateComponent for application/json ContentType.
 type UpdateComponentJSONRequestBody = Component
 
+// UpdateComponentDocumentJSONRequestBody defines body for UpdateComponentDocument for application/json ContentType.
+type UpdateComponentDocumentJSONRequestBody = EntityDocumentEdit
+
 // DemoteJSONRequestBody defines body for Demote for application/json ContentType.
 type DemoteJSONRequestBody = DemoteRequest
 
@@ -17561,6 +19711,9 @@ type PatchAttributeApplicationMergePatchPlusJSONRequestBody PatchAttributeApplic
 // UpdateAttributeJSONRequestBody defines body for UpdateAttribute for application/json ContentType.
 type UpdateAttributeJSONRequestBody = Attribute
 
+// UpdateAttributeDocumentJSONRequestBody defines body for UpdateAttributeDocument for application/json ContentType.
+type UpdateAttributeDocumentJSONRequestBody = EntityDocumentEdit
+
 // CreateBridgeWorkerJSONRequestBody defines body for CreateBridgeWorker for application/json ContentType.
 type CreateBridgeWorkerJSONRequestBody = BridgeWorker
 
@@ -17597,6 +19750,12 @@ type PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody PatchChangeWork
 // UpdateChangeWorkflowJSONRequestBody defines body for UpdateChangeWorkflow for application/json ContentType.
 type UpdateChangeWorkflowJSONRequestBody = ChangeWorkflow
 
+// UpdateChangeWorkflowDocumentJSONRequestBody defines body for UpdateChangeWorkflowDocument for application/json ContentType.
+type UpdateChangeWorkflowDocumentJSONRequestBody = EntityDocumentEdit
+
+// UpdateSpaceDocumentJSONRequestBody defines body for UpdateSpaceDocument for application/json ContentType.
+type UpdateSpaceDocumentJSONRequestBody = EntityDocumentEdit
+
 // CreateFilterJSONRequestBody defines body for CreateFilter for application/json ContentType.
 type CreateFilterJSONRequestBody = Filter
 
@@ -17605,6 +19764,9 @@ type PatchFilterApplicationMergePatchPlusJSONRequestBody PatchFilterApplicationM
 
 // UpdateFilterJSONRequestBody defines body for UpdateFilter for application/json ContentType.
 type UpdateFilterJSONRequestBody = Filter
+
+// UpdateFilterDocumentJSONRequestBody defines body for UpdateFilterDocument for application/json ContentType.
+type UpdateFilterDocumentJSONRequestBody = EntityDocumentEdit
 
 // InvokeFunctionsJSONRequestBody defines body for InvokeFunctions for application/json ContentType.
 type InvokeFunctionsJSONRequestBody = FunctionInvocationsRequest
@@ -17618,6 +19780,9 @@ type PatchInvocationApplicationMergePatchPlusJSONRequestBody PatchInvocationAppl
 // UpdateInvocationJSONRequestBody defines body for UpdateInvocation for application/json ContentType.
 type UpdateInvocationJSONRequestBody = Invocation
 
+// UpdateInvocationDocumentJSONRequestBody defines body for UpdateInvocationDocument for application/json ContentType.
+type UpdateInvocationDocumentJSONRequestBody = EntityDocumentEdit
+
 // CreateLinkJSONRequestBody defines body for CreateLink for application/json ContentType.
 type CreateLinkJSONRequestBody = Link
 
@@ -17626,6 +19791,9 @@ type PatchLinkApplicationMergePatchPlusJSONRequestBody PatchLinkApplicationMerge
 
 // UpdateLinkJSONRequestBody defines body for UpdateLink for application/json ContentType.
 type UpdateLinkJSONRequestBody = Link
+
+// UpdateLinkDocumentJSONRequestBody defines body for UpdateLinkDocument for application/json ContentType.
+type UpdateLinkDocumentJSONRequestBody = EntityDocumentEdit
 
 // PublishReleaseJSONRequestBody defines body for PublishRelease for application/json ContentType.
 type PublishReleaseJSONRequestBody = ReleasePublishRequest
@@ -17663,6 +19831,9 @@ type PatchTriggerApplicationMergePatchPlusJSONRequestBody PatchTriggerApplicatio
 // UpdateTriggerJSONRequestBody defines body for UpdateTrigger for application/json ContentType.
 type UpdateTriggerJSONRequestBody = Trigger
 
+// UpdateTriggerDocumentJSONRequestBody defines body for UpdateTriggerDocument for application/json ContentType.
+type UpdateTriggerDocumentJSONRequestBody = EntityDocumentEdit
+
 // CreateUnitJSONRequestBody defines body for CreateUnit for application/json ContentType.
 type CreateUnitJSONRequestBody = Unit
 
@@ -17690,6 +19861,9 @@ type PatchViewApplicationMergePatchPlusJSONRequestBody PatchViewApplicationMerge
 // UpdateViewJSONRequestBody defines body for UpdateView for application/json ContentType.
 type UpdateViewJSONRequestBody = View
 
+// UpdateViewDocumentJSONRequestBody defines body for UpdateViewDocument for application/json ContentType.
+type UpdateViewDocumentJSONRequestBody = EntityDocumentEdit
+
 // BulkPatchTagsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchTags for application/merge-patch+json ContentType.
 type BulkPatchTagsApplicationMergePatchPlusJSONRequestBody BulkPatchTagsApplicationMergePatchPlusJSONBody
 
@@ -17710,6 +19884,9 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONRequestBody BulkPatchTriggers
 
 // BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateTriggers for application/merge-patch+json ContentType.
 type BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody BulkCreateTriggersApplicationMergePatchPlusJSONBody
+
+// BulkMoveTriggersJSONRequestBody defines body for BulkMoveTriggers for application/json ContentType.
+type BulkMoveTriggersJSONRequestBody = MoveRequest
 
 // BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchUnits for application/merge-patch+json ContentType.
 type BulkPatchUnitsApplicationMergePatchPlusJSONRequestBody BulkPatchUnitsApplicationMergePatchPlusJSONBody

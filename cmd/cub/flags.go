@@ -22,6 +22,7 @@ var filter = ""
 // Shared by `run` and the function subcommands.
 var whereResource string
 var contains = ""
+var includeHidden = ""
 var verbose = false
 var quiet = false
 var jsonOutput = false
@@ -61,6 +62,34 @@ func enableFactFlag(cmd *cobra.Command) {
 
 func enableAllowExistsFlag(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&allowExists, "allow-exists", false, "Allow creation of resources that already exist")
+}
+
+// enableDryRunFlag adds --dry-run to a command that writes entities. The server makes the write,
+// with every check it involves, and then rolls it back, so what the command reports is what the
+// write would have done.
+func enableDryRunFlag(cmd *cobra.Command) {
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "report what the command would write, and write nothing")
+}
+
+// dryRunParam is the dry_run parameter of an entity write: set only with --dry-run.
+func dryRunParam() *bool {
+	if !dryRun {
+		return nil
+	}
+	dryRunValue := true
+	return &dryRunValue
+}
+
+// permissionFlag is --permission for the commands that declare no flag of their own for it;
+// space, component, target and worker do.
+var permissionFlag []string
+
+func enableCreatePermissionFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+}
+
+func enableUpdatePermissionFlag(cmd *cobra.Command) {
+	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 }
 
 func enableDeleteGateFlag(cmd *cobra.Command) {
@@ -271,6 +300,7 @@ func enableSelectFlag(cmd *cobra.Command) {
 
 func enableWhereFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&where, "where", "", "Filter expression using SQL-inspired syntax. Supports conjunctions with AND. String operators: =, !=, <, >, <=, >=, LIKE, NOT LIKE, ILIKE, ~~, !~~, ~, ~*, !~, !~*. Pattern matching with LIKE/ILIKE uses % and _ wildcards. Regex operators (~, ~*, !~, !~*) support POSIX regular expressions. A related entity is referenced by prefix, as in \"UpstreamUnit.Slug = 'base'\"; when the reference names a list, a * segment matches any element, as in \"FromLink.*.Slug = 'upgrade-app'\". Examples: \"Slug LIKE 'app-%'\", \"DisplayName ILIKE '%backend%'\", \"Slug ~ '^[a-z]+-[0-9]+$'\"")
+	enableIncludeHiddenFlag(cmd)
 }
 
 func enableFilterFlag(cmd *cobra.Command) {
@@ -279,6 +309,21 @@ func enableFilterFlag(cmd *cobra.Command) {
 
 func enableContainsFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&contains, "contains", "", "Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with --where using AND logic. Example: \"backend\" to find entities with backend in any searchable field")
+}
+
+// enableIncludeHiddenFlag goes with --where: whatever selects entities, to list or to act on,
+// leaves out hidden ones unless asked for them.
+func enableIncludeHiddenFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&includeHidden, "include-hidden", "", "Also select hidden entities, to list or to act on: those hidden for the given HiddenReasons, comma-separated, as in --include-hidden=BackingUnit, or for any reason when given no value or \"*\". ConfigHub/YAML Units, which hold the configuration of other entities, are hidden with the reason BackingUnit. A --where naming entities by Slug or ID selects them whether hidden or not")
+	cmd.Flags().Lookup("include-hidden").NoOptDefVal = "*"
+}
+
+// includeHiddenParam is the include_hidden parameter --include-hidden asks for, or nil.
+func includeHiddenParam() *string {
+	if includeHidden == "" {
+		return nil
+	}
+	return &includeHidden
 }
 
 // enableWaitFlagWithDefault allows setting a custom default for the wait flag
@@ -351,6 +396,13 @@ func addStandardListFlags(cmd *cobra.Command) {
 }
 
 func addStandardCreateFlags(cmd *cobra.Command) {
+	addCreateFlagsWithoutDryRun(cmd)
+	enableDryRunFlag(cmd)
+}
+
+// addCreateFlagsWithoutDryRun is addStandardCreateFlags for a create the identity provider holds,
+// which the server does not dry-run because a rollback cannot reach it.
+func addCreateFlagsWithoutDryRun(cmd *cobra.Command) {
 	enableAnnotationFlag(cmd)
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)
@@ -369,6 +421,7 @@ func addStandardUpdateFlags(cmd *cobra.Command) {
 	enableAnnotationFlag(cmd)
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)
+	enableDryRunFlag(cmd)
 	enableFromStdinFlag(cmd)
 	enableReplaceFlag(cmd)
 	enableFilenameFlag(cmd)

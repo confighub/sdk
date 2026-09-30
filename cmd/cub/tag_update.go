@@ -52,6 +52,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(tagUpdateCmd)
+	enableUpdatePermissionFlag(tagUpdateCmd)
 	tagUpdateCmd.Flags().BoolVar(&tagPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(tagUpdateCmd)
 	enableFilterFlag(tagUpdateCmd)
@@ -127,7 +128,7 @@ func runBulkTagUpdate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using BuildPatchData
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -138,10 +139,12 @@ func runBulkTagUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchTagsWithBodyWithResponse(
 		ctx,
@@ -149,8 +152,8 @@ func runBulkTagUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -202,7 +205,7 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			// No tag-specific fields to add
 		}
 
-		patchData, err := BuildPatchData(tagEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(tagEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -243,11 +246,14 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentTag.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentTag.SpaceID = spaceID
 
-	tagRes, err := cubClientNew.UpdateTagWithResponse(ctx, spaceID, currentTag.TagID, *currentTag)
+	tagRes, err := cubClientNew.UpdateTagWithResponse(ctx, spaceID, currentTag.TagID, &goclientnew.UpdateTagParams{DryRun: dryRunParam()}, *currentTag)
 	if cubapi.IsAPIError(err, tagRes) {
 		return cubapi.InterpretErrorGeneric(err, tagRes)
 	}
@@ -275,6 +281,7 @@ func patchTag(spaceID uuid.UUID, tagID uuid.UUID, patchData []byte) (*goclientne
 		ctx,
 		spaceID,
 		tagID,
+		&goclientnew.PatchTagParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

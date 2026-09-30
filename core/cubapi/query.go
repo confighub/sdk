@@ -170,6 +170,10 @@ type ListOpts struct {
 	Filter string
 	// Contains is a free-text search.
 	Contains string
+	// IncludeHidden returns hidden entities too: those hidden for the listed
+	// HiddenReasons (comma-separated), or for any reason with "*". A where
+	// clause naming entities by Slug or ID returns them hidden or not.
+	IncludeHidden string
 }
 
 func ptrIf(s string) *string {
@@ -200,11 +204,12 @@ func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with 
 		return nil, err
 	}
 	params := &goclientnew.ListAllUnitsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -225,11 +230,12 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 		return nil, err
 	}
 	params := &goclientnew.ListSpacesParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -247,11 +253,12 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListComponentsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListComponentsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -266,11 +273,12 @@ func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]
 		return nil, err
 	}
 	params := &goclientnew.ListAllTargetsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllTargetsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -285,11 +293,12 @@ func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([
 		return nil, err
 	}
 	params := &goclientnew.ListAllTriggersParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllTriggersWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -306,11 +315,12 @@ func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, wit
 		return nil, err
 	}
 	params := &goclientnew.ListAllFiltersParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -329,11 +339,12 @@ func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts)
 		return nil, err
 	}
 	params := &goclientnew.ListAllInvocationsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllInvocationsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -348,11 +359,12 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeSetsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllChangeSetsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -367,11 +379,12 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeOrdersParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllChangeOrdersWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -386,11 +399,12 @@ func ListChangeWorkflows(ctx context.Context, c *Client, where Where, opts ListO
 		return nil, err
 	}
 	params := &goclientnew.ListAllChangeWorkflowsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllChangeWorkflowsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -405,11 +419,12 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 		return nil, err
 	}
 	params := &goclientnew.ListAllTagsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllTagsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -424,11 +439,12 @@ func ListAttestations(ctx context.Context, c *Client, where Where, opts ListOpts
 		return nil, err
 	}
 	params := &goclientnew.ListAllAttestationsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllAttestationsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -443,11 +459,12 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		return nil, err
 	}
 	params := &goclientnew.ListAllViewsParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllViewsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -467,11 +484,12 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 		return nil, err
 	}
 	params := &goclientnew.ListAllResourcesParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	for _, fn := range with {
 		fn(params)
@@ -489,11 +507,12 @@ func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		return nil, err
 	}
 	params := &goclientnew.ListAllAttributesParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.ListAllAttributesWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -509,11 +528,12 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		return nil, err
 	}
 	params := &goclientnew.SearchListLinksParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	res, err := c.API.SearchListLinksWithResponse(ctx, params)
 	if IsAPIError(err, res) {
@@ -530,11 +550,12 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 		return nil, err
 	}
 	params := &goclientnew.ListAllBridgeWorkersParams{
-		Where:    ptrIf(where.String()),
-		Select:   ptrIf(opts.Select),
-		Include:  ptrIf(opts.Include),
-		Filter:   ptrIf(opts.Filter),
-		Contains: ptrIf(opts.Contains),
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
 	for _, fn := range with {
 		fn(params)

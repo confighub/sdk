@@ -69,7 +69,7 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	orgRes, err := cubClientNew.UpdateOrganizationWithResponse(ctx, currentOrganization.OrganizationID, *currentOrganization)
+	orgRes, err := cubClientNew.UpdateOrganizationWithResponse(ctx, currentOrganization.OrganizationID, &goclientnew.UpdateOrganizationParams{DryRun: dryRunParam()}, *currentOrganization)
 	if cubapi.IsAPIError(err, orgRes) {
 		return cubapi.InterpretErrorGeneric(err, orgRes)
 	}

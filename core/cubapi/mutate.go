@@ -50,6 +50,7 @@ type Selector struct {
 	ResourceType  string // e.g. "apps/v1/Deployment"
 	ToolchainType string // defaults to DefaultToolchainType
 	ExecutorSpace string // optional space whose worker/context executes functions
+	IncludeHidden string // also select hidden units: these HiddenReasons, comma-separated, or "*"
 }
 
 func (s Selector) toolchain() string {
@@ -190,6 +191,9 @@ func invoke(ctx context.Context, c *Client, sel Selector, ch Change, req goclien
 	params := &goclientnew.InvokeFunctionsOnOrgParams{}
 	if sel.Where != "" {
 		params.Where = &sel.Where
+	}
+	if sel.IncludeHidden != "" {
+		params.IncludeHidden = &sel.IncludeHidden
 	}
 	if sel.WhereData != "" {
 		params.WhereData = &sel.WhereData

@@ -101,9 +101,10 @@ func apiListAllTargets(where cubapi.Where, selectParam string, filterParam strin
 		return buildSelectList("Target", listColumnsFor("cub target list"), targetListInclude, defaultTargetColumns, targetAliases, targetCustomColumnDependencies, targetBaseSelectFields)
 	})
 	return cubapi.ListTargets(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  targetListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       targetListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

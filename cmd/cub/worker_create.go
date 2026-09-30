@@ -77,7 +77,7 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(workerCreatePermissions, workerDetails.Permissions)
+	err = applyPermissions(workerCreatePermissions, &workerDetails.Permissions)
 	if err != nil {
 		return err
 	}
@@ -117,6 +117,7 @@ func apiCreateWorker(details *goclientnew.BridgeWorker, spaceID uuid.UUID) (*goc
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	workerRes, err := cubClientNew.CreateBridgeWorkerWithResponse(ctx, spaceID, params, *details)
 	if cubapi.IsAPIError(err, workerRes) {
 		return nil, cubapi.InterpretErrorGeneric(err, workerRes)

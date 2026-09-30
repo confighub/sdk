@@ -76,6 +76,7 @@ var attributeCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(attributeCreateCmd)
+	enableCreatePermissionFlag(attributeCreateCmd)
 	attributeCreateCmd.Flags().StringVar(&attributeDescription, "description", "", "Description for the attribute")
 	enableWhereFlag(attributeCreateCmd)
 	enableFilterFlag(attributeCreateCmd)
@@ -87,6 +88,8 @@ func init() {
 	attributeCreateCmd.Flags().StringSliceVar(&attributeCreateArgs.attributeSlugs, "attribute", []string{}, "target specific attributes by slug or UUID for bulk create (can be repeated or comma-separated)")
 	attributeCreateCmd.Flags().StringVar(&attributeCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
+	addBackingUnitFlags(attributeCreateCmd, "Attribute", false, true)
+	addFromBackingUnitsFlags(attributeCreateCmd, "Attribute", true)
 	attributeCmd.AddCommand(attributeCreateCmd)
 }
 
@@ -102,7 +105,7 @@ func checkAttributeCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(attributeCreateArgs.destSpaces) == 0 && attributeCreateArgs.whereSpace == "" && len(attributeCreateArgs.namePrefixes) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(attributeCreateArgs.destSpaces) == 0 && attributeCreateArgs.whereSpace == "" && len(attributeCreateArgs.namePrefixes) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
 		}
 	} else if len(args) > 0 && len(args) < 3 && flagFilename == "" && !flagPopulateModelFromStdin {
@@ -156,6 +159,9 @@ func runSingleAttributeCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -176,11 +182,13 @@ func runSingleAttributeCreate(args []string) error {
 	}
 
 	params := &goclientnew.CreateAttributeParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	attrRes, err := cubClientNew.CreateAttributeWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, attrRes) {
 		return cubapi.InterpretErrorGeneric(err, attrRes)
@@ -210,7 +218,7 @@ func runBulkAttributeCreate() error {
 
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -219,6 +227,14 @@ func runBulkAttributeCreate() error {
 	params := &goclientnew.BulkCreateAttributesParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -256,14 +272,15 @@ func runBulkAttributeCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	bulkRes, err := cubClientNew.BulkCreateAttributesWithBodyWithResponse(
 		ctx,
 		params,
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	return handleBulkAttributeCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create", effectiveWhere)

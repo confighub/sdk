@@ -7,8 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -60,44 +58,16 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unit is in ChangeSet %s; use --changeset", currentUnit.Unit.ChangeSetID.String())
 	}
 
-	tmpFile, err := os.CreateTemp("", "*.yaml")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(tmpFile.Name())
 	currentData, err := fetchUnitData(currentUnit.Unit.SpaceID, currentUnit.Unit.UnitID)
 	if err != nil {
 		return err
 	}
 	currentContent := []byte(currentData)
-	_, err = tmpFile.Write(currentContent)
+	updatedContent, path, err := editInEditor(currentContent, "*.yaml")
 	if err != nil {
 		return err
 	}
-	err = tmpFile.Close()
-	if err != nil {
-		return err
-	}
-
-	editor := "vi"
-	if os.Getenv("EDITOR") != "" {
-		editor = os.Getenv("EDITOR")
-	}
-	vargs := strings.Split(editor, " ")
-	vargs = append(vargs, tmpFile.Name())
-	// Command to run the vi editor with the filename as argument
-	c := exec.Command(vargs[0], vargs[1:]...)
-
-	// Set the standard input, output, and error to the same as the current process
-	c.Stdin = os.Stdin
-	c.Stdout = os.Stdout
-	c.Stderr = os.Stderr
-	// Start the command and wait for it to exit
-	_ = c.Run()
-	updatedContent, err := os.ReadFile(tmpFile.Name())
-	if err != nil {
-		return err
-	}
+	defer os.Remove(path)
 
 	if bytes.Equal(currentContent, updatedContent) {
 		fmt.Println("No changes made")

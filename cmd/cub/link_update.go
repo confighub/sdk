@@ -112,6 +112,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(linkUpdateCmd)
+	enableUpdatePermissionFlag(linkUpdateCmd)
 	enableWaitFlag(linkUpdateCmd)
 	addLinkFieldFlags(linkUpdateCmd)
 	linkUpdateCmd.Flags().BoolVar(&linkPatch, "patch", false, "use patch API for individual or bulk operations")
@@ -119,6 +120,8 @@ func init() {
 	enableWhereFlag(linkUpdateCmd)
 	enableFilterFlag(linkUpdateCmd)
 	linkUpdateCmd.Flags().StringSliceVar(&linkIdentifiers, "link", []string{}, "target specific links by slug or UUID for bulk patch (can be repeated or comma-separated)")
+	addBackingUnitFlags(linkUpdateCmd, "Link", false, false)
+	addFromBackingUnitsFlags(linkUpdateCmd, "Link", false)
 	linkCmd.AddCommand(linkUpdateCmd)
 }
 
@@ -246,8 +249,9 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		return err
 	}
 
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
-		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse &&
+		!backingUnitArgs.withBackingUnits {
+		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, --permission, --reverse, --with-backing-units, or link field flags")
 	}
 
 	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkIdentifiers, where, selectedSpaceID)
@@ -256,7 +260,7 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 	}
 
 	// Build patch data using consolidated function with link-specific field enhancer
-	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
+	patchJSON, err := BuildPatchDataWithPermissions(linkFieldsEnhancer(cmd), permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -275,10 +279,14 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	res, err := cubClientNew.BulkPatchLinksWithBodyWithResponse(
 		ctx,
@@ -286,8 +294,8 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
 	// Handle the response
@@ -330,7 +338,7 @@ func runBulkLinkMakeCurrent(cmd *cobra.Command, effectiveWhere, filterID string)
 			}
 		}
 
-		patchData, err := BuildPatchData(withMakeCurrentPointers(linkFieldsEnhancer(cmd), upstream, downstream))
+		patchData, err := BuildPatchDataWithPermissions(withMakeCurrentPointers(linkFieldsEnhancer(cmd), upstream, downstream), permissionFlag)
 		if err != nil {
 			return err
 		}
@@ -339,7 +347,7 @@ func runBulkLinkMakeCurrent(cmd *cobra.Command, effectiveWhere, filterID string)
 			ctx,
 			link.SpaceID,
 			link.LinkID,
-			&goclientnew.PatchLinkParams{},
+			&goclientnew.PatchLinkParams{DryRun: dryRunParam()},
 			"application/merge-patch+json",
 			bytes.NewReader(patchData),
 		)
@@ -431,14 +439,18 @@ func runSameSpaceLinkPatchReverse(linkIDs []uuid.UUID, patchJSON []byte) error {
 		Include: &include,
 		Reverse: &rev,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
+	params.DryRun = dryRunParam()
 	res, err := cubClientNew.BulkPatchLinksWithBodyWithResponse(
 		ctx,
 		params,
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
 	}
 	return handleBulkLinkUpdateResponse(res.JSON200, res.JSON207, res.StatusCode(), "update", ssWhere)
 }
@@ -521,8 +533,8 @@ func successfullyReversedSourceIDs(res *goclientnew.BulkCreateLinksResponse) []u
 }
 
 func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
-		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, --reverse, or link field flags")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
+		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, --permission, --reverse, or link field flags")
 	}
 
 	// Get the current link for space and link ID
@@ -544,7 +556,7 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 		}
 		enhancer = withMakeCurrentPointers(enhancer, upstream, downstream)
 	}
-	patchData, err := BuildPatchData(enhancer)
+	patchData, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -560,6 +572,7 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	if linkReverse {
 		params.Reverse = &linkReverse
 	}
+	params.DryRun = dryRunParam()
 	res, err := cubClientNew.PatchLinkWithBodyWithResponse(
 		ctx,
 		spaceID,
@@ -650,6 +663,9 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentLink.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&currentLink.DeleteGates)
 	if err != nil {
 		return err
@@ -689,7 +705,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			makeCurrentPointers(fromUnit.Unit, toUnit.Unit)
 	}
 
-	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, *currentLink)
+	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, &goclientnew.UpdateLinkParams{DryRun: dryRunParam()}, *currentLink)
 	if cubapi.IsAPIError(err, linkRes) {
 		return cubapi.InterpretErrorGeneric(err, linkRes)
 	}

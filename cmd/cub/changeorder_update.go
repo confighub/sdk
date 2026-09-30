@@ -88,6 +88,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(changeorderUpdateCmd)
+	enableUpdatePermissionFlag(changeorderUpdateCmd)
 	changeorderUpdateCmd.Flags().BoolVar(&changeorderPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(changeorderUpdateCmd)
 	enableFilterFlag(changeorderUpdateCmd)
@@ -255,7 +256,7 @@ func runBulkChangeOrderUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -266,6 +267,7 @@ func runBulkChangeOrderUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -273,6 +275,7 @@ func runBulkChangeOrderUpdate() error {
 		params.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchChangeOrdersWithBodyWithResponse(
 		ctx,
@@ -280,8 +283,8 @@ func runBulkChangeOrderUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -333,7 +336,7 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			addChangeOrderAbortedReasonToPatch(patchData)
 		}
 
-		patchData, err := BuildPatchData(changeorderEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(changeorderEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -374,6 +377,9 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentChangeOrder.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentChangeOrder.SpaceID = spaceID
@@ -411,6 +417,7 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if changeorderUpdateArgs.refreshSpaces {
 		updateParams.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
 	}
+	updateParams.DryRun = dryRunParam()
 	changeorderRes, err := cubClientNew.UpdateChangeOrderWithResponse(ctx, spaceID, currentChangeOrder.ChangeOrderID, updateParams, *currentChangeOrder)
 	if cubapi.IsAPIError(err, changeorderRes) {
 		return cubapi.InterpretErrorGeneric(err, changeorderRes)
@@ -439,6 +446,7 @@ func patchChangeOrder(spaceID uuid.UUID, changeorderID uuid.UUID, patchData []by
 	if changeorderUpdateArgs.refreshSpaces {
 		patchParams.RefreshSpaces = &changeorderUpdateArgs.refreshSpaces
 	}
+	patchParams.DryRun = dryRunParam()
 	changeorderRes, err := cubClientNew.PatchChangeOrderWithBodyWithResponse(
 		ctx,
 		spaceID,

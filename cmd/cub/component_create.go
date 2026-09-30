@@ -50,6 +50,7 @@ func init() {
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions and releases may use (can be repeated or comma-separated)")
 	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
+	addBackingUnitFlags(componentCreateCmd, "Component", true, true)
 	componentCmd.AddCommand(componentCreateCmd)
 }
 
@@ -110,10 +111,7 @@ func componentCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := setDeleteGates(&newBody.DeleteGates); err != nil {
 		return err
 	}
-	if len(componentCreateArgs.permissions) > 0 && newBody.Permissions == nil {
-		newBody.Permissions = &goclientnew.Permissions{}
-	}
-	if err := parsePermissions(componentCreateArgs.permissions, newBody.Permissions); err != nil {
+	if err := applyPermissions(componentCreateArgs.permissions, &newBody.Permissions); err != nil {
 		return err
 	}
 
@@ -139,10 +137,13 @@ func componentCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	params := &goclientnew.CreateComponentParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.BackingUnitSpace = backingUnitSpaceParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
+	params.DryRun = dryRunParam()
 	componentRes, err := cubClientNew.CreateComponentWithResponse(ctx, params, *newBody)
 	if cubapi.IsAPIError(err, componentRes) {
 		return cubapi.InterpretErrorGeneric(err, componentRes)

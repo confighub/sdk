@@ -133,6 +133,7 @@ var changeorderCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(changeorderCreateCmd)
+	enableCreatePermissionFlag(changeorderCreateCmd)
 	enableWhereFlag(changeorderCreateCmd)
 	enableFilterFlag(changeorderCreateCmd)
 
@@ -358,6 +359,9 @@ func runSingleChangeOrderCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -469,6 +473,7 @@ func runSingleChangeOrderCreate(args []string) error {
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	changeorderRes, err := cubClientNew.CreateChangeOrderWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, changeorderRes) {
 		return cubapi.InterpretErrorGeneric(err, changeorderRes)
@@ -553,7 +558,7 @@ func runBulkChangeOrderCreate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -564,6 +569,7 @@ func runBulkChangeOrderCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -616,6 +622,7 @@ func runBulkChangeOrderCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateChangeOrdersWithBodyWithResponse(
 		ctx,
@@ -623,8 +630,8 @@ func runBulkChangeOrderCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

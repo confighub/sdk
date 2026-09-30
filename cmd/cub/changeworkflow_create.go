@@ -149,6 +149,7 @@ var changeworkflowCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(changeworkflowCreateCmd)
+	enableCreatePermissionFlag(changeworkflowCreateCmd)
 	enableWhereFlag(changeworkflowCreateCmd)
 	enableFilterFlag(changeworkflowCreateCmd)
 
@@ -165,6 +166,8 @@ func init() {
 	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original ChangeWorkflow and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	changeworkflowCreateCmd.Flags().StringVar(&changeworkflowCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
+	addBackingUnitFlags(changeworkflowCreateCmd, "ChangeWorkflow", false, true)
+	addFromBackingUnitsFlags(changeworkflowCreateCmd, "ChangeWorkflow", true)
 	changeworkflowCmd.AddCommand(changeworkflowCreateCmd)
 }
 
@@ -182,7 +185,7 @@ func checkChangeWorkflowCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(changeworkflowCreateArgs.destSpaces) == 0 && changeworkflowCreateArgs.whereSpace == "" && len(changeworkflowCreateArgs.namePrefixes) == 0 && len(changeworkflowCreateArgs.variantLabels) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(changeworkflowCreateArgs.destSpaces) == 0 && changeworkflowCreateArgs.whereSpace == "" && len(changeworkflowCreateArgs.namePrefixes) == 0 && len(changeworkflowCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
 		}
 
@@ -319,6 +322,9 @@ func runSingleChangeWorkflowCreate(args []string) error {
 	if err := setLabels(&newBody.Labels); err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	if err := setDeleteGates(&newBody.DeleteGates); err != nil {
 		return err
 	}
@@ -341,11 +347,13 @@ func runSingleChangeWorkflowCreate(args []string) error {
 	}
 
 	params := &goclientnew.CreateChangeWorkflowParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	changeWorkflowRes, err := cubClientNew.CreateChangeWorkflowWithResponse(ctx, spaceID, params, *newBody)
 	if cubapi.IsAPIError(err, changeWorkflowRes) {
 		return cubapi.InterpretErrorGeneric(err, changeWorkflowRes)
@@ -380,7 +388,7 @@ func runBulkChangeWorkflowCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -390,6 +398,14 @@ func runBulkChangeWorkflowCreate() error {
 	params := &goclientnew.BulkCreateChangeWorkflowsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -443,6 +459,7 @@ func runBulkChangeWorkflowCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateChangeWorkflowsWithBodyWithResponse(
 		ctx,
@@ -450,8 +467,8 @@ func runBulkChangeWorkflowCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	return handleBulkChangeWorkflowCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create", effectiveWhere)

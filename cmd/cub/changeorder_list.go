@@ -180,9 +180,10 @@ func apiListAllChangeOrders(where cubapi.Where, selectParam string, filterParam 
 		return buildSelectList("ChangeOrder", listColumnsFor("cub changeorder list"), changeorderListInclude, defaultChangeOrderColumns, changeorderAliases, changeorderCustomColumnDependencies, changeorderBaseSelectFields)
 	})
 	return cubapi.ListChangeOrders(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  changeorderListInclude,
-		Filter:   filterParam,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       changeorderListInclude,
+		Filter:        filterParam,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	})
 }

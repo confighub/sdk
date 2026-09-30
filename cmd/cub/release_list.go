@@ -123,6 +123,9 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	if selectValue := releaseSelectValue(selectParam, ""); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
@@ -146,6 +149,9 @@ func apiSearchListReleases(whereFilter string, selectParam string, filterParam s
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
 	}
 	if selectValue := releaseSelectValue(selectParam, ""); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue

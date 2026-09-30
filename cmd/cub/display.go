@@ -447,7 +447,11 @@ type DeleteConstraint interface {
 func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
 	alt := isAlternativeOutput()
 	if !quiet && !alt {
-		tprint("Successfully created %s %s (%s)", entityName, slug, id)
+		if dryRun {
+			tprint("Dry run: would create %s %s", entityName, slug)
+		} else {
+			tprint("Successfully created %s %s (%s)", entityName, slug, id)
+		}
 	}
 	if verbose {
 		display(entity)
@@ -458,7 +462,11 @@ func displayCreateResults[Entity ModelConstraint](entity *Entity, entityName, sl
 func displayUpdateResults[Entity ModelConstraint](entity *Entity, entityName, slug, id string, display func(entity *Entity)) {
 	alt := isAlternativeOutput()
 	if !quiet && !alt {
-		tprint("Successfully updated %s %s (%s)", entityName, slug, id)
+		if dryRun {
+			tprint("Dry run: would update %s %s (%s)", entityName, slug, id)
+		} else {
+			tprint("Successfully updated %s %s (%s)", entityName, slug, id)
+		}
 	}
 	if verbose {
 		display(entity)
@@ -621,7 +629,11 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 		// Display verbose success messages
 		if verbose && len(successNames) > 0 {
 			for _, name := range successNames {
-				fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, name)
+				if dryRun {
+					fmt.Printf("Would %s %s: %s\n", operationName, entityName, name)
+				} else {
+					fmt.Printf("Successfully %sd %s: %s\n", operationName, entityName, name)
+				}
 			}
 		}
 
@@ -632,7 +644,11 @@ func displayBulkGenericCreateOrUpdateResults[T any](
 		}
 
 		// Display summary
-		fmt.Printf("\nBulk %s operation completed:\n", operationName)
+		if dryRun {
+			fmt.Printf("\nBulk %s dry run completed; nothing was written:\n", operationName)
+		} else {
+			fmt.Printf("\nBulk %s operation completed:\n", operationName)
+		}
 		fmt.Printf("  Success: %d %s(s)\n", successCount, entityName)
 		if failureCount > 0 {
 			fmt.Printf("  Failed: %d %s(s)\n", failureCount, entityName)

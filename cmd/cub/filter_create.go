@@ -81,26 +81,29 @@ Bulk Create Examples:
 }
 
 var filterCreateArgs struct {
-	destSpaces    []string
-	whereSpace    string
-	namePrefixes  []string
-	filterSlugs   []string
-	whereField    string
-	whereData     string
-	resourceType  string
-	fromSpace     string
-	filterSpace   string
-	variantLabels []string
-	namePattern   string
+	destSpaces         []string
+	whereSpace         string
+	namePrefixes       []string
+	filterSlugs        []string
+	whereField         string
+	includeHiddenField string
+	whereData          string
+	resourceType       string
+	fromSpace          string
+	filterSpace        string
+	variantLabels      []string
+	namePattern        string
 }
 
 func init() {
 	addStandardCreateFlags(filterCreateCmd)
+	enableCreatePermissionFlag(filterCreateCmd)
 	enableWhereFlag(filterCreateCmd)
 	enableFilterFlag(filterCreateCmd)
 
 	// Single create specific flags
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereField, "where-field", "", "where expression for the filter entity")
+	filterCreateCmd.Flags().StringVar(&filterCreateArgs.includeHiddenField, "include-hidden-field", "", "HiddenReasons, comma-separated, or \"*\" for any: where the filter is applied to a list or a bulk operation, it also selects entities hidden for those reasons")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.whereData, "where-data", "", "where filter expression for configuration data (valid only for Units)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.resourceType, "resource-type", "", "resource type to match (e.g., apps/v1/Deployment, valid only for Units)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.fromSpace, "from-space", "", "space to filter within (slug or UUID, only relevant for spaced entity types)")
@@ -114,6 +117,8 @@ func init() {
 	filterCreateCmd.Flags().StringSliceVar(&filterCreateArgs.filterSlugs, "filter-entity", []string{}, "target specific filters by slug or UUID for bulk create (can be repeated or comma-separated)")
 	filterCreateCmd.Flags().StringVar(&filterCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
+	addBackingUnitFlags(filterCreateCmd, "Filter", false, true)
+	addFromBackingUnitsFlags(filterCreateCmd, "Filter", true)
 	filterCmd.AddCommand(filterCreateCmd)
 }
 
@@ -132,7 +137,7 @@ func checkFilterCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(filterCreateArgs.destSpaces) == 0 && filterCreateArgs.whereSpace == "" && len(filterCreateArgs.namePrefixes) == 0 && len(filterCreateArgs.variantLabels) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(filterCreateArgs.destSpaces) == 0 && filterCreateArgs.whereSpace == "" && len(filterCreateArgs.namePrefixes) == 0 && len(filterCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
 		}
 
@@ -210,6 +215,9 @@ func runSingleFilterCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -227,6 +235,9 @@ func runSingleFilterCreate(args []string) error {
 	if filterCreateArgs.whereField != "" {
 		newBody.Where = filterCreateArgs.whereField
 	}
+	if filterCreateArgs.includeHiddenField != "" {
+		newBody.IncludeHidden = filterCreateArgs.includeHiddenField
+	}
 	if filterCreateArgs.whereData != "" {
 		newBody.WhereData = filterCreateArgs.whereData
 	}
@@ -243,11 +254,13 @@ func runSingleFilterCreate(args []string) error {
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateFilterParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	filterRes, err := cubClientNew.CreateFilterWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, filterRes) {
 		return cubapi.InterpretErrorGeneric(err, filterRes)
@@ -293,6 +306,9 @@ func runBulkFilterCreate() error {
 		if filterCreateArgs.whereField != "" {
 			patchMap["Where"] = filterCreateArgs.whereField
 		}
+		if filterCreateArgs.includeHiddenField != "" {
+			patchMap["IncludeHidden"] = filterCreateArgs.includeHiddenField
+		}
 		if filterCreateArgs.whereData != "" {
 			patchMap["WhereData"] = filterCreateArgs.whereData
 		}
@@ -305,7 +321,7 @@ func runBulkFilterCreate() error {
 	}
 
 	// Build patch data using consolidated function (no entity-specific fields for filter)
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -315,6 +331,14 @@ func runBulkFilterCreate() error {
 	params := &goclientnew.BulkCreateFiltersParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -368,6 +392,7 @@ func runBulkFilterCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateFiltersWithBodyWithResponse(
 		ctx,
@@ -375,8 +400,8 @@ func runBulkFilterCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

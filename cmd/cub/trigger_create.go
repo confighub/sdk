@@ -124,6 +124,7 @@ var triggerCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(triggerCreateCmd)
+	enableCreatePermissionFlag(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ValidationWarnings instead of ValidationErrors")
 	addTriggerClearanceFlag(triggerCreateCmd)
@@ -141,12 +142,14 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerCreateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
-	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit", "", "filter expression to restrict which Units this trigger applies to")
+	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit)")
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
 	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum)")
 
+	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
+	addFromBackingUnitsFlags(triggerCreateCmd, "Trigger", true)
 	triggerCmd.AddCommand(triggerCreateCmd)
 }
 
@@ -164,7 +167,7 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(triggerCreateArgs.destSpaces) == 0 && triggerCreateArgs.whereSpace == "" && len(triggerCreateArgs.namePrefixes) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(triggerCreateArgs.destSpaces) == 0 && triggerCreateArgs.whereSpace == "" && len(triggerCreateArgs.namePrefixes) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
 		}
 	} else {
@@ -233,6 +236,9 @@ func runSingleTriggerCreate(args []string) error {
 	}
 	err = setLabels(&newBody.Labels)
 	if err != nil {
+		return err
+	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
 		return err
 	}
 	err = setDeleteGates(&newBody.DeleteGates)
@@ -328,11 +334,13 @@ func runSingleTriggerCreate(args []string) error {
 	}
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateTriggerParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, triggerRes) {
 		return cubapi.InterpretErrorGeneric(err, triggerRes)
@@ -366,7 +374,7 @@ func runBulkTriggerCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for trigger)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -376,6 +384,14 @@ func runBulkTriggerCreate() error {
 	params := &goclientnew.BulkCreateTriggersParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -418,6 +434,7 @@ func runBulkTriggerCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateTriggersWithBodyWithResponse(
 		ctx,
@@ -425,8 +442,8 @@ func runBulkTriggerCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

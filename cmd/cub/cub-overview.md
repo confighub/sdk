@@ -157,6 +157,7 @@ The following flags are deprecated in favor of `-o` / `--show` / the new subcomm
 - `--label`: Add a label or list of labels, comma-separated, using key=value syntax. Applies to `create` and `update`.
 - `--filename`: Read the JSON or YAML entity body from a file, URL, or standard input. Applies to `create` and `update`.
 - `--patch`: Use the PATCH API rather than PUT (Update). Applies to `update`.
+- `--dry-run`: Report what the command would write, and write nothing. The server makes the write, with every check it involves, and then rolls it back, so a dry run fails where the write would. Applies to `create` and `update`, single and bulk, except organization and organization-member create. A dry-run `unit create` with configuration tries only the create, since the configuration is written to the unit afterwards.
 - `--wait`: Wait for completion of asynchronous operations. Applies to unit and link create, update, apply, destroy, and refresh.
 
 ## Sample commands

@@ -83,6 +83,7 @@ Bulk Create (Copy) Examples:
 
 func init() {
 	addStandardCreateFlags(linkCreateCmd)
+	enableCreatePermissionFlag(linkCreateCmd)
 	enableWaitFlag(linkCreateCmd)
 	addLinkFieldFlags(linkCreateCmd)
 
@@ -93,16 +94,24 @@ func init() {
 	linkCreateCmd.Flags().BoolVar(&linkCreateArgs.reverse, "reverse", false, "swap FromUnit and ToUnit directions of copied links (for cross-space link reversal)")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.fromDownstreamWhere, "from-downstream-where", "", "where expression to find downstream UpgradeUnit links from each source link's FromUnit; creates one copy per match")
 	linkCreateCmd.Flags().StringVar(&linkCreateArgs.toDownstreamWhere, "to-downstream-where", "", "where expression to find downstream UpgradeUnit link from each source link's ToUnit; exactly one match required")
+	addBackingUnitFlags(linkCreateCmd, "Link", false, true)
+	addFromBackingUnitsFlags(linkCreateCmd, "Link", true)
 
 	linkCmd.AddCommand(linkCreateCmd)
 }
 
 func checkLinkCreateConflictingArgs(cmd *cobra.Command, args []string) (bool, error) {
 	// Determine if bulk create mode: no positional args and has bulk-specific flags
-	hasBulkFlags := where != "" || filter != "" || len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != ""
+	hasBulkFlags := where != "" || filter != "" || len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != "" ||
+		backingUnitArgs.fromBackingUnits
 	isBulkCreateMode := len(args) == 0 && hasBulkFlags
 
-	if isBulkCreateMode {
+	if isBulkCreateMode && backingUnitArgs.fromBackingUnits {
+		// The Links are made from Units, not copied from Links.
+		if len(linkCreateArgs.linkSlugs) > 0 || linkCreateArgs.reverse || linkCreateArgs.fromDownstreamWhere != "" || linkCreateArgs.toDownstreamWhere != "" {
+			return false, errors.New("--from-backing-units creates links from units; it takes none of --link, --reverse, --from-downstream-where and --to-downstream-where")
+		}
+	} else if isBulkCreateMode {
 		// Validate bulk create requirements
 		if len(linkCreateArgs.linkSlugs) > 0 && (where != "" || filter != "") {
 			return false, errors.New("--link and --where/--filter flags are mutually exclusive")
@@ -185,6 +194,9 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newLink.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newLink.DeleteGates)
 	if err != nil {
 		return err
@@ -234,18 +246,20 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateLinkParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), params, *newLink)
 	if cubapi.IsAPIError(err, linkRes) {
 		return cubapi.InterpretErrorGeneric(err, linkRes)
 	}
 	linkDetails := linkRes.JSON200
 	displayCreateResults(linkDetails, "link", linkDetails.Slug, linkDetails.LinkID.String(), displayLinkDetails)
-	if wait {
+	if wait && !dryRun {
 		if !quiet {
 			tprint("Awaiting triggers...")
 		}
@@ -262,13 +276,16 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 }
 
 func runBulkLinkCreate(cmd *cobra.Command) error {
+	if backingUnitArgs.fromBackingUnits {
+		return runLinkCreateFromBackingUnits(cmd)
+	}
 	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkCreateArgs.linkSlugs, where, selectedSpaceID)
 	if err != nil {
 		return err
 	}
 
 	// Build patch data using consolidated function with link-specific field enhancer
-	patchJSON, err := BuildPatchData(linkFieldsEnhancer(cmd))
+	patchJSON, err := BuildPatchDataWithPermissions(linkFieldsEnhancer(cmd), permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -299,6 +316,32 @@ func runBulkLinkCreate(cmd *cobra.Command) error {
 		fmt.Sprintf("where: %s, reverse: %v, from_downstream_where: %s", where, linkCreateArgs.reverse, linkCreateArgs.fromDownstreamWhere))
 }
 
+// runLinkCreateFromBackingUnits creates a link from each ConfigHub/YAML unit --where-unit,
+// --filter-unit and --space select that describes one, with the unit as its backing unit.
+func runLinkCreateFromBackingUnits(cmd *cobra.Command) error {
+	patchJSON, err := BuildPatchDataWithPermissions(linkFieldsEnhancer(cmd), permissionFlag)
+	if err != nil {
+		return err
+	}
+	params := &goclientnew.BulkCreateLinksParams{FromBackingUnits: fromBackingUnitsParam()}
+	params.IncludeHidden = includeHiddenParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if allowExists {
+		s := "true"
+		params.AllowExists = &s
+	}
+	params.DryRun = dryRunParam()
+	bulkRes, err := cubClientNew.BulkCreateLinksWithBodyWithResponse(ctx, params, "application/merge-patch+json",
+		bytes.NewReader(patchJSON))
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
+	}
+	return handleBulkLinkUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "create",
+		fmt.Sprintf("from backing units: %s", backingUnitArgs.whereUnit))
+}
+
 // callBulkCreateLinks issues a BulkCreateLinks API call. Source links are
 // selected via effectiveWhere/filterID; retargeting is controlled by reverse
 // and the optional downstream-where expressions. Used by both runBulkLinkCreate
@@ -311,6 +354,7 @@ func callBulkCreateLinks(
 	allowExistsFlag bool,
 ) (*goclientnew.BulkCreateLinksResponse, error) {
 	params := &goclientnew.BulkCreateLinksParams{}
+	params.IncludeHidden = includeHiddenParam()
 	if allowExistsFlag {
 		s := "true"
 		params.AllowExists = &s
@@ -331,6 +375,8 @@ func callBulkCreateLinks(
 	if toDownstreamWhere != "" {
 		params.ToDownstreamWhere = &toDownstreamWhere
 	}
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.DryRun = dryRunParam()
 	return cubClientNew.BulkCreateLinksWithBodyWithResponse(
 		ctx,
 		params,

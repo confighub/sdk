@@ -214,6 +214,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(unitUpdateCmd)
+	enableUpdatePermissionFlag(unitUpdateCmd)
 	enableDestroyGateFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringVar(&changeDescription, "change-desc", "", "change description")
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
@@ -222,7 +223,6 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
-	unitUpdateCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: return changed unit(s) but don't update configuration data")
 	unitUpdateCmd.Flags().BoolVar(&isUpgrade, "upgrade", false, "upgrade the unit to the latest version of its upstream unit")
 	unitUpdateCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
 	addClearanceFlag(unitUpdateCmd)
@@ -310,8 +310,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --delete-gate, --destroy-gate, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && len(permissionFlag) == 0 && changesetSlug == "" {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --delete-gate, --destroy-gate, --permission, or --changeset"))
 		}
 	}
 
@@ -494,7 +494,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 		// Build patch data using consolidated function. It reads from stdin/file and sets labels, if any.
-		patchData, err = BuildPatchData(enhancer)
+		patchData, err = BuildPatchDataWithPermissions(enhancer, permissionFlag)
 		if err != nil {
 			return err
 		}
@@ -525,6 +525,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		err = setLabels(&currentUnit.Labels)
 		if err != nil {
+			return err
+		}
+		if err := setPermissions(&currentUnit.Permissions); err != nil {
 			return err
 		}
 		err = setDeleteGates(&currentUnit.DeleteGates)
@@ -849,6 +852,7 @@ func runBulkUnitUpdate() error {
 	params := &goclientnew.BulkPatchUnitsParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -896,7 +900,7 @@ func runBulkUnitUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchData, err := BuildPatchData(enhancer)
+	patchData, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -1162,8 +1166,9 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 		return fmt.Errorf("no response data received")
 	}
 
-	// Wait for triggers BEFORE calling the generic display function
-	if wait {
+	// Wait for triggers BEFORE calling the generic display function. A dry run wrote nothing to
+	// wait for, and a unit it would have created does not exist.
+	if wait && !dryRun {
 		successfulUnits := []*goclientnew.Unit{}
 		for _, resp := range *responses {
 			if resp.Error == nil && resp.Unit != nil {

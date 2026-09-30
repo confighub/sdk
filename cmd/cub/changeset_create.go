@@ -76,6 +76,7 @@ var changesetCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(changesetCreateCmd)
+	enableCreatePermissionFlag(changesetCreateCmd)
 	enableWhereFlag(changesetCreateCmd)
 	enableFilterFlag(changesetCreateCmd)
 
@@ -188,6 +189,9 @@ func runSingleChangeSetCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -210,6 +214,7 @@ func runSingleChangeSetCreate(args []string) error {
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	changesetRes, err := cubClientNew.CreateChangeSetWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, changesetRes) {
 		return cubapi.InterpretErrorGeneric(err, changesetRes)
@@ -251,7 +256,7 @@ func runBulkChangeSetCreate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -262,6 +267,7 @@ func runBulkChangeSetCreate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -314,6 +320,7 @@ func runBulkChangeSetCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateChangeSetsWithBodyWithResponse(
 		ctx,
@@ -321,8 +328,8 @@ func runBulkChangeSetCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

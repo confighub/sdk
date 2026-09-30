@@ -128,6 +128,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	params := &goclientnew.InvokeFunctionsParams{
 		Where: &whereClause,
 	}
+	params.IncludeHidden = includeHiddenParam()
 
 	// Invoke the function.
 	funcRes, err := cubClientNew.InvokeFunctionsWithResponse(ctx, unit.Unit.SpaceID, params, req)

@@ -80,6 +80,7 @@ func init() {
 	enableLabelFlag(releasePublishCmd)
 	enableAnnotationFlag(releasePublishCmd)
 	enableDeleteGateFlag(releasePublishCmd)
+	enableCreatePermissionFlag(releasePublishCmd)
 	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. Units without a matching tagged Revision fall back to their head Revision.")
 	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
 	releaseCmd.AddCommand(releasePublishCmd)
@@ -107,6 +108,9 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if err := setDeleteGates(&body.DeleteGates); err != nil {
+		return err
+	}
+	if err := setPermissions(&body.Permissions); err != nil {
 		return err
 	}
 

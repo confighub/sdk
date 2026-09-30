@@ -69,7 +69,7 @@ func init() {
 	// Bulk create specific flags
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	spaceCreateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk create (can be repeated or comma-separated)")
-	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space; with neither it nor a trigger filter, the Triggers in the Space are (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of")
@@ -79,6 +79,8 @@ func init() {
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Space and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	enableWhereFlag(spaceCreateCmd)
 	enableFilterFlag(spaceCreateCmd)
+	addBackingUnitFlags(spaceCreateCmd, "Space", true, true)
+	addFromBackingUnitsFlags(spaceCreateCmd, "Space", true)
 	spaceCmd.AddCommand(spaceCreateCmd)
 }
 
@@ -92,7 +94,11 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--space and --where flags are mutually exclusive")
 		}
 
-		if len(spaceCreateArgs.namePrefixes) == 0 && len(spaceCreateArgs.variantLabels) == 0 {
+		if backingUnitArgs.fromBackingUnits && len(spaceIdentifiers) > 0 {
+			return false, errors.New("--space names spaces to clone; --from-backing-units selects the Units to create spaces from with --where-unit and --filter-unit")
+		}
+
+		if !backingUnitArgs.fromBackingUnits && len(spaceCreateArgs.namePrefixes) == 0 && len(spaceCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires --name-prefix or --variant-labels")
 		}
 
@@ -170,7 +176,7 @@ func runSingleSpaceCreate(args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(spaceCreateArgs.permissions, newBody.Permissions)
+	err = applyPermissions(spaceCreateArgs.permissions, &newBody.Permissions)
 	if err != nil {
 		return err
 	}
@@ -224,11 +230,14 @@ func runSingleSpaceCreate(args []string) error {
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateSpaceParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.BackingUnitSpace = backingUnitSpaceParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	spaceRes, err := cubClientNew.CreateSpaceWithResponse(ctx, params, *newBody)
 	if cubapi.IsAPIError(err, spaceRes) {
 		return cubapi.InterpretErrorGeneric(err, spaceRes)
@@ -333,6 +342,15 @@ func runBulkSpaceCreate() error {
 	params := &goclientnew.BulkCreateSpacesParams{
 		Where: &effectiveWhere,
 	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(""); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
+	}
+	params.BackingUnitSpace = backingUnitSpaceParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -377,6 +395,7 @@ func runBulkSpaceCreate() error {
 // merge-patch body, returning the responses and the HTTP status code (200 or 207).
 // Shared by `space create` bulk mode and `variant create`.
 func bulkCreateSpaces(params *goclientnew.BulkCreateSpacesParams, patchJSON []byte) ([]goclientnew.SpaceCreateOrUpdateResponse, int, error) {
+	params.DryRun = dryRunParam()
 	bulkRes, err := cubClientNew.BulkCreateSpacesWithBodyWithResponse(
 		ctx,
 		params,

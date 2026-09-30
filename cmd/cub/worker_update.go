@@ -139,7 +139,7 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(workerUpdatePermissions, currentBridgeworker.Permissions)
+	err = applyPermissions(workerUpdatePermissions, &currentBridgeworker.Permissions)
 	if err != nil {
 		return err
 	}
@@ -151,7 +151,7 @@ func bridgeworkerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentBridgeworker.SpaceID = spaceID
 
-	bridgeWorkerRes, err := cubClientNew.UpdateBridgeWorkerWithResponse(ctx, spaceID, currentBridgeworker.BridgeWorkerID, *currentBridgeworker)
+	bridgeWorkerRes, err := cubClientNew.UpdateBridgeWorkerWithResponse(ctx, spaceID, currentBridgeworker.BridgeWorkerID, &goclientnew.UpdateBridgeWorkerParams{DryRun: dryRunParam()}, *currentBridgeworker)
 	if cubapi.IsAPIError(err, bridgeWorkerRes) {
 		return cubapi.InterpretErrorGeneric(err, bridgeWorkerRes)
 	}
@@ -180,7 +180,7 @@ func workerIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 		return errors.New("no updates specified")
 	}
 
-	workerRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, spaceID, currentWorker.BridgeWorkerID, "application/merge-patch+json", bytes.NewReader(patchJSON))
+	workerRes, err := cubClientNew.PatchBridgeWorkerWithBodyWithResponse(ctx, spaceID, currentWorker.BridgeWorkerID, &goclientnew.PatchBridgeWorkerParams{DryRun: dryRunParam()}, "application/merge-patch+json", bytes.NewReader(patchJSON))
 	if cubapi.IsAPIError(err, workerRes) {
 		return cubapi.InterpretErrorGeneric(err, workerRes)
 	}
@@ -223,6 +223,7 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	params := &goclientnew.BulkPatchBridgeWorkersParams{}
+	params.IncludeHidden = includeHiddenParam()
 	if effectiveWhere != "" {
 		params.Where = &effectiveWhere
 	}
@@ -232,6 +233,7 @@ func workerBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	include := "SpaceID"
 	params.Include = &include
 
+	params.DryRun = dryRunParam()
 	res, err := cubClientNew.BulkPatchBridgeWorkersWithBodyWithResponse(ctx, params, "application/merge-patch+json", bytes.NewReader(patchJSON))
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)

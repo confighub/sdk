@@ -195,7 +195,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 
 	// Parse and set permissions
-	err = parsePermissions(targetCreateArgs.permissions, newTarget.Permissions)
+	err = applyPermissions(targetCreateArgs.permissions, &newTarget.Permissions)
 	if err != nil {
 		return err
 	}
@@ -243,6 +243,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, params, newTarget)
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)

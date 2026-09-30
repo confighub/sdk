@@ -120,6 +120,7 @@ func unitMoveCmdRun(cmd *cobra.Command, args []string) error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	params := &goclientnew.BulkMoveUnitsParams{Where: &effectiveWhere}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

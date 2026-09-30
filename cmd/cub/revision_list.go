@@ -402,6 +402,9 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if contains != "" {
 		newParams.Contains = &contains
 	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
+	}
 	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders,Releases"
 	newParams.Include = &include
 	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
@@ -443,6 +446,9 @@ func apiSearchListRevisions(whereFilter string, selectParam string, filterParam 
 	}
 	if contains != "" {
 		newParams.Contains = &contains
+	}
+	if includeHidden != "" {
+		newParams.IncludeHidden = &includeHidden
 	}
 	include := "UserID,UnitID,ChangeSetID,Tags,ChangeOrders,Releases"
 	newParams.Include = &include

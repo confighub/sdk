@@ -238,14 +238,22 @@ type ClientInterface interface {
 	GetComponent(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchComponentWithBody request with any body
-	PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateComponentWithBody request with any body
-	UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateComponent(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetComponentDocument request
+	GetComponentDocument(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateComponentDocumentWithBody request with any body
+	UpdateComponentDocumentWithBody(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateComponentDocument(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DemoteWithBody request with any body
 	DemoteWithBody(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -361,9 +369,9 @@ type ClientInterface interface {
 	GetOrganization(ctx context.Context, organizationId openapi_types.UUID, params *GetOrganizationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateOrganizationWithBody request with any body
-	UpdateOrganizationWithBody(ctx context.Context, organizationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateOrganizationWithBody(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListOrganizationMembers request
 	ListOrganizationMembers(ctx context.Context, organizationId openapi_types.UUID, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -449,14 +457,22 @@ type ClientInterface interface {
 	GetAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *GetAttributeParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchAttributeWithBody request with any body
-	PatchAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateAttributeWithBody request with any body
-	UpdateAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetAttributeDocument request
+	GetAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateAttributeDocumentWithBody request with any body
+	UpdateAttributeDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListBridgeWorkers request
 	ListBridgeWorkers(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -473,14 +489,14 @@ type ClientInterface interface {
 	GetBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *GetBridgeWorkerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchBridgeWorkerWithBody request with any body
-	PatchBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateBridgeWorkerWithBody request with any body
-	UpdateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListBridgeWorkerFunctions request
 	ListBridgeWorkerFunctions(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -530,14 +546,14 @@ type ClientInterface interface {
 	GetChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *GetChangeSetParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchChangeSetWithBody request with any body
-	PatchChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateChangeSetWithBody request with any body
-	UpdateChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListChangeWorkflows request
 	ListChangeWorkflows(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -554,14 +570,30 @@ type ClientInterface interface {
 	GetChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *GetChangeWorkflowParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchChangeWorkflowWithBody request with any body
-	PatchChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateChangeWorkflowWithBody request with any body
-	UpdateChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetChangeWorkflowDocument request
+	GetChangeWorkflowDocument(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateChangeWorkflowDocumentWithBody request with any body
+	UpdateChangeWorkflowDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateChangeWorkflowDocument(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetSpaceDocument request
+	GetSpaceDocument(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateSpaceDocumentWithBody request with any body
+	UpdateSpaceDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateSpaceDocument(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, body UpdateSpaceDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFilters request
 	ListFilters(ctx context.Context, spaceId openapi_types.UUID, params *ListFiltersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -578,14 +610,22 @@ type ClientInterface interface {
 	GetFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *GetFilterParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchFilterWithBody request with any body
-	PatchFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchFilterWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchFilterWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateFilterWithBody request with any body
-	UpdateFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetFilterDocument request
+	GetFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateFilterDocumentWithBody request with any body
+	UpdateFilterDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListFunctions request
 	ListFunctions(ctx context.Context, spaceId openapi_types.UUID, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -610,14 +650,22 @@ type ClientInterface interface {
 	GetInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *GetInvocationParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchInvocationWithBody request with any body
-	PatchInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateInvocationWithBody request with any body
-	UpdateInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetInvocationDocument request
+	GetInvocationDocument(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateInvocationDocumentWithBody request with any body
+	UpdateInvocationDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateInvocationDocument(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListLinks request
 	ListLinks(ctx context.Context, spaceId openapi_types.UUID, params *ListLinksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -639,9 +687,17 @@ type ClientInterface interface {
 	PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateLinkWithBody request with any body
-	UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetLinkDocument request
+	GetLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateLinkDocumentWithBody request with any body
+	UpdateLinkDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedReleases request
 	ListExtendedReleases(ctx context.Context, spaceId openapi_types.UUID, params *ListExtendedReleasesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -658,14 +714,14 @@ type ClientInterface interface {
 	GetExtendedRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchReleaseWithBody request with any body
-	PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateReleaseWithBody request with any body
-	UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DownloadReleaseData request
 	DownloadReleaseData(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -688,14 +744,14 @@ type ClientInterface interface {
 	GetTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *GetTagParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchTagWithBody request with any body
-	PatchTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchTagWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTagWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateTagWithBody request with any body
-	UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListTargets request
 	ListTargets(ctx context.Context, spaceId openapi_types.UUID, params *ListTargetsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -736,14 +792,22 @@ type ClientInterface interface {
 	GetTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *GetTriggerParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchTriggerWithBody request with any body
-	PatchTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateTriggerWithBody request with any body
-	UpdateTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTriggerDocument request
+	GetTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateTriggerDocumentWithBody request with any body
+	UpdateTriggerDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListUnits request
 	ListUnits(ctx context.Context, spaceId openapi_types.UUID, params *ListUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -847,14 +911,22 @@ type ClientInterface interface {
 	GetView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *GetViewParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// PatchViewWithBody request with any body
-	PatchViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PatchViewWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PatchViewWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UpdateViewWithBody request with any body
-	UpdateViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	UpdateView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	UpdateView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetViewDocument request
+	GetViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateViewDocumentWithBody request with any body
+	UpdateViewDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteTags request
 	BulkDeleteTags(ctx context.Context, params *BulkDeleteTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -908,6 +980,11 @@ type ClientInterface interface {
 	BulkCreateTriggersWithBody(ctx context.Context, params *BulkCreateTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	BulkCreateTriggersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateTriggersParams, body BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkMoveTriggersWithBody request with any body
+	BulkMoveTriggersWithBody(ctx context.Context, params *BulkMoveTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkMoveTriggers(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// BulkDeleteUnits request
 	BulkDeleteUnits(ctx context.Context, params *BulkDeleteUnitsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -968,9 +1045,9 @@ type ClientInterface interface {
 	ListUserKeys(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CreateUserKeyWithBody request with any body
-	CreateUserKeyWithBody(ctx context.Context, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateUserKeyWithBody(ctx context.Context, userId string, params *CreateUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	CreateUserKey(ctx context.Context, userId string, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	CreateUserKey(ctx context.Context, userId string, params *CreateUserKeyParams, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DeleteUserKey request
 	DeleteUserKey(ctx context.Context, userId string, kid string, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1645,8 +1722,8 @@ func (c *Client) GetComponent(ctx context.Context, componentId openapi_types.UUI
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchComponentRequestWithBody(c.Server, componentId, contentType, body)
+func (c *Client) PatchComponentWithBody(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchComponentRequestWithBody(c.Server, componentId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1657,8 +1734,8 @@ func (c *Client) PatchComponentWithBody(ctx context.Context, componentId openapi
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(c.Server, componentId, body)
+func (c *Client) PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(c.Server, componentId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1669,8 +1746,8 @@ func (c *Client) PatchComponentWithApplicationMergePatchPlusJSONBody(ctx context
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateComponentRequestWithBody(c.Server, componentId, contentType, body)
+func (c *Client) UpdateComponentWithBody(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentRequestWithBody(c.Server, componentId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -1681,8 +1758,44 @@ func (c *Client) UpdateComponentWithBody(ctx context.Context, componentId openap
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateComponent(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateComponentRequest(c.Server, componentId, body)
+func (c *Client) UpdateComponent(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentRequest(c.Server, componentId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetComponentDocument(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetComponentDocumentRequest(c.Server, componentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateComponentDocumentWithBody(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentDocumentRequestWithBody(c.Server, componentId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateComponentDocument(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateComponentDocumentRequest(c.Server, componentId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2197,8 +2310,8 @@ func (c *Client) GetOrganization(ctx context.Context, organizationId openapi_typ
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateOrganizationWithBody(ctx context.Context, organizationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateOrganizationRequestWithBody(c.Server, organizationId, contentType, body)
+func (c *Client) UpdateOrganizationWithBody(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOrganizationRequestWithBody(c.Server, organizationId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2209,8 +2322,8 @@ func (c *Client) UpdateOrganizationWithBody(ctx context.Context, organizationId 
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateOrganizationRequest(c.Server, organizationId, body)
+func (c *Client) UpdateOrganization(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateOrganizationRequest(c.Server, organizationId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2581,8 +2694,8 @@ func (c *Client) GetAttribute(ctx context.Context, spaceId openapi_types.UUID, a
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchAttributeRequestWithBody(c.Server, spaceId, attributeId, contentType, body)
+func (c *Client) PatchAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAttributeRequestWithBody(c.Server, spaceId, attributeId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2593,8 +2706,8 @@ func (c *Client) PatchAttributeWithBody(ctx context.Context, spaceId openapi_typ
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchAttributeRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, attributeId, body)
+func (c *Client) PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchAttributeRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, attributeId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2605,8 +2718,8 @@ func (c *Client) PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx context
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateAttributeRequestWithBody(c.Server, spaceId, attributeId, contentType, body)
+func (c *Client) UpdateAttributeWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAttributeRequestWithBody(c.Server, spaceId, attributeId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2617,8 +2730,44 @@ func (c *Client) UpdateAttributeWithBody(ctx context.Context, spaceId openapi_ty
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateAttributeRequest(c.Server, spaceId, attributeId, body)
+func (c *Client) UpdateAttribute(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAttributeRequest(c.Server, spaceId, attributeId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetAttributeDocumentRequest(c.Server, spaceId, attributeId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateAttributeDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAttributeDocumentRequestWithBody(c.Server, spaceId, attributeId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateAttributeDocument(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateAttributeDocumentRequest(c.Server, spaceId, attributeId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2689,8 +2838,8 @@ func (c *Client) GetBridgeWorker(ctx context.Context, spaceId openapi_types.UUID
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchBridgeWorkerRequestWithBody(c.Server, spaceId, bridgeWorkerId, contentType, body)
+func (c *Client) PatchBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchBridgeWorkerRequestWithBody(c.Server, spaceId, bridgeWorkerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2701,8 +2850,8 @@ func (c *Client) PatchBridgeWorkerWithBody(ctx context.Context, spaceId openapi_
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchBridgeWorkerRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, bridgeWorkerId, body)
+func (c *Client) PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchBridgeWorkerRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, bridgeWorkerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2713,8 +2862,8 @@ func (c *Client) PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateBridgeWorkerRequestWithBody(c.Server, spaceId, bridgeWorkerId, contentType, body)
+func (c *Client) UpdateBridgeWorkerWithBody(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateBridgeWorkerRequestWithBody(c.Server, spaceId, bridgeWorkerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2725,8 +2874,8 @@ func (c *Client) UpdateBridgeWorkerWithBody(ctx context.Context, spaceId openapi
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateBridgeWorkerRequest(c.Server, spaceId, bridgeWorkerId, body)
+func (c *Client) UpdateBridgeWorker(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateBridgeWorkerRequest(c.Server, spaceId, bridgeWorkerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2941,8 +3090,8 @@ func (c *Client) GetChangeSet(ctx context.Context, spaceId openapi_types.UUID, c
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeSetRequestWithBody(c.Server, spaceId, changeSetId, contentType, body)
+func (c *Client) PatchChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeSetRequestWithBody(c.Server, spaceId, changeSetId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2953,8 +3102,8 @@ func (c *Client) PatchChangeSetWithBody(ctx context.Context, spaceId openapi_typ
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeSetRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeSetId, body)
+func (c *Client) PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeSetRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeSetId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2965,8 +3114,8 @@ func (c *Client) PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx context
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeSetRequestWithBody(c.Server, spaceId, changeSetId, contentType, body)
+func (c *Client) UpdateChangeSetWithBody(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeSetRequestWithBody(c.Server, spaceId, changeSetId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -2977,8 +3126,8 @@ func (c *Client) UpdateChangeSetWithBody(ctx context.Context, spaceId openapi_ty
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeSetRequest(c.Server, spaceId, changeSetId, body)
+func (c *Client) UpdateChangeSet(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeSetRequest(c.Server, spaceId, changeSetId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3049,8 +3198,8 @@ func (c *Client) GetChangeWorkflow(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeWorkflowRequestWithBody(c.Server, spaceId, changeWorkflowId, contentType, body)
+func (c *Client) PatchChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeWorkflowRequestWithBody(c.Server, spaceId, changeWorkflowId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3061,8 +3210,8 @@ func (c *Client) PatchChangeWorkflowWithBody(ctx context.Context, spaceId openap
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchChangeWorkflowRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeWorkflowId, body)
+func (c *Client) PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchChangeWorkflowRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, changeWorkflowId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3073,8 +3222,8 @@ func (c *Client) PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx co
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeWorkflowRequestWithBody(c.Server, spaceId, changeWorkflowId, contentType, body)
+func (c *Client) UpdateChangeWorkflowWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeWorkflowRequestWithBody(c.Server, spaceId, changeWorkflowId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3085,8 +3234,80 @@ func (c *Client) UpdateChangeWorkflowWithBody(ctx context.Context, spaceId opena
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateChangeWorkflowRequest(c.Server, spaceId, changeWorkflowId, body)
+func (c *Client) UpdateChangeWorkflow(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeWorkflowRequest(c.Server, spaceId, changeWorkflowId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetChangeWorkflowDocument(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetChangeWorkflowDocumentRequest(c.Server, spaceId, changeWorkflowId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateChangeWorkflowDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeWorkflowDocumentRequestWithBody(c.Server, spaceId, changeWorkflowId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateChangeWorkflowDocument(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateChangeWorkflowDocumentRequest(c.Server, spaceId, changeWorkflowId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetSpaceDocument(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetSpaceDocumentRequest(c.Server, spaceId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSpaceDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSpaceDocumentRequestWithBody(c.Server, spaceId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateSpaceDocument(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, body UpdateSpaceDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateSpaceDocumentRequest(c.Server, spaceId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3157,8 +3378,8 @@ func (c *Client) GetFilter(ctx context.Context, spaceId openapi_types.UUID, filt
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchFilterRequestWithBody(c.Server, spaceId, filterId, contentType, body)
+func (c *Client) PatchFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchFilterRequestWithBody(c.Server, spaceId, filterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3169,8 +3390,8 @@ func (c *Client) PatchFilterWithBody(ctx context.Context, spaceId openapi_types.
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchFilterWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchFilterRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, filterId, body)
+func (c *Client) PatchFilterWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchFilterRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, filterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3181,8 +3402,8 @@ func (c *Client) PatchFilterWithApplicationMergePatchPlusJSONBody(ctx context.Co
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateFilterRequestWithBody(c.Server, spaceId, filterId, contentType, body)
+func (c *Client) UpdateFilterWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFilterRequestWithBody(c.Server, spaceId, filterId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3193,8 +3414,44 @@ func (c *Client) UpdateFilterWithBody(ctx context.Context, spaceId openapi_types
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateFilterRequest(c.Server, spaceId, filterId, body)
+func (c *Client) UpdateFilter(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFilterRequest(c.Server, spaceId, filterId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFilterDocumentRequest(c.Server, spaceId, filterId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateFilterDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFilterDocumentRequestWithBody(c.Server, spaceId, filterId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateFilterDocument(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateFilterDocumentRequest(c.Server, spaceId, filterId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3301,8 +3558,8 @@ func (c *Client) GetInvocation(ctx context.Context, spaceId openapi_types.UUID, 
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchInvocationRequestWithBody(c.Server, spaceId, invocationId, contentType, body)
+func (c *Client) PatchInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchInvocationRequestWithBody(c.Server, spaceId, invocationId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3313,8 +3570,8 @@ func (c *Client) PatchInvocationWithBody(ctx context.Context, spaceId openapi_ty
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchInvocationRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, invocationId, body)
+func (c *Client) PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchInvocationRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, invocationId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3325,8 +3582,8 @@ func (c *Client) PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx contex
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateInvocationRequestWithBody(c.Server, spaceId, invocationId, contentType, body)
+func (c *Client) UpdateInvocationWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateInvocationRequestWithBody(c.Server, spaceId, invocationId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3337,8 +3594,44 @@ func (c *Client) UpdateInvocationWithBody(ctx context.Context, spaceId openapi_t
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateInvocationRequest(c.Server, spaceId, invocationId, body)
+func (c *Client) UpdateInvocation(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateInvocationRequest(c.Server, spaceId, invocationId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetInvocationDocument(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetInvocationDocumentRequest(c.Server, spaceId, invocationId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateInvocationDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateInvocationDocumentRequestWithBody(c.Server, spaceId, invocationId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateInvocationDocument(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateInvocationDocumentRequest(c.Server, spaceId, invocationId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3433,8 +3726,8 @@ func (c *Client) PatchLinkWithApplicationMergePatchPlusJSONBody(ctx context.Cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateLinkRequestWithBody(c.Server, spaceId, linkId, contentType, body)
+func (c *Client) UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLinkRequestWithBody(c.Server, spaceId, linkId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3445,8 +3738,44 @@ func (c *Client) UpdateLinkWithBody(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateLinkRequest(c.Server, spaceId, linkId, body)
+func (c *Client) UpdateLink(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLinkRequest(c.Server, spaceId, linkId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetLinkDocumentRequest(c.Server, spaceId, linkId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateLinkDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLinkDocumentRequestWithBody(c.Server, spaceId, linkId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateLinkDocument(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateLinkDocumentRequest(c.Server, spaceId, linkId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3517,8 +3846,8 @@ func (c *Client) GetExtendedRelease(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchReleaseRequestWithBody(c.Server, spaceId, releaseId, contentType, body)
+func (c *Client) PatchReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReleaseRequestWithBody(c.Server, spaceId, releaseId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3529,8 +3858,8 @@ func (c *Client) PatchReleaseWithBody(ctx context.Context, spaceId openapi_types
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, releaseId, body)
+func (c *Client) PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, releaseId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3541,8 +3870,8 @@ func (c *Client) PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx context.C
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateReleaseRequestWithBody(c.Server, spaceId, releaseId, contentType, body)
+func (c *Client) UpdateReleaseWithBody(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReleaseRequestWithBody(c.Server, spaceId, releaseId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3553,8 +3882,8 @@ func (c *Client) UpdateReleaseWithBody(ctx context.Context, spaceId openapi_type
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateReleaseRequest(c.Server, spaceId, releaseId, body)
+func (c *Client) UpdateRelease(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReleaseRequest(c.Server, spaceId, releaseId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3649,8 +3978,8 @@ func (c *Client) GetTag(ctx context.Context, spaceId openapi_types.UUID, tagId o
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTagRequestWithBody(c.Server, spaceId, tagId, contentType, body)
+func (c *Client) PatchTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTagRequestWithBody(c.Server, spaceId, tagId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3661,8 +3990,8 @@ func (c *Client) PatchTagWithBody(ctx context.Context, spaceId openapi_types.UUI
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTagWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTagRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, tagId, body)
+func (c *Client) PatchTagWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTagRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, tagId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3673,8 +4002,8 @@ func (c *Client) PatchTagWithApplicationMergePatchPlusJSONBody(ctx context.Conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTagRequestWithBody(c.Server, spaceId, tagId, contentType, body)
+func (c *Client) UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTagRequestWithBody(c.Server, spaceId, tagId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3685,8 +4014,8 @@ func (c *Client) UpdateTagWithBody(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTagRequest(c.Server, spaceId, tagId, body)
+func (c *Client) UpdateTag(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTagRequest(c.Server, spaceId, tagId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3865,8 +4194,8 @@ func (c *Client) GetTrigger(ctx context.Context, spaceId openapi_types.UUID, tri
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTriggerRequestWithBody(c.Server, spaceId, triggerId, contentType, body)
+func (c *Client) PatchTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTriggerRequestWithBody(c.Server, spaceId, triggerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3877,8 +4206,8 @@ func (c *Client) PatchTriggerWithBody(ctx context.Context, spaceId openapi_types
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchTriggerRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, triggerId, body)
+func (c *Client) PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchTriggerRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, triggerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3889,8 +4218,8 @@ func (c *Client) PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx context.C
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTriggerRequestWithBody(c.Server, spaceId, triggerId, contentType, body)
+func (c *Client) UpdateTriggerWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTriggerRequestWithBody(c.Server, spaceId, triggerId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -3901,8 +4230,44 @@ func (c *Client) UpdateTriggerWithBody(ctx context.Context, spaceId openapi_type
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateTriggerRequest(c.Server, spaceId, triggerId, body)
+func (c *Client) UpdateTrigger(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTriggerRequest(c.Server, spaceId, triggerId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTriggerDocumentRequest(c.Server, spaceId, triggerId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTriggerDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTriggerDocumentRequestWithBody(c.Server, spaceId, triggerId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTriggerDocument(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTriggerDocumentRequest(c.Server, spaceId, triggerId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4345,8 +4710,8 @@ func (c *Client) GetView(ctx context.Context, spaceId openapi_types.UUID, viewId
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchViewRequestWithBody(c.Server, spaceId, viewId, contentType, body)
+func (c *Client) PatchViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchViewRequestWithBody(c.Server, spaceId, viewId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4357,8 +4722,8 @@ func (c *Client) PatchViewWithBody(ctx context.Context, spaceId openapi_types.UU
 	return c.Client.Do(req)
 }
 
-func (c *Client) PatchViewWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPatchViewRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, viewId, body)
+func (c *Client) PatchViewWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchViewRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, viewId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4369,8 +4734,8 @@ func (c *Client) PatchViewWithApplicationMergePatchPlusJSONBody(ctx context.Cont
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateViewRequestWithBody(c.Server, spaceId, viewId, contentType, body)
+func (c *Client) UpdateViewWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateViewRequestWithBody(c.Server, spaceId, viewId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4381,8 +4746,44 @@ func (c *Client) UpdateViewWithBody(ctx context.Context, spaceId openapi_types.U
 	return c.Client.Do(req)
 }
 
-func (c *Client) UpdateView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewUpdateViewRequest(c.Server, spaceId, viewId, body)
+func (c *Client) UpdateView(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateViewRequest(c.Server, spaceId, viewId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetViewDocumentRequest(c.Server, spaceId, viewId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateViewDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateViewDocumentRequestWithBody(c.Server, spaceId, viewId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateViewDocument(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateViewDocumentRequest(c.Server, spaceId, viewId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4623,6 +5024,30 @@ func (c *Client) BulkCreateTriggersWithBody(ctx context.Context, params *BulkCre
 
 func (c *Client) BulkCreateTriggersWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkCreateTriggersParams, body BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBulkCreateTriggersRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveTriggersWithBody(ctx context.Context, params *BulkMoveTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTriggersRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkMoveTriggers(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkMoveTriggersRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4885,8 +5310,8 @@ func (c *Client) ListUserKeys(ctx context.Context, userId string, reqEditors ...
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateUserKeyWithBody(ctx context.Context, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserKeyRequestWithBody(c.Server, userId, contentType, body)
+func (c *Client) CreateUserKeyWithBody(ctx context.Context, userId string, params *CreateUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateUserKeyRequestWithBody(c.Server, userId, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4897,8 +5322,8 @@ func (c *Client) CreateUserKeyWithBody(ctx context.Context, userId string, conte
 	return c.Client.Do(req)
 }
 
-func (c *Client) CreateUserKey(ctx context.Context, userId string, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewCreateUserKeyRequest(c.Server, userId, body)
+func (c *Client) CreateUserKey(ctx context.Context, userId string, params *CreateUserKeyParams, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateUserKeyRequest(c.Server, userId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5087,6 +5512,22 @@ func NewBulkDeleteComponentsRequest(server string, params *BulkDeleteComponentsP
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -5195,9 +5636,89 @@ func NewBulkPatchComponentsRequestWithBody(server string, params *BulkPatchCompo
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BackingUnitSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "backing_unit_space", runtime.ParamLocationQuery, *params.BackingUnitSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5281,6 +5802,22 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5450,6 +5987,22 @@ func NewBulkPatchSpacesRequestWithBody(server string, params *BulkPatchSpacesPar
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -5469,6 +6022,70 @@ func NewBulkPatchSpacesRequestWithBody(server string, params *BulkPatchSpacesPar
 		if params.RefreshTriggers != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BackingUnitSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "backing_unit_space", runtime.ParamLocationQuery, *params.BackingUnitSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5576,6 +6193,22 @@ func NewBulkCreateSpacesRequestWithBody(server string, params *BulkCreateSpacesP
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -5643,6 +6276,102 @@ func NewBulkCreateSpacesRequestWithBody(server string, params *BulkCreateSpacesP
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BackingUnitSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "backing_unit_space", runtime.ParamLocationQuery, *params.BackingUnitSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -5833,6 +6562,22 @@ func NewListAllAttestationsRequest(server string, params *ListAllAttestationsPar
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -5901,6 +6646,22 @@ func NewBulkDeleteAttributesRequest(server string, params *BulkDeleteAttributesP
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6043,6 +6804,22 @@ func NewListAllAttributesRequest(server string, params *ListAllAttributesParams)
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -6135,9 +6912,73 @@ func NewBulkPatchAttributesRequestWithBody(server string, params *BulkPatchAttri
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6245,6 +7086,22 @@ func NewBulkCreateAttributesRequestWithBody(server string, params *BulkCreateAtt
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -6312,6 +7169,86 @@ func NewBulkCreateAttributesRequestWithBody(server string, params *BulkCreateAtt
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6406,6 +7343,22 @@ func NewBulkMoveAttributesRequestWithBody(server string, params *BulkMoveAttribu
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6521,6 +7474,22 @@ func NewBulkDeleteBridgeWorkersRequest(server string, params *BulkDeleteBridgeWo
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -6679,6 +7648,22 @@ func NewListAllBridgeWorkersRequest(server string, params *ListAllBridgeWorkersP
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Summary != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary", runtime.ParamLocationQuery, *params.Summary); err != nil {
@@ -6787,9 +7772,41 @@ func NewBulkPatchBridgeWorkersRequestWithBody(server string, params *BulkPatchBr
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7062,6 +8079,22 @@ func NewBulkDeleteChangeOrdersRequest(server string, params *BulkDeleteChangeOrd
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -7207,6 +8240,22 @@ func NewListAllChangeOrdersRequest(server string, params *ListAllChangeOrdersPar
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -7299,6 +8348,22 @@ func NewBulkPatchChangeOrdersRequestWithBody(server string, params *BulkPatchCha
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -7318,6 +8383,22 @@ func NewBulkPatchChangeOrdersRequestWithBody(server string, params *BulkPatchCha
 		if params.RefreshSpaces != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_spaces", runtime.ParamLocationQuery, *params.RefreshSpaces); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7412,6 +8493,22 @@ func NewBulkCreateChangeOrdersRequestWithBody(server string, params *BulkCreateC
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7537,6 +8634,22 @@ func NewBulkCreateChangeOrdersRequestWithBody(server string, params *BulkCreateC
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -7607,6 +8720,22 @@ func NewBulkDeleteChangeSetsRequest(server string, params *BulkDeleteChangeSetsP
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7765,6 +8894,22 @@ func NewListAllChangeSetsRequest(server string, params *ListAllChangeSetsParams)
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -7857,9 +9002,41 @@ func NewBulkPatchChangeSetsRequestWithBody(server string, params *BulkPatchChang
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7954,6 +9131,22 @@ func NewBulkCreateChangeSetsRequestWithBody(server string, params *BulkCreateCha
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8079,6 +9272,22 @@ func NewBulkCreateChangeSetsRequestWithBody(server string, params *BulkCreateCha
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -8160,6 +9369,22 @@ func NewBulkMoveChangeSetsRequestWithBody(server string, params *BulkMoveChangeS
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8275,6 +9500,22 @@ func NewBulkDeleteChangeWorkflowsRequest(server string, params *BulkDeleteChange
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8417,6 +9658,22 @@ func NewListAllChangeWorkflowsRequest(server string, params *ListAllChangeWorkfl
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -8509,9 +9766,73 @@ func NewBulkPatchChangeWorkflowsRequestWithBody(server string, params *BulkPatch
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8606,6 +9927,22 @@ func NewBulkCreateChangeWorkflowsRequestWithBody(server string, params *BulkCrea
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8731,6 +10068,86 @@ func NewBulkCreateChangeWorkflowsRequestWithBody(server string, params *BulkCrea
 
 		}
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -8812,6 +10229,22 @@ func NewBulkMoveChangeWorkflowsRequestWithBody(server string, params *BulkMoveCh
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -8972,6 +10405,22 @@ func NewListComponentsRequest(server string, params *ListComponentsParams) (*htt
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -9016,9 +10465,57 @@ func NewCreateComponentRequestWithBody(server string, params *CreateComponentPar
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BackingUnitSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "backing_unit_space", runtime.ParamLocationQuery, *params.BackingUnitSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9152,18 +10649,18 @@ func NewGetComponentRequest(server string, componentId openapi_types.UUID, param
 }
 
 // NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchComponent builder with application/merge-patch+json body
-func NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(server string, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchComponentRequestWithApplicationMergePatchPlusJSONBody(server string, componentId openapi_types.UUID, params *PatchComponentParams, body PatchComponentApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchComponentRequestWithBody(server, componentId, "application/merge-patch+json", bodyReader)
+	return NewPatchComponentRequestWithBody(server, componentId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchComponentRequestWithBody generates requests for PatchComponent with any type of body
-func NewPatchComponentRequestWithBody(server string, componentId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchComponentRequestWithBody(server string, componentId openapi_types.UUID, params *PatchComponentParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9186,6 +10683,28 @@ func NewPatchComponentRequestWithBody(server string, componentId openapi_types.U
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -9199,18 +10718,18 @@ func NewPatchComponentRequestWithBody(server string, componentId openapi_types.U
 }
 
 // NewUpdateComponentRequest calls the generic UpdateComponent builder with application/json body
-func NewUpdateComponentRequest(server string, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody) (*http.Request, error) {
+func NewUpdateComponentRequest(server string, componentId openapi_types.UUID, params *UpdateComponentParams, body UpdateComponentJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateComponentRequestWithBody(server, componentId, "application/json", bodyReader)
+	return NewUpdateComponentRequestWithBody(server, componentId, params, "application/json", bodyReader)
 }
 
 // NewUpdateComponentRequestWithBody generates requests for UpdateComponent with any type of body
-func NewUpdateComponentRequestWithBody(server string, componentId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateComponentRequestWithBody(server string, componentId openapi_types.UUID, params *UpdateComponentParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -9235,7 +10754,132 @@ func NewUpdateComponentRequestWithBody(server string, componentId openapi_types.
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetComponentDocumentRequest generates requests for GetComponentDocument
+func NewGetComponentDocumentRequest(server string, componentId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s/document", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateComponentDocumentRequest calls the generic UpdateComponentDocument builder with application/json body
+func NewUpdateComponentDocumentRequest(server string, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateComponentDocumentRequestWithBody(server, componentId, params, "application/json", bodyReader)
+}
+
+// NewUpdateComponentDocumentRequestWithBody generates requests for UpdateComponentDocument with any type of body
+func NewUpdateComponentDocumentRequestWithBody(server string, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "component_id", runtime.ParamLocationPath, componentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/component/%s/document", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -9471,6 +11115,22 @@ func NewBulkDeleteFiltersRequest(server string, params *BulkDeleteFiltersParams)
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -9587,6 +11247,22 @@ func NewListAllFiltersRequest(server string, params *ListAllFiltersParams) (*htt
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9724,9 +11400,73 @@ func NewBulkPatchFiltersRequestWithBody(server string, params *BulkPatchFiltersP
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9821,6 +11561,22 @@ func NewBulkCreateFiltersRequestWithBody(server string, params *BulkCreateFilter
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -9946,6 +11702,86 @@ func NewBulkCreateFiltersRequestWithBody(server string, params *BulkCreateFilter
 
 		}
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -10027,6 +11863,22 @@ func NewBulkMoveFiltersRequestWithBody(server string, params *BulkMoveFiltersPar
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -10359,6 +12211,22 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -10597,6 +12465,22 @@ func NewBulkDeleteInvocationsRequest(server string, params *BulkDeleteInvocation
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -10726,6 +12610,22 @@ func NewListAllInvocationsRequest(server string, params *ListAllInvocationsParam
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -10818,9 +12718,73 @@ func NewBulkPatchInvocationsRequestWithBody(server string, params *BulkPatchInvo
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -10915,6 +12879,22 @@ func NewBulkCreateInvocationsRequestWithBody(server string, params *BulkCreateIn
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11040,6 +13020,86 @@ func NewBulkCreateInvocationsRequestWithBody(server string, params *BulkCreateIn
 
 		}
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11121,6 +13181,22 @@ func NewBulkMoveInvocationsRequestWithBody(server string, params *BulkMoveInvoca
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11236,6 +13312,22 @@ func NewBulkDeleteLinksRequest(server string, params *BulkDeleteLinksParams) (*h
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11378,6 +13470,22 @@ func NewSearchListLinksRequest(server string, params *SearchListLinksParams) (*h
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -11470,6 +13578,22 @@ func NewBulkPatchLinksRequestWithBody(server string, params *BulkPatchLinksParam
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -11489,6 +13613,54 @@ func NewBulkPatchLinksRequestWithBody(server string, params *BulkPatchLinksParam
 		if params.Reverse != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "reverse", runtime.ParamLocationQuery, *params.Reverse); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11631,6 +13803,102 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -11948,6 +14216,22 @@ func NewListOrganizationsRequest(server string, params *ListOrganizationsParams)
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12128,18 +14412,18 @@ func NewGetOrganizationRequest(server string, organizationId openapi_types.UUID,
 }
 
 // NewUpdateOrganizationRequest calls the generic UpdateOrganization builder with application/json body
-func NewUpdateOrganizationRequest(server string, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody) (*http.Request, error) {
+func NewUpdateOrganizationRequest(server string, organizationId openapi_types.UUID, params *UpdateOrganizationParams, body UpdateOrganizationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateOrganizationRequestWithBody(server, organizationId, "application/json", bodyReader)
+	return NewUpdateOrganizationRequestWithBody(server, organizationId, params, "application/json", bodyReader)
 }
 
 // NewUpdateOrganizationRequestWithBody generates requests for UpdateOrganization with any type of body
-func NewUpdateOrganizationRequestWithBody(server string, organizationId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateOrganizationRequestWithBody(server string, organizationId openapi_types.UUID, params *UpdateOrganizationParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12162,6 +14446,28 @@ func NewUpdateOrganizationRequestWithBody(server string, organizationId openapi_
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -12571,6 +14877,22 @@ func NewListAllReleasesRequest(server string, params *ListAllReleasesParams) (*h
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12671,6 +14993,22 @@ func NewListAllResourcesRequest(server string, params *ListAllResourcesParams) (
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12877,6 +15215,22 @@ func NewListAllRevisionsRequest(server string, params *ListAllRevisionsParams) (
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -13041,6 +15395,22 @@ func NewSearchRevisionDataRequest(server string, params *SearchRevisionDataParam
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -13231,6 +15601,22 @@ func NewSearchRevisionMutationSourcesRequest(server string, params *SearchRevisi
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Limit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
@@ -13408,6 +15794,22 @@ func NewListSpacesRequest(server string, params *ListSpacesParams) (*http.Reques
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Summary != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "summary", runtime.ParamLocationQuery, *params.Summary); err != nil {
@@ -13468,9 +15870,57 @@ func NewCreateSpaceRequestWithBody(server string, params *CreateSpaceParams, con
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.BackingUnitSpace != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "backing_unit_space", runtime.ParamLocationQuery, *params.BackingUnitSpace); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -13729,6 +16179,22 @@ func NewPatchSpaceRequestWithBody(server string, spaceId openapi_types.UUID, par
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -13785,6 +16251,22 @@ func NewUpdateSpaceRequestWithBody(server string, spaceId openapi_types.UUID, pa
 		if params.RefreshTriggers != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -13907,6 +16389,22 @@ func NewListExtendedAttestationsRequest(server string, spaceId openapi_types.UUI
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14188,6 +16686,22 @@ func NewListAttributesRequest(server string, spaceId openapi_types.UUID, params 
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -14239,9 +16753,41 @@ func NewCreateAttributeRequestWithBody(server string, spaceId openapi_types.UUID
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14389,18 +16935,18 @@ func NewGetAttributeRequest(server string, spaceId openapi_types.UUID, attribute
 }
 
 // NewPatchAttributeRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchAttribute builder with application/merge-patch+json body
-func NewPatchAttributeRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body PatchAttributeApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchAttributeRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, body PatchAttributeApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchAttributeRequestWithBody(server, spaceId, attributeId, "application/merge-patch+json", bodyReader)
+	return NewPatchAttributeRequestWithBody(server, spaceId, attributeId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchAttributeRequestWithBody generates requests for PatchAttribute with any type of body
-func NewPatchAttributeRequestWithBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchAttributeRequestWithBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -14430,6 +16976,28 @@ func NewPatchAttributeRequestWithBody(server string, spaceId openapi_types.UUID,
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -14443,18 +17011,18 @@ func NewPatchAttributeRequestWithBody(server string, spaceId openapi_types.UUID,
 }
 
 // NewUpdateAttributeRequest calls the generic UpdateAttribute builder with application/json body
-func NewUpdateAttributeRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body UpdateAttributeJSONRequestBody) (*http.Request, error) {
+func NewUpdateAttributeRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, body UpdateAttributeJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateAttributeRequestWithBody(server, spaceId, attributeId, "application/json", bodyReader)
+	return NewUpdateAttributeRequestWithBody(server, spaceId, attributeId, params, "application/json", bodyReader)
 }
 
 // NewUpdateAttributeRequestWithBody generates requests for UpdateAttribute with any type of body
-func NewUpdateAttributeRequestWithBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateAttributeRequestWithBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -14486,7 +17054,146 @@ func NewUpdateAttributeRequestWithBody(server string, spaceId openapi_types.UUID
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetAttributeDocumentRequest generates requests for GetAttributeDocument
+func NewGetAttributeDocumentRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "attribute_id", runtime.ParamLocationPath, attributeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/attribute/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateAttributeDocumentRequest calls the generic UpdateAttributeDocument builder with application/json body
+func NewUpdateAttributeDocumentRequest(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateAttributeDocumentRequestWithBody(server, spaceId, attributeId, params, "application/json", bodyReader)
+}
+
+// NewUpdateAttributeDocumentRequestWithBody generates requests for UpdateAttributeDocument with any type of body
+func NewUpdateAttributeDocumentRequestWithBody(server string, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "attribute_id", runtime.ParamLocationPath, attributeId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/attribute/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -14605,6 +17312,22 @@ func NewListBridgeWorkersRequest(server string, spaceId openapi_types.UUID, para
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -14659,6 +17382,22 @@ func NewCreateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.U
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14828,18 +17567,18 @@ func NewGetBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bridge
 }
 
 // NewPatchBridgeWorkerRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchBridgeWorker builder with application/merge-patch+json body
-func NewPatchBridgeWorkerRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchBridgeWorkerRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchBridgeWorkerRequestWithBody(server, spaceId, bridgeWorkerId, "application/merge-patch+json", bodyReader)
+	return NewPatchBridgeWorkerRequestWithBody(server, spaceId, bridgeWorkerId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchBridgeWorkerRequestWithBody generates requests for PatchBridgeWorker with any type of body
-func NewPatchBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -14869,6 +17608,28 @@ func NewPatchBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UU
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -14882,18 +17643,18 @@ func NewPatchBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UU
 }
 
 // NewUpdateBridgeWorkerRequest calls the generic UpdateBridgeWorker builder with application/json body
-func NewUpdateBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody) (*http.Request, error) {
+func NewUpdateBridgeWorkerRequest(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, body UpdateBridgeWorkerJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateBridgeWorkerRequestWithBody(server, spaceId, bridgeWorkerId, "application/json", bodyReader)
+	return NewUpdateBridgeWorkerRequestWithBody(server, spaceId, bridgeWorkerId, params, "application/json", bodyReader)
 }
 
 // NewUpdateBridgeWorkerRequestWithBody generates requests for UpdateBridgeWorker with any type of body
-func NewUpdateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -14923,6 +17684,28 @@ func NewUpdateBridgeWorkerRequestWithBody(server string, spaceId openapi_types.U
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -15174,6 +17957,22 @@ func NewListChangeOrdersRequest(server string, spaceId openapi_types.UUID, param
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -15228,6 +18027,22 @@ func NewCreateChangeOrderRequestWithBody(server string, spaceId openapi_types.UU
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15459,6 +18274,22 @@ func NewPatchChangeOrderRequestWithBody(server string, spaceId openapi_types.UUI
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -15522,6 +18353,22 @@ func NewUpdateChangeOrderRequestWithBody(server string, spaceId openapi_types.UU
 		if params.RefreshSpaces != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_spaces", runtime.ParamLocationQuery, *params.RefreshSpaces); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15657,6 +18504,22 @@ func NewListChangeSetsRequest(server string, spaceId openapi_types.UUID, params 
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -15711,6 +18574,22 @@ func NewCreateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -15880,18 +18759,18 @@ func NewGetChangeSetRequest(server string, spaceId openapi_types.UUID, changeSet
 }
 
 // NewPatchChangeSetRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchChangeSet builder with application/merge-patch+json body
-func NewPatchChangeSetRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchChangeSetRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchChangeSetRequestWithBody(server, spaceId, changeSetId, "application/merge-patch+json", bodyReader)
+	return NewPatchChangeSetRequestWithBody(server, spaceId, changeSetId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchChangeSetRequestWithBody generates requests for PatchChangeSet with any type of body
-func NewPatchChangeSetRequestWithBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchChangeSetRequestWithBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -15921,6 +18800,28 @@ func NewPatchChangeSetRequestWithBody(server string, spaceId openapi_types.UUID,
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -15934,18 +18835,18 @@ func NewPatchChangeSetRequestWithBody(server string, spaceId openapi_types.UUID,
 }
 
 // NewUpdateChangeSetRequest calls the generic UpdateChangeSet builder with application/json body
-func NewUpdateChangeSetRequest(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body UpdateChangeSetJSONRequestBody) (*http.Request, error) {
+func NewUpdateChangeSetRequest(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateChangeSetRequestWithBody(server, spaceId, changeSetId, "application/json", bodyReader)
+	return NewUpdateChangeSetRequestWithBody(server, spaceId, changeSetId, params, "application/json", bodyReader)
 }
 
 // NewUpdateChangeSetRequestWithBody generates requests for UpdateChangeSet with any type of body
-func NewUpdateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -15975,6 +18876,28 @@ func NewUpdateChangeSetRequestWithBody(server string, spaceId openapi_types.UUID
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -16096,6 +19019,22 @@ func NewListChangeWorkflowsRequest(server string, spaceId openapi_types.UUID, pa
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -16147,9 +19086,41 @@ func NewCreateChangeWorkflowRequestWithBody(server string, spaceId openapi_types
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16297,18 +19268,18 @@ func NewGetChangeWorkflowRequest(server string, spaceId openapi_types.UUID, chan
 }
 
 // NewPatchChangeWorkflowRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchChangeWorkflow builder with application/merge-patch+json body
-func NewPatchChangeWorkflowRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchChangeWorkflowRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchChangeWorkflowRequestWithBody(server, spaceId, changeWorkflowId, "application/merge-patch+json", bodyReader)
+	return NewPatchChangeWorkflowRequestWithBody(server, spaceId, changeWorkflowId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchChangeWorkflowRequestWithBody generates requests for PatchChangeWorkflow with any type of body
-func NewPatchChangeWorkflowRequestWithBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchChangeWorkflowRequestWithBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16338,6 +19309,28 @@ func NewPatchChangeWorkflowRequestWithBody(server string, spaceId openapi_types.
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -16351,18 +19344,18 @@ func NewPatchChangeWorkflowRequestWithBody(server string, spaceId openapi_types.
 }
 
 // NewUpdateChangeWorkflowRequest calls the generic UpdateChangeWorkflow builder with application/json body
-func NewUpdateChangeWorkflowRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body UpdateChangeWorkflowJSONRequestBody) (*http.Request, error) {
+func NewUpdateChangeWorkflowRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, body UpdateChangeWorkflowJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateChangeWorkflowRequestWithBody(server, spaceId, changeWorkflowId, "application/json", bodyReader)
+	return NewUpdateChangeWorkflowRequestWithBody(server, spaceId, changeWorkflowId, params, "application/json", bodyReader)
 }
 
 // NewUpdateChangeWorkflowRequestWithBody generates requests for UpdateChangeWorkflow with any type of body
-func NewUpdateChangeWorkflowRequestWithBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateChangeWorkflowRequestWithBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16394,7 +19387,249 @@ func NewUpdateChangeWorkflowRequestWithBody(server string, spaceId openapi_types
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetChangeWorkflowDocumentRequest generates requests for GetChangeWorkflowDocument
+func NewGetChangeWorkflowDocumentRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_workflow_id", runtime.ParamLocationPath, changeWorkflowId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_workflow/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateChangeWorkflowDocumentRequest calls the generic UpdateChangeWorkflowDocument builder with application/json body
+func NewUpdateChangeWorkflowDocumentRequest(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateChangeWorkflowDocumentRequestWithBody(server, spaceId, changeWorkflowId, params, "application/json", bodyReader)
+}
+
+// NewUpdateChangeWorkflowDocumentRequestWithBody generates requests for UpdateChangeWorkflowDocument with any type of body
+func NewUpdateChangeWorkflowDocumentRequestWithBody(server string, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "change_workflow_id", runtime.ParamLocationPath, changeWorkflowId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/change_workflow/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetSpaceDocumentRequest generates requests for GetSpaceDocument
+func NewGetSpaceDocumentRequest(server string, spaceId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/document", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateSpaceDocumentRequest calls the generic UpdateSpaceDocument builder with application/json body
+func NewUpdateSpaceDocumentRequest(server string, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, body UpdateSpaceDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateSpaceDocumentRequestWithBody(server, spaceId, params, "application/json", bodyReader)
+}
+
+// NewUpdateSpaceDocumentRequestWithBody generates requests for UpdateSpaceDocument with any type of body
+func NewUpdateSpaceDocumentRequestWithBody(server string, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/document", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -16513,6 +19748,22 @@ func NewListFiltersRequest(server string, spaceId openapi_types.UUID, params *Li
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Entity != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "entity", runtime.ParamLocationQuery, *params.Entity); err != nil {
@@ -16596,9 +19847,41 @@ func NewCreateFilterRequestWithBody(server string, spaceId openapi_types.UUID, p
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -16746,18 +20029,18 @@ func NewGetFilterRequest(server string, spaceId openapi_types.UUID, filterId ope
 }
 
 // NewPatchFilterRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchFilter builder with application/merge-patch+json body
-func NewPatchFilterRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, body PatchFilterApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchFilterRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, body PatchFilterApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchFilterRequestWithBody(server, spaceId, filterId, "application/merge-patch+json", bodyReader)
+	return NewPatchFilterRequestWithBody(server, spaceId, filterId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchFilterRequestWithBody generates requests for PatchFilter with any type of body
-func NewPatchFilterRequestWithBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchFilterRequestWithBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16787,6 +20070,28 @@ func NewPatchFilterRequestWithBody(server string, spaceId openapi_types.UUID, fi
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -16800,18 +20105,18 @@ func NewPatchFilterRequestWithBody(server string, spaceId openapi_types.UUID, fi
 }
 
 // NewUpdateFilterRequest calls the generic UpdateFilter builder with application/json body
-func NewUpdateFilterRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, body UpdateFilterJSONRequestBody) (*http.Request, error) {
+func NewUpdateFilterRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, body UpdateFilterJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateFilterRequestWithBody(server, spaceId, filterId, "application/json", bodyReader)
+	return NewUpdateFilterRequestWithBody(server, spaceId, filterId, params, "application/json", bodyReader)
 }
 
 // NewUpdateFilterRequestWithBody generates requests for UpdateFilter with any type of body
-func NewUpdateFilterRequestWithBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateFilterRequestWithBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -16843,7 +20148,146 @@ func NewUpdateFilterRequestWithBody(server string, spaceId openapi_types.UUID, f
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetFilterDocumentRequest generates requests for GetFilterDocument
+func NewGetFilterDocumentRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "filter_id", runtime.ParamLocationPath, filterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/filter/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateFilterDocumentRequest calls the generic UpdateFilterDocument builder with application/json body
+func NewUpdateFilterDocumentRequest(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateFilterDocumentRequestWithBody(server, spaceId, filterId, params, "application/json", bodyReader)
+}
+
+// NewUpdateFilterDocumentRequestWithBody generates requests for UpdateFilterDocument with any type of body
+func NewUpdateFilterDocumentRequestWithBody(server string, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "filter_id", runtime.ParamLocationPath, filterId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/filter/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -17173,6 +20617,22 @@ func NewInvokeFunctionsRequestWithBody(server string, spaceId openapi_types.UUID
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -17423,6 +20883,22 @@ func NewListInvocationsRequest(server string, spaceId openapi_types.UUID, params
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -17474,9 +20950,41 @@ func NewCreateInvocationRequestWithBody(server string, spaceId openapi_types.UUI
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -17624,18 +21132,18 @@ func NewGetInvocationRequest(server string, spaceId openapi_types.UUID, invocati
 }
 
 // NewPatchInvocationRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchInvocation builder with application/merge-patch+json body
-func NewPatchInvocationRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body PatchInvocationApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchInvocationRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, body PatchInvocationApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchInvocationRequestWithBody(server, spaceId, invocationId, "application/merge-patch+json", bodyReader)
+	return NewPatchInvocationRequestWithBody(server, spaceId, invocationId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchInvocationRequestWithBody generates requests for PatchInvocation with any type of body
-func NewPatchInvocationRequestWithBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchInvocationRequestWithBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -17665,6 +21173,28 @@ func NewPatchInvocationRequestWithBody(server string, spaceId openapi_types.UUID
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -17678,18 +21208,18 @@ func NewPatchInvocationRequestWithBody(server string, spaceId openapi_types.UUID
 }
 
 // NewUpdateInvocationRequest calls the generic UpdateInvocation builder with application/json body
-func NewUpdateInvocationRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body UpdateInvocationJSONRequestBody) (*http.Request, error) {
+func NewUpdateInvocationRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, body UpdateInvocationJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateInvocationRequestWithBody(server, spaceId, invocationId, "application/json", bodyReader)
+	return NewUpdateInvocationRequestWithBody(server, spaceId, invocationId, params, "application/json", bodyReader)
 }
 
 // NewUpdateInvocationRequestWithBody generates requests for UpdateInvocation with any type of body
-func NewUpdateInvocationRequestWithBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateInvocationRequestWithBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -17721,7 +21251,146 @@ func NewUpdateInvocationRequestWithBody(server string, spaceId openapi_types.UUI
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetInvocationDocumentRequest generates requests for GetInvocationDocument
+func NewGetInvocationDocumentRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "invocation_id", runtime.ParamLocationPath, invocationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/invocation/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateInvocationDocumentRequest calls the generic UpdateInvocationDocument builder with application/json body
+func NewUpdateInvocationDocumentRequest(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateInvocationDocumentRequestWithBody(server, spaceId, invocationId, params, "application/json", bodyReader)
+}
+
+// NewUpdateInvocationDocumentRequestWithBody generates requests for UpdateInvocationDocument with any type of body
+func NewUpdateInvocationDocumentRequestWithBody(server string, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "invocation_id", runtime.ParamLocationPath, invocationId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/invocation/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -17840,6 +21509,22 @@ func NewListLinksRequest(server string, spaceId openapi_types.UUID, params *List
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -17891,9 +21576,41 @@ func NewCreateLinkRequestWithBody(server string, spaceId openapi_types.UUID, par
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -18103,6 +21820,22 @@ func NewPatchLinkRequestWithBody(server string, spaceId openapi_types.UUID, link
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -18117,18 +21850,18 @@ func NewPatchLinkRequestWithBody(server string, spaceId openapi_types.UUID, link
 }
 
 // NewUpdateLinkRequest calls the generic UpdateLink builder with application/json body
-func NewUpdateLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody) (*http.Request, error) {
+func NewUpdateLinkRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, body UpdateLinkJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateLinkRequestWithBody(server, spaceId, linkId, "application/json", bodyReader)
+	return NewUpdateLinkRequestWithBody(server, spaceId, linkId, params, "application/json", bodyReader)
 }
 
 // NewUpdateLinkRequestWithBody generates requests for UpdateLink with any type of body
-func NewUpdateLinkRequestWithBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateLinkRequestWithBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -18160,7 +21893,146 @@ func NewUpdateLinkRequestWithBody(server string, spaceId openapi_types.UUID, lin
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetLinkDocumentRequest generates requests for GetLinkDocument
+func NewGetLinkDocumentRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "link_id", runtime.ParamLocationPath, linkId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/link/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateLinkDocumentRequest calls the generic UpdateLinkDocument builder with application/json body
+func NewUpdateLinkDocumentRequest(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateLinkDocumentRequestWithBody(server, spaceId, linkId, params, "application/json", bodyReader)
+}
+
+// NewUpdateLinkDocumentRequestWithBody generates requests for UpdateLinkDocument with any type of body
+func NewUpdateLinkDocumentRequestWithBody(server string, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "link_id", runtime.ParamLocationPath, linkId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/link/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -18266,6 +22138,22 @@ func NewListExtendedReleasesRequest(server string, spaceId openapi_types.UUID, p
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -18480,18 +22368,18 @@ func NewGetExtendedReleaseRequest(server string, spaceId openapi_types.UUID, rel
 }
 
 // NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchRelease builder with application/merge-patch+json body
-func NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchReleaseRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, body PatchReleaseApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchReleaseRequestWithBody(server, spaceId, releaseId, "application/merge-patch+json", bodyReader)
+	return NewPatchReleaseRequestWithBody(server, spaceId, releaseId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchReleaseRequestWithBody generates requests for PatchRelease with any type of body
-func NewPatchReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -18521,6 +22409,28 @@ func NewPatchReleaseRequestWithBody(server string, spaceId openapi_types.UUID, r
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -18534,18 +22444,18 @@ func NewPatchReleaseRequestWithBody(server string, spaceId openapi_types.UUID, r
 }
 
 // NewUpdateReleaseRequest calls the generic UpdateRelease builder with application/json body
-func NewUpdateReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody) (*http.Request, error) {
+func NewUpdateReleaseRequest(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, body UpdateReleaseJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateReleaseRequestWithBody(server, spaceId, releaseId, "application/json", bodyReader)
+	return NewUpdateReleaseRequestWithBody(server, spaceId, releaseId, params, "application/json", bodyReader)
 }
 
 // NewUpdateReleaseRequestWithBody generates requests for UpdateRelease with any type of body
-func NewUpdateReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateReleaseRequestWithBody(server string, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -18575,6 +22485,28 @@ func NewUpdateReleaseRequestWithBody(server string, spaceId openapi_types.UUID, 
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -18778,6 +22710,22 @@ func NewListTagsRequest(server string, spaceId openapi_types.UUID, params *ListT
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -18832,6 +22780,22 @@ func NewCreateTagRequestWithBody(server string, spaceId openapi_types.UUID, para
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -19001,18 +22965,18 @@ func NewGetTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_t
 }
 
 // NewPatchTagRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchTag builder with application/merge-patch+json body
-func NewPatchTagRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, body PatchTagApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchTagRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, body PatchTagApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchTagRequestWithBody(server, spaceId, tagId, "application/merge-patch+json", bodyReader)
+	return NewPatchTagRequestWithBody(server, spaceId, tagId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchTagRequestWithBody generates requests for PatchTag with any type of body
-func NewPatchTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -19042,6 +23006,28 @@ func NewPatchTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -19055,18 +23041,18 @@ func NewPatchTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId
 }
 
 // NewUpdateTagRequest calls the generic UpdateTag builder with application/json body
-func NewUpdateTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, body UpdateTagJSONRequestBody) (*http.Request, error) {
+func NewUpdateTagRequest(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateTagRequestWithBody(server, spaceId, tagId, "application/json", bodyReader)
+	return NewUpdateTagRequestWithBody(server, spaceId, tagId, params, "application/json", bodyReader)
 }
 
 // NewUpdateTagRequestWithBody generates requests for UpdateTag with any type of body
-func NewUpdateTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateTagRequestWithBody(server string, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -19096,6 +23082,28 @@ func NewUpdateTagRequestWithBody(server string, spaceId openapi_types.UUID, tagI
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
@@ -19217,6 +23225,22 @@ func NewListTargetsRequest(server string, spaceId openapi_types.UUID, params *Li
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -19271,6 +23295,22 @@ func NewCreateTargetRequestWithBody(server string, spaceId openapi_types.UUID, p
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -19502,6 +23542,22 @@ func NewPatchTargetRequestWithBody(server string, spaceId openapi_types.UUID, ta
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -19565,6 +23621,22 @@ func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, t
 		if params.RefreshTriggers != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -19700,6 +23772,22 @@ func NewListTriggersRequest(server string, spaceId openapi_types.UUID, params *L
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -19751,9 +23839,41 @@ func NewCreateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, 
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -19901,18 +24021,18 @@ func NewGetTriggerRequest(server string, spaceId openapi_types.UUID, triggerId o
 }
 
 // NewPatchTriggerRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchTrigger builder with application/merge-patch+json body
-func NewPatchTriggerRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body PatchTriggerApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchTriggerRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, body PatchTriggerApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchTriggerRequestWithBody(server, spaceId, triggerId, "application/merge-patch+json", bodyReader)
+	return NewPatchTriggerRequestWithBody(server, spaceId, triggerId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchTriggerRequestWithBody generates requests for PatchTrigger with any type of body
-func NewPatchTriggerRequestWithBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchTriggerRequestWithBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -19942,6 +24062,28 @@ func NewPatchTriggerRequestWithBody(server string, spaceId openapi_types.UUID, t
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -19955,18 +24097,18 @@ func NewPatchTriggerRequestWithBody(server string, spaceId openapi_types.UUID, t
 }
 
 // NewUpdateTriggerRequest calls the generic UpdateTrigger builder with application/json body
-func NewUpdateTriggerRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody) (*http.Request, error) {
+func NewUpdateTriggerRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, body UpdateTriggerJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateTriggerRequestWithBody(server, spaceId, triggerId, "application/json", bodyReader)
+	return NewUpdateTriggerRequestWithBody(server, spaceId, triggerId, params, "application/json", bodyReader)
 }
 
 // NewUpdateTriggerRequestWithBody generates requests for UpdateTrigger with any type of body
-func NewUpdateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -19998,7 +24140,146 @@ func NewUpdateTriggerRequestWithBody(server string, spaceId openapi_types.UUID, 
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetTriggerDocumentRequest generates requests for GetTriggerDocument
+func NewGetTriggerDocumentRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "trigger_id", runtime.ParamLocationPath, triggerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/trigger/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateTriggerDocumentRequest calls the generic UpdateTriggerDocument builder with application/json body
+func NewUpdateTriggerDocumentRequest(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateTriggerDocumentRequestWithBody(server, spaceId, triggerId, params, "application/json", bodyReader)
+}
+
+// NewUpdateTriggerDocumentRequestWithBody generates requests for UpdateTriggerDocument with any type of body
+func NewUpdateTriggerDocumentRequestWithBody(server string, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "trigger_id", runtime.ParamLocationPath, triggerId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/trigger/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -20104,6 +24385,22 @@ func NewListUnitsRequest(server string, spaceId openapi_types.UUID, params *List
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -20379,6 +24676,22 @@ func NewCreateUnitRequestWithBody(server string, spaceId openapi_types.UUID, par
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -21988,6 +26301,22 @@ func NewListExtendedMutationsRequest(server string, spaceId openapi_types.UUID, 
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -22283,6 +26612,22 @@ func NewListExtendedResourcesRequest(server string, spaceId openapi_types.UUID, 
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -22656,6 +27001,22 @@ func NewListExtendedRevisionsRequest(server string, spaceId openapi_types.UUID, 
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -23233,6 +27594,22 @@ func NewListUnitEventsRequest(server string, spaceId openapi_types.UUID, unitId 
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -23455,6 +27832,22 @@ func NewListViewsRequest(server string, spaceId openapi_types.UUID, params *List
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -23506,9 +27899,41 @@ func NewCreateViewRequestWithBody(server string, spaceId openapi_types.UUID, par
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -23656,18 +28081,18 @@ func NewGetViewRequest(server string, spaceId openapi_types.UUID, viewId openapi
 }
 
 // NewPatchViewRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchView builder with application/merge-patch+json body
-func NewPatchViewRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, body PatchViewApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+func NewPatchViewRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, body PatchViewApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPatchViewRequestWithBody(server, spaceId, viewId, "application/merge-patch+json", bodyReader)
+	return NewPatchViewRequestWithBody(server, spaceId, viewId, params, "application/merge-patch+json", bodyReader)
 }
 
 // NewPatchViewRequestWithBody generates requests for PatchView with any type of body
-func NewPatchViewRequestWithBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewPatchViewRequestWithBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -23697,6 +28122,28 @@ func NewPatchViewRequestWithBody(server string, spaceId openapi_types.UUID, view
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("PATCH", queryURL.String(), body)
@@ -23710,18 +28157,18 @@ func NewPatchViewRequestWithBody(server string, spaceId openapi_types.UUID, view
 }
 
 // NewUpdateViewRequest calls the generic UpdateView builder with application/json body
-func NewUpdateViewRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, body UpdateViewJSONRequestBody) (*http.Request, error) {
+func NewUpdateViewRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, body UpdateViewJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewUpdateViewRequestWithBody(server, spaceId, viewId, "application/json", bodyReader)
+	return NewUpdateViewRequestWithBody(server, spaceId, viewId, params, "application/json", bodyReader)
 }
 
 // NewUpdateViewRequestWithBody generates requests for UpdateView with any type of body
-func NewUpdateViewRequestWithBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader) (*http.Request, error) {
+func NewUpdateViewRequestWithBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -23753,7 +28200,146 @@ func NewUpdateViewRequestWithBody(server string, spaceId openapi_types.UUID, vie
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetViewDocumentRequest generates requests for GetViewDocument
+func NewGetViewDocumentRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "view_id", runtime.ParamLocationPath, viewId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/view/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateViewDocumentRequest calls the generic UpdateViewDocument builder with application/json body
+func NewUpdateViewDocumentRequest(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateViewDocumentRequestWithBody(server, spaceId, viewId, params, "application/json", bodyReader)
+}
+
+// NewUpdateViewDocumentRequestWithBody generates requests for UpdateViewDocument with any type of body
+func NewUpdateViewDocumentRequestWithBody(server string, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "view_id", runtime.ParamLocationPath, viewId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/view/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -23820,6 +28406,22 @@ func NewBulkDeleteTagsRequest(server string, params *BulkDeleteTagsParams) (*htt
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -23978,6 +28580,22 @@ func NewListAllTagsRequest(server string, params *ListAllTagsParams) (*http.Requ
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -24070,9 +28688,41 @@ func NewBulkPatchTagsRequestWithBody(server string, params *BulkPatchTagsParams,
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24167,6 +28817,22 @@ func NewBulkCreateTagsRequestWithBody(server string, params *BulkCreateTagsParam
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24292,6 +28958,22 @@ func NewBulkCreateTagsRequestWithBody(server string, params *BulkCreateTagsParam
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -24373,6 +29055,22 @@ func NewBulkMoveTagsRequestWithBody(server string, params *BulkMoveTagsParams, c
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24488,6 +29186,22 @@ func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams)
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24646,6 +29360,22 @@ func NewListAllTargetsRequest(server string, params *ListAllTargetsParams) (*htt
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -24738,6 +29468,22 @@ func NewBulkPatchTargetsRequestWithBody(server string, params *BulkPatchTargetsP
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -24757,6 +29503,22 @@ func NewBulkPatchTargetsRequestWithBody(server string, params *BulkPatchTargetsP
 		if params.RefreshTriggers != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "refresh_triggers", runtime.ParamLocationQuery, *params.RefreshTriggers); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24851,6 +29613,22 @@ func NewBulkMoveTargetsRequestWithBody(server string, params *BulkMoveTargetsPar
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -24966,6 +29744,22 @@ func NewBulkDeleteTriggersRequest(server string, params *BulkDeleteTriggersParam
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25108,6 +29902,22 @@ func NewListAllTriggersRequest(server string, params *ListAllTriggersParams) (*h
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -25200,9 +30010,73 @@ func NewBulkPatchTriggersRequestWithBody(server string, params *BulkPatchTrigger
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25310,6 +30184,22 @@ func NewBulkCreateTriggersRequestWithBody(server string, params *BulkCreateTrigg
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -25377,6 +30267,228 @@ func NewBulkCreateTriggersRequestWithBody(server string, params *BulkCreateTrigg
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewBulkMoveTriggersRequest calls the generic BulkMoveTriggers builder with application/json body
+func NewBulkMoveTriggersRequest(server string, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkMoveTriggersRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewBulkMoveTriggersRequestWithBody generates requests for BulkMoveTriggers with any type of body
+func NewBulkMoveTriggersRequestWithBody(server string, params *BulkMoveTriggersParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/trigger/move")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25460,6 +30572,22 @@ func NewBulkDeleteUnitsRequest(server string, params *BulkDeleteUnitsParams) (*h
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25605,6 +30733,22 @@ func NewListAllUnitsRequest(server string, params *ListAllUnitsParams) (*http.Re
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -25809,6 +30953,22 @@ func NewBulkPatchUnitsRequestWithBody(server string, params *BulkPatchUnitsParam
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -26252,6 +31412,22 @@ func NewBulkCreateUnitsRequestWithBody(server string, params *BulkCreateUnitsPar
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
@@ -26412,6 +31588,22 @@ func NewBulkCreateUnitsRequestWithBody(server string, params *BulkCreateUnitsPar
 
 		}
 
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -26482,6 +31674,22 @@ func NewBulkCancelUnitsRequest(server string, params *BulkCancelUnitsParams) (*h
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -26590,6 +31798,22 @@ func NewBulkMoveUnitsRequestWithBody(server string, params *BulkMoveUnitsParams,
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -26716,6 +31940,22 @@ func NewBulkTagUnitsRequestWithBody(server string, params *BulkTagUnitsParams, c
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -26941,6 +32181,22 @@ func NewSearchUnitDataRequest(server string, params *SearchUnitDataParams) (*htt
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.ResourceType != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "resource_type", runtime.ParamLocationQuery, *params.ResourceType); err != nil {
@@ -27121,6 +32377,22 @@ func NewSearchUnitDiffRequest(server string, params *SearchUnitDiffParams) (*htt
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -27439,6 +32711,22 @@ func NewListAllUnitEventsRequest(server string, params *ListAllUnitEventsParams)
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DistinctOn != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "distinct_on", runtime.ParamLocationQuery, *params.DistinctOn); err != nil {
@@ -27555,6 +32843,22 @@ func NewSearchUnitMutationSourcesRequest(server string, params *SearchUnitMutati
 		if params.Select != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -27839,6 +33143,22 @@ func NewListUsersRequest(server string, params *ListUsersParams) (*http.Request,
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -27919,18 +33239,18 @@ func NewListUserKeysRequest(server string, userId string) (*http.Request, error)
 }
 
 // NewCreateUserKeyRequest calls the generic CreateUserKey builder with application/json body
-func NewCreateUserKeyRequest(server string, userId string, body CreateUserKeyJSONRequestBody) (*http.Request, error) {
+func NewCreateUserKeyRequest(server string, userId string, params *CreateUserKeyParams, body CreateUserKeyJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewCreateUserKeyRequestWithBody(server, userId, "application/json", bodyReader)
+	return NewCreateUserKeyRequestWithBody(server, userId, params, "application/json", bodyReader)
 }
 
 // NewCreateUserKeyRequestWithBody generates requests for CreateUserKey with any type of body
-func NewCreateUserKeyRequestWithBody(server string, userId string, contentType string, body io.Reader) (*http.Request, error) {
+func NewCreateUserKeyRequestWithBody(server string, userId string, params *CreateUserKeyParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -27953,6 +33273,28 @@ func NewCreateUserKeyRequestWithBody(server string, userId string, contentType s
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
 	}
 
 	req, err := http.NewRequest("POST", queryURL.String(), body)
@@ -28063,6 +33405,22 @@ func NewBulkDeleteViewsRequest(server string, params *BulkDeleteViewsParams) (*h
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -28205,6 +33563,22 @@ func NewListAllViewsRequest(server string, params *ListAllViewsParams) (*http.Re
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -28297,9 +33671,73 @@ func NewBulkPatchViewsRequestWithBody(server string, params *BulkPatchViewsParam
 
 		}
 
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Include != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -28394,6 +33832,22 @@ func NewBulkCreateViewsRequestWithBody(server string, params *BulkCreateViewsPar
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -28519,6 +33973,86 @@ func NewBulkCreateViewsRequestWithBody(server string, params *BulkCreateViewsPar
 
 		}
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -28600,6 +34134,22 @@ func NewBulkMoveViewsRequestWithBody(server string, params *BulkMoveViewsParams,
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -28846,14 +34396,22 @@ type ClientWithResponsesInterface interface {
 	GetComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *GetComponentParams, reqEditors ...RequestEditorFn) (*GetComponentResponse, error)
 
 	// PatchComponentWithBodyWithResponse request with any body
-	PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
+	PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
 
-	PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
+	PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error)
 
 	// UpdateComponentWithBodyWithResponse request with any body
-	UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
+	UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
 
-	UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
+	UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error)
+
+	// GetComponentDocumentWithResponse request
+	GetComponentDocumentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComponentDocumentResponse, error)
+
+	// UpdateComponentDocumentWithBodyWithResponse request with any body
+	UpdateComponentDocumentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentDocumentResponse, error)
+
+	UpdateComponentDocumentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentDocumentResponse, error)
 
 	// DemoteWithBodyWithResponse request with any body
 	DemoteWithBodyWithResponse(ctx context.Context, params *DemoteParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DemoteResponse, error)
@@ -28969,9 +34527,9 @@ type ClientWithResponsesInterface interface {
 	GetOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *GetOrganizationParams, reqEditors ...RequestEditorFn) (*GetOrganizationResponse, error)
 
 	// UpdateOrganizationWithBodyWithResponse request with any body
-	UpdateOrganizationWithBodyWithResponse(ctx context.Context, organizationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error)
+	UpdateOrganizationWithBodyWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error)
 
-	UpdateOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error)
+	UpdateOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error)
 
 	// ListOrganizationMembersWithResponse request
 	ListOrganizationMembersWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *ListOrganizationMembersParams, reqEditors ...RequestEditorFn) (*ListOrganizationMembersResponse, error)
@@ -29057,14 +34615,22 @@ type ClientWithResponsesInterface interface {
 	GetAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *GetAttributeParams, reqEditors ...RequestEditorFn) (*GetAttributeResponse, error)
 
 	// PatchAttributeWithBodyWithResponse request with any body
-	PatchAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error)
+	PatchAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error)
 
-	PatchAttributeWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error)
+	PatchAttributeWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error)
 
 	// UpdateAttributeWithBodyWithResponse request with any body
-	UpdateAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error)
+	UpdateAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error)
 
-	UpdateAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error)
+	UpdateAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error)
+
+	// GetAttributeDocumentWithResponse request
+	GetAttributeDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetAttributeDocumentResponse, error)
+
+	// UpdateAttributeDocumentWithBodyWithResponse request with any body
+	UpdateAttributeDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeDocumentResponse, error)
+
+	UpdateAttributeDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeDocumentResponse, error)
 
 	// ListBridgeWorkersWithResponse request
 	ListBridgeWorkersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListBridgeWorkersParams, reqEditors ...RequestEditorFn) (*ListBridgeWorkersResponse, error)
@@ -29081,14 +34647,14 @@ type ClientWithResponsesInterface interface {
 	GetBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *GetBridgeWorkerParams, reqEditors ...RequestEditorFn) (*GetBridgeWorkerResponse, error)
 
 	// PatchBridgeWorkerWithBodyWithResponse request with any body
-	PatchBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error)
+	PatchBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error)
 
-	PatchBridgeWorkerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error)
+	PatchBridgeWorkerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error)
 
 	// UpdateBridgeWorkerWithBodyWithResponse request with any body
-	UpdateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error)
+	UpdateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error)
 
-	UpdateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error)
+	UpdateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error)
 
 	// ListBridgeWorkerFunctionsWithResponse request
 	ListBridgeWorkerFunctionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*ListBridgeWorkerFunctionsResponse, error)
@@ -29138,14 +34704,14 @@ type ClientWithResponsesInterface interface {
 	GetChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *GetChangeSetParams, reqEditors ...RequestEditorFn) (*GetChangeSetResponse, error)
 
 	// PatchChangeSetWithBodyWithResponse request with any body
-	PatchChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error)
+	PatchChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error)
 
-	PatchChangeSetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error)
+	PatchChangeSetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error)
 
 	// UpdateChangeSetWithBodyWithResponse request with any body
-	UpdateChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error)
+	UpdateChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error)
 
-	UpdateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error)
+	UpdateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error)
 
 	// ListChangeWorkflowsWithResponse request
 	ListChangeWorkflowsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListChangeWorkflowsParams, reqEditors ...RequestEditorFn) (*ListChangeWorkflowsResponse, error)
@@ -29162,14 +34728,30 @@ type ClientWithResponsesInterface interface {
 	GetChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *GetChangeWorkflowParams, reqEditors ...RequestEditorFn) (*GetChangeWorkflowResponse, error)
 
 	// PatchChangeWorkflowWithBodyWithResponse request with any body
-	PatchChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error)
+	PatchChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error)
 
-	PatchChangeWorkflowWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error)
+	PatchChangeWorkflowWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error)
 
 	// UpdateChangeWorkflowWithBodyWithResponse request with any body
-	UpdateChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error)
+	UpdateChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error)
 
-	UpdateChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error)
+	UpdateChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error)
+
+	// GetChangeWorkflowDocumentWithResponse request
+	GetChangeWorkflowDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetChangeWorkflowDocumentResponse, error)
+
+	// UpdateChangeWorkflowDocumentWithBodyWithResponse request with any body
+	UpdateChangeWorkflowDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowDocumentResponse, error)
+
+	UpdateChangeWorkflowDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowDocumentResponse, error)
+
+	// GetSpaceDocumentWithResponse request
+	GetSpaceDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSpaceDocumentResponse, error)
+
+	// UpdateSpaceDocumentWithBodyWithResponse request with any body
+	UpdateSpaceDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceDocumentResponse, error)
+
+	UpdateSpaceDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, body UpdateSpaceDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceDocumentResponse, error)
 
 	// ListFiltersWithResponse request
 	ListFiltersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListFiltersParams, reqEditors ...RequestEditorFn) (*ListFiltersResponse, error)
@@ -29186,14 +34768,22 @@ type ClientWithResponsesInterface interface {
 	GetFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *GetFilterParams, reqEditors ...RequestEditorFn) (*GetFilterResponse, error)
 
 	// PatchFilterWithBodyWithResponse request with any body
-	PatchFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error)
+	PatchFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error)
 
-	PatchFilterWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error)
+	PatchFilterWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error)
 
 	// UpdateFilterWithBodyWithResponse request with any body
-	UpdateFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error)
+	UpdateFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error)
 
-	UpdateFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error)
+	UpdateFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error)
+
+	// GetFilterDocumentWithResponse request
+	GetFilterDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFilterDocumentResponse, error)
+
+	// UpdateFilterDocumentWithBodyWithResponse request with any body
+	UpdateFilterDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterDocumentResponse, error)
+
+	UpdateFilterDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterDocumentResponse, error)
 
 	// ListFunctionsWithResponse request
 	ListFunctionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListFunctionsParams, reqEditors ...RequestEditorFn) (*ListFunctionsResponse, error)
@@ -29218,14 +34808,22 @@ type ClientWithResponsesInterface interface {
 	GetInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *GetInvocationParams, reqEditors ...RequestEditorFn) (*GetInvocationResponse, error)
 
 	// PatchInvocationWithBodyWithResponse request with any body
-	PatchInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error)
+	PatchInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error)
 
-	PatchInvocationWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error)
+	PatchInvocationWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error)
 
 	// UpdateInvocationWithBodyWithResponse request with any body
-	UpdateInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error)
+	UpdateInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error)
 
-	UpdateInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error)
+	UpdateInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error)
+
+	// GetInvocationDocumentWithResponse request
+	GetInvocationDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetInvocationDocumentResponse, error)
+
+	// UpdateInvocationDocumentWithBodyWithResponse request with any body
+	UpdateInvocationDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationDocumentResponse, error)
+
+	UpdateInvocationDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationDocumentResponse, error)
 
 	// ListLinksWithResponse request
 	ListLinksWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListLinksParams, reqEditors ...RequestEditorFn) (*ListLinksResponse, error)
@@ -29247,9 +34845,17 @@ type ClientWithResponsesInterface interface {
 	PatchLinkWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *PatchLinkParams, body PatchLinkApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchLinkResponse, error)
 
 	// UpdateLinkWithBodyWithResponse request with any body
-	UpdateLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
+	UpdateLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
 
-	UpdateLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
+	UpdateLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error)
+
+	// GetLinkDocumentWithResponse request
+	GetLinkDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLinkDocumentResponse, error)
+
+	// UpdateLinkDocumentWithBodyWithResponse request with any body
+	UpdateLinkDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkDocumentResponse, error)
+
+	UpdateLinkDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkDocumentResponse, error)
 
 	// ListExtendedReleasesWithResponse request
 	ListExtendedReleasesWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListExtendedReleasesParams, reqEditors ...RequestEditorFn) (*ListExtendedReleasesResponse, error)
@@ -29266,14 +34872,14 @@ type ClientWithResponsesInterface interface {
 	GetExtendedReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *GetExtendedReleaseParams, reqEditors ...RequestEditorFn) (*GetExtendedReleaseResponse, error)
 
 	// PatchReleaseWithBodyWithResponse request with any body
-	PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
+	PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
 
-	PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
+	PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error)
 
 	// UpdateReleaseWithBodyWithResponse request with any body
-	UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
+	UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
 
-	UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
+	UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error)
 
 	// DownloadReleaseDataWithResponse request
 	DownloadReleaseDataWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DownloadReleaseDataResponse, error)
@@ -29296,14 +34902,14 @@ type ClientWithResponsesInterface interface {
 	GetTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *GetTagParams, reqEditors ...RequestEditorFn) (*GetTagResponse, error)
 
 	// PatchTagWithBodyWithResponse request with any body
-	PatchTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTagResponse, error)
+	PatchTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTagResponse, error)
 
-	PatchTagWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTagResponse, error)
+	PatchTagWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTagResponse, error)
 
 	// UpdateTagWithBodyWithResponse request with any body
-	UpdateTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error)
+	UpdateTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error)
 
-	UpdateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error)
+	UpdateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error)
 
 	// ListTargetsWithResponse request
 	ListTargetsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTargetsParams, reqEditors ...RequestEditorFn) (*ListTargetsResponse, error)
@@ -29344,14 +34950,22 @@ type ClientWithResponsesInterface interface {
 	GetTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *GetTriggerParams, reqEditors ...RequestEditorFn) (*GetTriggerResponse, error)
 
 	// PatchTriggerWithBodyWithResponse request with any body
-	PatchTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error)
+	PatchTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error)
 
-	PatchTriggerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error)
+	PatchTriggerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error)
 
 	// UpdateTriggerWithBodyWithResponse request with any body
-	UpdateTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
+	UpdateTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
 
-	UpdateTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
+	UpdateTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error)
+
+	// GetTriggerDocumentWithResponse request
+	GetTriggerDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTriggerDocumentResponse, error)
+
+	// UpdateTriggerDocumentWithBodyWithResponse request with any body
+	UpdateTriggerDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerDocumentResponse, error)
+
+	UpdateTriggerDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerDocumentResponse, error)
 
 	// ListUnitsWithResponse request
 	ListUnitsWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListUnitsParams, reqEditors ...RequestEditorFn) (*ListUnitsResponse, error)
@@ -29455,14 +35069,22 @@ type ClientWithResponsesInterface interface {
 	GetViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *GetViewParams, reqEditors ...RequestEditorFn) (*GetViewResponse, error)
 
 	// PatchViewWithBodyWithResponse request with any body
-	PatchViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchViewResponse, error)
+	PatchViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchViewResponse, error)
 
-	PatchViewWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchViewResponse, error)
+	PatchViewWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchViewResponse, error)
 
 	// UpdateViewWithBodyWithResponse request with any body
-	UpdateViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error)
+	UpdateViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error)
 
-	UpdateViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error)
+	UpdateViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error)
+
+	// GetViewDocumentWithResponse request
+	GetViewDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetViewDocumentResponse, error)
+
+	// UpdateViewDocumentWithBodyWithResponse request with any body
+	UpdateViewDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewDocumentResponse, error)
+
+	UpdateViewDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewDocumentResponse, error)
 
 	// BulkDeleteTagsWithResponse request
 	BulkDeleteTagsWithResponse(ctx context.Context, params *BulkDeleteTagsParams, reqEditors ...RequestEditorFn) (*BulkDeleteTagsResponse, error)
@@ -29516,6 +35138,11 @@ type ClientWithResponsesInterface interface {
 	BulkCreateTriggersWithBodyWithResponse(ctx context.Context, params *BulkCreateTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkCreateTriggersResponse, error)
 
 	BulkCreateTriggersWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkCreateTriggersParams, body BulkCreateTriggersApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkCreateTriggersResponse, error)
+
+	// BulkMoveTriggersWithBodyWithResponse request with any body
+	BulkMoveTriggersWithBodyWithResponse(ctx context.Context, params *BulkMoveTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTriggersResponse, error)
+
+	BulkMoveTriggersWithResponse(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTriggersResponse, error)
 
 	// BulkDeleteUnitsWithResponse request
 	BulkDeleteUnitsWithResponse(ctx context.Context, params *BulkDeleteUnitsParams, reqEditors ...RequestEditorFn) (*BulkDeleteUnitsResponse, error)
@@ -29576,9 +35203,9 @@ type ClientWithResponsesInterface interface {
 	ListUserKeysWithResponse(ctx context.Context, userId string, reqEditors ...RequestEditorFn) (*ListUserKeysResponse, error)
 
 	// CreateUserKeyWithBodyWithResponse request with any body
-	CreateUserKeyWithBodyWithResponse(ctx context.Context, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error)
+	CreateUserKeyWithBodyWithResponse(ctx context.Context, userId string, params *CreateUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error)
 
-	CreateUserKeyWithResponse(ctx context.Context, userId string, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error)
+	CreateUserKeyWithResponse(ctx context.Context, userId string, params *CreateUserKeyParams, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error)
 
 	// DeleteUserKeyWithResponse request
 	DeleteUserKeyWithResponse(ctx context.Context, userId string, kid string, reqEditors ...RequestEditorFn) (*DeleteUserKeyResponse, error)
@@ -29646,6 +35273,7 @@ type BulkPatchComponentsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -29707,6 +35335,7 @@ type BulkPatchSpacesResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -29737,6 +35366,7 @@ type BulkCreateSpacesResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -29884,6 +35514,7 @@ type BulkPatchAttributesResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -29914,6 +35545,7 @@ type BulkCreateAttributesResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -30469,6 +36101,7 @@ type BulkPatchChangeWorkflowsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -30499,6 +36132,7 @@ type BulkCreateChangeWorkflowsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -30722,6 +36356,63 @@ func (r UpdateComponentResponse) StatusCode() int {
 	return 0
 }
 
+type GetComponentDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetComponentDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetComponentDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateComponentDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Component
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateComponentDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateComponentDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type DemoteResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -30851,6 +36542,7 @@ type BulkPatchFiltersResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -30881,6 +36573,7 @@ type BulkCreateFiltersResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -31084,6 +36777,7 @@ type BulkPatchInvocationsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -31114,6 +36808,7 @@ type BulkCreateInvocationsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -31233,6 +36928,7 @@ type BulkPatchLinksResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -31263,6 +36959,7 @@ type BulkCreateLinksResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -32316,6 +38013,63 @@ func (r UpdateAttributeResponse) StatusCode() int {
 	return 0
 }
 
+type GetAttributeDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetAttributeDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetAttributeDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateAttributeDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Attribute
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateAttributeDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateAttributeDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListBridgeWorkersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -33086,6 +38840,120 @@ func (r UpdateChangeWorkflowResponse) StatusCode() int {
 	return 0
 }
 
+type GetChangeWorkflowDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetChangeWorkflowDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetChangeWorkflowDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateChangeWorkflowDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ChangeWorkflow
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateChangeWorkflowDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateChangeWorkflowDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetSpaceDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetSpaceDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetSpaceDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateSpaceDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Space
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateSpaceDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateSpaceDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListFiltersResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -33253,6 +39121,63 @@ func (r UpdateFilterResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetFilterDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFilterDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFilterDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateFilterDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Filter
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateFilterDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateFilterDocumentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -33494,6 +39419,63 @@ func (r UpdateInvocationResponse) StatusCode() int {
 	return 0
 }
 
+type GetInvocationDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetInvocationDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetInvocationDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateInvocationDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Invocation
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateInvocationDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateInvocationDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListLinksResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -33661,6 +39643,63 @@ func (r UpdateLinkResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateLinkResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetLinkDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetLinkDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetLinkDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateLinkDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Link
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateLinkDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateLinkDocumentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -34411,6 +40450,63 @@ func (r UpdateTriggerResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateTriggerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetTriggerDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTriggerDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTriggerDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateTriggerDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Trigger
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateTriggerDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateTriggerDocumentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -35301,6 +41397,63 @@ func (r UpdateViewResponse) StatusCode() int {
 	return 0
 }
 
+type GetViewDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetViewDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetViewDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateViewDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *View
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateViewDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateViewDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type BulkDeleteTagsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -35638,6 +41791,7 @@ type BulkPatchTriggersResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -35668,6 +41822,7 @@ type BulkCreateTriggersResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -35682,6 +41837,36 @@ func (r BulkCreateTriggersResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r BulkCreateTriggersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkMoveTriggersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]MoveResponse
+	JSON207      *[]MoveResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkMoveTriggersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkMoveTriggersResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -36285,6 +42470,7 @@ type BulkPatchViewsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -36315,6 +42501,7 @@ type BulkCreateViewsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -36834,16 +43021,16 @@ func (c *ClientWithResponses) GetComponentWithResponse(ctx context.Context, comp
 }
 
 // PatchComponentWithBodyWithResponse request with arbitrary body returning *PatchComponentResponse
-func (c *ClientWithResponses) PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
-	rsp, err := c.PatchComponentWithBody(ctx, componentId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
+	rsp, err := c.PatchComponentWithBody(ctx, componentId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchComponentResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
-	rsp, err := c.PatchComponentWithApplicationMergePatchPlusJSONBody(ctx, componentId, body, reqEditors...)
+func (c *ClientWithResponses) PatchComponentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *PatchComponentParams, body PatchComponentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchComponentResponse, error) {
+	rsp, err := c.PatchComponentWithApplicationMergePatchPlusJSONBody(ctx, componentId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -36851,20 +43038,46 @@ func (c *ClientWithResponses) PatchComponentWithApplicationMergePatchPlusJSONBod
 }
 
 // UpdateComponentWithBodyWithResponse request with arbitrary body returning *UpdateComponentResponse
-func (c *ClientWithResponses) UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
-	rsp, err := c.UpdateComponentWithBody(ctx, componentId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateComponentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
+	rsp, err := c.UpdateComponentWithBody(ctx, componentId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateComponentResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
-	rsp, err := c.UpdateComponent(ctx, componentId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateComponentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentParams, body UpdateComponentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentResponse, error) {
+	rsp, err := c.UpdateComponent(ctx, componentId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateComponentResponse(rsp)
+}
+
+// GetComponentDocumentWithResponse request returning *GetComponentDocumentResponse
+func (c *ClientWithResponses) GetComponentDocumentWithResponse(ctx context.Context, componentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetComponentDocumentResponse, error) {
+	rsp, err := c.GetComponentDocument(ctx, componentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetComponentDocumentResponse(rsp)
+}
+
+// UpdateComponentDocumentWithBodyWithResponse request with arbitrary body returning *UpdateComponentDocumentResponse
+func (c *ClientWithResponses) UpdateComponentDocumentWithBodyWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateComponentDocumentResponse, error) {
+	rsp, err := c.UpdateComponentDocumentWithBody(ctx, componentId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateComponentDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateComponentDocumentWithResponse(ctx context.Context, componentId openapi_types.UUID, params *UpdateComponentDocumentParams, body UpdateComponentDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateComponentDocumentResponse, error) {
+	rsp, err := c.UpdateComponentDocument(ctx, componentId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateComponentDocumentResponse(rsp)
 }
 
 // DemoteWithBodyWithResponse request with arbitrary body returning *DemoteResponse
@@ -37233,16 +43446,16 @@ func (c *ClientWithResponses) GetOrganizationWithResponse(ctx context.Context, o
 }
 
 // UpdateOrganizationWithBodyWithResponse request with arbitrary body returning *UpdateOrganizationResponse
-func (c *ClientWithResponses) UpdateOrganizationWithBodyWithResponse(ctx context.Context, organizationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error) {
-	rsp, err := c.UpdateOrganizationWithBody(ctx, organizationId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateOrganizationWithBodyWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error) {
+	rsp, err := c.UpdateOrganizationWithBody(ctx, organizationId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateOrganizationResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error) {
-	rsp, err := c.UpdateOrganization(ctx, organizationId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateOrganizationWithResponse(ctx context.Context, organizationId openapi_types.UUID, params *UpdateOrganizationParams, body UpdateOrganizationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateOrganizationResponse, error) {
+	rsp, err := c.UpdateOrganization(ctx, organizationId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37513,16 +43726,16 @@ func (c *ClientWithResponses) GetAttributeWithResponse(ctx context.Context, spac
 }
 
 // PatchAttributeWithBodyWithResponse request with arbitrary body returning *PatchAttributeResponse
-func (c *ClientWithResponses) PatchAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error) {
-	rsp, err := c.PatchAttributeWithBody(ctx, spaceId, attributeId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error) {
+	rsp, err := c.PatchAttributeWithBody(ctx, spaceId, attributeId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchAttributeResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchAttributeWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error) {
-	rsp, err := c.PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx, spaceId, attributeId, body, reqEditors...)
+func (c *ClientWithResponses) PatchAttributeWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *PatchAttributeParams, body PatchAttributeApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchAttributeResponse, error) {
+	rsp, err := c.PatchAttributeWithApplicationMergePatchPlusJSONBody(ctx, spaceId, attributeId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37530,20 +43743,46 @@ func (c *ClientWithResponses) PatchAttributeWithApplicationMergePatchPlusJSONBod
 }
 
 // UpdateAttributeWithBodyWithResponse request with arbitrary body returning *UpdateAttributeResponse
-func (c *ClientWithResponses) UpdateAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error) {
-	rsp, err := c.UpdateAttributeWithBody(ctx, spaceId, attributeId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateAttributeWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error) {
+	rsp, err := c.UpdateAttributeWithBody(ctx, spaceId, attributeId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateAttributeResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error) {
-	rsp, err := c.UpdateAttribute(ctx, spaceId, attributeId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateAttributeWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeParams, body UpdateAttributeJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeResponse, error) {
+	rsp, err := c.UpdateAttribute(ctx, spaceId, attributeId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateAttributeResponse(rsp)
+}
+
+// GetAttributeDocumentWithResponse request returning *GetAttributeDocumentResponse
+func (c *ClientWithResponses) GetAttributeDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetAttributeDocumentResponse, error) {
+	rsp, err := c.GetAttributeDocument(ctx, spaceId, attributeId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetAttributeDocumentResponse(rsp)
+}
+
+// UpdateAttributeDocumentWithBodyWithResponse request with arbitrary body returning *UpdateAttributeDocumentResponse
+func (c *ClientWithResponses) UpdateAttributeDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateAttributeDocumentResponse, error) {
+	rsp, err := c.UpdateAttributeDocumentWithBody(ctx, spaceId, attributeId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAttributeDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateAttributeDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, attributeId openapi_types.UUID, params *UpdateAttributeDocumentParams, body UpdateAttributeDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateAttributeDocumentResponse, error) {
+	rsp, err := c.UpdateAttributeDocument(ctx, spaceId, attributeId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateAttributeDocumentResponse(rsp)
 }
 
 // ListBridgeWorkersWithResponse request returning *ListBridgeWorkersResponse
@@ -37591,16 +43830,16 @@ func (c *ClientWithResponses) GetBridgeWorkerWithResponse(ctx context.Context, s
 }
 
 // PatchBridgeWorkerWithBodyWithResponse request with arbitrary body returning *PatchBridgeWorkerResponse
-func (c *ClientWithResponses) PatchBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error) {
-	rsp, err := c.PatchBridgeWorkerWithBody(ctx, spaceId, bridgeWorkerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error) {
+	rsp, err := c.PatchBridgeWorkerWithBody(ctx, spaceId, bridgeWorkerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchBridgeWorkerResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchBridgeWorkerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error) {
-	rsp, err := c.PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx, spaceId, bridgeWorkerId, body, reqEditors...)
+func (c *ClientWithResponses) PatchBridgeWorkerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *PatchBridgeWorkerParams, body PatchBridgeWorkerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchBridgeWorkerResponse, error) {
+	rsp, err := c.PatchBridgeWorkerWithApplicationMergePatchPlusJSONBody(ctx, spaceId, bridgeWorkerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37608,16 +43847,16 @@ func (c *ClientWithResponses) PatchBridgeWorkerWithApplicationMergePatchPlusJSON
 }
 
 // UpdateBridgeWorkerWithBodyWithResponse request with arbitrary body returning *UpdateBridgeWorkerResponse
-func (c *ClientWithResponses) UpdateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error) {
-	rsp, err := c.UpdateBridgeWorkerWithBody(ctx, spaceId, bridgeWorkerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateBridgeWorkerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error) {
+	rsp, err := c.UpdateBridgeWorkerWithBody(ctx, spaceId, bridgeWorkerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateBridgeWorkerResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error) {
-	rsp, err := c.UpdateBridgeWorker(ctx, spaceId, bridgeWorkerId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateBridgeWorkerWithResponse(ctx context.Context, spaceId openapi_types.UUID, bridgeWorkerId openapi_types.UUID, params *UpdateBridgeWorkerParams, body UpdateBridgeWorkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBridgeWorkerResponse, error) {
+	rsp, err := c.UpdateBridgeWorker(ctx, spaceId, bridgeWorkerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37774,16 +44013,16 @@ func (c *ClientWithResponses) GetChangeSetWithResponse(ctx context.Context, spac
 }
 
 // PatchChangeSetWithBodyWithResponse request with arbitrary body returning *PatchChangeSetResponse
-func (c *ClientWithResponses) PatchChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error) {
-	rsp, err := c.PatchChangeSetWithBody(ctx, spaceId, changeSetId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error) {
+	rsp, err := c.PatchChangeSetWithBody(ctx, spaceId, changeSetId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchChangeSetResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchChangeSetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error) {
-	rsp, err := c.PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeSetId, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeSetWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *PatchChangeSetParams, body PatchChangeSetApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeSetResponse, error) {
+	rsp, err := c.PatchChangeSetWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeSetId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37791,16 +44030,16 @@ func (c *ClientWithResponses) PatchChangeSetWithApplicationMergePatchPlusJSONBod
 }
 
 // UpdateChangeSetWithBodyWithResponse request with arbitrary body returning *UpdateChangeSetResponse
-func (c *ClientWithResponses) UpdateChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error) {
-	rsp, err := c.UpdateChangeSetWithBody(ctx, spaceId, changeSetId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeSetWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error) {
+	rsp, err := c.UpdateChangeSetWithBody(ctx, spaceId, changeSetId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateChangeSetResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error) {
-	rsp, err := c.UpdateChangeSet(ctx, spaceId, changeSetId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeSetWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeSetId openapi_types.UUID, params *UpdateChangeSetParams, body UpdateChangeSetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeSetResponse, error) {
+	rsp, err := c.UpdateChangeSet(ctx, spaceId, changeSetId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37852,16 +44091,16 @@ func (c *ClientWithResponses) GetChangeWorkflowWithResponse(ctx context.Context,
 }
 
 // PatchChangeWorkflowWithBodyWithResponse request with arbitrary body returning *PatchChangeWorkflowResponse
-func (c *ClientWithResponses) PatchChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error) {
-	rsp, err := c.PatchChangeWorkflowWithBody(ctx, spaceId, changeWorkflowId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error) {
+	rsp, err := c.PatchChangeWorkflowWithBody(ctx, spaceId, changeWorkflowId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchChangeWorkflowResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchChangeWorkflowWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error) {
-	rsp, err := c.PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeWorkflowId, body, reqEditors...)
+func (c *ClientWithResponses) PatchChangeWorkflowWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *PatchChangeWorkflowParams, body PatchChangeWorkflowApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchChangeWorkflowResponse, error) {
+	rsp, err := c.PatchChangeWorkflowWithApplicationMergePatchPlusJSONBody(ctx, spaceId, changeWorkflowId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37869,20 +44108,72 @@ func (c *ClientWithResponses) PatchChangeWorkflowWithApplicationMergePatchPlusJS
 }
 
 // UpdateChangeWorkflowWithBodyWithResponse request with arbitrary body returning *UpdateChangeWorkflowResponse
-func (c *ClientWithResponses) UpdateChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error) {
-	rsp, err := c.UpdateChangeWorkflowWithBody(ctx, spaceId, changeWorkflowId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeWorkflowWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error) {
+	rsp, err := c.UpdateChangeWorkflowWithBody(ctx, spaceId, changeWorkflowId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateChangeWorkflowResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error) {
-	rsp, err := c.UpdateChangeWorkflow(ctx, spaceId, changeWorkflowId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateChangeWorkflowWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowParams, body UpdateChangeWorkflowJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowResponse, error) {
+	rsp, err := c.UpdateChangeWorkflow(ctx, spaceId, changeWorkflowId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateChangeWorkflowResponse(rsp)
+}
+
+// GetChangeWorkflowDocumentWithResponse request returning *GetChangeWorkflowDocumentResponse
+func (c *ClientWithResponses) GetChangeWorkflowDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetChangeWorkflowDocumentResponse, error) {
+	rsp, err := c.GetChangeWorkflowDocument(ctx, spaceId, changeWorkflowId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetChangeWorkflowDocumentResponse(rsp)
+}
+
+// UpdateChangeWorkflowDocumentWithBodyWithResponse request with arbitrary body returning *UpdateChangeWorkflowDocumentResponse
+func (c *ClientWithResponses) UpdateChangeWorkflowDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowDocumentResponse, error) {
+	rsp, err := c.UpdateChangeWorkflowDocumentWithBody(ctx, spaceId, changeWorkflowId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateChangeWorkflowDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateChangeWorkflowDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, changeWorkflowId openapi_types.UUID, params *UpdateChangeWorkflowDocumentParams, body UpdateChangeWorkflowDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateChangeWorkflowDocumentResponse, error) {
+	rsp, err := c.UpdateChangeWorkflowDocument(ctx, spaceId, changeWorkflowId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateChangeWorkflowDocumentResponse(rsp)
+}
+
+// GetSpaceDocumentWithResponse request returning *GetSpaceDocumentResponse
+func (c *ClientWithResponses) GetSpaceDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetSpaceDocumentResponse, error) {
+	rsp, err := c.GetSpaceDocument(ctx, spaceId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetSpaceDocumentResponse(rsp)
+}
+
+// UpdateSpaceDocumentWithBodyWithResponse request with arbitrary body returning *UpdateSpaceDocumentResponse
+func (c *ClientWithResponses) UpdateSpaceDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateSpaceDocumentResponse, error) {
+	rsp, err := c.UpdateSpaceDocumentWithBody(ctx, spaceId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSpaceDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateSpaceDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *UpdateSpaceDocumentParams, body UpdateSpaceDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateSpaceDocumentResponse, error) {
+	rsp, err := c.UpdateSpaceDocument(ctx, spaceId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateSpaceDocumentResponse(rsp)
 }
 
 // ListFiltersWithResponse request returning *ListFiltersResponse
@@ -37930,16 +44221,16 @@ func (c *ClientWithResponses) GetFilterWithResponse(ctx context.Context, spaceId
 }
 
 // PatchFilterWithBodyWithResponse request with arbitrary body returning *PatchFilterResponse
-func (c *ClientWithResponses) PatchFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error) {
-	rsp, err := c.PatchFilterWithBody(ctx, spaceId, filterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error) {
+	rsp, err := c.PatchFilterWithBody(ctx, spaceId, filterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchFilterResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchFilterWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error) {
-	rsp, err := c.PatchFilterWithApplicationMergePatchPlusJSONBody(ctx, spaceId, filterId, body, reqEditors...)
+func (c *ClientWithResponses) PatchFilterWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *PatchFilterParams, body PatchFilterApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchFilterResponse, error) {
+	rsp, err := c.PatchFilterWithApplicationMergePatchPlusJSONBody(ctx, spaceId, filterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -37947,20 +44238,46 @@ func (c *ClientWithResponses) PatchFilterWithApplicationMergePatchPlusJSONBodyWi
 }
 
 // UpdateFilterWithBodyWithResponse request with arbitrary body returning *UpdateFilterResponse
-func (c *ClientWithResponses) UpdateFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error) {
-	rsp, err := c.UpdateFilterWithBody(ctx, spaceId, filterId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateFilterWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error) {
+	rsp, err := c.UpdateFilterWithBody(ctx, spaceId, filterId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateFilterResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error) {
-	rsp, err := c.UpdateFilter(ctx, spaceId, filterId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateFilterWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterParams, body UpdateFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterResponse, error) {
+	rsp, err := c.UpdateFilter(ctx, spaceId, filterId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateFilterResponse(rsp)
+}
+
+// GetFilterDocumentWithResponse request returning *GetFilterDocumentResponse
+func (c *ClientWithResponses) GetFilterDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetFilterDocumentResponse, error) {
+	rsp, err := c.GetFilterDocument(ctx, spaceId, filterId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFilterDocumentResponse(rsp)
+}
+
+// UpdateFilterDocumentWithBodyWithResponse request with arbitrary body returning *UpdateFilterDocumentResponse
+func (c *ClientWithResponses) UpdateFilterDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateFilterDocumentResponse, error) {
+	rsp, err := c.UpdateFilterDocumentWithBody(ctx, spaceId, filterId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFilterDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateFilterDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, filterId openapi_types.UUID, params *UpdateFilterDocumentParams, body UpdateFilterDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateFilterDocumentResponse, error) {
+	rsp, err := c.UpdateFilterDocument(ctx, spaceId, filterId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateFilterDocumentResponse(rsp)
 }
 
 // ListFunctionsWithResponse request returning *ListFunctionsResponse
@@ -38034,16 +44351,16 @@ func (c *ClientWithResponses) GetInvocationWithResponse(ctx context.Context, spa
 }
 
 // PatchInvocationWithBodyWithResponse request with arbitrary body returning *PatchInvocationResponse
-func (c *ClientWithResponses) PatchInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error) {
-	rsp, err := c.PatchInvocationWithBody(ctx, spaceId, invocationId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error) {
+	rsp, err := c.PatchInvocationWithBody(ctx, spaceId, invocationId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchInvocationResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchInvocationWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error) {
-	rsp, err := c.PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx, spaceId, invocationId, body, reqEditors...)
+func (c *ClientWithResponses) PatchInvocationWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *PatchInvocationParams, body PatchInvocationApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchInvocationResponse, error) {
+	rsp, err := c.PatchInvocationWithApplicationMergePatchPlusJSONBody(ctx, spaceId, invocationId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38051,20 +44368,46 @@ func (c *ClientWithResponses) PatchInvocationWithApplicationMergePatchPlusJSONBo
 }
 
 // UpdateInvocationWithBodyWithResponse request with arbitrary body returning *UpdateInvocationResponse
-func (c *ClientWithResponses) UpdateInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error) {
-	rsp, err := c.UpdateInvocationWithBody(ctx, spaceId, invocationId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateInvocationWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error) {
+	rsp, err := c.UpdateInvocationWithBody(ctx, spaceId, invocationId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateInvocationResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error) {
-	rsp, err := c.UpdateInvocation(ctx, spaceId, invocationId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateInvocationWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationParams, body UpdateInvocationJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationResponse, error) {
+	rsp, err := c.UpdateInvocation(ctx, spaceId, invocationId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateInvocationResponse(rsp)
+}
+
+// GetInvocationDocumentWithResponse request returning *GetInvocationDocumentResponse
+func (c *ClientWithResponses) GetInvocationDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetInvocationDocumentResponse, error) {
+	rsp, err := c.GetInvocationDocument(ctx, spaceId, invocationId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetInvocationDocumentResponse(rsp)
+}
+
+// UpdateInvocationDocumentWithBodyWithResponse request with arbitrary body returning *UpdateInvocationDocumentResponse
+func (c *ClientWithResponses) UpdateInvocationDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateInvocationDocumentResponse, error) {
+	rsp, err := c.UpdateInvocationDocumentWithBody(ctx, spaceId, invocationId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateInvocationDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateInvocationDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, invocationId openapi_types.UUID, params *UpdateInvocationDocumentParams, body UpdateInvocationDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInvocationDocumentResponse, error) {
+	rsp, err := c.UpdateInvocationDocument(ctx, spaceId, invocationId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateInvocationDocumentResponse(rsp)
 }
 
 // ListLinksWithResponse request returning *ListLinksResponse
@@ -38129,20 +44472,46 @@ func (c *ClientWithResponses) PatchLinkWithApplicationMergePatchPlusJSONBodyWith
 }
 
 // UpdateLinkWithBodyWithResponse request with arbitrary body returning *UpdateLinkResponse
-func (c *ClientWithResponses) UpdateLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error) {
-	rsp, err := c.UpdateLinkWithBody(ctx, spaceId, linkId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateLinkWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error) {
+	rsp, err := c.UpdateLinkWithBody(ctx, spaceId, linkId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateLinkResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error) {
-	rsp, err := c.UpdateLink(ctx, spaceId, linkId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateLinkWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkParams, body UpdateLinkJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkResponse, error) {
+	rsp, err := c.UpdateLink(ctx, spaceId, linkId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateLinkResponse(rsp)
+}
+
+// GetLinkDocumentWithResponse request returning *GetLinkDocumentResponse
+func (c *ClientWithResponses) GetLinkDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetLinkDocumentResponse, error) {
+	rsp, err := c.GetLinkDocument(ctx, spaceId, linkId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetLinkDocumentResponse(rsp)
+}
+
+// UpdateLinkDocumentWithBodyWithResponse request with arbitrary body returning *UpdateLinkDocumentResponse
+func (c *ClientWithResponses) UpdateLinkDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateLinkDocumentResponse, error) {
+	rsp, err := c.UpdateLinkDocumentWithBody(ctx, spaceId, linkId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateLinkDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateLinkDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, linkId openapi_types.UUID, params *UpdateLinkDocumentParams, body UpdateLinkDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateLinkDocumentResponse, error) {
+	rsp, err := c.UpdateLinkDocument(ctx, spaceId, linkId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateLinkDocumentResponse(rsp)
 }
 
 // ListExtendedReleasesWithResponse request returning *ListExtendedReleasesResponse
@@ -38190,16 +44559,16 @@ func (c *ClientWithResponses) GetExtendedReleaseWithResponse(ctx context.Context
 }
 
 // PatchReleaseWithBodyWithResponse request with arbitrary body returning *PatchReleaseResponse
-func (c *ClientWithResponses) PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
-	rsp, err := c.PatchReleaseWithBody(ctx, spaceId, releaseId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
+	rsp, err := c.PatchReleaseWithBody(ctx, spaceId, releaseId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchReleaseResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
-	rsp, err := c.PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx, spaceId, releaseId, body, reqEditors...)
+func (c *ClientWithResponses) PatchReleaseWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *PatchReleaseParams, body PatchReleaseApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReleaseResponse, error) {
+	rsp, err := c.PatchReleaseWithApplicationMergePatchPlusJSONBody(ctx, spaceId, releaseId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38207,16 +44576,16 @@ func (c *ClientWithResponses) PatchReleaseWithApplicationMergePatchPlusJSONBodyW
 }
 
 // UpdateReleaseWithBodyWithResponse request with arbitrary body returning *UpdateReleaseResponse
-func (c *ClientWithResponses) UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
-	rsp, err := c.UpdateReleaseWithBody(ctx, spaceId, releaseId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateReleaseWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
+	rsp, err := c.UpdateReleaseWithBody(ctx, spaceId, releaseId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateReleaseResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
-	rsp, err := c.UpdateRelease(ctx, spaceId, releaseId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateReleaseWithResponse(ctx context.Context, spaceId openapi_types.UUID, releaseId openapi_types.UUID, params *UpdateReleaseParams, body UpdateReleaseJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReleaseResponse, error) {
+	rsp, err := c.UpdateRelease(ctx, spaceId, releaseId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38286,16 +44655,16 @@ func (c *ClientWithResponses) GetTagWithResponse(ctx context.Context, spaceId op
 }
 
 // PatchTagWithBodyWithResponse request with arbitrary body returning *PatchTagResponse
-func (c *ClientWithResponses) PatchTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTagResponse, error) {
-	rsp, err := c.PatchTagWithBody(ctx, spaceId, tagId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTagResponse, error) {
+	rsp, err := c.PatchTagWithBody(ctx, spaceId, tagId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchTagResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchTagWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTagResponse, error) {
-	rsp, err := c.PatchTagWithApplicationMergePatchPlusJSONBody(ctx, spaceId, tagId, body, reqEditors...)
+func (c *ClientWithResponses) PatchTagWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *PatchTagParams, body PatchTagApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTagResponse, error) {
+	rsp, err := c.PatchTagWithApplicationMergePatchPlusJSONBody(ctx, spaceId, tagId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38303,16 +44672,16 @@ func (c *ClientWithResponses) PatchTagWithApplicationMergePatchPlusJSONBodyWithR
 }
 
 // UpdateTagWithBodyWithResponse request with arbitrary body returning *UpdateTagResponse
-func (c *ClientWithResponses) UpdateTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error) {
-	rsp, err := c.UpdateTagWithBody(ctx, spaceId, tagId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTagWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error) {
+	rsp, err := c.UpdateTagWithBody(ctx, spaceId, tagId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateTagResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error) {
-	rsp, err := c.UpdateTag(ctx, spaceId, tagId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTagWithResponse(ctx context.Context, spaceId openapi_types.UUID, tagId openapi_types.UUID, params *UpdateTagParams, body UpdateTagJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTagResponse, error) {
+	rsp, err := c.UpdateTag(ctx, spaceId, tagId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38442,16 +44811,16 @@ func (c *ClientWithResponses) GetTriggerWithResponse(ctx context.Context, spaceI
 }
 
 // PatchTriggerWithBodyWithResponse request with arbitrary body returning *PatchTriggerResponse
-func (c *ClientWithResponses) PatchTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error) {
-	rsp, err := c.PatchTriggerWithBody(ctx, spaceId, triggerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error) {
+	rsp, err := c.PatchTriggerWithBody(ctx, spaceId, triggerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchTriggerResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchTriggerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error) {
-	rsp, err := c.PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx, spaceId, triggerId, body, reqEditors...)
+func (c *ClientWithResponses) PatchTriggerWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *PatchTriggerParams, body PatchTriggerApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchTriggerResponse, error) {
+	rsp, err := c.PatchTriggerWithApplicationMergePatchPlusJSONBody(ctx, spaceId, triggerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38459,20 +44828,46 @@ func (c *ClientWithResponses) PatchTriggerWithApplicationMergePatchPlusJSONBodyW
 }
 
 // UpdateTriggerWithBodyWithResponse request with arbitrary body returning *UpdateTriggerResponse
-func (c *ClientWithResponses) UpdateTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error) {
-	rsp, err := c.UpdateTriggerWithBody(ctx, spaceId, triggerId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTriggerWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error) {
+	rsp, err := c.UpdateTriggerWithBody(ctx, spaceId, triggerId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateTriggerResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error) {
-	rsp, err := c.UpdateTrigger(ctx, spaceId, triggerId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateTriggerWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerParams, body UpdateTriggerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerResponse, error) {
+	rsp, err := c.UpdateTrigger(ctx, spaceId, triggerId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateTriggerResponse(rsp)
+}
+
+// GetTriggerDocumentWithResponse request returning *GetTriggerDocumentResponse
+func (c *ClientWithResponses) GetTriggerDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTriggerDocumentResponse, error) {
+	rsp, err := c.GetTriggerDocument(ctx, spaceId, triggerId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTriggerDocumentResponse(rsp)
+}
+
+// UpdateTriggerDocumentWithBodyWithResponse request with arbitrary body returning *UpdateTriggerDocumentResponse
+func (c *ClientWithResponses) UpdateTriggerDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTriggerDocumentResponse, error) {
+	rsp, err := c.UpdateTriggerDocumentWithBody(ctx, spaceId, triggerId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTriggerDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateTriggerDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, triggerId openapi_types.UUID, params *UpdateTriggerDocumentParams, body UpdateTriggerDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTriggerDocumentResponse, error) {
+	rsp, err := c.UpdateTriggerDocument(ctx, spaceId, triggerId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTriggerDocumentResponse(rsp)
 }
 
 // ListUnitsWithResponse request returning *ListUnitsResponse
@@ -38793,16 +45188,16 @@ func (c *ClientWithResponses) GetViewWithResponse(ctx context.Context, spaceId o
 }
 
 // PatchViewWithBodyWithResponse request with arbitrary body returning *PatchViewResponse
-func (c *ClientWithResponses) PatchViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchViewResponse, error) {
-	rsp, err := c.PatchViewWithBody(ctx, spaceId, viewId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) PatchViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchViewResponse, error) {
+	rsp, err := c.PatchViewWithBody(ctx, spaceId, viewId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParsePatchViewResponse(rsp)
 }
 
-func (c *ClientWithResponses) PatchViewWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchViewResponse, error) {
-	rsp, err := c.PatchViewWithApplicationMergePatchPlusJSONBody(ctx, spaceId, viewId, body, reqEditors...)
+func (c *ClientWithResponses) PatchViewWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *PatchViewParams, body PatchViewApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchViewResponse, error) {
+	rsp, err := c.PatchViewWithApplicationMergePatchPlusJSONBody(ctx, spaceId, viewId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -38810,20 +45205,46 @@ func (c *ClientWithResponses) PatchViewWithApplicationMergePatchPlusJSONBodyWith
 }
 
 // UpdateViewWithBodyWithResponse request with arbitrary body returning *UpdateViewResponse
-func (c *ClientWithResponses) UpdateViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error) {
-	rsp, err := c.UpdateViewWithBody(ctx, spaceId, viewId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) UpdateViewWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error) {
+	rsp, err := c.UpdateViewWithBody(ctx, spaceId, viewId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateViewResponse(rsp)
 }
 
-func (c *ClientWithResponses) UpdateViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error) {
-	rsp, err := c.UpdateView(ctx, spaceId, viewId, body, reqEditors...)
+func (c *ClientWithResponses) UpdateViewWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewParams, body UpdateViewJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewResponse, error) {
+	rsp, err := c.UpdateView(ctx, spaceId, viewId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseUpdateViewResponse(rsp)
+}
+
+// GetViewDocumentWithResponse request returning *GetViewDocumentResponse
+func (c *ClientWithResponses) GetViewDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetViewDocumentResponse, error) {
+	rsp, err := c.GetViewDocument(ctx, spaceId, viewId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetViewDocumentResponse(rsp)
+}
+
+// UpdateViewDocumentWithBodyWithResponse request with arbitrary body returning *UpdateViewDocumentResponse
+func (c *ClientWithResponses) UpdateViewDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateViewDocumentResponse, error) {
+	rsp, err := c.UpdateViewDocumentWithBody(ctx, spaceId, viewId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateViewDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateViewDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, viewId openapi_types.UUID, params *UpdateViewDocumentParams, body UpdateViewDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateViewDocumentResponse, error) {
+	rsp, err := c.UpdateViewDocument(ctx, spaceId, viewId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateViewDocumentResponse(rsp)
 }
 
 // BulkDeleteTagsWithResponse request returning *BulkDeleteTagsResponse
@@ -38997,6 +45418,23 @@ func (c *ClientWithResponses) BulkCreateTriggersWithApplicationMergePatchPlusJSO
 		return nil, err
 	}
 	return ParseBulkCreateTriggersResponse(rsp)
+}
+
+// BulkMoveTriggersWithBodyWithResponse request with arbitrary body returning *BulkMoveTriggersResponse
+func (c *ClientWithResponses) BulkMoveTriggersWithBodyWithResponse(ctx context.Context, params *BulkMoveTriggersParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkMoveTriggersResponse, error) {
+	rsp, err := c.BulkMoveTriggersWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTriggersResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkMoveTriggersWithResponse(ctx context.Context, params *BulkMoveTriggersParams, body BulkMoveTriggersJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkMoveTriggersResponse, error) {
+	rsp, err := c.BulkMoveTriggers(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkMoveTriggersResponse(rsp)
 }
 
 // BulkDeleteUnitsWithResponse request returning *BulkDeleteUnitsResponse
@@ -39184,16 +45622,16 @@ func (c *ClientWithResponses) ListUserKeysWithResponse(ctx context.Context, user
 }
 
 // CreateUserKeyWithBodyWithResponse request with arbitrary body returning *CreateUserKeyResponse
-func (c *ClientWithResponses) CreateUserKeyWithBodyWithResponse(ctx context.Context, userId string, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error) {
-	rsp, err := c.CreateUserKeyWithBody(ctx, userId, contentType, body, reqEditors...)
+func (c *ClientWithResponses) CreateUserKeyWithBodyWithResponse(ctx context.Context, userId string, params *CreateUserKeyParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error) {
+	rsp, err := c.CreateUserKeyWithBody(ctx, userId, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
 	return ParseCreateUserKeyResponse(rsp)
 }
 
-func (c *ClientWithResponses) CreateUserKeyWithResponse(ctx context.Context, userId string, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error) {
-	rsp, err := c.CreateUserKey(ctx, userId, body, reqEditors...)
+func (c *ClientWithResponses) CreateUserKeyWithResponse(ctx context.Context, userId string, params *CreateUserKeyParams, body CreateUserKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateUserKeyResponse, error) {
+	rsp, err := c.CreateUserKey(ctx, userId, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
@@ -39430,6 +45868,13 @@ func ParseBulkPatchComponentsResponse(rsp *http.Response) (*BulkPatchComponentsR
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -39601,6 +46046,13 @@ func ParseBulkPatchSpacesResponse(rsp *http.Response) (*BulkPatchSpacesResponse,
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -39682,6 +46134,13 @@ func ParseBulkCreateSpacesResponse(rsp *http.Response) (*BulkCreateSpacesRespons
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -40072,6 +46531,13 @@ func ParseBulkPatchAttributesResponse(rsp *http.Response) (*BulkPatchAttributesR
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -40153,6 +46619,13 @@ func ParseBulkCreateAttributesResponse(rsp *http.Response) (*BulkCreateAttribute
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -41607,6 +48080,13 @@ func ParseBulkPatchChangeWorkflowsResponse(rsp *http.Response) (*BulkPatchChange
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -41688,6 +48168,13 @@ func ParseBulkCreateChangeWorkflowsResponse(rsp *http.Response) (*BulkCreateChan
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -42233,6 +48720,149 @@ func ParseUpdateComponentResponse(rsp *http.Response) (*UpdateComponentResponse,
 	return response, nil
 }
 
+// ParseGetComponentDocumentResponse parses an HTTP response from a GetComponentDocumentWithResponse call
+func ParseGetComponentDocumentResponse(rsp *http.Response) (*GetComponentDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetComponentDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateComponentDocumentResponse parses an HTTP response from a UpdateComponentDocumentWithResponse call
+func ParseUpdateComponentDocumentResponse(rsp *http.Response) (*UpdateComponentDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateComponentDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Component
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseDemoteResponse parses an HTTP response from a DemoteWithResponse call
 func ParseDemoteResponse(rsp *http.Response) (*DemoteResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -42617,6 +49247,13 @@ func ParseBulkPatchFiltersResponse(rsp *http.Response) (*BulkPatchFiltersRespons
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -42698,6 +49335,13 @@ func ParseBulkCreateFiltersResponse(rsp *http.Response) (*BulkCreateFiltersRespo
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -43224,6 +49868,13 @@ func ParseBulkPatchInvocationsResponse(rsp *http.Response) (*BulkPatchInvocation
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -43305,6 +49956,13 @@ func ParseBulkCreateInvocationsResponse(rsp *http.Response) (*BulkCreateInvocati
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -43627,6 +50285,13 @@ func ParseBulkPatchLinksResponse(rsp *http.Response) (*BulkPatchLinksResponse, e
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -43708,6 +50373,13 @@ func ParseBulkCreateLinksResponse(rsp *http.Response) (*BulkCreateLinksResponse,
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
@@ -46351,6 +53023,149 @@ func ParseUpdateAttributeResponse(rsp *http.Response) (*UpdateAttributeResponse,
 	return response, nil
 }
 
+// ParseGetAttributeDocumentResponse parses an HTTP response from a GetAttributeDocumentWithResponse call
+func ParseGetAttributeDocumentResponse(rsp *http.Response) (*GetAttributeDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetAttributeDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateAttributeDocumentResponse parses an HTTP response from a UpdateAttributeDocumentWithResponse call
+func ParseUpdateAttributeDocumentResponse(rsp *http.Response) (*UpdateAttributeDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateAttributeDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Attribute
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListBridgeWorkersResponse parses an HTTP response from a ListBridgeWorkersWithResponse call
 func ParseListBridgeWorkersResponse(rsp *http.Response) (*ListBridgeWorkersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -48285,6 +55100,292 @@ func ParseUpdateChangeWorkflowResponse(rsp *http.Response) (*UpdateChangeWorkflo
 	return response, nil
 }
 
+// ParseGetChangeWorkflowDocumentResponse parses an HTTP response from a GetChangeWorkflowDocumentWithResponse call
+func ParseGetChangeWorkflowDocumentResponse(rsp *http.Response) (*GetChangeWorkflowDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetChangeWorkflowDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateChangeWorkflowDocumentResponse parses an HTTP response from a UpdateChangeWorkflowDocumentWithResponse call
+func ParseUpdateChangeWorkflowDocumentResponse(rsp *http.Response) (*UpdateChangeWorkflowDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateChangeWorkflowDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ChangeWorkflow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetSpaceDocumentResponse parses an HTTP response from a GetSpaceDocumentWithResponse call
+func ParseGetSpaceDocumentResponse(rsp *http.Response) (*GetSpaceDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetSpaceDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateSpaceDocumentResponse parses an HTTP response from a UpdateSpaceDocumentWithResponse call
+func ParseUpdateSpaceDocumentResponse(rsp *http.Response) (*UpdateSpaceDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateSpaceDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Space
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListFiltersResponse parses an HTTP response from a ListFiltersWithResponse call
 func ParseListFiltersResponse(rsp *http.Response) (*ListFiltersResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -48662,6 +55763,149 @@ func ParseUpdateFilterResponse(rsp *http.Response) (*UpdateFilterResponse, error
 	}
 
 	response := &UpdateFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Filter
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetFilterDocumentResponse parses an HTTP response from a GetFilterDocumentWithResponse call
+func ParseGetFilterDocumentResponse(rsp *http.Response) (*GetFilterDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFilterDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateFilterDocumentResponse parses an HTTP response from a UpdateFilterDocumentWithResponse call
+func ParseUpdateFilterDocumentResponse(rsp *http.Response) (*UpdateFilterDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateFilterDocumentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -49349,6 +56593,149 @@ func ParseUpdateInvocationResponse(rsp *http.Response) (*UpdateInvocationRespons
 	return response, nil
 }
 
+// ParseGetInvocationDocumentResponse parses an HTTP response from a GetInvocationDocumentWithResponse call
+func ParseGetInvocationDocumentResponse(rsp *http.Response) (*GetInvocationDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetInvocationDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateInvocationDocumentResponse parses an HTTP response from a UpdateInvocationDocumentWithResponse call
+func ParseUpdateInvocationDocumentResponse(rsp *http.Response) (*UpdateInvocationDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateInvocationDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Invocation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListLinksResponse parses an HTTP response from a ListLinksWithResponse call
 func ParseListLinksResponse(rsp *http.Response) (*ListLinksResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -49726,6 +57113,149 @@ func ParseUpdateLinkResponse(rsp *http.Response) (*UpdateLinkResponse, error) {
 	}
 
 	response := &UpdateLinkResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Link
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetLinkDocumentResponse parses an HTTP response from a GetLinkDocumentWithResponse call
+func ParseGetLinkDocumentResponse(rsp *http.Response) (*GetLinkDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetLinkDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateLinkDocumentResponse parses an HTTP response from a UpdateLinkDocumentWithResponse call
+func ParseUpdateLinkDocumentResponse(rsp *http.Response) (*UpdateLinkDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateLinkDocumentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -51648,6 +59178,149 @@ func ParseUpdateTriggerResponse(rsp *http.Response) (*UpdateTriggerResponse, err
 	}
 
 	response := &UpdateTriggerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Trigger
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetTriggerDocumentResponse parses an HTTP response from a GetTriggerDocumentWithResponse call
+func ParseGetTriggerDocumentResponse(rsp *http.Response) (*GetTriggerDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTriggerDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateTriggerDocumentResponse parses an HTTP response from a UpdateTriggerDocumentWithResponse call
+func ParseUpdateTriggerDocumentResponse(rsp *http.Response) (*UpdateTriggerDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateTriggerDocumentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -53934,6 +61607,149 @@ func ParseUpdateViewResponse(rsp *http.Response) (*UpdateViewResponse, error) {
 	return response, nil
 }
 
+// ParseGetViewDocumentResponse parses an HTTP response from a GetViewDocumentWithResponse call
+func ParseGetViewDocumentResponse(rsp *http.Response) (*GetViewDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetViewDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateViewDocumentResponse parses an HTTP response from a UpdateViewDocumentWithResponse call
+func ParseUpdateViewDocumentResponse(rsp *http.Response) (*UpdateViewDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateViewDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest View
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseBulkDeleteTagsResponse parses an HTTP response from a BulkDeleteTagsWithResponse call
 func ParseBulkDeleteTagsResponse(rsp *http.Response) (*BulkDeleteTagsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -54878,6 +62694,13 @@ func ParseBulkPatchTriggersResponse(rsp *http.Response) (*BulkPatchTriggersRespo
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -54920,6 +62743,95 @@ func ParseBulkCreateTriggersResponse(rsp *http.Response) (*BulkCreateTriggersRes
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
 		var dest []TriggerCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkMoveTriggersResponse parses an HTTP response from a BulkMoveTriggersWithResponse call
+func ParseBulkMoveTriggersResponse(rsp *http.Response) (*BulkMoveTriggersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkMoveTriggersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []MoveResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []MoveResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -56591,6 +64503,13 @@ func ParseBulkPatchViewsResponse(rsp *http.Response) (*BulkPatchViewsResponse, e
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -56672,6 +64591,13 @@ func ParseBulkCreateViewsResponse(rsp *http.Response) (*BulkCreateViewsResponse,
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

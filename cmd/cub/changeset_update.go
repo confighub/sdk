@@ -55,6 +55,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(changesetUpdateCmd)
+	enableUpdatePermissionFlag(changesetUpdateCmd)
 	changesetUpdateCmd.Flags().BoolVar(&changesetPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(changesetUpdateCmd)
 	enableFilterFlag(changesetUpdateCmd)
@@ -142,7 +143,7 @@ func runBulkChangeSetUpdate() error {
 	}
 
 	// Build patch data using consolidated function
-	patchJSON, err := BuildPatchData(enhancer)
+	patchJSON, err := BuildPatchDataWithPermissions(enhancer, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -153,10 +154,12 @@ func runBulkChangeSetUpdate() error {
 		Where:   &effectiveWhere,
 		Include: &include,
 	}
+	params.IncludeHidden = includeHiddenParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk patch API
 	bulkRes, err := cubClientNew.BulkPatchChangeSetsWithBodyWithResponse(
 		ctx,
@@ -164,8 +167,8 @@ func runBulkChangeSetUpdate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response
@@ -204,7 +207,7 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			}
 		}
 
-		patchData, err := BuildPatchData(changesetEnhancer)
+		patchData, err := BuildPatchDataWithPermissions(changesetEnhancer, permissionFlag)
 		if err != nil {
 			return fmt.Errorf("failed to build patch data: %w", err)
 		}
@@ -245,6 +248,9 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&currentChangeSet.Permissions); err != nil {
+		return err
+	}
 
 	// If this was set from stdin, it will be overridden
 	currentChangeSet.SpaceID = spaceID
@@ -254,7 +260,7 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentChangeSet.Description = changesetUpdateArgs.description
 	}
 
-	changesetRes, err := cubClientNew.UpdateChangeSetWithResponse(ctx, spaceID, currentChangeSet.ChangeSetID, *currentChangeSet)
+	changesetRes, err := cubClientNew.UpdateChangeSetWithResponse(ctx, spaceID, currentChangeSet.ChangeSetID, &goclientnew.UpdateChangeSetParams{DryRun: dryRunParam()}, *currentChangeSet)
 	if cubapi.IsAPIError(err, changesetRes) {
 		return cubapi.InterpretErrorGeneric(err, changesetRes)
 	}
@@ -282,6 +288,7 @@ func patchChangeSet(spaceID uuid.UUID, changesetID uuid.UUID, patchData []byte) 
 		ctx,
 		spaceID,
 		changesetID,
+		&goclientnew.PatchChangeSetParams{DryRun: dryRunParam()},
 		"application/merge-patch+json",
 		bytes.NewReader(patchData),
 	)

@@ -120,6 +120,7 @@ var invocationDeclaredParameterFlags []string
 
 func init() {
 	addStandardCreateFlags(invocationCreateCmd)
+	enableCreatePermissionFlag(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	enableWhereFlag(invocationCreateCmd)
@@ -134,6 +135,8 @@ func init() {
 	invocationCreateCmd.Flags().StringSliceVar(&invocationCreateArgs.invocationSlugs, "invocation", []string{}, "target specific invocations by slug or UUID for bulk create (can be repeated or comma-separated)")
 	invocationCreateCmd.Flags().StringVar(&invocationCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
+	addBackingUnitFlags(invocationCreateCmd, "Invocation", false, true)
+	addFromBackingUnitsFlags(invocationCreateCmd, "Invocation", true)
 	invocationCmd.AddCommand(invocationCreateCmd)
 }
 
@@ -151,7 +154,7 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if len(invocationCreateArgs.destSpaces) == 0 && invocationCreateArgs.whereSpace == "" && len(invocationCreateArgs.namePrefixes) == 0 && len(invocationCreateArgs.variantLabels) == 0 {
+		if !backingUnitArgs.fromBackingUnits && len(invocationCreateArgs.destSpaces) == 0 && invocationCreateArgs.whereSpace == "" && len(invocationCreateArgs.namePrefixes) == 0 && len(invocationCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
 		}
 
@@ -237,6 +240,9 @@ func runSingleInvocationCreate(args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := setPermissions(&newBody.Permissions); err != nil {
+		return err
+	}
 	err = setDeleteGates(&newBody.DeleteGates)
 	if err != nil {
 		return err
@@ -275,11 +281,13 @@ func runSingleInvocationCreate(args []string) error {
 	}
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateInvocationParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
+	params.DryRun = dryRunParam()
 	invocationRes, err := cubClientNew.CreateInvocationWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, invocationRes) {
 		return cubapi.InterpretErrorGeneric(err, invocationRes)
@@ -351,7 +359,7 @@ func runBulkInvocationCreate() error {
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
 	// Build patch data using consolidated function (no entity-specific fields for invocation)
-	patchJSON, err := BuildPatchData(nil)
+	patchJSON, err := BuildPatchDataWithPermissions(nil, permissionFlag)
 	if err != nil {
 		return err
 	}
@@ -361,6 +369,14 @@ func runBulkInvocationCreate() error {
 	params := &goclientnew.BulkCreateInvocationsParams{
 		Where:   &effectiveWhere,
 		Include: &include,
+	}
+	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
 	}
 	if filterID != "" {
 		params.Filter = &filterID
@@ -414,6 +430,7 @@ func runBulkInvocationCreate() error {
 		params.FilterSpace = &filterSpaceID
 	}
 
+	params.DryRun = dryRunParam()
 	// Call the bulk create API
 	bulkRes, err := cubClientNew.BulkCreateInvocationsWithBodyWithResponse(
 		ctx,
@@ -421,8 +438,8 @@ func runBulkInvocationCreate() error {
 		"application/merge-patch+json",
 		bytes.NewReader(patchJSON),
 	)
-	if err != nil {
-		return err
+	if cubapi.IsAPIError(err, bulkRes) {
+		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
 	// Handle the response

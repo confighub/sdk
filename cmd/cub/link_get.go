@@ -76,6 +76,7 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	view.Append([]string{"Created At", linkDetails.CreatedAt.String()})
 	view.Append([]string{"Updated At", linkDetails.UpdatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(linkDetails.Labels)})
+	appendBackingUnitRow(view, linkDetails.BackingUnitID)
 	view.Append([]string{"Delete Gates", deleteGatesToString(linkDetails.DeleteGates)})
 	view.Append([]string{"Annotations", annotationsToString(linkDetails.Annotations)})
 	view.Append([]string{"Organization ID", linkDetails.OrganizationID.String()})

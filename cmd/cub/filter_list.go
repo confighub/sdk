@@ -181,9 +181,10 @@ func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.E
 	}
 
 	return cubapi.ListFilters(ctx, cubClient, where, cubapi.ListOpts{
-		Select:   cubapi.SelectFields(selectValue),
-		Include:  filterListInclude,
-		Contains: contains,
+		Select:        cubapi.SelectFields(selectValue),
+		Include:       filterListInclude,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
 	}, with...)
 }
 
