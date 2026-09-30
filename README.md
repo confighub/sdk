@@ -9,9 +9,9 @@ Find other links to developer documentation on [our documentation site](https://
 
 ## Release assets
 
-Each [release](https://github.com/confighub/sdk/releases) publishes, next to the `cub` and `cub-worker-run` binaries:
+Each [release](https://github.com/confighub/sdk/releases) publishes, next to the `cub` binaries:
 
-- `THIRD_PARTY_LICENSES-cub.txt` and `THIRD_PARTY_LICENSES-cub-worker-run.txt`: the third-party Go modules linked into each binary, with their license texts.
-- `<binary>-<os>-<arch>.spdx.json`: an SPDX software bill of materials generated from each published binary.
+- `THIRD_PARTY_LICENSES-cub.txt`: the third-party Go modules linked into the binary, with their license texts.
+- `cub-<os>-<arch>.spdx.json`: an SPDX software bill of materials generated from each published binary.
 
 The release fails if a dependency with a forbidden or restricted (copyleft) license is linked in. The generator is `.github/scripts/gen-third-party-licenses.sh`.
