@@ -1,13 +1,17 @@
 name: Build and Release CLI Binaries
 
-# Every release publishes, next to the binaries:
-#   THIRD_PARTY_LICENSES-<binary>.txt   notices and license texts for every
-#                                       third-party module linked into cub and
-#                                       cub-worker-run (MIT/BSD/Apache require
-#                                       them to accompany binary distributions)
-#   <binary>-<os>-<arch>.spdx.json      an SPDX SBOM generated from each binary
+# Every release publishes, next to the cub binaries:
+#   THIRD_PARTY_LICENSES-cub.txt        notices and license texts for every
+#                                       third-party module linked into cub
+#                                       (MIT/BSD/Apache require them to
+#                                       accompany binary distributions)
+#   cub-<os>-<arch>.spdx.json           an SPDX SBOM generated from each binary
 # The notices job doubles as a license gate: a forbidden or restricted (copyleft)
 # dependency fails it, and no binary is uploaded.
+#
+# cub-worker-run is not released. A worker process is built from this SDK by
+# whoever needs one; `make build-worker` still builds the reference binary for
+# development and the e2e suite.
 
 on:
   push:
@@ -38,7 +42,6 @@ jobs:
       - name: Generate third-party notices (fails on disallowed licenses)
         run: |
           .github/scripts/gen-third-party-licenses.sh cub cmd/cub bin/THIRD_PARTY_LICENSES-cub.txt
-          .github/scripts/gen-third-party-licenses.sh cub-worker-run cmd/cub-worker bin/THIRD_PARTY_LICENSES-cub-worker-run.txt
 
       - name: Upload notices to GitHub Release
         env:
@@ -50,7 +53,6 @@ jobs:
             --generate-notes 2>/dev/null || true
           gh release upload ${{ github.ref_name }} \
             ./bin/THIRD_PARTY_LICENSES-cub.txt \
-            ./bin/THIRD_PARTY_LICENSES-cub-worker-run.txt \
             --clobber
 
   build-binaries:
@@ -82,34 +84,28 @@ jobs:
           echo "Building for ${{ matrix.goos }}/${{ matrix.goarch }} version ${{ github.ref_name }}"
           CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
             VERSION=${{ github.ref_name }} RELEASE=1 make build-cli
-          CGO_ENABLED=0 GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} \
-            VERSION=${{ github.ref_name }} RELEASE=1 make build-worker
 
       - name: Install syft
         uses: anchore/sbom-action/download-syft@v0.24.2
         with:
           syft-version: v1.51.1
 
-      - name: Generate SBOMs from the built binaries
+      - name: Generate SBOM from the built binary
         env:
           # The binary's embedded build info gives exact module versions; this
           # resolves each module's license from the Go module proxy as well.
           SYFT_GOLANG_SEARCH_REMOTE_LICENSES: "true"
         run: |
-          for bin in cub cub-worker-run; do
-            f=./bin/${bin}-${{ matrix.goos }}-${{ matrix.goarch }}
-            syft "file:${f}" \
-              --source-name "${bin}" --source-version "${{ github.ref_name }}" \
-              -o "spdx-json=${f}.spdx.json"
-          done
+          f=./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}
+          syft "file:${f}" \
+            --source-name cub --source-version "${{ github.ref_name }}" \
+            -o "spdx-json=${f}.spdx.json"
 
-      - name: Upload binaries and SBOMs to GitHub Release
+      - name: Upload binary and SBOM to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ github.ref_name }} \
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }} \
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.spdx.json \
-            ./bin/cub-worker-run-${{ matrix.goos }}-${{ matrix.goarch }} \
-            ./bin/cub-worker-run-${{ matrix.goos }}-${{ matrix.goarch }}.spdx.json \
             --clobber

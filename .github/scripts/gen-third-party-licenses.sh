@@ -22,7 +22,7 @@
 
 set -euo pipefail
 
-BINARY="${1:?binary name (cub, cub-worker-run)}"
+BINARY="${1:?binary name (cub)}"
 MODULE_DIR="${2:?module directory (cmd/cub, cmd/cub-worker)}"
 OUTPUT="${3:?output path}"
 
