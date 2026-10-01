@@ -228,7 +228,7 @@ func describeRevisionAttestations(spaceID goclientnew.UUID, attestationIDs map[s
 		username, ok := usernames[a.UserID]
 		if !ok {
 			username = a.UserID.String()
-			if user, err := apiGetUser(username); err == nil && user != nil && user.Username != "" {
+			if user, err := resolveUserCore(username); err == nil && user.Username != "" {
 				username = user.Username
 			}
 			usernames[a.UserID] = username

@@ -4,11 +4,7 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +18,9 @@ Examples:
 `+"```"+`
   # Get details about a user
   cub user get --json my-user
+
+  # Get the user's ID
+  cub user get my-user -o jq=.User.UserID
 `+"```"+`
 `, ""),
 	RunE: userGetCmdRun,
@@ -35,18 +34,18 @@ func init() {
 // TODO: select
 
 func userGetCmdRun(cmd *cobra.Command, args []string) error {
-	userDetails, err := apiGetUserFromUsername(args[0])
+	extendedUser, err := resolveUser(args[0], selectFields)
 	if err != nil {
 		return err
 	}
-
-	// the previous call got the list resource. We want the "detail" resource just in case they're different
-	exUserDetails, err := apiGetUser(userDetails.UserID.String())
-	if err != nil {
-		return err
-	}
-	displayGetResults(exUserDetails, displayUserDetails)
+	displayGetResults(extendedUser, displayExtendedUserDetails)
 	return nil
+}
+
+// displayExtendedUserDetails renders what get returns: the User wrapped the way every other
+// get's entity is, so -o json and -o jq read it as .User, as list does.
+func displayExtendedUserDetails(extendedUser *goclientnew.ExtendedUser) {
+	displayUserDetails(extendedUser.User)
 }
 
 func displayUserDetails(member *goclientnew.User) {
@@ -56,32 +55,4 @@ func displayUserDetails(member *goclientnew.User) {
 	view.Append([]string{"Display Name", member.DisplayName})
 	view.Append([]string{"Username", member.Username})
 	view.Render()
-}
-
-func apiGetUser(userID string) (*goclientnew.User, error) {
-	// No params currently
-	// newParams := &goclientnew.GetUserParams{}
-	orgMemberRes, err := cubClientNew.GetUserWithResponse(ctx, uuid.MustParse(userID) /*, newParams*/)
-	if cubapi.IsAPIError(err, orgMemberRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, orgMemberRes)
-	}
-	return orgMemberRes.JSON200, nil
-}
-
-func apiGetUserFromUsername(username string) (*goclientnew.User, error) {
-	id, err := uuid.Parse(username)
-	if err == nil {
-		return apiGetUser(id.String())
-	}
-	users, err := apiListUsers("Username = '"+username+"'", "")
-	if err != nil {
-		return nil, err
-	}
-	// find member by username
-	for _, userDetails := range users {
-		if userDetails.Username == username {
-			return userDetails, nil
-		}
-	}
-	return nil, fmt.Errorf("user %s not found", username)
 }

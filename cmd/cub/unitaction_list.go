@@ -116,7 +116,7 @@ func fetchUsersForActions(actions []*goclientnew.UnitAction) (map[uuid.UUID]*goc
 		return lookup, nil
 	}
 	seen := make(map[uuid.UUID]struct{})
-	quoted := make([]string, 0, len(actions))
+	userIDs := make([]goclientnew.UUID, 0, len(actions))
 	for _, action := range actions {
 		if action.UserID == uuid.Nil {
 			continue
@@ -125,19 +125,18 @@ func fetchUsersForActions(actions []*goclientnew.UnitAction) (map[uuid.UUID]*goc
 			continue
 		}
 		seen[action.UserID] = struct{}{}
-		quoted = append(quoted, fmt.Sprintf("'%s'", action.UserID.String()))
+		userIDs = append(userIDs, action.UserID)
 	}
-	if len(quoted) == 0 {
+	if len(userIDs) == 0 {
 		return lookup, nil
 	}
-	whereClause := fmt.Sprintf("UserID IN (%s)", strings.Join(quoted, ","))
-	users, err := apiListUsers(whereClause, "")
+	users, err := cubapi.ListUsers(ctx, cubClient, cubapi.Where{}.In("UserID", userIDs), cubapi.ListOpts{Select: "UserID,Username"})
 	if err != nil {
 		return nil, err
 	}
 	for _, u := range users {
-		if u != nil {
-			lookup[u.UserID] = u
+		if u.User != nil {
+			lookup[u.User.UserID] = u.User
 		}
 	}
 	return lookup, nil

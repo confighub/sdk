@@ -267,6 +267,94 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 	return derefPtrs(res.JSON200), nil
 }
 
+// ListOrganizations returns the organizations the caller belongs to matching
+// where. Results are ExtendedOrganization envelopes; the core record is in each
+// element's .Organization field.
+func ListOrganizations(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedOrganization, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListOrganizationsParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+	}
+	res, err := c.API.ListOrganizationsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
+// ListOrganizationMembers returns the members of one organization matching
+// where. Results are ExtendedOrganizationMember envelopes; the core record is in
+// each element's .OrganizationMember field. A member is a User seen through an
+// organization, so where filters on the User's fields (Username, UserID,
+// DisplayName). The endpoint returns every field and expands nothing, so
+// [ListOpts.Select], [ListOpts.Include] and [ListOpts.IncludeHidden] have no
+// effect.
+func ListOrganizationMembers(ctx context.Context, c *Client, organizationID goclientnew.UUID, where Where, opts ListOpts) ([]*goclientnew.ExtendedOrganizationMember, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListOrganizationMembersParams{
+		Where:    ptrIf(where.String()),
+		Filter:   ptrIf(opts.Filter),
+		Contains: ptrIf(opts.Contains),
+	}
+	res, err := c.API.ListOrganizationMembersWithResponse(ctx, organizationID, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
+// ListUsers returns the users in the caller's organization matching where,
+// including the bot users of its workers. Results are ExtendedUser envelopes;
+// the core record is in each element's .User field. A user references no other
+// entity, so [ListOpts.Include] has no effect.
+func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedUser, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListUsersParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+	}
+	res, err := c.API.ListUsersWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
+// ListGroups returns the Groups the caller belongs to matching where. The endpoint takes no
+// select, include or filter.
+func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedGroup, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	if opts.Filter != "" {
+		return nil, fmt.Errorf("groups cannot be listed with a filter; use a where clause")
+	}
+	params := &goclientnew.ListExtendedGroupsParams{
+		Where:         ptrIf(where.String()),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+	}
+	res, err := c.API.ListExtendedGroupsWithResponse(ctx, params)
+	if IsAPIError(err, res) {
+		return nil, InterpretErrorGeneric(err, res)
+	}
+	return derefPtrs(res.JSON200), nil
+}
+
 // ListTargets returns targets across the organization matching where.
 func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedTarget, error) {
 	if err := where.Err(); err != nil {

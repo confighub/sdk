@@ -36,10 +36,11 @@ func organizationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	currentOrganization, err := apiGetOrganizationFromSlug(args[0], "*") // get all fields for RMW
+	extendedOrganization, err := resolveOrganization(args[0], "*") // get all fields for RMW
 	if err != nil {
 		return err
 	}
+	currentOrganization := extendedOrganization.Organization
 	// Handle --from-stdin or --filename with optional --replace
 	if flagPopulateModelFromStdin || flagFilename != "" {
 		existingOrganization := currentOrganization

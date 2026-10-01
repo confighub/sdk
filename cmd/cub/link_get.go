@@ -19,9 +19,9 @@ var linkGetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Get detailed information about a link in a space including its ID, slug, display name, and the connected units.
 
-What the link reads and writes is shown a row apiece: its Bindings, and a TransformPaths link's
-upstream paths and getters, downstream paths, and downstream setters, each setter as its function
-call. The merge pointers read "none" for a link that has not merged. Use -o json for the raw form.
+What the link reads and writes is shown a row apiece: its stated and resolved bindings, and a
+TransformPaths link's upstream paths and getters, downstream paths, and downstream setters, each
+setter as its function call. An entry with a Key is labeled by it. The merge pointers read "none" for a link that has not merged. Use -o json for the raw form.
 
 Examples:
 `+"```"+`
@@ -152,12 +152,19 @@ func displayExtendedLinkDetails(extendedLink *goclientnew.ExtendedLink) {
 	view.Render()
 }
 
-// appendLinkDefinitionRows shows what the Link reads and writes, a row apiece: the Bindings of an
-// Insert or NeedsProvides Link, and the paths, getters and setters of a TransformPaths Link. Each
-// kind is numbered only when there is more than one, so a Link with one of each reads plainly.
+// appendLinkDefinitionRows shows what the Link reads and writes, a row apiece: the bindings of an
+// Insert or NeedsProvides Link -- those stated, then those resolution found -- and the paths,
+// getters and setters of a TransformPaths Link. An entry with a Key is labeled by it; the others
+// are numbered only when there is more than one, so a Link with one of each reads plainly.
 // They are the Link's definition, so they are shown by default rather than behind --verbose, and
 // -o json gives the raw form.
 func appendLinkDefinitionRows(view *tablewriter.Table, link *goclientnew.Link) {
+	if link.ManualBindings != nil {
+		bindings := *link.ManualBindings
+		for i := range bindings {
+			view.Append([]string{keyedLabel("Manual Binding", bindings[i].Key, i, len(bindings)), formatBinding(&bindings[i])})
+		}
+	}
 	if link.Bindings != nil {
 		bindings := *link.Bindings
 		for i := range bindings {
@@ -174,7 +181,7 @@ func appendLinkDefinitionRows(view *tablewriter.Table, link *goclientnew.Link) {
 	}
 	for i := range link.DownstreamPaths {
 		down := &link.DownstreamPaths[i]
-		view.Append([]string{numberedLabel("Downstream Path", i, len(link.DownstreamPaths)), formatPathExpression(down)})
+		view.Append([]string{keyedLabel("Downstream Path", down.Key, i, len(link.DownstreamPaths)), formatPathExpression(down)})
 	}
 	for i := range link.DownstreamSetters {
 		setter := &link.DownstreamSetters[i]
@@ -182,8 +189,17 @@ func appendLinkDefinitionRows(view *tablewriter.Table, link *goclientnew.Link) {
 		if len(setter.Parameters) > 0 {
 			line += fmt.Sprintf(" [uses %s]", strings.Join(setter.Parameters, ", "))
 		}
-		view.Append([]string{numberedLabel("Downstream Setter", i, len(link.DownstreamSetters)), line})
+		view.Append([]string{keyedLabel("Downstream Setter", setter.Key, i, len(link.DownstreamSetters)), line})
 	}
+}
+
+// keyedLabel is label and the entry's Key, for an entry that has one, and otherwise its
+// numberedLabel.
+func keyedLabel(label, key string, index, count int) string {
+	if key != "" {
+		return label + " " + key
+	}
+	return numberedLabel(label, index, count)
 }
 
 // numberedLabel is label alone for the only item of its kind, and label and a 1-based number
@@ -256,9 +272,6 @@ func formatBinding(binding *goclientnew.Binding) string {
 	}
 	if binding.DataType != "" {
 		qualifiers = append(qualifiers, binding.DataType)
-	}
-	if binding.AutoUpdate {
-		qualifiers = append(qualifiers, "auto-update")
 	}
 	if len(qualifiers) > 0 {
 		line += " (" + strings.Join(qualifiers, ", ") + ")"

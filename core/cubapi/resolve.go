@@ -141,6 +141,10 @@ type resolver[E any] struct {
 	entity string
 	// idField is the filter column holding the entity's own id ("TargetID").
 	idField string
+	// nameField is the filter column a reference that is not a UUID names, and
+	// slugOf returns its value. Empty means Slug, which names every entity but
+	// a user and an organization member: those go by Username.
+	nameField string
 	// include is the default expansion, matching what "cub <entity> get"
 	// displays. ResolveOpts.Include overrides it.
 	include string
@@ -166,7 +170,11 @@ func (r resolver[E]) resolve(ctx context.Context, c *Client, ref Ref, opts Resol
 		if spaceID, err = spaceIDForRef(ctx, c, ref, opts); err != nil {
 			return nil, err
 		}
-		where = where.Slug(ref.Name)
+		if r.nameField == "" {
+			where = where.Slug(ref.Name)
+		} else {
+			where = where.Eq(r.nameField, ref.Name)
+		}
 		if spaceID != (goclientnew.UUID{}) {
 			where = where.SpaceID(spaceID)
 		}
@@ -293,6 +301,104 @@ func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts)
 		},
 	}
 	// A component reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
+}
+
+// ResolveOrganization looks up one organization by slug or UUID, among the
+// organizations the caller belongs to. An organization resides in no space, so
+// ResolveOpts.Space is ignored.
+func ResolveOrganization(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedOrganization, error) {
+	r := resolver[goclientnew.ExtendedOrganization]{
+		entity: "organization", idField: "OrganizationID", include: "", orgLevel: true,
+		list: ListOrganizations,
+		slugOf: func(e *goclientnew.ExtendedOrganization) string {
+			if e.Organization == nil {
+				return ""
+			}
+			return e.Organization.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedOrganization) goclientnew.UUID {
+			if e.Organization == nil {
+				return goclientnew.UUID{}
+			}
+			return e.Organization.OrganizationID
+		},
+	}
+	// An organization reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
+}
+
+// ResolveOrganizationMember looks up one member of an organization by username
+// or by the UUID of the member's User. A member resides in no space, so
+// ResolveOpts.Space is ignored, as are Select and Include: see
+// [ListOrganizationMembers].
+func ResolveOrganizationMember(ctx context.Context, c *Client, organizationID goclientnew.UUID, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedOrganizationMember, error) {
+	r := resolver[goclientnew.ExtendedOrganizationMember]{
+		entity: "organization member", idField: "UserID", nameField: "Username", include: "", orgLevel: true,
+		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.ExtendedOrganizationMember, error) {
+			return ListOrganizationMembers(ctx, c, organizationID, w, o)
+		},
+		slugOf: func(e *goclientnew.ExtendedOrganizationMember) string {
+			if e.OrganizationMember == nil {
+				return ""
+			}
+			return e.OrganizationMember.Username
+		},
+		idOf: func(e *goclientnew.ExtendedOrganizationMember) goclientnew.UUID {
+			if e.OrganizationMember == nil {
+				return goclientnew.UUID{}
+			}
+			return e.OrganizationMember.UserID
+		},
+	}
+	// A member reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{})
+}
+
+// ResolveUser looks up one user by username or UUID, among the users in the
+// caller's organization and the bot users of its workers. A user resides in no
+// space, so ResolveOpts.Space is ignored, as is Include: see [ListUsers].
+func ResolveUser(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedUser, error) {
+	r := resolver[goclientnew.ExtendedUser]{
+		entity: "user", idField: "UserID", nameField: "Username", include: "", orgLevel: true,
+		list: ListUsers,
+		slugOf: func(e *goclientnew.ExtendedUser) string {
+			if e.User == nil {
+				return ""
+			}
+			return e.User.Username
+		},
+		idOf: func(e *goclientnew.ExtendedUser) goclientnew.UUID {
+			if e.User == nil {
+				return goclientnew.UUID{}
+			}
+			return e.User.UserID
+		},
+	}
+	// A user reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select})
+}
+
+// ResolveGroup looks up one Group the caller belongs to by slug or UUID. A Group is in no
+// Organization or Space, so ResolveOpts.Space is ignored.
+func ResolveGroup(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedGroup, error) {
+	r := resolver[goclientnew.ExtendedGroup]{
+		entity: "group", idField: "GroupID", include: "", orgLevel: true,
+		list: ListGroups,
+		slugOf: func(e *goclientnew.ExtendedGroup) string {
+			if e.Group == nil {
+				return ""
+			}
+			return e.Group.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedGroup) goclientnew.UUID {
+			if e.Group == nil {
+				return goclientnew.UUID{}
+			}
+			return e.Group.GroupID
+		},
+	}
+	// A group reference never carries a space.
 	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
 }
 

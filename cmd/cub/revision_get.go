@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strconv"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -210,14 +211,24 @@ func displayExtendedRevisionDetails(extendedRev *goclientnew.ExtendedRevision) {
 // resolveUsernames names users, falling back to the id for a user that cannot be read -- one
 // removed from the organization since, for instance.
 func resolveUsernames(userIDs []goclientnew.UUID) []string {
+	usernames := map[goclientnew.UUID]string{}
+	if len(userIDs) > 0 {
+		users, err := cubapi.ListUsers(ctx, cubClient, cubapi.Where{}.In("UserID", userIDs), cubapi.ListOpts{Select: "UserID,Username"})
+		if err == nil {
+			for _, user := range users {
+				if user.User != nil {
+					usernames[user.User.UserID] = user.User.Username
+				}
+			}
+		}
+	}
 	names := make([]string, 0, len(userIDs))
 	for _, userID := range userIDs {
-		user, err := apiGetUser(userID.String())
-		if err != nil || user == nil || user.Username == "" {
-			names = append(names, userID.String())
+		if username := usernames[userID]; username != "" {
+			names = append(names, username)
 			continue
 		}
-		names = append(names, user.Username)
+		names = append(names, userID.String())
 	}
 	sort.Strings(names)
 	return names

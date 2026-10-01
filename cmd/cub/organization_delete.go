@@ -23,10 +23,11 @@ func init() {
 }
 
 func organizationDeleteCmdRun(cmd *cobra.Command, args []string) error {
-	organizationDetails, err := apiGetOrganizationFromSlug(args[0], "*")
+	extendedOrganization, err := resolveOrganization(args[0], "*")
 	if err != nil {
 		return err
 	}
+	organizationDetails := extendedOrganization.Organization
 
 	deleteRes, err := cubClientNew.DeleteOrganizationWithResponse(ctx, organizationDetails.OrganizationID)
 	if cubapi.IsAPIError(err, deleteRes) {

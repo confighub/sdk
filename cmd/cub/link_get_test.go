@@ -74,10 +74,9 @@ func TestLinkBindingFormatting(t *testing.T) {
 		ProvidedResource: &goclientnew.ResourceInfo{ResourceType: "v1/Namespace", ResourceName: "/prod"},
 		AttributeName:    "resource-name",
 		DataType:         "string",
-		AutoUpdate:       true,
 	}
 	if got, want := formatBinding(needsProvides),
-		"metadata.namespace in v1/ServiceAccount confighubplaceholder/app <- metadata.name in v1/Namespace /prod (resource-name, string, auto-update)"; got != want {
+		"metadata.namespace in v1/ServiceAccount confighubplaceholder/app <- metadata.name in v1/Namespace /prod (resource-name, string)"; got != want {
 		t.Errorf("needs/provides binding:\n got %s\nwant %s", got, want)
 	}
 
@@ -97,5 +96,11 @@ func TestLinkBindingFormatting(t *testing.T) {
 	}
 	if got := numberedLabel("Downstream Setter", 0, 1); got != "Downstream Setter" {
 		t.Errorf("single label: got %s", got)
+	}
+	if got := keyedLabel("Downstream Setter", "replicas", 1, 2); got != "Downstream Setter replicas" {
+		t.Errorf("keyed label: got %s", got)
+	}
+	if got := keyedLabel("Downstream Setter", "", 1, 2); got != "Downstream Setter 2" {
+		t.Errorf("unkeyed label: got %s", got)
 	}
 }

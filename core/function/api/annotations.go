@@ -494,7 +494,7 @@ const (
 type ClearanceRequirement struct {
 	Key      string            `description:"The guard key this requirement is about"`
 	Operator ClearanceOperator `description:"Exists, In, NotIn, or DoesNotExist"`
-	Values   []string          `json:",omitempty" description:"The values In and NotIn compare against; unused by Exists and DoesNotExist"`
+	Values   []string          `json:",omitempty" listType:"set" description:"The values In and NotIn compare against; unused by Exists and DoesNotExist"`
 }
 
 // Clearance is the set of reasons an operation is cleared for. The zero value clears nothing,

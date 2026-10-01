@@ -59,7 +59,7 @@ func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissi
 		userID, err := uuid.Parse(userIdentifier)
 		if err != nil {
 			// Not a UUID, try to look up by username
-			user, err := apiGetUserFromUsername(userIdentifier)
+			user, err := resolveUserCore(userIdentifier)
 			if err != nil {
 				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
 			}
@@ -119,7 +119,7 @@ func parsePermissionsIntoPatchMap(permissionStrs []string, permissionsMap map[st
 		userID, err := uuid.Parse(userIdentifier)
 		if err != nil {
 			// Not a UUID, try to look up by username
-			user, err := apiGetUserFromUsername(userIdentifier)
+			user, err := resolveUserCore(userIdentifier)
 			if err != nil {
 				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
 			}

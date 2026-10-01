@@ -225,6 +225,96 @@ func TestResolveOrgLevelNotFoundNamesNoSpace(t *testing.T) {
 	}
 }
 
+// A user and an organization member are named by username, which is not a
+// slug: the filter has to say Username, and the match has to be on it.
+func TestResolveUserByUsername(t *testing.T) {
+	var wheres []string
+	body := `[{"User":{"Slug":"id-ada","Username":"ada@example.com","UserID":"` + targetUUID + `"}}]`
+	c := captureWhere(t, body, &wheres)
+
+	got, err := ResolveUser(context.Background(), c, NewRef("", "ada@example.com"), ResolveOpts{})
+	if err != nil {
+		t.Fatalf("ResolveUser by username: %v", err)
+	}
+	if got.User.UserID.String() != targetUUID {
+		t.Fatalf("resolved %+v", got.User)
+	}
+	if wheres[0] != "Username = 'ada@example.com'" {
+		t.Errorf("where = %q, want a Username clause alone", wheres[0])
+	}
+
+	if _, err := ResolveUser(context.Background(), c, RefFromID(goclientnew.UUID(uuid.MustParse(targetUUID))), ResolveOpts{}); err != nil {
+		t.Fatalf("ResolveUser by UUID: %v", err)
+	}
+	if wheres[1] != "UserID = '"+targetUUID+"'" {
+		t.Errorf("where = %q, want a UserID clause alone", wheres[1])
+	}
+
+	// The user's slug is not its name.
+	_, err = ResolveUser(context.Background(), c, NewRef("", "id-ada"), ResolveOpts{})
+	if err == nil || err.Error() != `user "id-ada" not found` {
+		t.Errorf("err = %v, want the slug not to resolve", err)
+	}
+}
+
+// A member is listed under its organization, so the organization is part of
+// the request path rather than of the filter.
+func TestResolveOrganizationMember(t *testing.T) {
+	var gotPath, gotWhere string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		gotWhere, _ = url.QueryUnescape(r.URL.Query().Get("where"))
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"OrganizationMember":{"Username":"ada@example.com","UserID":"` + targetUUID + `"}}]`))
+	}))
+	t.Cleanup(srv.Close)
+	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+
+	got, err := ResolveOrganizationMember(context.Background(), c, goclientnew.UUID(uuid.MustParse(spaceUUID)),
+		NewRef("", "ada@example.com"), ResolveOpts{})
+	if err != nil {
+		t.Fatalf("ResolveOrganizationMember: %v", err)
+	}
+	if got.OrganizationMember.UserID.String() != targetUUID {
+		t.Fatalf("resolved %+v", got.OrganizationMember)
+	}
+	if !strings.HasSuffix(gotPath, "/organization/"+spaceUUID+"/organization_member") {
+		t.Errorf("path = %q, want the organization's member list", gotPath)
+	}
+	if gotWhere != "Username = 'ada@example.com'" {
+		t.Errorf("where = %q, want a Username clause alone", gotWhere)
+	}
+}
+
+func TestResolveOrganization(t *testing.T) {
+	var wheres []string
+	body := `[{"Organization":{"Slug":"acme","OrganizationID":"` + targetUUID + `"}}]`
+	c := captureWhere(t, body, &wheres)
+
+	// The caller's space has nothing to do with an organization.
+	opts := ResolveOpts{Space: goclientnew.UUID(uuid.MustParse(spaceUUID))}
+	got, err := ResolveOrganization(context.Background(), c, ParseRef("acme"), opts)
+	if err != nil {
+		t.Fatalf("ResolveOrganization by slug: %v", err)
+	}
+	if got.Organization.OrganizationID.String() != targetUUID {
+		t.Fatalf("resolved %+v", got.Organization)
+	}
+	if wheres[0] != "Slug = 'acme'" {
+		t.Errorf("where = %q, want a Slug clause alone", wheres[0])
+	}
+
+	if _, err := ResolveOrganization(context.Background(), c, ParseRef(targetUUID), opts); err != nil {
+		t.Fatalf("ResolveOrganization by UUID: %v", err)
+	}
+	if wheres[1] != "OrganizationID = '"+targetUUID+"'" {
+		t.Errorf("where = %q, want an OrganizationID clause alone", wheres[1])
+	}
+}
+
 func TestResolveEmptyRef(t *testing.T) {
 	var wheres []string
 	c := captureWhere(t, `[]`, &wheres)

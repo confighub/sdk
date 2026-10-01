@@ -94,13 +94,14 @@ func TestListColumnsForOnlyServesTheRunningCommand(t *testing.T) {
 	}
 }
 
-// A User is not wrapped in an ExtendedUser, so "User.Username" has no User field to step into.
+// A BridgeWorkerStatus is not wrapped in an envelope, so "BridgeWorkerStatus.Status" has no
+// BridgeWorkerStatus field to step into.
 func TestGetValueEntityPrefixOnPlainStruct(t *testing.T) {
-	user := &goclientnew.User{Username: "ada"}
-	provider := NewDynamicColumnProvider(new(goclientnew.User))
-	for _, col := range []string{"Username", "User.Username"} {
-		if got := provider.GetValue(user, col); got != "ada" {
-			t.Errorf("GetValue(%q) = %q, want %q", col, got, "ada")
+	status := &goclientnew.BridgeWorkerStatus{Status: "Connected"}
+	provider := NewDynamicColumnProvider(new(goclientnew.BridgeWorkerStatus))
+	for _, col := range []string{"Status", "BridgeWorkerStatus.Status"} {
+		if got := provider.GetValue(status, col); got != "Connected" {
+			t.Errorf("GetValue(%q) = %q, want %q", col, got, "Connected")
 		}
 	}
 }

@@ -74,8 +74,7 @@ Single Unit Examples:
       --upstream-revision Before:ChangeOrder:base-space/release-42
 
   # Clone a unit as a draft to change and review, with a link back to merge the change home
-  cub unit create --space drafts mydraft --upstream-unit sample-deployment \
-      --upstream-space my-space --syncback
+  cub unit create --space drafts mydraft --upstream-unit my-space/sample-deployment --syncback
 ` + "```" + `
 
 Bulk Create Examples:
@@ -121,7 +120,7 @@ From stdin (useful for programmatic creation):
   cat config.yaml | cub unit create --space SPACE my-unit - --wait
 
 Clone existing unit:
-  cub unit create --space SPACE my-variant --upstream-unit SOURCE_UNIT --upstream-space SOURCE_SPACE --from-stdin < metadata.json
+  cub unit create --space SPACE my-variant --upstream-unit SOURCE_SPACE/SOURCE_UNIT --from-stdin < metadata.json
 ` + "```" + `
 
 
@@ -176,8 +175,8 @@ func init() {
 	// Single unit create flags
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.targetSlug, "target", "", "target for the unit")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changesetSlug, "changeset", "", "changeset to associate the unit with")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit slug to clone (single mode only)")
-	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space slug of upstream unit to clone (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamUnitSlug, "upstream-unit", "", "upstream unit to clone: a slug, <space>/<slug>, or UUID (single mode only)")
+	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamSpaceSlug, "upstream-space", "", "space a bare --upstream-unit slug is looked up in; defaults to --space (single mode only)")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.upstreamRevision, "upstream-revision", "", "revision of the upstream unit to copy instead of its head (same format as --restore, resolved against the unit being cloned). Before:ChangeOrder:<slug> takes the state a change order starts from, so a following --upgrade --change-order replays the change into the clone")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.importUnitSlug, "import", "", "source unit slug (single mode only)")
 	// default to ToolchainKubernetesYAML
@@ -329,13 +328,18 @@ func runSingleUnitCreate(args []string) error {
 		upstreamSpaceID = upstreamSpace.Space.SpaceID
 	}
 	if unitCreateArgs.upstreamUnitSlug != "" {
-		if unitCreateArgs.upstreamSpaceSlug == "" {
-			upstreamSpaceID = spaceID
+		// A bare slug is looked up in --upstream-space, or in the new unit's space without it.
+		lookupSpaceID := spaceID
+		if unitCreateArgs.upstreamSpaceSlug != "" {
+			lookupSpaceID = upstreamSpaceID
 		}
-		upstreamUnit, err := resolveUnit(unitCreateArgs.upstreamUnitSlug, upstreamSpaceID.String(), "*") // get all fields for now
+		upstreamUnit, err := resolveUnit(unitCreateArgs.upstreamUnitSlug, lookupSpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
 		}
+		// The reference may have named its own space, or been a UUID, so the upstream space
+		// is the one the unit was found in rather than the one the lookup started from.
+		upstreamSpaceID = upstreamUnit.Unit.SpaceID
 		upstreamUnitID = upstreamUnit.Unit.UnitID
 		newUnit = upstreamUnit.Unit
 		newUnit.UnitID = uuid.Nil          // the server will set this

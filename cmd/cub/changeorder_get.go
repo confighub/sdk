@@ -134,6 +134,36 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	stage, completed := changeOrderRollout(changeorderDetails)
 	view.Append([]string{"Stage", stage})
 	view.Append([]string{"Completed", completed})
+	// The server does not expand ChangeWorkflowID, so the slug is looked up by id. The ID is the
+	// fallback, since the workflow may have been deleted or be unreadable by the caller.
+	if changeorderDetails.ChangeWorkflowID != nil {
+		changeWorkflow, err := resolveChangeWorkflow(changeorderDetails.ChangeWorkflowID.String(), "", "ChangeWorkflowID,Slug")
+		if err == nil && changeWorkflow != nil && changeWorkflow.ChangeWorkflow != nil {
+			view.Append([]string{"Change Workflow", changeWorkflow.ChangeWorkflow.Slug})
+		} else {
+			view.Append([]string{"Change Workflow ID", changeorderDetails.ChangeWorkflowID.String()})
+		}
+	}
+	// The copy of the workflow taken when it was associated, which is what promotions are judged
+	// against even if the ChangeWorkflow has since been edited.
+	if changeWorkflow := changeorderDetails.ChangeWorkflow; changeWorkflow != nil {
+		for i, stage := range changeWorkflow.Stages {
+			view.Append([]string{fmt.Sprintf("Stage %d: %s", i+1, stage.Name), formatChangeWorkflowStage(stage)})
+		}
+		if final := changeWorkflowFinalPrerequisites(changeWorkflow.Final); len(final) > 0 {
+			view.Append([]string{"Final Gates", strings.Join(final, ", ")})
+		}
+		for _, custom := range changeWorkflow.CustomPrerequisites {
+			detail := custom.Expression
+			if custom.Description != "" {
+				detail = custom.Description + " (" + custom.Expression + ")"
+			}
+			view.Append([]string{"Prerequisite " + custom.Name, detail})
+		}
+		for _, required := range changeWorkflow.AttestationPrerequisites {
+			view.Append([]string{"Prerequisite " + required.Name, formatAttestationPrerequisite(required)})
+		}
+	}
 	// Why a change order has not moved, when a promotion of it did not complete. The most recent
 	// one only: it is the one still being worked on, and -o json has the rest.
 	if n := len(changeorderDetails.PromotionFailures); n > 0 {

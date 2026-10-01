@@ -77,6 +77,39 @@ func resolveComponent(ref string, selectParam string) (*goclientnew.ExtendedComp
 	return cubapi.ResolveComponent(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
 }
 
+func resolveOrganization(ref string, selectParam string) (*goclientnew.ExtendedOrganization, error) {
+	return cubapi.ResolveOrganization(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
+}
+
+// resolveOrganizationMember resolves a member of the selected organization by username or
+// User ID. The reference is taken whole rather than parsed for a space: a username is not a
+// slug, and nothing keeps a "/" out of one.
+func resolveOrganizationMember(ref string) (*goclientnew.ExtendedOrganizationMember, error) {
+	return cubapi.ResolveOrganizationMember(ctx, cubClient, goclientnew.UUID(uuid.MustParse(selectedOrganizationID)),
+		cubapi.NewRef("", ref), cubapi.ResolveOpts{})
+}
+
+// resolveUser resolves a user by username or ID, taking the reference whole as
+// resolveOrganizationMember does.
+func resolveUser(ref string, selectParam string) (*goclientnew.ExtendedUser, error) {
+	return cubapi.ResolveUser(ctx, cubClient, cubapi.NewRef("", ref), resolveOpts("", selectParam))
+}
+
+// resolveUserCore returns just the User, whole, for the callers that want the record rather
+// than the envelope.
+func resolveUserCore(ref string) (*goclientnew.User, error) {
+	user, err := resolveUser(ref, "*")
+	if err != nil {
+		return nil, err
+	}
+	return user.User, nil
+}
+
+// resolveGroup resolves a Group the caller belongs to.
+func resolveGroup(ref string, selectParam string) (*goclientnew.ExtendedGroup, error) {
+	return cubapi.ResolveGroup(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
+}
+
 func resolveUnit(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedUnit, error) {
 	return cubapi.ResolveUnit(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }

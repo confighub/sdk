@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/spf13/cobra"
 )
@@ -62,7 +63,7 @@ func switchToOrganization(searchTerm string) error {
 	}
 
 	// Get list of organizations to find the matching one
-	organizations, err := apiListOrganizations("", "*", "")
+	organizations, err := cubapi.ListOrganizations(context.Background(), cubClient, cubapi.Where{}, cubapi.ListOpts{})
 	if err != nil {
 		return fmt.Errorf("failed to list organizations: %w", err)
 	}
@@ -141,8 +142,14 @@ func switchToOrganization(searchTerm string) error {
 }
 
 // findBestMatchingOrganization finds the organization that best matches the search term
-func findBestMatchingOrganization(organizations []*goclientnew.Organization, searchTerm string) *goclientnew.Organization {
+func findBestMatchingOrganization(extendedOrganizations []*goclientnew.ExtendedOrganization, searchTerm string) *goclientnew.Organization {
 	searchLower := strings.ToLower(searchTerm)
+	organizations := make([]*goclientnew.Organization, 0, len(extendedOrganizations))
+	for _, extendedOrganization := range extendedOrganizations {
+		if extendedOrganization.Organization != nil {
+			organizations = append(organizations, extendedOrganization.Organization)
+		}
+	}
 
 	// First, try exact matches
 	for _, org := range organizations {

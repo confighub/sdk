@@ -61,6 +61,14 @@ func (r *ResourceProviderRegistry) MergeKeysForPath(resourceType api.ResourceTyp
 	return r.specs.MergeKeysForPath(r.toolchainType, resourceType, path)
 }
 
+// ListTypeForPath implements the ResourceProvider method for every toolchain.
+func (r *ResourceProviderRegistry) ListTypeForPath(resourceType api.ResourceType, path string) ListType {
+	if r.specs == nil {
+		return ""
+	}
+	return r.specs.ListTypeForPath(r.toolchainType, resourceType, path)
+}
+
 // ExclusiveFieldsForPath implements the ResourceProvider method for every toolchain. The path
 // may use numeric indices or associative segments; both normalize to wildcards for lookup, as
 // they do for merge keys.
@@ -124,6 +132,9 @@ type ResourceProvider interface {
 	// key *and* its whenUnsatisfiable. Matching such an element on the first field
 	// alone pairs elements that are not the same element.
 	MergeKeysForPath(resourceType api.ResourceType, path string) ([]string, bool)
+	// ListTypeForPath returns how the array at the given path merges when it has no merge
+	// keys -- atomically, or as a set -- or "" for an array matched by position.
+	ListTypeForPath(resourceType api.ResourceType, path string) ListType
 	// ExclusiveFieldsForPath returns the mutually exclusive sibling fields of the object
 	// at the given path, if the schema declares any. Kubernetes handles the class with
 	// patchStrategy:"retainKeys": setting one member of a union has to clear the others,

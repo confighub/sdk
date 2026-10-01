@@ -377,8 +377,13 @@ type ModelConstraint interface {
 	goclientnew.Link |
 		goclientnew.ExtendedLink |
 		goclientnew.Organization |
+		goclientnew.ExtendedOrganization |
 		goclientnew.OrganizationMember |
+		goclientnew.ExtendedOrganizationMember |
 		goclientnew.User |
+		goclientnew.ExtendedUser |
+		goclientnew.Group |
+		goclientnew.ExtendedGroup |
 		goclientnew.ExtendedBridgeWorker |
 		goclientnew.BridgeWorker |
 		goclientnew.BridgeWorkerStatus |

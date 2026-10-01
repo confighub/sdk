@@ -4,8 +4,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
@@ -29,19 +27,19 @@ Examples:
   cub organization-member list -o json
 
   # List organization-member with custom JQ filter
-  cub organization-member list -o jq='.[].UserID'
+  cub organization-member list -o jq='.[].OrganizationMember.UserID'
 `+"```"+`
 `, ""),
 	RunE: organizationMemberListCmdRun,
 }
 
 // Default columns to display when no custom columns are specified
-var defaultOrganizationMemberColumns = []string{"UserID", "ExternalID", "DisplayName", "Username", "OrganizationID", "ExternalOrganizationID"}
+var defaultOrganizationMemberColumns = []string{"OrganizationMember.UserID", "OrganizationMember.ExternalID", "OrganizationMember.DisplayName", "OrganizationMember.Username", "OrganizationMember.OrganizationID", "OrganizationMember.ExternalOrganizationID"}
 
 // OrganizationMember-specific aliases
 var organizationMemberAliases = map[string]string{
-	"Name": "DisplayName",
-	"ID":   "UserID",
+	"Name": "OrganizationMember.DisplayName",
+	"ID":   "OrganizationMember.UserID",
 }
 
 // OrganizationMember custom column dependencies
@@ -58,7 +56,12 @@ func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	organizationMembers, err := apiListOrganizationMembers(where, selectFields, filterID)
+	// The endpoint returns every field, so there is no select to build.
+	organizationMembers, err := cubapi.ListOrganizationMembers(ctx, cubClient, goclientnew.UUID(uuid.MustParse(selectedOrganizationID)),
+		cubapi.NewWhere(where), cubapi.ListOpts{
+			Filter:   filterID,
+			Contains: contains,
+		})
 	if err != nil {
 		return err
 	}
@@ -66,12 +69,12 @@ func organizationMemberListCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getSlugForOrgMember(member *goclientnew.OrganizationMember) string {
+func getSlugForOrgMember(member *goclientnew.ExtendedOrganizationMember) string {
 	// Return the username because get and delete expect the username
-	return member.Username
+	return member.OrganizationMember.Username
 }
 
-func displayOrganizationMemberList(organizationMembers []*goclientnew.OrganizationMember) {
+func displayOrganizationMemberList(organizationMembers []*goclientnew.ExtendedOrganizationMember) {
 	if displayRequestedColumns(organizationMembers, organizationMemberAliases, nil) {
 		return
 	}
@@ -79,7 +82,8 @@ func displayOrganizationMemberList(organizationMembers []*goclientnew.Organizati
 	if !noheader {
 		table.SetHeader([]string{"User-ID", "External-ID", "Name", "Username", "Org-ID", "Org-Ext-ID"})
 	}
-	for _, orgMember := range organizationMembers {
+	for _, extendedOrganizationMember := range organizationMembers {
+		orgMember := extendedOrganizationMember.OrganizationMember
 		table.Append([]string{
 			orgMember.UserID.String(),
 			orgMember.ExternalID,
@@ -90,39 +94,4 @@ func displayOrganizationMemberList(organizationMembers []*goclientnew.Organizati
 		})
 	}
 	table.Render()
-}
-
-// apiListOrganizationMembers
-// TODO: where filter not implemented yet
-func apiListOrganizationMembers(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.OrganizationMember, error) {
-	newParams := &goclientnew.ListOrganizationMembersParams{}
-	if whereFilter != "" {
-		log.Printf("where filter: %s", whereFilter)
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	// TODO: Add select parameter support when backend endpoint supports it
-	// Auto-select fields based on default display if no custom output format is specified
-	// if selectFields == "" {
-	//     baseFields := []string{"Username", "UserID", "OrganizationID"}
-	//     autoSelect := buildSelectList("OrganizationMember", nil, "", defaultOrganizationMemberColumns, organizationMemberAliases, organizationMemberCustomColumnDependencies, baseFields)
-	//     newParams.Select = &autoSelect
-	// } else if selectFields != "" && selectFields != "*" {
-	//     newParams.Select = &selectFields
-	// }
-	membersRes, err := cubClientNew.ListOrganizationMembersWithResponse(ctx, uuid.MustParse(selectedOrganizationID), newParams)
-	if cubapi.IsAPIError(err, membersRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, membersRes)
-	}
-
-	organizationMembers := make([]*goclientnew.OrganizationMember, 0, len(*membersRes.JSON200))
-	for _, member := range *membersRes.JSON200 {
-		organizationMembers = append(organizationMembers, &member)
-	}
-	return organizationMembers, nil
 }

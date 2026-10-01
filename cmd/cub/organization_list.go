@@ -26,19 +26,22 @@ Examples:
   cub organization list -o json
 
   # List organizations with custom JQ filter
-  cub organization list -o jq='.[].Slug'
+  cub organization list -o jq='.[].Organization.Slug'
 `+"```"+`
 `, ""),
 	RunE: organizationListCmdRun,
 }
 
 // Default columns to display when no custom columns are specified
-var defaultOrganizationColumns = []string{"DisplayName", "OrganizationID", "ExternalID"}
+var defaultOrganizationColumns = []string{"Organization.DisplayName", "Organization.OrganizationID", "Organization.ExternalID"}
+
+// organizationBaseSelectFields are the fields always returned by organization list queries.
+var organizationBaseSelectFields = []string{"Slug", "OrganizationID"}
 
 // Organization-specific aliases
 var organizationAliases = map[string]string{
-	"Name": "DisplayName",
-	"ID":   "OrganizationID",
+	"Name": "Organization.DisplayName",
+	"ID":   "Organization.OrganizationID",
 }
 
 // Organization custom column dependencies
@@ -55,7 +58,15 @@ func organizationListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	organizations, err := apiListOrganizations(where, selectFields, filterID)
+	selectValue := handleSelectParameter(selectFields, selectFields, func() string {
+		return buildSelectList("Organization", listColumnsFor("cub organization list"), "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, organizationBaseSelectFields)
+	})
+	organizations, err := cubapi.ListOrganizations(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
+		Select:        cubapi.SelectFields(selectValue),
+		Filter:        filterID,
+		Contains:      contains,
+		IncludeHidden: includeHidden,
+	})
 	if err != nil {
 		return err
 	}
@@ -63,11 +74,11 @@ func organizationListCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func getOrganizationSlug(organization *goclientnew.Organization) string {
-	return organization.Slug
+func getOrganizationSlug(organization *goclientnew.ExtendedOrganization) string {
+	return organization.Organization.Slug
 }
 
-func displayOrganizationList(organizations []*goclientnew.Organization) {
+func displayOrganizationList(organizations []*goclientnew.ExtendedOrganization) {
 	if displayRequestedColumns(organizations, organizationAliases, nil) {
 		return
 	}
@@ -75,7 +86,8 @@ func displayOrganizationList(organizations []*goclientnew.Organization) {
 	if !noheader {
 		table.SetHeader([]string{"Display-Name", "ID", "External-ID"})
 	}
-	for _, organization := range organizations {
+	for _, extendedOrganization := range organizations {
+		organization := extendedOrganization.Organization
 		table.Append([]string{
 			organization.DisplayName,
 			organization.OrganizationID.String(),
@@ -83,37 +95,4 @@ func displayOrganizationList(organizations []*goclientnew.Organization) {
 		})
 	}
 	table.Render()
-}
-
-func apiListOrganizations(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.Organization, error) {
-	newParams := &goclientnew.ListOrganizationsParams{}
-	if whereFilter != "" {
-		newParams.Where = &whereFilter
-	}
-	if filterParam != "" {
-		newParams.Filter = &filterParam
-	}
-	if contains != "" {
-		newParams.Contains = &contains
-	}
-	if includeHidden != "" {
-		newParams.IncludeHidden = &includeHidden
-	}
-	selectValue := handleSelectParameter(selectParam, selectFields, func() string {
-		baseFields := []string{"Slug", "OrganizationID"}
-		return buildSelectList("Organization", listColumnsFor("cub organization list"), "", defaultOrganizationColumns, organizationAliases, organizationCustomColumnDependencies, baseFields)
-	})
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	orgsRes, err := cubClientNew.ListOrganizationsWithResponse(ctx, newParams)
-	if cubapi.IsAPIError(err, orgsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, orgsRes)
-	}
-
-	organizations := make([]*goclientnew.Organization, 0, len(*orgsRes.JSON200))
-	for _, org := range *orgsRes.JSON200 {
-		organizations = append(organizations, &org)
-	}
-	return organizations, nil
 }

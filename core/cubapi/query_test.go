@@ -205,6 +205,31 @@ func TestListUnitsMutator(t *testing.T) {
 	}
 }
 
+// The User list takes a select like the other lists, and answers in envelopes.
+func TestListUsersSelect(t *testing.T) {
+	var gotSelect string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotSelect = r.URL.Query().Get("select")
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`[{"User":{"Username":"ada@example.com"}}]`))
+	}))
+	t.Cleanup(srv.Close)
+	c, err := NewClient(ClientOptions{ServerURL: srv.URL, Token: "t"})
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	users, err := ListUsers(context.Background(), c, Where{}, ListOpts{Select: "UserID,Username"})
+	if err != nil {
+		t.Fatalf("ListUsers: %v", err)
+	}
+	if len(users) != 1 || users[0].User == nil || users[0].User.Username != "ada@example.com" {
+		t.Fatalf("users = %+v", users)
+	}
+	if gotSelect != "UserID,Username" {
+		t.Errorf("select = %q, want it sent", gotSelect)
+	}
+}
+
 func TestListChangeSets(t *testing.T) {
 	body := `[{"ChangeSet":{"Slug":"cs1"}},{"ChangeSet":{"Slug":"cs2"}}]`
 	var gotWhere string

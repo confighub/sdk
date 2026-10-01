@@ -52,6 +52,29 @@ func (f MergeKeyField) Keys() []string {
 	return append([]string{f.Key}, f.ExtraKeys...)
 }
 
+// ListType says how an array whose elements carry no merge key is merged. Without one, its
+// elements are matched by position. Kubernetes has the same notion as x-kubernetes-list-type.
+type ListType string
+
+const (
+	// ListTypeAtomic is an array that changes only as a whole: a diff records any change to it as
+	// a replacement of the whole array, so a merge replaces it rather than matching its elements,
+	// and a conflict is on the whole array. For a list whose elements have no identity of their
+	// own, such as an ordered pipeline that may repeat a step.
+	ListTypeAtomic ListType = "atomic"
+
+	// ListTypeSet is an array of scalars whose order means nothing. Reordering it is no change;
+	// any other change replaces the whole array, as for an atomic one.
+	ListTypeSet ListType = "set"
+)
+
+// ListTypeField declares the list type of the array at Path, relative to whatever root the
+// declaration sits at. An array with merge keys has no list type: the keys say how it merges.
+type ListTypeField struct {
+	Path string   `json:"path"`
+	Type ListType `json:"type"`
+}
+
 // ExclusiveFieldGroup declares a set of sibling fields of which at most one may be present,
 // at a path relative to whatever root the declaration sits at.
 //
@@ -137,6 +160,7 @@ type Declaration struct {
 	// path registry's key function rather than entries in it, which is why they are not
 	// attributes.
 	MergeKeys       []MergeKeyField       `json:"mergeKeys,omitempty"`
+	ListTypes       []ListTypeField       `json:"listTypes,omitempty"`
 	ExclusiveFields []ExclusiveFieldGroup `json:"exclusiveFields,omitempty"`
 
 	// MapKeyPaths name the freeform maps whose children are dynamic keys rather than schema
@@ -261,6 +285,7 @@ type specKey struct {
 // and are two map lookups, as they were when the lookups were package globals.
 type CompiledSpecs struct {
 	mergeKeys       map[specKey]map[string][]string
+	listTypes       map[specKey]map[string]ListType
 	exclusiveFields map[specKey]map[string]ExclusiveFields
 	mapKeyPaths     map[specKey]map[string]bool
 	attributes      map[specKey]map[api.AttributeName][]AttributePath
@@ -306,6 +331,7 @@ func CompileSpecSets(sets ...SpecSet) (*CompiledSpecs, error) {
 
 	compiled := &CompiledSpecs{
 		mergeKeys:       make(map[specKey]map[string][]string),
+		listTypes:       make(map[specKey]map[string]ListType),
 		exclusiveFields: make(map[specKey]map[string]ExclusiveFields),
 		mapKeyPaths:     make(map[specKey]map[string]bool),
 		attributes:      make(map[specKey]map[api.AttributeName][]AttributePath),
@@ -364,6 +390,20 @@ func (c *CompiledSpecs) addDeclaration(
 			c.mergeKeys[key] = make(map[string][]string)
 		}
 		c.mergeKeys[key][JoinRelativePath(prefix, field.Path)] = field.Keys()
+	}
+
+	for _, field := range declaration.ListTypes {
+		joined := JoinRelativePath(prefix, field.Path)
+		if field.Type != ListTypeAtomic && field.Type != ListTypeSet {
+			return fmt.Errorf("list type %q at %q is neither %q nor %q", field.Type, joined, ListTypeAtomic, ListTypeSet)
+		}
+		if _, keyed := c.mergeKeys[key][joined]; keyed {
+			return fmt.Errorf("%q declares both merge keys and a list type; the keys already say how it merges", joined)
+		}
+		if c.listTypes[key] == nil {
+			c.listTypes[key] = make(map[string]ListType)
+		}
+		c.listTypes[key][joined] = field.Type
 	}
 
 	for _, group := range declaration.ExclusiveFields {
@@ -487,6 +527,23 @@ func (c *CompiledSpecs) MergeKeysForPath(
 		}
 	}
 	return nil, false
+}
+
+// ListTypeForPath returns the list type declared for the given resource type and array path, or
+// "" for an array declaring none, checking the type's own entries before those declared for
+// api.ResourceTypeAny.
+func (c *CompiledSpecs) ListTypeForPath(
+	toolchainType workerapi.ToolchainType,
+	resourceType api.ResourceType,
+	path string,
+) ListType {
+	normalized := NormalizeStructurePath(path)
+	for _, rt := range []api.ResourceType{resourceType, api.ResourceTypeAny} {
+		if listType, ok := c.listTypes[specKey{toolchainType, rt}][normalized]; ok {
+			return listType
+		}
+	}
+	return ""
 }
 
 // ExclusiveFieldsForPath returns the mutually exclusive sibling fields of the object at the

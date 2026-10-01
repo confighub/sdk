@@ -23,10 +23,11 @@ func init() {
 }
 
 func organizationMemberDeleteCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0], "*") // get all fields for now
+	extendedOrganizationMember, err := resolveOrganizationMember(args[0])
 	if err != nil {
 		return err
 	}
+	organizationMemberDetails := extendedOrganizationMember.OrganizationMember
 	deleteRes, err := cubClientNew.DeleteOrganizationMemberWithResponse(ctx,
 		uuid.MustParse(selectedOrganizationID),
 		organizationMemberDetails.UserID)

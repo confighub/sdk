@@ -4,11 +4,7 @@
 package main
 
 import (
-	"fmt"
-
-	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +18,9 @@ Examples:
 `+"```"+`
   # Get details about a organization-member
   cub organization-member get --json my-organization-member
+
+  # Get the member's User ID
+  cub organization-member get my-organization-member -o jq=.OrganizationMember.UserID
 `+"```"+`
 `, ""),
 	RunE: organizationMemberGetCmdRun,
@@ -33,13 +32,20 @@ func init() {
 }
 
 func organizationMemberGetCmdRun(cmd *cobra.Command, args []string) error {
-	organizationMemberDetails, err := apiGetOrganizationMemberFromUsername(args[0], selectFields)
+	extendedOrganizationMember, err := resolveOrganizationMember(args[0])
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(organizationMemberDetails, displayOrganizationMemberDetails)
+	displayGetResults(extendedOrganizationMember, displayExtendedOrganizationMemberDetails)
 	return nil
+}
+
+// displayExtendedOrganizationMemberDetails renders what get returns: the OrganizationMember
+// wrapped the way every other get's entity is, so -o json and -o jq read it as
+// .OrganizationMember, as list does.
+func displayExtendedOrganizationMemberDetails(extendedOrganizationMember *goclientnew.ExtendedOrganizationMember) {
+	displayOrganizationMemberDetails(extendedOrganizationMember.OrganizationMember)
 }
 
 func displayOrganizationMemberDetails(member *goclientnew.OrganizationMember) {
@@ -51,37 +57,4 @@ func displayOrganizationMemberDetails(member *goclientnew.OrganizationMember) {
 	view.Append([]string{"Organization ID", member.OrganizationID.String()})
 	view.Append([]string{"External Organization ID", member.ExternalOrganizationID})
 	view.Render()
-}
-
-// TODO: Org Member Serialization is wrong
-func apiGetOrganizationMember(userID string, selectParam string) (*goclientnew.OrganizationMember, error) {
-	// No params currently
-	// newParams := &goclientnew.GetOrganizationMemberParams{}
-	orgMemberRes, err := cubClientNew.GetOrganizationMemberWithResponse(ctx, uuid.MustParse(selectedOrganizationID), uuid.MustParse(userID) /*, newParams*/)
-	if cubapi.IsAPIError(err, orgMemberRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, orgMemberRes)
-	}
-	return orgMemberRes.JSON200, nil
-}
-
-func apiGetOrganizationMemberFromUsername(username string, selectParam string) (*goclientnew.OrganizationMember, error) {
-	id, err := uuid.Parse(username)
-	if err == nil {
-		return apiGetOrganizationMember(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	organizationMembers, err := apiListOrganizationMembers("Username='"+username+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	// find member by userID
-	for _, member := range organizationMembers {
-		if member.Username == username {
-			return member, nil
-		}
-	}
-	return nil, fmt.Errorf("organizationMember %s not found in organization %s", username, selectedOrganizationSlug)
 }

@@ -10007,6 +10007,195 @@ paths:
       summary: Invoke Functions across Org
       tags:
       - Function
+  /group:
+    get:
+      description: List ExtendedGroups
+      operationId: ListExtendedGroups
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Groups returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Group: CreatedAt, DisplayName, ExternalID, GroupID, Slug, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Group include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Group entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedGroup'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedGroup request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedGroup not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedGroup.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ExtendedGroups
+      tags:
+      - Group
+  /group/{group_id}:
+    get:
+      description: Get ExtendedGroup
+      operationId: GetExtendedGroup
+      parameters:
+      - description: Unique identifier for a group_id
+        in: path
+        name: group_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedGroup'
+          description: Group with additional related entities expanded based on the
+            request's include parameter.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedGroup request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ExtendedGroup not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ExtendedGroup.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ExtendedGroup
+      tags:
+      - Group
   /info:
     get:
       description: Get info about this api server
@@ -11344,7 +11533,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           filter
 
@@ -11526,7 +11715,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -11699,7 +11888,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           filter
 
@@ -11825,13 +12014,6 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
-                Bindings:
-                  description: ""
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 Clearance:
                   description: ""
                   items:
@@ -11905,6 +12087,13 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                ManualBindings:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 MergeEnableSubtraction:
                   description: ""
                   nullable: true
@@ -12088,7 +12277,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           Where expression to select source links to copy
 
@@ -12157,7 +12346,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit links from each source link's FromUnit. Creates one copy per match. Required if reverse is not specified.
 
@@ -12202,7 +12391,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           Where expression to find downstream UpgradeUnit link from each source link's ToUnit. Exactly one match required. If omitted, ToUnitID/ToSpaceID are unchanged.
 
@@ -12332,13 +12521,6 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
-                Bindings:
-                  description: ""
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 Clearance:
                   description: ""
                   items:
@@ -12412,6 +12594,13 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                ManualBindings:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 MergeEnableSubtraction:
                   description: ""
                   nullable: true
@@ -13035,7 +13224,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/Organization'
+                  $ref: '#/components/schemas/ExtendedOrganization'
                 type: array
           description: OK
         "400":
@@ -13259,8 +13448,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Organization'
-          description: The top-level container for an organization using ConfigHub.
+                $ref: '#/components/schemas/ExtendedOrganization'
+          description: OK
         "400":
           content:
             application/json:
@@ -13477,7 +13666,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/OrganizationMember'
+                  $ref: '#/components/schemas/ExtendedOrganizationMember'
                 type: array
           description: OK
         "400":
@@ -13689,8 +13878,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OrganizationMember'
-          description: a User given membership on the Organization
+                $ref: '#/components/schemas/ExtendedOrganizationMember'
+          description: OK
         "400":
           content:
             application/json:
@@ -22418,7 +22607,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           The whole string must be query-encoded.
         in: query
@@ -22871,13 +23060,6 @@ paths:
                   description: ""
                   nullable: true
                   type: boolean
-                Bindings:
-                  description: ""
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 Clearance:
                   description: ""
                   items:
@@ -22951,6 +23133,13 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
+                ManualBindings:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
                 MergeEnableSubtraction:
                   description: ""
                   nullable: true
@@ -35891,7 +36080,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
+          Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 
           Where expression to filter outgoing links (links to units outside the cloned set) for copying. If non-empty, matching outgoing links are also copied with FromUnitID retargeted to the cloned unit.
 
@@ -37943,7 +38132,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on User: CreatedAt, DisplayName, ExternalID, HiddenReason, Slug, UpdatedAt, UserID, Username.
+          Supported attributes for filtering on User: CreatedAt, DisplayName, ExternalID, GroupIDs, HiddenReason, Slug, UpdatedAt, UserID, Username.
 
           The whole string must be query-encoded.
         in: query
@@ -37990,6 +38179,20 @@ paths:
         schema:
           type: string
       - description: |-
+          Select clause for specifying which fields to include in the response for User.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, UserID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
           Hidden User entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 
           It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -38008,7 +38211,7 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/User'
+                  $ref: '#/components/schemas/ExtendedUser'
                 type: array
           description: OK
         "400":
@@ -38055,6 +38258,20 @@ paths:
       description: Get User
       operationId: GetUser
       parameters:
+      - description: |-
+          Select clause for specifying which fields to include in the response for User.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, UserID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
       - description: Unique identifier for a user_id
         in: path
         name: user_id
@@ -38067,8 +38284,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-          description: a User in Confighub.
+                $ref: '#/components/schemas/ExtendedUser'
+          description: OK
         "400":
           content:
             application/json:
@@ -40450,14 +40667,15 @@ components:
           description: Shared attribute name that matched the need to the provide
           type: string
           x-go-type-skip-optional-pointer: true
-        AutoUpdate:
-          description: Whether this binding should be automatically updated when the
-            provided value changes; if false, the binding is manual and will not be
-            modified by automatic resolution
-          type: boolean
-          x-go-type-skip-optional-pointer: true
         DataType:
           description: DataType of the bound value
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Key:
+          description: Identifies a binding within its Link's ManualBindings, so that
+            a merge of two versions of the Link matches bindings by Key rather than
+            by position. Optional, and unique within the list when present. Letters,
+            digits, '-' and '_', starting with a letter or digit; at most 128 characters.
           type: string
           x-go-type-skip-optional-pointer: true
         NeededPath:
@@ -42207,6 +42425,15 @@ components:
         Space:
           $ref: '#/components/schemas/Space'
       type: object
+    ExtendedGroup:
+      description: Group with additional related entities expanded based on the request's
+        include parameter.
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Group:
+          $ref: '#/components/schemas/Group'
+      type: object
     ExtendedInvocation:
       properties:
         BridgeWorker:
@@ -42261,6 +42488,20 @@ components:
           $ref: '#/components/schemas/Trigger'
         Unit:
           $ref: '#/components/schemas/Unit'
+      type: object
+    ExtendedOrganization:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+      type: object
+    ExtendedOrganizationMember:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        OrganizationMember:
+          $ref: '#/components/schemas/OrganizationMember'
       type: object
     ExtendedRelease:
       description: Release with additional related entities expanded based on the
@@ -42532,6 +42773,13 @@ components:
             $ref: '#/components/schemas/ViewColumn'
           type: array
           x-go-type-skip-optional-pointer: true
+      type: object
+    ExtendedUser:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        User:
+          $ref: '#/components/schemas/User'
       type: object
     ExtendedView:
       properties:
@@ -43080,6 +43328,75 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
+    Group:
+      description: A Group of Users, a subject in an entity's Permissions. Groups
+        and their membership are managed in the identity provider, and like Users
+        are not scoped to an Organization; a Group is provisioned when a User in it
+        logs in.
+      properties:
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        DisplayName:
+          description: Friendly name for the entity.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ExternalID:
+          description: Unique identifier for the External Identity Provider record
+            matching this Group.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        GroupID:
+          description: Unique identifier for a Group. (readonly)
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        HiddenReason:
+          description: The reason the entity is hidden, if it is. A hidden entity
+            is left out of List and Search results, and of what bulk operations act
+            on, unless the include_hidden parameter names its reason or is *, or the
+            where parameter names the entity by Slug or ID. ConfigHub/YAML Units are
+            created hidden with the reason BackingUnit unless given another.
+          maxLength: 64
+          pattern: ^([A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Slug
+      type: object
     GuardDelta:
       properties:
         Path:
@@ -43393,6 +43710,8 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
+        ManualBindings:
+          $ref: '#/components/schemas/BindingList'
         MergeEnableSubtraction:
           description: Enables the subtraction (override-preservation) step of the
             merge performed when resolving this Link. When false (the default), the
@@ -44058,6 +44377,13 @@ components:
       properties:
         FunctionInvocation:
           $ref: '#/components/schemas/FunctionInvocation'
+        Key:
+          description: Identifies the entry within DownstreamSetters, so that a merge
+            of two versions of the Link matches entries by Key rather than by position.
+            Optional, and unique within the list when present. Letters, digits, '-'
+            and '_', starting with a letter or digit; at most 128 characters.
+          type: string
+          x-go-type-skip-optional-pointer: true
         Parameters:
           description: Names of upstream values whose values are exposed to string-argument
             template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters.
@@ -44144,6 +44470,13 @@ components:
         Expression:
           description: Go template or CEL expression that evaluates to the value to
             write. Parameters and FunctionContext fields are in scope.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Key:
+          description: Identifies the entry within DownstreamPaths, so that a merge
+            of two versions of the Link matches entries by Key rather than by position.
+            Optional, and unique within the list when present. Letters, digits, '-'
+            and '_', starting with a letter or digit; at most 128 characters.
           type: string
           x-go-type-skip-optional-pointer: true
         Parameters:
@@ -45858,6 +46191,11 @@ components:
       type: object
     Subjects:
       properties:
+        GroupIDs:
+          additionalProperties:
+            type: boolean
+          type: object
+          x-go-type-skip-optional-pointer: true
         UserIDs:
           additionalProperties:
             type: boolean
@@ -47759,6 +48097,13 @@ components:
           description: Unique identifier for the External Identity Provider record
             matching this User.
           type: string
+          x-go-type-skip-optional-pointer: true
+        GroupIDs:
+          description: The Groups the User belongs to, from the identity provider's
+            claims at their last login. (readonly)
+          items:
+            $ref: '#/components/schemas/UUID'
+          type: array
           x-go-type-skip-optional-pointer: true
         HiddenReason:
           description: The reason the entity is hidden, if it is. A hidden entity

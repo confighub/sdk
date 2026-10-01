@@ -540,8 +540,11 @@ func ValidateAndBuildArguments(resourceProvider yamlkit.ResourceProvider, functi
 		if f.VarArgs && parameterIndex >= len(f.Parameters) {
 			parameterIndex = len(f.Parameters) - 1
 		}
-		argumentName := arg.ParameterName
-		if arg.ParameterName == "" {
+		// A suffix tells apart the repeated arguments of a variadic parameter where they are
+		// stored; the function is given the parameter's own name.
+		argumentName := api.ArgumentParameterName(arg.ParameterName)
+		invocation.Arguments[i].ParameterName = argumentName
+		if argumentName == "" {
 			mustBeInOrder = true
 			if isInOrder {
 				parameterName := f.Parameters[parameterIndex].ParameterName

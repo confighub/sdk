@@ -99,6 +99,10 @@ import (
 // elements by merge key value instead of positional index.
 type MergeKeyLookup func(path string) ([]string, bool)
 
+// ListTypeLookup returns the list type declared for an array path, or "" when the array declares
+// none. computeMutationsForDocs reads it to diff an atomic or set array as a whole.
+type ListTypeLookup func(path string) ListType
+
 // anchorKeyPrefix marks a pair in an associative path segment whose key is not a field of
 // the element but something computed from it. Field names never start with it, so a
 // segment carrying such a pair is recognizably an anchor rather than a merge key.
@@ -1720,13 +1724,16 @@ func recordAddedSubtree(path string, doc *gaby.YamlDoc, functionIndex int64, pat
 // recorded so PatchMutations rewrites the merge-key field at apply time.
 func ComputeMutationsForDocs(rootPath string, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap) {
 	computeMutationsForDocs(rootPath, diffLocation{}, previousDoc, modifiedDoc, functionIndex, pathMutationMap,
-		mergeKeyLookup, arrayOrders, arrayElementAliases, nil)
+		mergeKeyLookup, nil, arrayOrders, arrayElementAliases, nil)
 }
 
 // computeMutationsForDocs is ComputeMutationsForDocs that also records, when recorder is
 // non-nil, what a display diff needs at each site it records a mutation. rootLocation is
 // where rootPath sits; locations are only tracked when recording.
-func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap, recorder *diffRecorder) {
+//
+// listTypeLookup, if non-nil, names the arrays that are diffed as a whole rather than element by
+// element: see ListType.
+func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previousDoc *gaby.YamlDoc, modifiedDoc *gaby.YamlDoc, functionIndex int64, pathMutationMap api.MutationMap, mergeKeyLookup MergeKeyLookup, listTypeLookup ListTypeLookup, arrayOrders api.ArrayOrderMap, arrayElementAliases api.ArrayElementAliasMap, recorder *diffRecorder) {
 	recording := recorder != nil
 
 	// Define a traversal item for our stack
@@ -1887,6 +1894,23 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 				continue // process next stack element
 			}
 
+			// An atomic or set array is compared whole, and any change to it is a Replace: a patch
+			// sets it wholesale rather than merging into the target's elements, and accumulating it
+			// into a Unit's MutationSources drops whatever was recorded inside it.
+			if listTypeLookup != nil {
+				if listType := listTypeLookup(path); listType != "" {
+					if !arraysEquivalent(listType, previousDoc, modifiedDoc) {
+						pathMutationMap[api.ResolvedPath(path)] = api.MutationInfo{
+							MutationType: api.MutationTypeReplace,
+							Index:        functionIndex,
+							Value:        modifiedDoc.String(), // new data
+						}
+						recorder.record(path, location, api.DiffChangeTypeUpdate, previousDoc, modifiedDoc, "")
+					}
+					continue // process next stack element
+				}
+			}
+
 			// Check if this array has merge keys for associative matching.
 			var mergeKeys []string
 			if mergeKeyLookup != nil {
@@ -2043,7 +2067,7 @@ func computeMutationsForDocs(rootPath string, rootLocation diffLocation, previou
 								prevIdx, pa.modifiedIndex, diffOrder{pos: float64(pa.modifiedIndex)})
 						}
 						computeMutationsForDocs(subPath, subLocation, prevChild, pa.modifiedChild, functionIndex, tmpPathMap,
-							mergeKeyLookup, tmpArrayOrders, tmpAliases, tmpRecorder)
+							mergeKeyLookup, listTypeLookup, tmpArrayOrders, tmpAliases, tmpRecorder)
 						// Cost is the leaf-value count of the sub-diff so a
 						// mutation whose Value is a whole subtree (e.g., an
 						// Add/Delete of a container or env-var block) is
@@ -2341,9 +2365,43 @@ func diffResourcePair(previousDoc, modifiedDoc *gaby.YamlDoc, modifiedResourceTy
 	mergeKeyLookup := MergeKeyLookup(func(path string) ([]string, bool) {
 		return resourceProvider.MergeKeysForPath(modifiedResourceType, path)
 	})
-	ComputeMutationsForDocs("", previousDoc, modifiedDoc, functionIndex,
-		diff.pathMutationMap, mergeKeyLookup, diff.arrayOrders, diff.arrayElementAliases)
+	computeMutationsForDocs("", diffLocation{}, previousDoc, modifiedDoc, functionIndex,
+		diff.pathMutationMap, mergeKeyLookup, listTypeLookupFor(modifiedResourceType, resourceProvider),
+		diff.arrayOrders, diff.arrayElementAliases, nil)
 	return diff
+}
+
+// listTypeLookupFor is the list-type lookup for diffing one resource type.
+func listTypeLookupFor(resourceType api.ResourceType, resourceProvider ResourceProvider) ListTypeLookup {
+	return func(path string) ListType {
+		return resourceProvider.ListTypeForPath(resourceType, path)
+	}
+}
+
+// arraysEquivalent reports whether two arrays of the given list type are the same: element for
+// element for an atomic one, and as a multiset of elements for a set, whose order means nothing.
+func arraysEquivalent(listType ListType, previous, modified *gaby.YamlDoc) bool {
+	previousElements, modifiedElements := elementTexts(previous), elementTexts(modified)
+	if listType == ListTypeSet {
+		slices.Sort(previousElements)
+		slices.Sort(modifiedElements)
+	}
+	return slices.Equal(previousElements, modifiedElements)
+}
+
+// elementTexts renders an array's elements for comparison: their values as JSON, which sorts
+// object keys and carries no comments, so only a change of value is a difference.
+func elementTexts(array *gaby.YamlDoc) []string {
+	children := array.Children()
+	texts := make([]string, len(children))
+	for i, child := range children {
+		data, err := json.Marshal(child.Data())
+		if err != nil {
+			data = []byte(child.String())
+		}
+		texts[i] = string(data)
+	}
+	return texts
 }
 
 // diffResourcePairRecorded is diffResourcePair that also records the pair's changes for a
@@ -2359,7 +2417,8 @@ func diffResourcePairRecorded(previousDoc, modifiedDoc *gaby.YamlDoc, modifiedRe
 		return resourceProvider.MergeKeysForPath(modifiedResourceType, path)
 	})
 	computeMutationsForDocs("", diffLocation{}, previousDoc, modifiedDoc, functionIndex,
-		diff.pathMutationMap, mergeKeyLookup, diff.arrayOrders, diff.arrayElementAliases, recorder)
+		diff.pathMutationMap, mergeKeyLookup, listTypeLookupFor(modifiedResourceType, resourceProvider),
+		diff.arrayOrders, diff.arrayElementAliases, recorder)
 	return diff
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +24,9 @@ Examples:
 
   # Get organization details in JSON format
   cub organization get --json my-organization
+
+  # Get the organization's ID
+  cub organization get my-organization -o jq=.Organization.OrganizationID
 `+"```"+`
 `, ""),
 	RunE: organizationGetCmdRun,
@@ -37,13 +39,19 @@ func init() {
 
 // organizationGetCmdRun is the main entry point for `cub organization get`
 func organizationGetCmdRun(cmd *cobra.Command, args []string) error {
-	organizationDetails, err := apiGetOrganizationFromSlug(args[0], selectFields)
+	extendedOrganization, err := resolveOrganization(args[0], selectFields)
 	if err != nil {
 		return err
 	}
 
-	displayGetResults(organizationDetails, displayOrganizationDetails)
+	displayGetResults(extendedOrganization, displayExtendedOrganizationDetails)
 	return nil
+}
+
+// displayExtendedOrganizationDetails renders what get returns: the Organization wrapped the way
+// every other get's entity is, so -o json and -o jq read it as .Organization, as list does.
+func displayExtendedOrganizationDetails(extendedOrganization *goclientnew.ExtendedOrganization) {
+	displayOrganizationDetails(extendedOrganization.Organization)
 }
 
 func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
@@ -60,49 +68,17 @@ func displayOrganizationDetails(organizationDetails *goclientnew.Organization) {
 	view.Render()
 }
 
-func apiGetOrganization(organizationID string, selectParam string) (*goclientnew.Organization, error) {
-	newParams := &goclientnew.GetOrganizationParams{}
-	selectValue := handleSelectParameter(selectParam, selectFields, nil)
-	if selectValue != "" && selectValue != "*" {
-		newParams.Select = &selectValue
-	}
-	orgRes, err := cubClientNew.GetOrganizationWithResponse(ctx, uuid.MustParse(organizationID), newParams)
-	if cubapi.IsAPIError(err, orgRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, orgRes)
-	}
-	return orgRes.JSON200, nil
-}
-
+// apiGetOrganizationFromExternalID finds an organization by the ID the identity provider knows
+// it by, which is how a context names its organization.
 func apiGetOrganizationFromExternalID(extID string) (*goclientnew.Organization, error) {
-	organizations, err := apiListOrganizations("ExternalID = '"+extID+"'", "", "")
+	organizations, err := cubapi.ListOrganizations(ctx, cubClient, cubapi.Where{}.Eq("ExternalID", extID), cubapi.ListOpts{})
 	if err != nil {
 		return nil, err
 	}
 	for _, organization := range organizations {
-		if organization.ExternalID == extID {
-			return organization, nil
+		if organization.Organization != nil && organization.Organization.ExternalID == extID {
+			return organization.Organization, nil
 		}
 	}
 	return nil, fmt.Errorf("organization %s not found", extID)
-}
-
-func apiGetOrganizationFromSlug(slug string, selectParam string) (*goclientnew.Organization, error) {
-	id, err := uuid.Parse(slug)
-	if err == nil {
-		return apiGetOrganization(id.String(), selectParam)
-	}
-	// The default for get is "*" rather than auto-selected list columns
-	if selectParam == "" {
-		selectParam = "*"
-	}
-	organizations, err := apiListOrganizations("Slug = '"+slug+"'", selectParam, "")
-	if err != nil {
-		return nil, err
-	}
-	for _, organization := range organizations {
-		if organization.Slug == slug {
-			return organization, nil
-		}
-	}
-	return nil, fmt.Errorf("organization %s not found", slug)
 }

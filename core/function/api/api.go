@@ -73,6 +73,34 @@ type FunctionArgument struct {
 	Evaluator string `json:",omitempty" description:"Evaluate the provided Value with the specified Evaluator; supported values: template, cel"`
 }
 
+// ArgumentSuffixSeparator separates a parameter name from a numeric suffix in an argument's
+// ParameterName: values#2. A suffix tells apart the repeated arguments of a variadic parameter,
+// so each argument of a stored Trigger or Invocation has a name of its own that a merge can
+// match it by. It is optional elsewhere. '#' cannot appear in a parameter name, and means
+// nothing in a path, unlike '.' and ':'.
+const ArgumentSuffixSeparator = "#"
+
+// ArgumentParameterName returns the parameter an argument's ParameterName names, without any
+// suffix.
+func ArgumentParameterName(parameterName string) string {
+	base, _, _ := strings.Cut(parameterName, ArgumentSuffixSeparator)
+	return base
+}
+
+// ArgumentsForExecution returns a copy of arguments with their suffixes removed, in the form a
+// function implementation is given them.
+func ArgumentsForExecution(arguments []FunctionArgument) []FunctionArgument {
+	if arguments == nil {
+		return nil
+	}
+	stripped := make([]FunctionArgument, len(arguments))
+	for i, argument := range arguments {
+		stripped[i] = argument
+		stripped[i].ParameterName = ArgumentParameterName(argument.ParameterName)
+	}
+	return stripped
+}
+
 // Valid function names. By convention we use kabob-case to match cub's convention.
 const FunctionNamePrefixRegexpString = "^[A-Za-z0-9]([\\-_A-Za-z0-9]{0,127})?"
 
@@ -100,14 +128,15 @@ const (
 // provider on its executor instance.
 type FunctionInvocation struct {
 	FunctionName  string             `description:"Function name"`
-	Arguments     []FunctionArgument `description:"Function arguments"`
+	Arguments     []FunctionArgument `mergeKey:"ParameterName" description:"Function arguments"`
 	WhereResource string             `json:",omitempty" description:"Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource)."`
 	// Params carries caller-supplied values for a stored Invocation's declared
 	// parameters. They are the scope (.Params / params) against which templated
 	// argument Values (Evaluator template/cel) are expanded at execution time.
 	// Transient and per-invocation: not persisted on stored Invocations/Triggers
-	// (bun:"-"), and never part of an Invocation's identity hash.
-	Params map[string]any `json:",omitempty" bun:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
+	// (bun:"-"), never part of an Invocation's identity hash, and so left out of the
+	// documents that describe a Trigger, Invocation, or Link as configuration.
+	Params map[string]any `json:",omitempty" bun:"-" entityDocument:"-" description:"Caller-supplied parameter values for expanding templated argument Values; transient, not persisted"`
 	// Clearance is the set of guarded reasons this invocation is cleared for. A path whose
 	// guards it does not cover is not written, and the withheld change is reported.
 	//
@@ -115,7 +144,7 @@ type FunctionInvocation struct {
 	// function is meant to disturb, rather than every Trigger that runs it having to restate
 	// them. An execution combines it with the clearance of whatever drove it -- the Trigger,
 	// the Link, or the API call -- by union.
-	Clearance Clearance `json:",omitempty" description:"Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"`
+	Clearance Clearance `json:",omitempty" mergeKey:"Key,Operator" description:"Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"`
 	// Guards are the reasons this invocation states about the paths it writes, recorded on
 	// the Unit's path annotations so a later operation has to be cleared for them.
 	//

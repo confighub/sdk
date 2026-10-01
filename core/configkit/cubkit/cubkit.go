@@ -11,8 +11,8 @@ import (
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/constants"
 	"github.com/confighub/sdk/core/function/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/confighub/sdk/core/third_party/gaby"
+	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 )
 
@@ -25,15 +25,14 @@ type ConfigHubResourceProviderType struct {
 	yamlkit.ResourceProviderRegistry
 }
 
-// NewConfigHubResourceProvider creates a new ConfigHubResourceProviderType with its own path registry.
+// NewConfigHubResourceProvider creates a new ConfigHubResourceProviderType with its own path
+// registry, whose structure lookups -- merge keys and map-key paths -- read the generated
+// resource-type specs.
 func NewConfigHubResourceProvider() *ConfigHubResourceProviderType {
 	return &ConfigHubResourceProviderType{
-		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistry(workerapi.ToolchainConfigHubYAML),
+		ResourceProviderRegistry: yamlkit.NewResourceProviderRegistryWithSpecs(workerapi.ToolchainConfigHubYAML, compiledSpecs),
 	}
 }
-
-
-
 
 // DefaultResourceCategory returns the default resource category to asssume, which is AppConfig in this case.
 func (*ConfigHubResourceProviderType) DefaultResourceCategory() api.ResourceCategory {

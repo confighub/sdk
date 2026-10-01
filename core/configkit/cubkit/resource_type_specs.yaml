@@ -1,0 +1,195 @@
+# ConfigHub/YAML resource-type specs: one per ConfigHub entity type that can be managed as a
+# document, saying how its lists merge, which of its fields cannot change once it is created,
+# what its names are scoped by, and the order to apply it in.
+#
+# Generated from ConfigHub's entity definitions. Do not edit.
+resourceTypes:
+- applyPriority: 300
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - ResourceTypePaths.*.Paths.*
+  - ResourceTypePaths.*.Paths.*.Details.ProvidedProperties.*
+  - ResourceTypePaths.*.Paths.*.Details.NeededRequired.*
+  - ResourceTypePaths.*.Paths.*.Details.NeededPreferred.*
+  - ResourceTypePaths.*.Paths.*.Details.BoundProvidedProperties.*
+  - ResourceTypePaths.*.Paths.*.TypeExceptions.*
+  - ResourceTypePaths.*.ProvidedProperties.*
+  - ResourceTypePaths.*.NeededRequired.*
+  - ResourceTypePaths.*.NeededPreferred.*
+  - ResourceTypePaths.*.BoundProvidedProperties.*
+  - Parameters.*.Schema.definitions.*
+  - Parameters.*.Schema.properties.*
+  - Parameters.*.Schema.patternProperties.*
+  - Parameters.*.Schema.dependencies.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - key: ParameterName
+    path: Parameters
+  scope: Space
+  type: Attribute
+- applyPriority: 200
+  listTypes:
+  - path: Stages.*.Prerequisites
+    type: set
+  - path: Stages.*.ReleasePrerequisites
+    type: set
+  - path: AttestationPrerequisites.*.FromUserIDs
+    type: set
+  - path: AttestationPrerequisites.*.FromGroupIDs
+    type: set
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - key: Name
+    path: Stages
+  - key: Name
+    path: CustomPrerequisites
+  - key: Name
+    path: AttestationPrerequisites
+  scope: Space
+  type: ChangeWorkflow
+- applyPriority: 100
+  listTypes:
+  - path: AllowedChangeWorkflows
+    type: set
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  scope: Organization
+  type: Component
+- applyPriority: 200
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  scope: Space
+  type: Filter
+- applyPriority: 200
+  attributes:
+    immutable:
+    - path: ToolchainType
+  listTypes:
+  - path: FunctionInvocations
+    type: atomic
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Parameters.*.Schema.definitions.*
+  - Parameters.*.Schema.properties.*
+  - Parameters.*.Schema.patternProperties.*
+  - Parameters.*.Schema.dependencies.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - key: ParameterName
+    path: Parameters
+  scope: Space
+  type: Invocation
+- applyPriority: 600
+  attributes:
+    immutable:
+    - path: UpdateType
+  listTypes:
+  - path: Clearance.*.Values
+    type: set
+  - path: DownstreamPaths.*.Parameters
+    type: set
+  - path: UpstreamGetters.*.FunctionInvocation.Clearance.*.Values
+    type: set
+  - path: DownstreamSetters.*.Parameters
+    type: set
+  - path: DownstreamSetters.*.FunctionInvocation.Clearance.*.Values
+    type: set
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Guards.*
+  - UpstreamGetters.*.FunctionInvocation.Guards.*
+  - DownstreamSetters.*.FunctionInvocation.Guards.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - extraKeys:
+    - Operator
+    key: Key
+    path: Clearance
+  - key: Key
+    path: ManualBindings
+  - key: Name
+    path: UpstreamPaths
+  - key: Key
+    path: DownstreamPaths
+  - key: Name
+    path: UpstreamGetters
+  - key: ParameterName
+    path: UpstreamGetters.*.FunctionInvocation.Arguments
+  - extraKeys:
+    - Operator
+    key: Key
+    path: UpstreamGetters.*.FunctionInvocation.Clearance
+  - key: Key
+    path: DownstreamSetters
+  - key: ParameterName
+    path: DownstreamSetters.*.FunctionInvocation.Arguments
+  - extraKeys:
+    - Operator
+    key: Key
+    path: DownstreamSetters.*.FunctionInvocation.Clearance
+  scope: Space
+  type: Link
+- applyPriority: 100
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  scope: Organization
+  type: Space
+- applyPriority: 300
+  listTypes:
+  - path: Clearance.*.Values
+    type: set
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Guards.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - key: ParameterName
+    path: Arguments
+  - extraKeys:
+    - Operator
+    key: Key
+    path: Clearance
+  scope: Space
+  type: Trigger
+- applyPriority: 300
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  mergeKeys:
+  - key: Name
+    path: Columns
+  scope: Space
+  type: View
+toolchainType: ConfigHub/YAML

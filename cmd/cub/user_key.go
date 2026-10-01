@@ -82,9 +82,9 @@ func resolveKeyTargetUser() (*goclientnew.User, error) {
 			// Worth saying plainly rather than reporting a nil UUID lookup.
 			return nil, fmt.Errorf("worker %s has no bot user, so it has no identity to hold a key", userKeyWorker)
 		}
-		return apiGetUser(worker.BridgeWorker.UserID.String())
+		return resolveUserCore(worker.BridgeWorker.UserID.String())
 	case userKeyUser != "":
-		return apiGetUserFromUsername(userKeyUser)
+		return resolveUserCore(userKeyUser)
 	default:
 		return nil, fmt.Errorf("name an identity with --user or a worker with --worker")
 	}
