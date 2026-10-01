@@ -237,7 +237,6 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
 	unitUpdateCmd.Flags().BoolVar(&mergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the target's local differences from the patch during --upgrade and --merge-source, on top of the stored path protection that preserves overrides by default (no effect on --merge-source Self)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
-	enableOptionFlag(unitUpdateCmd)
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -459,19 +458,6 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				failOnError(err)
 			}
-			// Handle TargetOptions
-			if len(option) > 0 {
-				optionMap := make(map[string]interface{})
-				if existing, ok := patchMap["TargetOptions"]; ok {
-					if m, ok := existing.(map[string]interface{}); ok {
-						for k, v := range m {
-							optionMap[k] = v
-						}
-					}
-				}
-				_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
-				patchMap["TargetOptions"] = optionMap
-			}
 			if providerType != "" {
 				patchMap["ProviderType"] = providerType
 			}
@@ -535,10 +521,6 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		err = setDestroyGatesField(&currentUnit.DestroyGates)
-		if err != nil {
-			return err
-		}
-		err = setOptions(&currentUnit.TargetOptions)
 		if err != nil {
 			return err
 		}
@@ -863,19 +845,6 @@ func runBulkUnitUpdate() error {
 		err := setDestroyGatesInPatch(patchMap)
 		if err != nil {
 			failOnError(err)
-		}
-		// Handle TargetOptions
-		if len(option) > 0 {
-			optionMap := make(map[string]interface{})
-			if existing, ok := patchMap["TargetOptions"]; ok {
-				if m, ok := existing.(map[string]interface{}); ok {
-					for k, v := range m {
-						optionMap[k] = v
-					}
-				}
-			}
-			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
-			patchMap["TargetOptions"] = optionMap
 		}
 		if providerType != "" {
 			patchMap["ProviderType"] = providerType

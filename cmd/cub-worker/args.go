@@ -21,8 +21,8 @@ import (
 // The worker is configured primarily via environment variables. Command-line
 // flags exist for testing and, when supplied, override the corresponding
 // environment variable. The flags are not part of the worker invocation
-// contract used by `cub worker install`, `cub worker run`, and
-// `cub worker get-envs`.
+// contract, which is the environment `cub worker get-envs` emits plus
+// CONFIGHUB_URL and the CONFIGHUB_WORKER_* settings below.
 //
 // Field tags:
 //   - `env`     populated by github.com/sethvargo/go-envconfig

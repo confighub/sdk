@@ -113,7 +113,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	}
 	view.Append([]string{"Trigger Hash", extendedSpace.Space.TriggerHash})
 
-	// TODO: TriggerCountByEventType, TargetCountByToolchainType
+	// TODO: TriggerCountByEventType
 	view.Append([]string{"# Units", fmt.Sprintf("%d", extendedSpace.TotalUnitCount)})
 	view.Append([]string{"# Unreleased Units", fmt.Sprintf("%d", extendedSpace.UnreleasedUnitCount)})
 	view.Append([]string{"# Gated Units", fmt.Sprintf("%d", extendedSpace.GatedUnitCount)})
@@ -128,7 +128,7 @@ func displayExtendedSpaceDetails(extendedSpace *goclientnew.ExtendedSpace) {
 	view.Append([]string{"# ChangeOrders", fmt.Sprintf("%d", extendedSpace.TotalChangeOrderCount)})
 	view.Append([]string{"# ChangeWorkflows", fmt.Sprintf("%d", extendedSpace.TotalChangeWorkflowCount)})
 	view.Append([]string{"# Invocations", fmt.Sprintf("%d", extendedSpace.TotalInvocationCount)})
-	view.Append([]string{"# Targets", fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))})
+	view.Append([]string{"# Targets", fmt.Sprintf("%d", extendedSpace.TotalTargetCount)})
 	view.Append([]string{"# Triggers", fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))})
 	view.Append([]string{"# Attributes", fmt.Sprintf("%d", extendedSpace.TotalAttributeCount)})
 	view.Render()

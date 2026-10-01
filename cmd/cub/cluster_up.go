@@ -283,7 +283,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	})
 
 	fmt.Fprintf(out, "Creating server-hosted OCI worker %q (OrgRole=none)...\n", clusterWorkerSlug)
-	workerID, workerSecret, err := clusterCreateOCIWorker(spaceID, clusterWorkerSlug, clusterWorkerSlug)
+	workerID, workerSecret, workerUserID, err := clusterCreateOCIWorker(spaceID, clusterWorkerSlug, clusterWorkerSlug)
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		}
 	}
 
-	fmt.Fprintf(out, "Creating OCI target %q owned by worker %q...\n", clusterTargetSlug, clusterWorkerSlug)
+	fmt.Fprintf(out, "Creating OCI target %q pulled by worker %q...\n", clusterTargetSlug, clusterWorkerSlug)
 	// URL-TargetUI deep link: the ConfigHub UI substitutes "{slug}" with the
 	// Space slug at render time, linking a Unit straight to its Argo CD
 	// Application UI on the locally-forwarded argocd-server NodePort.
@@ -313,7 +313,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	// Selecting the cluster Space's Triggers makes them gate every Unit bound to
 	// this target, wherever that Unit lives — the apps Space, the argobot
 	// variant, and every deployment variant, including ones created later.
-	targetID, err := clusterCreateOCITarget(spaceID, workerID, clusterTargetSlug, clusterTargetSlug,
+	targetID, err := clusterCreateOCITarget(spaceID, workerUserID, clusterTargetSlug, clusterTargetSlug,
 		targetAnnotations, clusterWhereTriggerForSpace(spaceID))
 	if err != nil {
 		return err

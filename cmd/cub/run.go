@@ -89,7 +89,7 @@ func RunRunCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	// Preload builtin functions
-	_, _, err := listAndMaybeSaveFunctions("", "", "", "")
+	_, _, err := listAndMaybeSaveFunctions("", "")
 	failOnError(err)
 	tprint("Function list saved to %s", functionSpecFilePath())
 	return nil

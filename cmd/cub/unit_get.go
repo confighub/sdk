@@ -180,9 +180,6 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		if unitDetails.Target != nil {
 			view.Append([]string{"Target", unitDetails.Target.Slug})
 		}
-		if len(unitDetails.Unit.TargetOptions) > 0 {
-			view.Append([]string{"Target Options", mapToString(unitDetails.Unit.TargetOptions)})
-		}
 
 		// Show ChangeSet slug if available, or ChangeSetID if not nil and not uuid.Nil
 		if unitDetails.ChangeSet != nil {
@@ -257,14 +254,6 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 				linkIDs += " " + linkID.String()
 			}
 			view.Append([]string{"From Link IDs", strings.TrimSpace(linkIDs)})
-		}
-
-		// Show Bridge Worker if available (expanded)
-		if unitDetails.BridgeWorker != nil {
-			view.Append([]string{"Bridge Worker", unitDetails.BridgeWorker.Slug})
-		} else if unitDetails.Unit.BridgeWorkerID != nil && *unitDetails.Unit.BridgeWorkerID != uuid.Nil {
-			// Fallback to ID if expansion not available
-			view.Append([]string{"Bridge Worker ID", unitDetails.Unit.BridgeWorkerID.String()})
 		}
 
 		if unitDetails.Unit.DataHash != "" {

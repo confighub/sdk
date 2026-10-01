@@ -175,7 +175,7 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	// Preload builtin functions
 	// Builtin functions are the same in every space, so list them organization-wide
 	selectedSpaceID = "*"
-	if _, _, err := listAndMaybeSaveFunctions("", "", "", ""); err != nil {
+	if _, _, err := listAndMaybeSaveFunctions("", ""); err != nil {
 		return err
 	}
 

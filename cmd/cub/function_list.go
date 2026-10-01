@@ -37,9 +37,7 @@ Agent workflow:
 Filter options:
 - --where: SQL-inspired filter over FunctionSignature attributes. Supported attributes: ToolchainType, FunctionName, Description, RequiredParameters, VarArgs, Mutating, Validating, Hermetic, Idempotent, Replayable, FunctionType, AttributeName, and OutputInfo.OutputType / OutputInfo.ResultName / OutputInfo.Description. Example: --where "ToolchainType = 'Kubernetes/YAML' AND FunctionName LIKE '%image%'"
 - --toolchain: Shortcut that is AND'd into --where as ToolchainType = '<toolchain>'
-- --target: Show functions available for a specific deployment target
 - --worker: Show functions available on a specific worker
-- --unit: Show functions available for a specific unit
 
 Function types:
 - Mutating: false = Read-only inspection functions (safe to run repeatedly)
@@ -54,16 +52,12 @@ Note: Filtered results (--where or --toolchain supplied) are not cached locally.
 }
 
 var functionListCmdArgs struct {
-	targetSlug    string
 	workerSlug    string
-	unitSlug      string
 	toolchainType string
 }
 
 func init() {
-	functionListCmd.Flags().StringVar(&functionListCmdArgs.targetSlug, "target", "", "Target slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.workerSlug, "worker", "", "Worker slug to list functions for")
-	functionListCmd.Flags().StringVar(&functionListCmdArgs.unitSlug, "unit", "", "Unit slug to list functions for")
 	functionListCmd.Flags().StringVar(&functionListCmdArgs.toolchainType, "toolchain", "", "Toolchain type to list functions for (AND'd into --where as ToolchainType = '<toolchain>')")
 	enableWhereFlag(functionListCmd)
 	addStandardListDisplayFlags(functionListCmd)
@@ -75,7 +69,7 @@ type functionsByEntity map[string]functionsByToolchain
 
 const builtinFunctionKey = "builtin"
 
-func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
+func listFunctions(workerSlug, whereClause string) (string, functionsByToolchain, error) {
 	entity := builtinFunctionKey
 	funcs := functionsByToolchain{}
 	params := &goclientnew.ListFunctionsParams{}
@@ -83,21 +77,11 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 		params.Where = &whereClause
 	}
 
-	// Validate that selectedSpaceID is not "*" when target, worker, or unit is specified
-	if selectedSpaceID == "*" && (targetSlug != "" || workerSlug != "" || unitSlug != "") {
-		return entity, funcs, fmt.Errorf("cannot use --space '*' with --target, --worker, or --unit flags")
+	// Validate that selectedSpaceID is not "*" when a worker is specified
+	if selectedSpaceID == "*" && workerSlug != "" {
+		return entity, funcs, fmt.Errorf("cannot use --space '*' with --worker")
 	}
-	if targetSlug != "" {
-		targetDetails, err := resolveTarget(targetSlug, selectedSpaceID, "") // default select is fine
-		if err != nil {
-			return entity, funcs, fmt.Errorf("failed to get target '%s': %w", targetSlug, err)
-		}
-		entityType := "target"
-		params.Entity = &entityType
-		targetIDStr := targetDetails.Target.TargetID.String()
-		params.Id = &targetIDStr
-		entity = targetIDStr
-	} else if workerSlug != "" {
+	if workerSlug != "" {
 		workerDetails, err := resolveWorker(workerSlug, selectedSpaceID, "") // default select is fine
 		if err != nil {
 			return entity, funcs, fmt.Errorf("failed to get worker '%s': %w", workerSlug, err)
@@ -107,16 +91,6 @@ func listFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string
 		workerIDStr := workerDetails.BridgeWorker.BridgeWorkerID.String()
 		params.Id = &workerIDStr
 		entity = workerIDStr
-	} else if unitSlug != "" {
-		unitDetails, err := resolveUnit(unitSlug, selectedSpaceID, "*") // get all fields
-		if err != nil {
-			return entity, funcs, fmt.Errorf("failed to get unit '%s': %w", unitSlug, err)
-		}
-		entityType := "unit"
-		params.Entity = &entityType
-		unitIDStr := unitDetails.Unit.UnitID.String()
-		params.Id = &unitIDStr
-		entity = unitIDStr
 	}
 
 	// No space and the wildcard both mean the organization: a command that runs
@@ -198,12 +172,12 @@ func removeFunctions() error {
 
 // listAndMaybeSaveFunctions fetches functions and caches them locally only when the
 // result is the full builtin listing: no --where / --toolchain filtering and no
-// --target, --worker, or --unit. Only the builtin entry is read back to register
-// function commands, and per-entity listings would accumulate one entry per
-// Target, Worker, or Unit ever listed; every cub invocation parses the cache at
-// startup, so its size is paid on every command. Saving replaces the whole cache.
-func listAndMaybeSaveFunctions(targetSlug, workerSlug, unitSlug, whereClause string) (string, functionsByToolchain, error) {
-	entity, functions, err := listFunctions(targetSlug, workerSlug, unitSlug, whereClause)
+// --worker. Only the builtin entry is read back to register function commands,
+// and per-worker listings would accumulate one entry per worker ever listed;
+// every cub invocation parses the cache at startup, so its size is paid on every
+// command. Saving replaces the whole cache.
+func listAndMaybeSaveFunctions(workerSlug, whereClause string) (string, functionsByToolchain, error) {
+	entity, functions, err := listFunctions(workerSlug, whereClause)
 	if err != nil {
 		return entity, functions, err
 	}
@@ -219,7 +193,7 @@ func functionListCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	effectiveWhere := addToolchainToWhereClause(where, functionListCmdArgs.toolchainType)
-	_, funcs, err := listAndMaybeSaveFunctions(functionListCmdArgs.targetSlug, functionListCmdArgs.workerSlug, functionListCmdArgs.unitSlug, effectiveWhere)
+	_, funcs, err := listAndMaybeSaveFunctions(functionListCmdArgs.workerSlug, effectiveWhere)
 	if err != nil {
 		return err
 	}

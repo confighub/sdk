@@ -127,7 +127,7 @@ var defaultUnitColumns = []string{"Unit.Slug", "Space.Slug", "ChangeSet.Slug", "
 // unitListInclude is the Include parameter for unit list queries (the related
 // entities expanded into each ExtendedUnit). UnitEventID is a pseudo-field used
 // only by Include, not a selectable field.
-const unitListInclude = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,BridgeWorkerID,ChangeSetID"
+const unitListInclude = "UnitEventID,TargetID,UpstreamUnitID,SpaceID,FromLinkID,ChangeSetID"
 
 // unitBaseSelectFields are the fields always returned by unit list queries,
 // regardless of the requested columns.

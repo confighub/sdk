@@ -14,21 +14,28 @@ var workerCreateCmd = &cobra.Command{
 	Use:   "create <worker-slug>",
 	Args:  cobra.ExactArgs(1),
 	Short: "Create a worker",
-	Long: getCommandHelp(`Create a bridge worker in your environment. Workers are responsible for executing tasks and managing resources in your infrastructure.
+	Long: getCommandHelp(`Create a worker in your environment.
 
 The worker-slug must be unique within a space. Workers can be used to:
 
-  1. Apply configurations to target environments
-  2. Monitor and manage resource states
+  1. Run custom functions, invoked by naming the worker on a request, Trigger or Invocation
+  2. Serve as an identity a GitOps tool pulls a Target's Releases as, by granting the
+     worker's bot user View and ViewChildren on the Target (--is-server-worker needs no
+     process to run)
 
 Examples:
 `+"```"+`
   # Create a worker in a space
   cub worker create --space my-space k8s-worker-1
 
-  # Create a worker and run it for the Kubernetes toolchain
+  # Create a worker and fetch the credentials a worker process authenticates with
   cub worker create --space my-space worker-1
-  cub worker run --space my-space worker-1 -t=kubernetes
+  eval "$(cub worker get-envs --space my-space worker-1)"
+
+  # Create a server-hosted worker and let it pull from a Target
+  cub worker create --space infra --is-server-worker --org-role none argo
+  bot=$(cub worker get --space infra argo -o jq=.BridgeWorker.UserID)
+  cub target update --space infra prod --permission View:$bot --permission ViewChildren:$bot
 `+"```"+`
 `, ""),
 	RunE: workerCreateCmdRun,

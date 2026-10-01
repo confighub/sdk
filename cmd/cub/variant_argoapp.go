@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 )
 
@@ -55,9 +54,8 @@ spec:
 
 // createVariantArgoApp auto-creates the Argo CD Application Unit for a deployment
 // variant when its target is a cub-cluster Argo target. It reports whether it did
-// anything: a target that is not OCI or carries no confighub.com/argo-apps-space
-// annotation is not a cluster target, so it returns (false, nil) and the caller
-// stays silent.
+// anything: a target that carries no confighub.com/argo-apps-space annotation is
+// not a cluster target, so it returns (false, nil) and the caller stays silent.
 //
 // The Application is named after the variant Space and pulls that Space's Release
 // from the OCI endpoint. It is created as a Unit in the cluster's apps Space
@@ -67,7 +65,7 @@ spec:
 // Application on its next reconcile.
 func createVariantArgoApp(out io.Writer, target *goclientnew.Target, variantSpace *goclientnew.Space, targetID uuid.UUID) (bool, error) {
 	appsSpaceSlug := target.Annotations[clusterAnnotationArgoAppsSpace]
-	if target.ProviderType != string(api.ProviderOCI) || appsSpaceSlug == "" {
+	if appsSpaceSlug == "" {
 		return false, nil
 	}
 

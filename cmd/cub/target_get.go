@@ -9,7 +9,6 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
@@ -92,32 +91,6 @@ func displayTargetDetails(extendedTarget *goclientnew.ExtendedTarget) {
 		view.Append([]string{"Space", extendedTarget.Space.Slug})
 	} else {
 		view.Append([]string{"Space ID", targetDetails.SpaceID.String()})
-	}
-
-	// Show Bridge Worker slug if available (expanded), otherwise show BridgeWorkerID
-	if extendedTarget.BridgeWorker != nil {
-		view.Append([]string{"Bridge Worker", extendedTarget.BridgeWorker.Slug})
-	} else if targetDetails.BridgeWorkerID != uuid.Nil {
-		view.Append([]string{"Bridge Worker ID", targetDetails.BridgeWorkerID.String()})
-	}
-
-	if targetDetails.BridgeHandle != "" {
-		view.Append([]string{"Bridge Handle", targetDetails.BridgeHandle})
-	}
-	view.Append([]string{"Provider Type", targetDetails.ProviderType})
-	view.Append([]string{"Toolchain Type", targetDetails.ToolchainType})
-	view.Append([]string{"LiveState Type", targetDetails.LiveStateType})
-	if len(targetDetails.Options) > 0 {
-		view.Append([]string{"Options", mapToString(targetDetails.Options)})
-	}
-	if len(targetDetails.ConfigTypes) > 0 {
-		for i, ct := range targetDetails.ConfigTypes {
-			prefix := fmt.Sprintf("ConfigType[%d]", i)
-			view.Append([]string{prefix, fmt.Sprintf("%s / %s / %s", ct.ProviderType, ct.ToolchainType, ct.LiveStateType)})
-			if len(ct.Options) > 0 {
-				view.Append([]string{prefix + " Options", mapToString(ct.Options)})
-			}
-		}
 	}
 
 	view.Append([]string{"Created At", targetDetails.CreatedAt.String()})

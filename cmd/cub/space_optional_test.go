@@ -31,9 +31,7 @@ var referenceOperandCommands = []string{
 	"unit-action get", "unit-action data", "unit-event get",
 	"target access", "k8s collect",
 	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
-	"worker logs", "worker status", "worker stop",
 	"worker key add", "worker key list", "worker key delete",
-	"worker get-image", "worker run", "worker install", "worker upgrade",
 	"user key add", "user key list", "user key delete",
 }
 

@@ -240,7 +240,6 @@ var refArgKinds = map[string][]*refKind{
 	"worker get": {kindWorker}, "worker update": {kindWorker}, "worker delete": {kindWorker},
 	"worker get-envs": {kindWorker}, "worker get-secret": {kindWorker},
 	"worker list-function": {kindWorker}, "worker list-status": {kindWorker},
-	"worker logs": {kindWorker}, "worker status": {kindWorker}, "worker stop": {kindWorker},
 	"worker key add": {kindWorker}, "worker key list": {kindWorker}, "worker key delete": {kindWorker},
 }
 
@@ -265,12 +264,6 @@ var refFlagKinds = map[string]*refKind{
 	"worker":         kindWorker,
 }
 
-// refFlagExceptions are flags that share a name with an entity but name
-// something new rather than something to look up.
-var refFlagExceptions = map[string]map[string]bool{
-	"worker install": {"unit": true},
-}
-
 // installReferenceCompletions attaches the completers to the command tree. It
 // runs once, from main, after every init has added its commands.
 func installReferenceCompletions(root *cobra.Command) {
@@ -290,7 +283,7 @@ func installReferenceCompletions(root *cobra.Command) {
 	var walk func(*cobra.Command)
 	walk = func(cmd *cobra.Command) {
 		for name, kind := range refFlagKinds {
-			if cmd.LocalFlags().Lookup(name) == nil || refFlagExceptions[strings.TrimPrefix(cmd.CommandPath(), "cub ")][name] {
+			if cmd.LocalFlags().Lookup(name) == nil {
 				continue
 			}
 			kind := kind

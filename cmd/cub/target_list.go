@@ -20,15 +20,15 @@ var targetListCmd = &cobra.Command{
 }
 
 // Default columns to display when no custom columns are specified
-var defaultTargetColumns = []string{"Target.Slug", "BridgeWorker.Slug", "Target.ProviderType", "Target.Parameters", "Target.SpaceSlug"}
+var defaultTargetColumns = []string{"Target.Slug", "Target.SpaceSlug", "Target.Labels"}
 
 // targetListInclude is the Include parameter for target list queries (the related
 // entities expanded into each ExtendedTarget).
-const targetListInclude = "SpaceID,BridgeWorkerID,TriggerFilterID,TriggerIDs"
+const targetListInclude = "SpaceID,TriggerFilterID,TriggerIDs"
 
 // targetBaseSelectFields are the fields always returned by target list queries,
 // regardless of the requested columns.
-var targetBaseSelectFields = []string{"Slug", "TargetID", "BridgeWorkerID", "SpaceID", "OrganizationID"}
+var targetBaseSelectFields = []string{"Slug", "TargetID", "SpaceID", "OrganizationID"}
 
 // Target-specific aliases
 var targetAliases = map[string]string{
@@ -68,19 +68,13 @@ func displayTargetList(exTargets []*goclientnew.ExtendedTarget) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Name", "Worker", "ProviderType", "Parameters", "Space"})
+		table.SetHeader([]string{"Name", "Space", "Labels"})
 	}
 	for _, exTarget := range exTargets {
-		workerSlug := ""
-		if exTarget.BridgeWorker != nil {
-			workerSlug = exTarget.BridgeWorker.Slug
-		}
 		table.Append([]string{
 			exTarget.Target.Slug,
-			workerSlug,
-			exTarget.Target.ProviderType,
-			exTarget.Target.Parameters,
 			exTarget.Target.SpaceSlug,
+			labelsToString(exTarget.Target.Labels),
 		})
 	}
 	table.Render()

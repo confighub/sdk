@@ -5,33 +5,29 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/confighub/sdk/core/cubapi"
-	funcapi "github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/confighub/sdk/core/worker/api"
-	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 var targetCreateCmd = &cobra.Command{
-	Use:   "create <slug> <parameters> [worker-slug]",
+	Use:   "create <slug>",
 	Short: "Create a new target",
-	Long: getCommandHelp(`Create a new target with the specified slug and optional parameters and worker slug.
-Parameters are optional and can be used to pass additional configuration data to the target.
-Parameters are passed as a JSON string.
+	Long: getCommandHelp(`Create a new target with the specified slug.
 
-Example:
-`+"```"+`
-  "{\"KubeContext\":\"kind-space17005\",\"KubeNamespace\":\"default\",\"WaitTimeout\":\"2m0s\"}"
-`+"```"+`
+A Target is where a Space's Releases are destined: a Space releases to the Target named by
+its ReleaseTargetID, and a GitOps tool such as Argo CD or Flux pulls those Releases from
+ConfigHub's OCI registry. The identity that pulls, such as a worker's bot user, needs View
+and ViewChildren on the Target, granted with --permission or "cub target update --permission".`, `
+  # Create a Target
+  cub target create --space infra prod
 
-The worker slug is optional. A Target needs no worker: a worker that should have access to
-the Target is granted it with --permission or "cub target update --permission" instead. When a
-worker is named, the Target's provider and toolchain are validated against what it supports.`, ""),
-	Args: cobra.RangeArgs(1, 3),
+  # Create a Target a worker's bot user can pull from
+  cub target create --space infra prod \
+    --permission View:<bot-user-id> --permission ViewChildren:<bot-user-id>`),
+	Args: cobra.ExactArgs(1),
 	RunE: targetCreateCmdRun,
 }
 
@@ -43,20 +39,13 @@ var targetCreateArgs struct {
 
 var fromTarget string
 var fromTargetSpace string
-var providerTypes []string
-var toolchainTypes []string
-var liveStateTypes []string
 
 func init() {
 	addStandardCreateFlags(targetCreateCmd)
-	targetCreateCmd.Flags().StringSliceVarP(&providerTypes, "provider", "p", []string{}, "The type of provider for the target (can be repeated for multiple ConfigTypes).\nDefault is OCI when no worker is named, Kubernetes when one is.\n\t(e.g., OCI, Kubernetes)")
-	targetCreateCmd.Flags().StringSliceVarP(&toolchainTypes, "toolchain", "t", []string{}, "The type of toolchain for the target (can be repeated for multiple ConfigTypes).\nDefault is Any for an OCI target, Kubernetes/YAML otherwise.\n\t(e.g., Any, Kubernetes/YAML, ConfigHub/YAML)")
-	targetCreateCmd.Flags().StringSliceVar(&liveStateTypes, "livestate-type", []string{}, "The toolchain type for live state of the target's provider type (can be repeated for multiple ConfigTypes).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	// TODO: Remove client-side copying now that server-side bulk create exists
 	targetCreateCmd.Flags().StringVar(&fromTarget, "from-target", "", "target to copy from another space")
 	targetCreateCmd.Flags().StringVar(&fromTargetSpace, "from-target-space", "", "space of target to copy")
 	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
-	enableOptionFlag(targetCreateCmd)
 	enableFactFlag(targetCreateCmd)
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
@@ -103,81 +92,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// set toolchainType and providerType if not copying from another target or stdin
-	hasDefaults := fromTarget != "" || fromTargetSpace != "" || flagPopulateModelFromStdin || flagFilename != ""
-
-	// A Target that names no worker is a pull destination, so it defaults to the OCI
-	// transport. A Target that names one keeps the Kubernetes default: the worker's
-	// SupportedConfigTypes validate the Target, and an OCI default would fail against
-	// every Kubernetes worker that exists today.
-	hasWorker := len(args) == 3
-
-	// If set, flags override other data. First element sets the top-level fields,
-	// additional elements populate ConfigTypes.
-	// Resolve the provider first so the toolchain default can depend on it.
-	if len(providerTypes) > 0 {
-		newTarget.ProviderType = providerTypes[0]
-	} else if !hasDefaults && hasWorker {
-		newTarget.ProviderType = string(api.ProviderKubernetes)
-	} else if !hasDefaults {
-		newTarget.ProviderType = string(api.ProviderOCI)
-	}
-	if len(toolchainTypes) > 0 {
-		newTarget.ToolchainType = toolchainTypes[0]
-	} else if newTarget.ProviderType == string(api.ProviderOCI) && newTarget.ToolchainType == "" {
-		// The OCI transport never routes by toolchain, so default to the ToolchainAny
-		// wildcard: the Target then accepts Units of any toolchain without enumeration.
-		newTarget.ToolchainType = string(workerapi.ToolchainAny)
-	} else if !hasDefaults {
-		newTarget.ToolchainType = "Kubernetes/YAML"
-	}
-	if len(liveStateTypes) > 0 {
-		newTarget.LiveStateType = liveStateTypes[0]
-	}
-	// no default
-
-	err := validateToolchainAndProvider(newTarget.ToolchainType, newTarget.ProviderType, newTarget.LiveStateType)
-	if err != nil {
-		return err
-	}
-
-	// Parse option sets (one per ConfigType position)
-	optionSets, err := parseOptionSets(option)
-	if err != nil {
-		return err
-	}
-	if len(optionSets) > 0 {
-		newTarget.Options = optionSets[0]
-	}
-
-	// Build additional ConfigTypes from slices beyond the first element
-	maxLen := max(len(toolchainTypes), len(providerTypes), len(liveStateTypes), len(optionSets))
-	if maxLen > 1 {
-		for i := 1; i < maxLen; i++ {
-			ct := goclientnew.TargetConfigType{}
-			if i < len(toolchainTypes) {
-				ct.ToolchainType = toolchainTypes[i]
-			}
-			if i < len(providerTypes) {
-				ct.ProviderType = providerTypes[i]
-			}
-			if i < len(liveStateTypes) {
-				ct.LiveStateType = liveStateTypes[i]
-			}
-			if i < len(optionSets) {
-				ct.Options = optionSets[i]
-			}
-			if ct.ToolchainType != "" && ct.ProviderType != "" {
-				err = validateToolchainAndProvider(ct.ToolchainType, ct.ProviderType, ct.LiveStateType)
-				if err != nil {
-					return err
-				}
-			}
-			newTarget.ConfigTypes = append(newTarget.ConfigTypes, ct)
-		}
-	}
-
-	err = setAnnotations(&newTarget.Annotations)
+	err := setAnnotations(&newTarget.Annotations)
 	if err != nil {
 		return err
 	}
@@ -224,17 +139,6 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if newTarget.DisplayName == "" {
 		newTarget.DisplayName = args[0]
 	}
-	if len(args) >= 2 {
-		newTarget.Parameters = args[1]
-	}
-	if len(args) == 3 {
-		worker, err := resolveWorker(args[2], selectedSpaceID, "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		workerID := worker.BridgeWorker.BridgeWorkerID
-		newTarget.BridgeWorkerID = workerID
-	}
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateTargetParams{}
@@ -252,39 +156,5 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 	targetDetails := targetRes.JSON200
 	extendedDetails := &goclientnew.ExtendedTarget{Target: targetDetails}
 	displayCreateResults(extendedDetails, "target", args[0], targetDetails.TargetID.String(), displayTargetDetails)
-	return nil
-}
-
-func validateToolchainAndProvider(toolchainType string, providerType string, liveStateType string) error {
-	// Ensure toolchainType and providerType are set and valid. Should never be empty but just in case.
-	if toolchainType == "" || providerType == "" {
-		return errors.New("toolchain and provider must be specified")
-	}
-	// ToolchainAny is a wildcard accepted on a Target (e.g. for the OCI transport,
-	// which never routes by toolchain). It is not a real serialization format, so it
-	// is intentionally absent from SupportedToolchains; allow it explicitly here.
-	if toolchainType != string(workerapi.ToolchainAny) &&
-		!funcapi.IsSupportedToolchain(workerapi.ToolchainType(toolchainType)) {
-		return errors.New("toolchain must be one of: " + funcapi.SupportedToolchainsToString())
-	}
-	if liveStateType != "" && !funcapi.IsSupportedToolchain(workerapi.ToolchainType(liveStateType)) {
-		return errors.New("live state type must be one of: " + funcapi.SupportedToolchainsToString())
-	}
-	// TODO: allow any provider type that a bridge implements by looking at SupportedConfigTypes
-
-	if providerType == string(api.ProviderKubernetes) &&
-		toolchainType != string(workerapi.ToolchainKubernetesYAML) {
-		return fmt.Errorf("provider %s requires toolchain Kubernetes/YAML", providerType)
-	}
-	if providerType == string(api.ProviderConfigMapRenderer) &&
-		toolchainType != string(workerapi.ToolchainAppConfigProperties) &&
-		toolchainType != string(workerapi.ToolchainAppConfigYAML) &&
-		toolchainType != string(workerapi.ToolchainAppConfigTOML) &&
-		toolchainType != string(workerapi.ToolchainAppConfigINI) &&
-		toolchainType != string(workerapi.ToolchainAppConfigJSON) &&
-		toolchainType != string(workerapi.ToolchainAppConfigEnv) &&
-		toolchainType != string(workerapi.ToolchainAppConfigText) {
-		return errors.New("provider ConfigMapRenderer requires toolchain AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI, AppConfig/JSON, AppConfig/Env, or AppConfig/Text")
-	}
 	return nil
 }

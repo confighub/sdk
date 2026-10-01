@@ -79,7 +79,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 	// so worker-provided functions participate in the convenience.
 	// A worker listing is not cached, so its signatures are merged from the
 	// response rather than re-read from the cache.
-	if _, funcs, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
+	if _, funcs, err := listAndMaybeSaveFunctions(workerSlug, ""); err == nil {
 		addFunctionSignatures(sigs, funcs)
 		if resolved, ok := lookup(); ok {
 			return resolved
@@ -89,7 +89,7 @@ func resolveFunctionNameForVerb(mode FunctionKindMode, name string) string {
 		// Also refresh the builtin entity so verb-prefix resolution against
 		// builtin functions still works when --worker is set but the short
 		// name refers to a builtin.
-		if _, funcs, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
+		if _, funcs, err := listAndMaybeSaveFunctions("", ""); err == nil {
 			addFunctionSignatures(sigs, funcs)
 			if resolved, ok := lookup(); ok {
 				return resolved
@@ -156,7 +156,7 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 		// Best-effort refresh. Include --worker if set so worker-provided
 		// functions are validated against their own catalog. A worker listing
 		// is not cached, so its signatures are merged from the response.
-		if _, funcs, err := listAndMaybeSaveFunctions("", workerSlug, "", ""); err == nil {
+		if _, funcs, err := listAndMaybeSaveFunctions(workerSlug, ""); err == nil {
 			addFunctionSignatures(sigs, funcs)
 		}
 		// If the worker refresh didn't resolve everything, top up with builtin.
@@ -168,7 +168,7 @@ func validateFunctionKinds(mode FunctionKindMode, body *goclientnew.FunctionInvo
 			}
 		}
 		if stillMissing && workerSlug != "" {
-			if _, funcs, err := listAndMaybeSaveFunctions("", "", "", ""); err == nil {
+			if _, funcs, err := listAndMaybeSaveFunctions("", ""); err == nil {
 				addFunctionSignatures(sigs, funcs)
 			}
 		}

@@ -112,9 +112,9 @@ func CreateTargets(dir string) error {
 		return err
 	}
 	// format:
-	// slug, spaceSlug, workerSlug
+	// slug, spaceSlug
 	for i, record := range records {
-		_, err = confighubApi.CreateTarget(record[0], record[1], record[2])
+		_, err = confighubApi.CreateTarget(record[0], record[1])
 		if err != nil {
 			tprint("Line %d: Error creating target: %v", i+1, err)
 		}
@@ -317,23 +317,15 @@ func (c *ConfighubApi) CreateWorker(slug, spaceSlug string) (*goclientnew.Bridge
 	return worker, nil
 }
 
-func (c *ConfighubApi) CreateTarget(slug, spaceSlug, workerSlug string) (*goclientnew.Target, error) {
+func (c *ConfighubApi) CreateTarget(slug, spaceSlug string) (*goclientnew.Target, error) {
 	space, ok := c.GetSpace(spaceSlug)
 	if !ok {
 		return nil, fmt.Errorf("space %s not found", spaceSlug)
 	}
-	worker, ok := c.GetWorker(spaceSlug, workerSlug)
-	if !ok {
-		return nil, fmt.Errorf("worker %s not found", workerSlug)
-	}
 	targetDetails := goclientnew.Target{
-		Slug:           slug,
-		DisplayName:    slug,
-		SpaceID:        space.SpaceID,
-		Parameters:     "{}",
-		ToolchainType:  "Kubernetes/YAML",
-		ProviderType:   "Kubernetes",
-		BridgeWorkerID: worker.BridgeWorkerID,
+		Slug:        slug,
+		DisplayName: slug,
+		SpaceID:     space.SpaceID,
 	}
 	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, space.SpaceID, nil, targetDetails)
 	if cubapi.IsAPIError(err, targetRes) {

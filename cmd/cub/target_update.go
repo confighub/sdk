@@ -17,7 +17,6 @@ import (
 var targetUpdateArgs struct {
 	whereTrigger    string
 	triggerFilter   string
-	liveStateType   string
 	permissions     []string
 	refreshTriggers bool
 }
@@ -38,8 +37,8 @@ Update multiple targets at once based on search criteria. Requires --patch flag 
 
 Examples:
 `+"```"+`
-  # Update all targets with a specific toolchain type using JSON patch
-  echo '{"Parameters": "{}"}' | cub target update --patch --where "ToolchainType = 'Kubernetes/YAML'" --from-stdin
+  # Label all targets with a specific label using JSON patch
+  echo '{"Labels": {"tier": "prod"}}' | cub target update --patch --where "Labels.environment = 'prod'" --from-stdin
 
   # Update specific targets by slug
   cub target update --patch --target my-target,another-target --from-stdin < patch.json
@@ -64,9 +63,7 @@ func init() {
 	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
-	enableOptionFlag(targetUpdateCmd)
 	enableFactFlag(targetUpdateCmd)
-	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.liveStateType, "livestate-type", "", "The toolchain type for live state of the target's provider type (use '-' to clear).\n\t(e.g., Kubernetes/YAML, ConfigHub/YAML)")
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
@@ -149,18 +146,6 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTarget.Target.TargetID = existingTarget.TargetID
 	}
 
-	// Set LiveStateType if provided
-	if targetUpdateArgs.liveStateType == "-" {
-		currentTarget.Target.LiveStateType = ""
-	} else if targetUpdateArgs.liveStateType != "" {
-		currentTarget.Target.LiveStateType = targetUpdateArgs.liveStateType
-	}
-
-	err = validateToolchainAndProvider(currentTarget.Target.ToolchainType, currentTarget.Target.ProviderType, currentTarget.Target.LiveStateType)
-	if err != nil {
-		return err
-	}
-
 	err = setAnnotations(&currentTarget.Target.Annotations)
 	if err != nil {
 		return err
@@ -174,10 +159,6 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	err = setDeleteGates(&currentTarget.Target.DeleteGates)
-	if err != nil {
-		return err
-	}
-	err = setOptions(&currentTarget.Target.Options)
 	if err != nil {
 		return err
 	}
@@ -250,19 +231,6 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data using consolidated function with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
-		// Add Options if provided
-		if len(option) > 0 {
-			optionMap := make(map[string]interface{})
-			if existingOptions, ok := patchMap["Options"]; ok {
-				if optionMapInterface, ok := existingOptions.(map[string]interface{}); ok {
-					for k, v := range optionMapInterface {
-						optionMap[k] = v
-					}
-				}
-			}
-			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
-			patchMap["Options"] = optionMap
-		}
 		// Add Facts if provided
 		if len(fact) > 0 {
 			factMap := make(map[string]interface{})
@@ -275,12 +243,6 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			_ = patchKeyValues(factMap, fact)
 			patchMap["Facts"] = factMap
-		}
-		// Add LiveStateType if provided
-		if targetUpdateArgs.liveStateType == "-" {
-			patchMap["LiveStateType"] = ""
-		} else if targetUpdateArgs.liveStateType != "" {
-			patchMap["LiveStateType"] = targetUpdateArgs.liveStateType
 		}
 		// Add WhereTrigger if provided
 		if targetUpdateArgs.whereTrigger == "-" {
@@ -359,19 +321,6 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Build patch data with target enhancer
 	targetEnhancer := func(patchMap map[string]interface{}) {
-		// Add Options if provided
-		if len(option) > 0 {
-			optionMap := make(map[string]interface{})
-			if existingOptions, ok := patchMap["Options"]; ok {
-				if optionMapInterface, ok := existingOptions.(map[string]interface{}); ok {
-					for k, v := range optionMapInterface {
-						optionMap[k] = v
-					}
-				}
-			}
-			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
-			patchMap["Options"] = optionMap
-		}
 		// Add Facts if provided
 		if len(fact) > 0 {
 			factMap := make(map[string]interface{})
@@ -384,12 +333,6 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			_ = patchKeyValues(factMap, fact)
 			patchMap["Facts"] = factMap
-		}
-		// Add LiveStateType if provided
-		if targetUpdateArgs.liveStateType == "-" {
-			patchMap["LiveStateType"] = ""
-		} else if targetUpdateArgs.liveStateType != "" {
-			patchMap["LiveStateType"] = targetUpdateArgs.liveStateType
 		}
 		// Add WhereTrigger if provided
 		if targetUpdateArgs.whereTrigger == "-" {
@@ -425,7 +368,7 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 	if targetUpdateArgs.refreshTriggers {
 		params.RefreshTriggers = &targetUpdateArgs.refreshTriggers
 	}
-	include := "SpaceID,BridgeWorkerID"
+	include := "SpaceID"
 	params.Include = &include
 
 	params.DryRun = dryRunParam()

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -223,10 +222,9 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Created variant space %s (ID: %s)", newSpace.Slug, newSpace.SpaceID)
 	}
 
-	// Step 2: resolve the target (if specified) and stamp the new space's TargetID annotation.
+	// Step 2: resolve the target (if specified) and set it as the new space's ReleaseTargetID:
+	// releases are published per space ("cub release publish <space>"), and publish requires it.
 	// Resolved after the space exists so that <new-space-slug>/<target-slug> can be used.
-	// For an OCI target, also set the new space's ReleaseTargetID: releases are published
-	// per space ("cub release publish <space>"), and publish requires it.
 	var targetID *uuid.UUID
 	var target *goclientnew.Target
 	if variantCreateArgs.target != "" {
@@ -236,8 +234,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		targetID = &target.TargetID
 
-		isOCI := target.ProviderType == string(api.ProviderOCI)
-		if err := patchVariantSpaceTarget(newSpace.SpaceID, target.TargetID, isOCI); err != nil {
+		if err := patchVariantSpaceTarget(newSpace.SpaceID, target.TargetID); err != nil {
 			return err
 		}
 	}
@@ -414,14 +411,10 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 	return newSpace, nil
 }
 
-// patchVariantSpaceTarget sets the "TargetID" annotation on the new space to the resolved
-// target UUID, mirroring the convention used by upstream spaces. For an OCI target it also
-// sets the space's ReleaseTargetID, which "cub release publish" requires.
-func patchVariantSpaceTarget(spaceID uuid.UUID, targetID uuid.UUID, releaseTarget bool) error {
-	patchMap := map[string]interface{}{}
-	if releaseTarget {
-		patchMap["ReleaseTargetID"] = targetID.String()
-	}
+// patchVariantSpaceTarget sets the new space's ReleaseTargetID to the resolved target,
+// which "cub release publish" requires.
+func patchVariantSpaceTarget(spaceID uuid.UUID, targetID uuid.UUID) error {
+	patchMap := map[string]interface{}{"ReleaseTargetID": targetID.String()}
 	patchData, err := json.Marshal(patchMap)
 	if err != nil {
 		return err

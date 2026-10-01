@@ -65,8 +65,8 @@ via the CONFIGHUB_WORKER_PROVIDER_TYPES environment variable.
 By default, all provider types are started.
 
 The worker takes its configuration primarily from environment variables.
-Flags should only be used for testing. They are not part of the worker invocation contract
-used by cub worker install, cub worker run, and cub worker get-envs.
+Flags should only be used for testing. They are not part of the worker invocation contract,
+which is the environment described below; cub worker get-envs emits its credentials part.
 
 The environment variables it expects are:
 

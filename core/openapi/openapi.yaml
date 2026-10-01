@@ -1205,7 +1205,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -2535,7 +2535,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -6906,7 +6906,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -9180,7 +9180,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -9781,7 +9781,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -10932,7 +10932,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -12286,7 +12286,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -21047,7 +21047,7 @@ paths:
           format: uuid
           type: string
       - description: 'Type of entity used to identify the worker whose functions should
-          be listed: unit, target, or worker'
+          be listed: worker'
         in: query
         name: entity
         required: false
@@ -21291,7 +21291,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -24880,7 +24880,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -24931,7 +24931,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -25053,12 +25053,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
-            (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+          description: 'Target represents a deployment target in ConfigHub: where
+            configuration is destined. A Space''s Releases are published for its release
+            Target and pulled from ConfigHub''s OCI registry by a GitOps tool such
+            as Argo CD or Flux. Access to a Target, including a worker''s, is granted
+            through its Permissions.'
         "400":
           content:
             application/json:
@@ -25207,7 +25206,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -25332,22 +25331,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                BridgeHandle:
-                  description: ""
-                  nullable: true
-                  type: string
-                BridgeWorkerID:
-                  description: ""
-                  format: uuid
-                  nullable: true
-                  type: string
-                ConfigTypes:
-                  description: ""
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -25385,21 +25368,6 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                LiveStateType:
-                  description: ""
-                  nullable: true
-                  type: string
-                Options:
-                  additionalProperties:
-                    nullable: true
-                    type: string
-                  description: ""
-                  nullable: true
-                  type: object
-                Parameters:
-                  description: ""
-                  nullable: true
-                  type: string
                 Permissions:
                   additionalProperties:
                     nullable: true
@@ -25407,16 +25375,8 @@ paths:
                   description: ""
                   nullable: true
                   type: object
-                ProviderType:
-                  description: ""
-                  nullable: true
-                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
-                  nullable: true
-                  type: string
-                ToolchainType:
-                  description: ""
                   nullable: true
                   type: string
                 TriggerFilterID:
@@ -25440,12 +25400,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
-            (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+          description: 'Target represents a deployment target in ConfigHub: where
+            configuration is destined. A Space''s Releases are published for its release
+            Target and pulled from ConfigHub''s OCI registry by a GitOps tool such
+            as Argo CD or Flux. Access to a Target, including a worker''s, is granted
+            through its Permissions.'
         "400":
           content:
             application/json:
@@ -25537,12 +25496,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Target'
-          description: Target represents a deployment target in ConfigHub. It defines
-            where configuration should be applied, including the toolchain type (e.g.,
-            Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML,
-            AppConfig/INI, AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider
-            (e.g., ArgoCDOCI, FluxOCI). Each Target is associated with a specific
-            BridgeWorker that handles the actual deployment actions (e.g. Apply, Destroy).
+          description: 'Target represents a deployment target in ConfigHub: where
+            configuration is destined. A Space''s Releases are published for its release
+            Target and pulled from ConfigHub''s OCI registry by a GitOps tool such
+            as Argo CD or Flux. Access to a Target, including a worker''s, is granted
+            through its Permissions.'
         "400":
           content:
             application/json:
@@ -26591,7 +26549,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -26644,7 +26602,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -27074,7 +27032,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -27573,16 +27531,6 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
-                TargetOptions:
-                  additionalProperties:
-                    nullable: true
-                    type: string
-                  description: Bridge option values set per-Unit, merged with the
-                    Target's Options when sending to the bridge worker (Target's Options
-                    take precedence on overlap). The options must be predefined by
-                    the ConfigType in the BridgeWorker.
-                  nullable: true
-                  type: object
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties",
@@ -32477,7 +32425,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -32541,7 +32489,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -32666,7 +32614,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -32717,7 +32665,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -32839,7 +32787,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -32903,7 +32851,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -32943,22 +32891,6 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                BridgeHandle:
-                  description: ""
-                  nullable: true
-                  type: string
-                BridgeWorkerID:
-                  description: ""
-                  format: uuid
-                  nullable: true
-                  type: string
-                ConfigTypes:
-                  description: ""
-                  items:
-                    nullable: true
-                    type: object
-                  nullable: true
-                  type: array
                 DeleteGates:
                   additionalProperties:
                     nullable: true
@@ -32996,21 +32928,6 @@ paths:
                     and filtering them.
                   nullable: true
                   type: object
-                LiveStateType:
-                  description: ""
-                  nullable: true
-                  type: string
-                Options:
-                  additionalProperties:
-                    nullable: true
-                    type: string
-                  description: ""
-                  nullable: true
-                  type: object
-                Parameters:
-                  description: ""
-                  nullable: true
-                  type: string
                 Permissions:
                   additionalProperties:
                     nullable: true
@@ -33018,16 +32935,8 @@ paths:
                   description: ""
                   nullable: true
                   type: object
-                ProviderType:
-                  description: ""
-                  nullable: true
-                  type: string
                 Slug:
                   description: Unique URL-safe identifier for the entity.
-                  nullable: true
-                  type: string
-                ToolchainType:
-                  description: ""
                   nullable: true
                   type: string
                 TriggerFilterID:
@@ -33151,7 +33060,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, BridgeHandle, BridgeWorkerID, ConfigTypes, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, LiveStateType, Options, OrganizationID, Permissions, ProviderType, Slug, SpaceID, TargetID, ToolchainType, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -33215,7 +33124,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Target are BridgeWorkerID, OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+          Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
 
           The whole string must be query-encoded.
         in: query
@@ -34262,7 +34171,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -34747,7 +34656,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -34813,7 +34722,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -34945,7 +34854,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -34998,7 +34907,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -35202,7 +35111,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -35268,7 +35177,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -35662,16 +35571,6 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
-                TargetOptions:
-                  additionalProperties:
-                    nullable: true
-                    type: string
-                  description: Bridge option values set per-Unit, merged with the
-                    Target's Options when sending to the bridge worker (Target's Options
-                    take precedence on overlap). The options must be predefined by
-                    the ConfigType in the BridgeWorker.
-                  nullable: true
-                  type: object
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties",
@@ -35793,7 +35692,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -35859,7 +35758,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -36132,16 +36031,6 @@ paths:
                   format: uuid
                   nullable: true
                   type: string
-                TargetOptions:
-                  additionalProperties:
-                    nullable: true
-                    type: string
-                  description: Bridge option values set per-Unit, merged with the
-                    Target's Options when sending to the bridge worker (Target's Options
-                    take precedence on overlap). The options must be predefined by
-                    the ConfigType in the BridgeWorker.
-                  nullable: true
-                  type: object
                 ToolchainType:
                   description: ToolchainType specifies the type of toolchain for this
                     unit. Possible values include "Kubernetes/YAML", "AppConfig/Properties",
@@ -36264,7 +36153,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -36330,7 +36219,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -36449,7 +36338,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -36515,7 +36404,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -36638,7 +36527,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -36704,7 +36593,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -36959,7 +36848,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -37012,7 +36901,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -37224,7 +37113,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -37693,7 +37582,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -37746,7 +37635,7 @@ paths:
           The attribute names are case-sensitive, PascalCase, and
           expected in a comma-separated list format as in the JSON encoding.
 
-          Supported attributes for Unit are BridgeWorkerID, ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
+          Supported attributes for Unit are ChangeSetID, FromLinkID, HeadMutationNum, HeadRevisionNum, LastReleasedRevisionNum, OrganizationID, SpaceID, TargetID, UnitEventID, UpstreamSpaceID, UpstreamUnitID.
 
           The whole string must be query-encoded.
         in: query
@@ -39347,7 +39236,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, BridgeWorkerID, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, TargetOptions, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -40588,29 +40477,6 @@ components:
       items:
         $ref: '#/components/schemas/Binding'
       type: array
-    BridgeOption:
-      properties:
-        DataType:
-          description: Data type of the option
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Description:
-          description: Description of the option
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Example:
-          description: Example value
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Name:
-          description: Name of the option in PascalCase
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Required:
-          description: Whether the option is required
-          type: boolean
-          x-go-type-skip-optional-pointer: true
-      type: object
     BridgeWorker:
       description: |-
         BridgeWorker represents a bridge worker in ConfigHub.
@@ -40788,15 +40654,6 @@ components:
           $ref: '#/components/schemas/BridgeWorker'
         Error:
           $ref: '#/components/schemas/ResponseError'
-      type: object
-    BridgeWorkerInfo:
-      properties:
-        SupportedConfigTypes:
-          description: Configuration types of the bridges supported by the worker
-          items:
-            $ref: '#/components/schemas/SupportedConfigType'
-          type: array
-          x-go-type-skip-optional-pointer: true
       type: object
     BridgeWorkerStatus:
       description: BridgeWorkerStatus represents the status information of a bridge
@@ -42278,10 +42135,6 @@ components:
           $ref: '#/components/schemas/Organization'
         Space:
           $ref: '#/components/schemas/Space'
-        TargetCount:
-          format: int64
-          type: integer
-          x-go-type-skip-optional-pointer: true
       type: object
     ExtendedChangeOrder:
       properties:
@@ -42510,12 +42363,6 @@ components:
           $ref: '#/components/schemas/Target'
         Space:
           $ref: '#/components/schemas/Space'
-        TargetCountByToolchainType:
-          additionalProperties:
-            type: integer
-          nullable: true
-          type: object
-          x-go-type-skip-optional-pointer: true
         TotalAttributeCount:
           format: int64
           type: integer
@@ -42553,6 +42400,10 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         TotalTagCount:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        TotalTargetCount:
           format: int64
           type: integer
           x-go-type-skip-optional-pointer: true
@@ -42609,8 +42460,6 @@ components:
       type: object
     ExtendedTarget:
       properties:
-        BridgeWorker:
-          $ref: '#/components/schemas/BridgeWorker'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Organization:
@@ -42647,8 +42496,6 @@ components:
     ExtendedUnit:
       description: Unit with capability to extend additional related entities.
       properties:
-        BridgeWorker:
-          $ref: '#/components/schemas/BridgeWorker'
         ChangeSet:
           $ref: '#/components/schemas/ChangeSet'
         Error:
@@ -46017,39 +45864,6 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
       type: object
-    SupportedConfigType:
-      properties:
-        AvailableTargets:
-          description: Targets known by the BridgeWorker. Optional.
-          items:
-            $ref: '#/components/schemas/TargetType2'
-          type: array
-          x-go-type-skip-optional-pointer: true
-        CompatibleBridge:
-          description: Bridge with compatible BridgeHandles
-          type: string
-          x-go-type-skip-optional-pointer: true
-        LiveStateType:
-          description: Configuration toolchain and format of the LiveState for this
-            bridge; required in order to invoke functions on LiveState
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Options:
-          description: Supported bridge options
-          items:
-            $ref: '#/components/schemas/BridgeOption'
-          type: array
-          x-go-type-skip-optional-pointer: true
-        ProviderType:
-          description: Type identifying a bridge implementation supported by the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ToolchainType:
-          description: Configuration toolchain and format implemented by this bridge
-            of the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
-      type: object
     Tag:
       description: Defines a Tag that can be used to identify a set of Revisions across
         Units.
@@ -46185,12 +45999,10 @@ components:
           $ref: '#/components/schemas/Tag'
       type: object
     Target:
-      description: Target represents a deployment target in ConfigHub. It defines
-        where configuration should be applied, including the toolchain type (e.g.,
-        Kubernetes/YAML, AppConfig/Properties, AppConfig/YAML, AppConfig/TOML, AppConfig/INI,
-        AppConfig/JSON, AppConfig/Env, AppConfig/Text) and provider (e.g., ArgoCDOCI,
-        FluxOCI). Each Target is associated with a specific BridgeWorker that handles
-        the actual deployment actions (e.g. Apply, Destroy).
+      description: 'Target represents a deployment target in ConfigHub: where configuration
+        is destined. A Space''s Releases are published for its release Target and
+        pulled from ConfigHub''s OCI registry by a GitOps tool such as Argo CD or
+        Flux. Access to a Target, including a worker''s, is granted through its Permissions.'
       properties:
         Annotations:
           additionalProperties:
@@ -46200,24 +46012,6 @@ components:
           description: An optional map of Annotation key/value pairs for tools to
             attach information to entities.
           type: object
-          x-go-type-skip-optional-pointer: true
-        BridgeHandle:
-          description: Identifier used by the Bridge to refer to discovered/enabled
-            Target credentials and coordinates.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        BridgeWorkerID:
-          description: Unique identifier for a Bridge Worker associated with the Target.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ConfigTypes:
-          description: ConfigTypes (ToolchainType, ProviderType, LiveStateType tuples)
-            supported by this Target.
-          items:
-            $ref: '#/components/schemas/TargetConfigType'
-          type: array
           x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
@@ -46274,41 +46068,14 @@ components:
             attributes of entities for the purpose of grouping and filtering them.
           type: object
           x-go-type-skip-optional-pointer: true
-        LiveStateType:
-          description: LiveStateType specifies the first/default configuration toolchain
-            and format of the LiveState for the bridge corresponding to this Target.
-            Possible values include "Kubernetes/YAML" and "ConfigHub/YAML".
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Options:
-          additionalProperties:
-            type: string
-          description: Bridge option values for the first ProviderType. The options
-            must be predefined by the ConfigType in the BridgeWorker.
-          type: object
-          x-go-type-skip-optional-pointer: true
         OrganizationID:
           description: Unique identifier for an organization.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
-        Parameters:
-          description: |
-            Deprecated. Parameters contains toolchain-type and/or provider-type-specific parameters in JSON format.
-
-            For ProviderType: Kubernetes (ToolchainType: Kubernetes/YAML)
-            The Parameters object may contain the following fields:
-            - "KubeContext" (string): The name of the Kubernetes context (from "~/.kube/config") to use. (Not typically needed if running in-cluster).
-          type: string
-          x-go-type-skip-optional-pointer: true
         Permissions:
           $ref: '#/components/schemas/Permissions'
-        ProviderType:
-          description: ProviderType specifies the first/default cloud or infrastructure
-            provider for this target, such as "Kubernetes".
-          type: string
-          x-go-type-skip-optional-pointer: true
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -46330,13 +46097,6 @@ components:
           description: Unique identifier for a Target.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ToolchainType:
-          description: ToolchainType specifies the type of the first/default toolchain
-            supported by this Target. Possible values include "Kubernetes/YAML", "ConfigHub/YAML",
-            "AppConfig/Properties", "AppConfig/YAML", "AppConfig/TOML", "AppConfig/INI",
-            "AppConfig/JSON", "AppConfig/Env", "AppConfig/Text".
           type: string
           x-go-type-skip-optional-pointer: true
         TriggerFilterID:
@@ -46416,30 +46176,6 @@ components:
           x-go-type-skip-optional-pointer: true
       required:
       - Slug
-      - ToolchainType
-      - ProviderType
-      type: object
-    TargetConfigType:
-      properties:
-        LiveStateType:
-          description: Configuration toolchain and format of the LiveState for this
-            bridge; required in order to invoke functions on LiveState
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Options:
-          additionalProperties:
-            type: string
-          type: object
-          x-go-type-skip-optional-pointer: true
-        ProviderType:
-          description: Type identifying a bridge implementation supported by the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
-        ToolchainType:
-          description: Configuration toolchain and format implemented by this bridge
-            of the worker
-          type: string
-          x-go-type-skip-optional-pointer: true
       type: object
     TargetCreateOrUpdateResponse:
       properties:
@@ -46447,25 +46183,6 @@ components:
           $ref: '#/components/schemas/ResponseError'
         Target:
           $ref: '#/components/schemas/Target'
-      type: object
-    TargetType2:
-      properties:
-        BridgeHandle:
-          description: Identifier used by the Bridge to refer to discovered/enabled
-            Target credentials and coordinates
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Name:
-          description: Used to set the Slug and DisplayName of the Target created
-            in ConfigHub. Optional.
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Params:
-          additionalProperties: {}
-          description: Deprecated. Used to set the Parameters of the Target created
-            in ConfigHub
-          type: object
-          x-go-type-skip-optional-pointer: true
       type: object
     Trigger:
       description: |-
@@ -46771,12 +46488,6 @@ components:
           readOnly: true
           type: object
           x-go-type-skip-optional-pointer: true
-        BridgeWorkerID:
-          description: ID of the BridgeWorker from the Target assigned to this Unit.
-          example: 248df4b7-aa70-47b8-a036-33ac447e668d
-          format: uuid
-          readOnly: true
-          type: string
         ChangeSetID:
           description: Unique identifier for the ChangeSet to which the current Revision
             belongs. Optional. Units are not required to belong to ChangeSets.
@@ -46931,8 +46642,10 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         ProviderType:
-          description: ProviderType identifies which bridge to use in the case that
-            the Target supports multiple ProviderTypes.
+          description: ProviderType says whether and how the Unit is delivered. None
+            keeps it off every Target and out of Releases, ConfigHub marks configuration
+            ConfigHub applies to itself, and OCI or empty means it is published in
+            its Space's Releases.
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
@@ -46960,14 +46673,6 @@ components:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
-        TargetOptions:
-          additionalProperties:
-            type: string
-          description: Bridge option values set per-Unit, merged with the Target's
-            Options when sending to the bridge worker (Target's Options take precedence
-            on overlap). The options must be predefined by the ConfigType in the BridgeWorker.
-          type: object
-          x-go-type-skip-optional-pointer: true
         ToolchainType:
           description: ToolchainType specifies the type of toolchain for this unit.
             Possible values include "Kubernetes/YAML", "AppConfig/Properties", "AppConfig/YAML",
@@ -47390,9 +47095,8 @@ components:
         Action:
           $ref: '#/components/schemas/ActionType'
         BridgeWorkerID:
-          description: BridgeWorkerID is the ID of the bridge worker that performed
-            this action. This field is populated from the Target's BridgeWorkerID
-            when the event is created.
+          description: 'BridgeWorkerID is the ID of the bridge worker that performed
+            this action: the worker that reported the result.'
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string
@@ -48361,8 +48065,6 @@ components:
       type: object
     WorkerInfo:
       properties:
-        BridgeWorkerInfo:
-          $ref: '#/components/schemas/BridgeWorkerInfo'
         FunctionWorkerInfo:
           $ref: '#/components/schemas/FunctionWorkerInfo'
         IsServerWorker:

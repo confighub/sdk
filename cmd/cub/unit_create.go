@@ -186,7 +186,6 @@ func init() {
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.changeDescription, "change-desc", "", "change description")
 	unitCreateCmd.Flags().StringVar(&unitCreateArgs.mergeExternalSource, "merge-external-source", "", "external source identifier (sets source type to MergeExternal)")
 	unitCreateCmd.Flags().BoolVar(&unitCreateArgs.syncback, "syncback", false, "also link each clone back to the unit it was cloned from, with a MergeUnits link in the upstream unit's space, so changes made in the clone can be merged home with \"cub unit update --patch --resolve\"; requires cloning (--upstream-unit in single mode)")
-	enableOptionFlag(unitCreateCmd)
 
 	// Bulk create specific flags
 	unitCreateCmd.Flags().StringSliceVar(&unitCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
@@ -402,10 +401,6 @@ func runSingleUnitCreate(args []string) error {
 	if err != nil {
 		return err
 	}
-	err = setOptions(&newUnit.TargetOptions)
-	if err != nil {
-		return err
-	}
 	if unitCreateArgs.targetSlug != "" {
 		if unitCreateArgs.targetSlug == "-" {
 			newUnit.TargetID = &uuid.Nil
@@ -515,12 +510,6 @@ func createBulkCreatePatch() ([]byte, error) {
 		err := setDestroyGatesInPatch(patchMap)
 		if err != nil {
 			failOnError(err)
-		}
-		// Handle TargetOptions
-		if len(option) > 0 {
-			optionMap := make(map[string]interface{})
-			_ = patchKeyValues(optionMap, splitOptionsBySemicolon(option))
-			patchMap["TargetOptions"] = optionMap
 		}
 		// Add provider type if specified
 		if unitCreateArgs.providerType != "" {

@@ -148,9 +148,9 @@ type clusterArgobotOptions struct {
 }
 
 // clusterInstallArgobot installs argobot for a freshly created cluster: it
-// reuses the cluster's server-hosted oci-worker as argobot's identity (that
-// worker owns the OCI target, so event auto-scoping and the credential Secret
-// are the whole story). The argobot Deployment runs in the default kubernetes
+// reuses the cluster's server-hosted oci-worker as argobot's identity (the OCI
+// target grants that worker's bot user access, so event auto-scoping and the
+// credential Secret are the whole story). The argobot Deployment runs in the default kubernetes
 // sync mode — it patches an Application's refresh annotation via the in-cluster
 // ServiceAccount, needing no Argo CD API token.
 //

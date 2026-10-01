@@ -272,7 +272,7 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 			}
 			spaceSlug = makeSlug(spaceSlug)
 		}
-		id, _, _, resolveErr := resolveUploadTarget(spaceSlug, a.target)
+		id, resolveErr := resolveUploadTarget(spaceSlug, a.target)
 		if resolveErr != nil {
 			return resolveErr
 		}
@@ -695,34 +695,26 @@ func renderSpacePattern(pattern string, component *goclientnew.Component, labels
 	return strings.TrimSpace(b.String()), nil
 }
 
-// resolveUploadTarget resolves a --target ref to the TargetID UUID, the target's
-// ProviderType, and the fully qualified <space>/<slug> ref.
+// resolveUploadTarget resolves a --target ref to the TargetID UUID.
 //
 // A bare slug is scoped to the Space the upload writes to. A qualified ref or a
 // UUID identifies the target on its own, so ParseRef handles both and the scope
 // is left empty for them.
-func resolveUploadTarget(unitSpace, targetRef string) (id, providerType, qualifiedRef string, err error) {
+func resolveUploadTarget(unitSpace, targetRef string) (string, error) {
 	spaceID := ""
 	if !strings.Contains(targetRef, "/") {
 		space, spaceErr := resolveSpace(unitSpace, "SpaceID,Slug")
 		if spaceErr != nil {
-			return "", "", "", spaceErr
+			return "", spaceErr
 		}
 		spaceID = space.Space.SpaceID.String()
 	}
-	target, err := resolveTarget(targetRef, spaceID, "*")
+	target, err := resolveTarget(targetRef, spaceID, "TargetID,Slug")
 	if err != nil {
-		return "", "", "", err
+		return "", err
 	}
 	if target.Target == nil {
-		return "", "", "", fmt.Errorf("target %q not found", targetRef)
+		return "", fmt.Errorf("target %q not found", targetRef)
 	}
-	// The Space comes back on the expansion, which is what names a target that a
-	// qualified ref or a UUID put in another Space.
-	spaceSlug := unitSpace
-	if target.Space != nil && target.Space.Slug != "" {
-		spaceSlug = target.Space.Slug
-	}
-	return target.Target.TargetID.String(), target.Target.ProviderType,
-		spaceSlug + "/" + target.Target.Slug, nil
+	return target.Target.TargetID.String(), nil
 }

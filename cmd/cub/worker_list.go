@@ -29,8 +29,6 @@ Examples:
   # List the workers hosting a custom function
   cub worker list --space "*" --where "ProvidedInfo.FunctionWorkerInfo.SupportedFunctions.Kubernetes/YAML ? 'my-function'"
 
-  # List the workers implementing a bridge provider
-  cub worker list --space "*" --where "ProvidedInfo.BridgeWorkerInfo.SupportedConfigTypes.*.ProviderType = 'Kubernetes'"
 `+"```"+`
 `, ""),
 	Annotations: map[string]string{"OrgLevel": ""},

@@ -12,7 +12,6 @@ import (
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/confighub/sdk/core/cubbyname"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
-	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
 	"github.com/google/uuid"
 )
@@ -138,14 +137,13 @@ func clusterCreateSpace(slug, displayName string, labels, annotations map[string
 	return res.JSON200.SpaceID, nil
 }
 
-// clusterCreateOCIWorker creates a server-hosted OCI worker — no pod runs in
-// the user's cluster; ConfigHub hosts it. OrgRole is forced to "none" because
-// this worker's secret is handed to Argo as OCI repo-creds and must carry no
-// org-level REST privileges. The (OCI, Any) ConfigType must match the server
-// bridge registry's OCIBridge entry exactly — including the empty
-// LiveStateType — or the server rejects the server-worker create. Returns the
-// worker's UUID and its Secret (needed for the Argo repo-creds Secret).
-func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.UUID, string, error) {
+// clusterCreateOCIWorker creates a server-hosted worker — no pod runs in the
+// user's cluster; ConfigHub hosts it. It is the identity Argo pulls as: its
+// secret is handed to Argo as OCI repo-creds, so OrgRole is forced to "none"
+// and it must carry no org-level REST privileges. Returns the worker's UUID,
+// its Secret (needed for the Argo repo-creds Secret), and its bot user, which
+// the cluster's Target grants access to.
+func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.UUID, string, uuid.UUID, error) {
 	body := &goclientnew.BridgeWorker{
 		SpaceID:     spaceID,
 		Slug:        slug,
@@ -153,31 +151,31 @@ func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.U
 		OrgRole:     "none",
 		ProvidedInfo: &goclientnew.WorkerInfo{
 			IsServerWorker: true,
-			BridgeWorkerInfo: &goclientnew.BridgeWorkerInfo{
-				SupportedConfigTypes: []goclientnew.SupportedConfigType{
-					{ProviderType: string(api.ProviderOCI), ToolchainType: string(workerapi.ToolchainAny)},
-				},
-			},
 		},
 	}
 	worker, err := apiCreateWorker(body, spaceID)
 	if err != nil {
-		return uuid.Nil, "", err
+		return uuid.Nil, "", uuid.Nil, err
 	}
 	secret := worker.Secret
-	if secret == "" {
+	userID := worker.UserID
+	if secret == "" || userID == nil {
 		// Some server responses blank Secret on create; fetch via Get as
 		// `cub worker get-secret` does.
 		got, gerr := resolveWorker(worker.BridgeWorkerID.String(), spaceID.String(), "*")
 		if gerr != nil {
-			return uuid.Nil, "", fmt.Errorf("get worker secret after create: %w", gerr)
+			return uuid.Nil, "", uuid.Nil, fmt.Errorf("get worker secret after create: %w", gerr)
 		}
 		secret = got.BridgeWorker.Secret
+		userID = got.BridgeWorker.UserID
 	}
 	if secret == "" {
-		return uuid.Nil, "", fmt.Errorf("worker %q: server returned no Secret", slug)
+		return uuid.Nil, "", uuid.Nil, fmt.Errorf("worker %q: server returned no Secret", slug)
 	}
-	return worker.BridgeWorkerID, secret, nil
+	if userID == nil || *userID == uuid.Nil {
+		return uuid.Nil, "", uuid.Nil, fmt.Errorf("worker %q: server returned no bot user", slug)
+	}
+	return worker.BridgeWorkerID, secret, *userID, nil
 }
 
 // clusterWhereTriggerForSpace is the Target's WhereTrigger expression: every
@@ -227,25 +225,26 @@ func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error)
 	return res.JSON200.TriggerID, nil
 }
 
-// clusterCreateOCITarget creates an OCI target bound to the given worker. The
-// worker OWNS the target — that ownership is what authorizes OCI bundle pull,
-// no separate permission grant needed. ToolchainType is the ToolchainAny
-// wildcard so Units of any toolchain can bind; the OCI provider takes no
-// parameters. annotations (may be nil) are attached to the Target, e.g. the
-// URL-TargetUI deep link. whereTrigger selects the Triggers that gate Units
-// bound to this Target; the server resolves it into TriggerIDs here, so any
-// Trigger it selects must already exist.
-func clusterCreateOCITarget(spaceID, workerID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
+// clusterCreateOCITarget creates the cluster's Target and grants the worker's
+// bot user View and ViewChildren on it. ViewChildren is what authorizes Argo,
+// pulling as that worker, to pull the Releases of every Space that releases to
+// the Target; View is what lets argobot, running as the same worker, find it.
+// annotations (may be nil) are attached to the Target, e.g. the URL-TargetUI
+// deep link. whereTrigger selects the Triggers that gate Units bound to this
+// Target; the server resolves it into TriggerIDs here, so any Trigger it
+// selects must already exist.
+func clusterCreateOCITarget(spaceID, workerUserID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
+	permissions := goclientnew.Permissions{
+		"View":         {UserIDs: map[string]bool{workerUserID.String(): true}},
+		"ViewChildren": {UserIDs: map[string]bool{workerUserID.String(): true}},
+	}
 	body := goclientnew.Target{
-		SpaceID:        spaceID,
-		Slug:           slug,
-		DisplayName:    displayName,
-		BridgeWorkerID: workerID,
-		ToolchainType:  string(workerapi.ToolchainAny),
-		ProviderType:   string(api.ProviderOCI),
-		Parameters:     "{}",
-		Annotations:    annotations,
-		WhereTrigger:   whereTrigger,
+		SpaceID:      spaceID,
+		Slug:         slug,
+		DisplayName:  displayName,
+		Permissions:  &permissions,
+		Annotations:  annotations,
+		WhereTrigger: whereTrigger,
 	}
 	res, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, &goclientnew.CreateTargetParams{}, body)
 	if cubapi.IsAPIError(err, res) {

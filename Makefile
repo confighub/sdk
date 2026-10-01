@@ -5,7 +5,6 @@ OS?=$(shell go env GOOS)
 ARCH?=$(shell go env GOARCH)
 GOPATH ?= $(shell go env GOPATH)
 GOBIN?=${GOPATH}/bin
-BRIDGE_WORKER?=confighub-worker
 SHA_SUM := $(shell git rev-parse HEAD)
 CUB_CMD?=./bin/cub
 RELEASE?= # 'true|1' Set to true to build a release version of the CLI

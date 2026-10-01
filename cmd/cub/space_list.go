@@ -89,7 +89,7 @@ Next steps after listing spaces:
 }
 
 // Default columns to display when no custom columns are specified
-var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TargetCountByToolchainType", "TotalAttributeCount"}
+var defaultSpaceColumns = []string{"Space.Slug", "Space.ComponentID", "Space.Labels", "Space.WhereTrigger", "TotalUnitCount", "TotalLinkCount", "TotalFilterCount", "TotalViewCount", "TotalTagCount", "TotalChangeSetCount", "TotalChangeOrderCount", "TotalChangeWorkflowCount", "TotalInvocationCount", "TriggerCountByEventType", "TotalBridgeWorkerCount", "TotalTargetCount", "TotalAttributeCount"}
 
 // spaceBaseSelectFields are the fields always returned by space list queries,
 // regardless of the requested columns.
@@ -133,12 +133,6 @@ var spaceCustomColumns = func() map[string]func(any) string {
 	cols["TriggerCountByEventType"] = func(obj any) string {
 		if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok {
 			return fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType))
-		}
-		return ""
-	}
-	cols["TargetCountByToolchainType"] = func(obj any) string {
-		if extendedSpace, ok := obj.(*goclientnew.ExtendedSpace); ok {
-			return fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType))
 		}
 		return ""
 	}
@@ -192,7 +186,7 @@ func wideSpaceCounts(extendedSpace *goclientnew.ExtendedSpace) []string {
 		fmt.Sprintf("%d", extendedSpace.TotalInvocationCount),
 		fmt.Sprintf("%d", totalCountMap(extendedSpace.TriggerCountByEventType)),
 		fmt.Sprintf("%d", extendedSpace.TotalBridgeWorkerCount),
-		fmt.Sprintf("%d", totalCountMap(extendedSpace.TargetCountByToolchainType)),
+		fmt.Sprintf("%d", extendedSpace.TotalTargetCount),
 		fmt.Sprintf("%d", extendedSpace.TotalAttributeCount),
 	}
 }

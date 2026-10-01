@@ -44,9 +44,6 @@ func TestReferenceFlagsRegistered(t *testing.T) {
 			t.Errorf("%q --%s has no completion function", tc.path, tc.flag)
 		}
 	}
-	if _, ok := findCommand(t, "worker install").GetFlagCompletionFunc("unit"); ok {
-		t.Error("worker install --unit names a unit to create, so it must not complete existing units")
-	}
 }
 
 func fakeCompleter(spaceFlag string) (*refCompleter, *refKind) {

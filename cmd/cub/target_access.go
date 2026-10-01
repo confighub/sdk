@@ -28,6 +28,7 @@ import (
 var targetAccessArgs struct {
 	ttl    string
 	output string
+	worker string
 }
 
 var targetAccessCmd = &cobra.Command{
@@ -37,22 +38,23 @@ var targetAccessCmd = &cobra.Command{
 Request temporary kubectl access by invoking the generate-kubecontext
 function on an access policy unit applied to a target. The unit must
 contain a ServiceAccount with the confighub.com/generate-kubecontext: allow
-annotation and must have been applied to the target.
+annotation and must have been applied to the target. The function runs on
+the worker named by --worker, which must be running in the cluster.
 
 The resulting kubeconfig is encrypted end-to-end — the ConfigHub server
 never sees the credentials.`, `
   # Print kubeconfig to stdout
-  cub target access --space infra my-cluster access-readonly
+  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker
 
   # Save to a file and use with kubectl
-  cub target access --space infra my-cluster access-readonly --output ~/.kube/confighub-prod
+  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker --output ~/.kube/confighub-prod
   kubectl --kubeconfig ~/.kube/confighub-prod get pods
 
   # Pipe directly
-  cub target access --space infra my-cluster access-readonly | kubectl --kubeconfig /dev/stdin get pods
+  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker | kubectl --kubeconfig /dev/stdin get pods
 
   # Request a shorter TTL
-  cub target access --space infra my-cluster access-readonly --ttl 30m`),
+  cub target access --space infra my-cluster access-readonly --worker my-cluster-worker --ttl 30m`),
 	Args:    cobra.ExactArgs(2),
 	PreRunE: spacePreRunE,
 	RunE:    targetAccessRun,
@@ -61,6 +63,8 @@ never sees the credentials.`, `
 func init() {
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.ttl, "ttl", "", "requested token TTL (e.g., 30m, 1h); capped by the policy's max-ttl")
 	targetAccessCmd.Flags().StringVar(&targetAccessArgs.output, "output", "", "write kubeconfig to this file instead of stdout")
+	targetAccessCmd.Flags().StringVar(&targetAccessArgs.worker, "worker", "", "slug or ID of the worker running in the cluster, which runs generate-kubecontext")
+	_ = targetAccessCmd.MarkFlagRequired("worker")
 	enableOptionalSpace(targetAccessCmd)
 	targetCmd.AddCommand(targetAccessCmd)
 }
@@ -70,7 +74,7 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 	unitSlug := args[1]
 
 	// Look up the target.
-	target, err := resolveTargetCore(targetSlug, selectedSpaceID, "TargetID,BridgeWorkerID")
+	target, err := resolveTargetCore(targetSlug, selectedSpaceID, "TargetID")
 	if err != nil {
 		return fmt.Errorf("target %q not found in space", targetSlug)
 	}
@@ -114,10 +118,11 @@ func targetAccessRun(cmd *cobra.Command, args []string) error {
 		},
 	}
 
-	if target.BridgeWorkerID == uuid.Nil {
-		return fmt.Errorf("target %s has no worker; generate-kubecontext runs on the target's worker", targetSlug)
+	worker, err := resolveWorker(targetAccessArgs.worker, selectedSpaceID, idSelect("BridgeWorkerID"))
+	if err != nil {
+		return fmt.Errorf("worker %q not found: %w", targetAccessArgs.worker, err)
 	}
-	workerID := goclientnew.UUID(target.BridgeWorkerID)
+	workerID := goclientnew.UUID(worker.BridgeWorker.BridgeWorkerID)
 	whereClause := fmt.Sprintf("Slug = '%s'", unitSlug)
 	req := goclientnew.FunctionInvocationsRequest{
 		ToolchainType:       "Kubernetes/YAML",
