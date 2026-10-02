@@ -6,6 +6,12 @@ name: Build and Release CLI Binaries
 #                                       (MIT/BSD/Apache require them to
 #                                       accompany binary distributions)
 #   cub-<os>-<arch>.spdx.json           an SPDX SBOM generated from each binary
+#   cub-<os>-<arch>.sigstore.json       a cosign keyless signature of each binary,
+#                                       as a Sigstore bundle
+#   cub-<os>-<arch>.sbom.sigstore.json  the SBOM as a signed attestation about
+#                                       the binary, as a Sigstore bundle
+# The signing identity of both is this workflow at the release tag. README.md
+# has the verify commands.
 # The notices job doubles as a license gate: a forbidden or restricted (copyleft)
 # dependency fails it, and no binary is uploaded.
 #
@@ -59,6 +65,10 @@ jobs:
     needs: notices
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
+      # The OIDC token cosign exchanges for a short-lived signing certificate.
+      id-token: write
     strategy:
       matrix:
         goos: [linux, windows, darwin]
@@ -101,11 +111,45 @@ jobs:
             --source-name cub --source-version "${{ github.ref_name }}" \
             -o "spdx-json=${f}.spdx.json"
 
-      - name: Upload binary and SBOM to GitHub Release
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.1.2
+        with:
+          cosign-release: v3.1.3
+
+      - name: Sign the binary and attest its SBOM
+        env:
+          IDENTITY: https://github.com/${{ github.workflow_ref }}
+          ISSUER: https://token.actions.githubusercontent.com
+        run: |
+          set -euo pipefail
+          f=./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}
+          cosign sign-blob --yes --bundle "${f}.sigstore.json" "${f}"
+          cosign attest-blob --yes \
+            --type spdxjson \
+            --predicate "${f}.spdx.json" \
+            --bundle "${f}.sbom.sigstore.json" \
+            "${f}"
+          # Verify as a user would, so a binary is never uploaded with a
+          # signature or attestation that does not check out.
+          cosign verify-blob \
+            --bundle "${f}.sigstore.json" \
+            --certificate-identity "${IDENTITY}" \
+            --certificate-oidc-issuer "${ISSUER}" \
+            "${f}"
+          cosign verify-blob-attestation \
+            --type spdxjson \
+            --bundle "${f}.sbom.sigstore.json" \
+            --certificate-identity "${IDENTITY}" \
+            --certificate-oidc-issuer "${ISSUER}" \
+            "${f}"
+
+      - name: Upload binary, SBOM, signature and attestation to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release upload ${{ github.ref_name }} \
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }} \
             ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.spdx.json \
+            ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.sigstore.json \
+            ./bin/cub-${{ matrix.goos }}-${{ matrix.goarch }}.sbom.sigstore.json \
             --clobber
