@@ -59,6 +59,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(filterUpdateCmd)
+	addFieldEditFlags(filterUpdateCmd, "Filter")
 	enableUpdatePermissionFlag(filterUpdateCmd)
 	filterUpdateCmd.Flags().BoolVar(&filterPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(filterUpdateCmd)
@@ -296,6 +297,7 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentFilter.SpaceID = existingFilter.SpaceID
 		currentFilter.FilterID = existingFilter.FilterID
 	}
+	setDisplayNameAndHiddenReason(&currentFilter.DisplayName, &currentFilter.HiddenReason)
 	err = setAnnotations(&currentFilter.Annotations)
 	if err != nil {
 		return err
@@ -333,6 +335,9 @@ func filterUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentFilter.FromSpaceID = &fromSpaceID
 	}
 
+	if err := applyFieldEdits("Filter", currentFilter); err != nil {
+		return err
+	}
 	filterRes, err := cubClientNew.UpdateFilterWithResponse(ctx, spaceID, currentFilter.FilterID, &goclientnew.UpdateFilterParams{DryRun: dryRunParam()}, *currentFilter)
 	if cubapi.IsAPIError(err, filterRes) {
 		return cubapi.InterpretErrorGeneric(err, filterRes)

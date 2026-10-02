@@ -70,6 +70,7 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&workerDetails.DisplayName, &workerDetails.HiddenReason)
 	err := setAnnotations(&workerDetails.Annotations)
 	if err != nil {
 		return err

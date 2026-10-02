@@ -386,6 +386,7 @@ func runSingleUnitCreate(args []string) error {
 		}
 	}
 
+	setDisplayNameAndHiddenReason(&newUnit.DisplayName, &newUnit.HiddenReason)
 	err := setAnnotations(&newUnit.Annotations)
 	if err != nil {
 		return err

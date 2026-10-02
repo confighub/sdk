@@ -369,6 +369,10 @@ func changeorderUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentChangeOrder.SpaceID = existingChangeOrder.SpaceID
 		currentChangeOrder.ChangeOrderID = existingChangeOrder.ChangeOrderID
 	}
+	setDisplayNameAndHiddenReason(&currentChangeOrder.DisplayName, &currentChangeOrder.HiddenReason)
+	if err := setDeleteGates(&currentChangeOrder.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentChangeOrder.Annotations)
 	if err != nil {
 		return err

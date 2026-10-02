@@ -17,8 +17,8 @@ func BuildPatchData(enhancer PatchEnhancer) ([]byte, error) {
 }
 
 // BuildPatchDataWithPermissions builds patch JSON bytes from stdin/file input, labels, permissions, and entity-specific fields.
-// It handles reading from stdin or file, merging with existing data, processing labels, permissions, and applying
-// entity-specific enhancements through the enhancer function.
+// It handles reading from stdin or file, merging with existing data, processing labels, permissions, the display name
+// and hidden reason, and applying entity-specific enhancements through the enhancer function.
 func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string) ([]byte, error) {
 	// Get base patch data from stdin/file if provided
 	var patchData []byte
@@ -34,6 +34,10 @@ func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string)
 	}
 
 	// Enhance with labels, delete gates, permissions, and entity-specific fields
+	enhancer, err := withFieldEdits(withDisplayNameAndHiddenReason(enhancer))
+	if err != nil {
+		return nil, err
+	}
 	return EnhancePatchData(patchData, annotation, label, deleteGate, permissions, enhancer)
 }
 

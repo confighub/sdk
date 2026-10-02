@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -13,6 +14,7 @@ var attestationCreateArgs struct {
 	statement   attestationStatementArgs
 	revision    string
 	changeOrder string
+	release     string
 	dryRun      bool
 }
 
@@ -53,6 +55,7 @@ func init() {
 	addAttestationStatementFlags(attestationCreateCmd, &attestationCreateArgs.statement, true)
 	attestationCreateCmd.Flags().StringVar(&attestationCreateArgs.revision, "revision", "", "the revision of each unit to attest to; defaults to the change order's, or the head")
 	attestationCreateCmd.Flags().StringVar(&attestationCreateArgs.changeOrder, "change-order", "", "the change order the attestation is made in the context of")
+	attestationCreateCmd.Flags().StringVar(&attestationCreateArgs.release, "release", "", "the ID of a published release in the space that the attestation is about, such as that it deployed and stayed healthy")
 	attestationCreateCmd.Flags().BoolVar(&attestationCreateArgs.dryRun, "dry-run", false, "report what would be covered, and record nothing")
 	enableCreatePermissionFlag(attestationCreateCmd)
 	addStandardDisplayFlags(attestationCreateCmd)
@@ -80,6 +83,13 @@ func attestationCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	request := statement.createRequest()
+	if attestationCreateArgs.release != "" {
+		releaseID, err := uuid.Parse(attestationCreateArgs.release)
+		if err != nil {
+			return errors.Newf("--release %q must be a release ID", attestationCreateArgs.release)
+		}
+		request.ReleaseID = &releaseID
+	}
 	request.WhereUnit = where
 	request.Revision = revision
 	if err := setPermissions(&request.Permissions); err != nil {

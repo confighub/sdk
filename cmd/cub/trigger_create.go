@@ -124,6 +124,7 @@ var triggerCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(triggerCreateCmd)
+	addFieldEditFlags(triggerCreateCmd, "Trigger")
 	enableCreatePermissionFlag(triggerCreateCmd)
 	triggerCreateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerCreateCmd.Flags().BoolVar(&warnTrigger, "warn", false, "Set trigger to produce ValidationWarnings instead of ValidationErrors")
@@ -142,7 +143,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerCreateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
-	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit)")
+	triggerCreateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
@@ -230,6 +231,7 @@ func runSingleTriggerCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -341,6 +343,9 @@ func runSingleTriggerCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Trigger", &newBody); err != nil {
+		return err
+	}
 	triggerRes, err := cubClientNew.CreateTriggerWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, triggerRes) {
 		return cubapi.InterpretErrorGeneric(err, triggerRes)
@@ -390,6 +395,7 @@ func runBulkTriggerCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

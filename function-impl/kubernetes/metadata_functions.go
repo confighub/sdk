@@ -225,8 +225,8 @@ func unionResourceTypes(maps ...map[api.ResourceType][]string) []api.ResourceTyp
 }
 
 const AttributeNameNamespaceNameReference = api.AttributeName("namespace-name-reference")
-const AttributeNameAnnotationValue = api.AttributeName("annotation-value")
-const AttributeNameLabelValue = api.AttributeName("label-value")
+const AttributeNameAnnotationValue = api.AttributeNameAnnotationValue
+const AttributeNameLabelValue = api.AttributeNameLabelValue
 const AttributeNameMetadataName = api.AttributeName("metadata-name")
 
 // The attributes carrying pod labels are declared in k8skit, beside the specs that say where

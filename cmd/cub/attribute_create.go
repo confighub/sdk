@@ -76,6 +76,8 @@ var attributeCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(attributeCreateCmd)
+	addFieldEditFlags(attributeCreateCmd, "Attribute")
+	addAttributeParameterFlag(attributeCreateCmd)
 	enableCreatePermissionFlag(attributeCreateCmd)
 	attributeCreateCmd.Flags().StringVar(&attributeDescription, "description", "", "Description for the attribute")
 	enableWhereFlag(attributeCreateCmd)
@@ -136,6 +138,10 @@ func attributeCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := queueAttributeParameterEdits(); err != nil {
+		return err
+	}
+
 	if isBulkCreateMode {
 		return runBulkAttributeCreate()
 	}
@@ -151,6 +157,7 @@ func runSingleAttributeCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -189,6 +196,9 @@ func runSingleAttributeCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Attribute", &newBody); err != nil {
+		return err
+	}
 	attrRes, err := cubClientNew.CreateAttributeWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, attrRes) {
 		return cubapi.InterpretErrorGeneric(err, attrRes)
@@ -233,6 +243,7 @@ func runBulkAttributeCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

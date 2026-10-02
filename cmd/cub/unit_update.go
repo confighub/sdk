@@ -191,25 +191,26 @@ Important: Only one of config-file, --restore, --upgrade, or --merge-source (wit
 }
 
 var (
-	changeDescription      string
-	restore                string
-	resolve                string
-	isUpgrade              bool
-	isPatch                bool
-	changesetSlug          string
-	changeorderSlug        string
-	providerType           string
-	mergeSource            string
-	mergeBase              string
-	mergeEnd               string
-	mergeExternalSource    string
-	mergeEnableSubtraction bool
-	protectChange          bool
-	squashMerge            bool
-	priorRevisions         string
-	whereMutation          string
-	filterMutation         string
-	tag                    string
+	changeDescription       string
+	restore                 string
+	resolve                 string
+	isUpgrade               bool
+	isPatch                 bool
+	changesetSlug           string
+	changeorderSlug         string
+	providerType            string
+	unitUpdateToolchainType string
+	mergeSource             string
+	mergeBase               string
+	mergeEnd                string
+	mergeExternalSource     string
+	mergeEnableSubtraction  bool
+	protectChange           bool
+	squashMerge             bool
+	priorRevisions          string
+	whereMutation           string
+	filterMutation          string
+	tag                     string
 )
 
 func init() {
@@ -220,6 +221,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&changesetSlug, "changeset", "", "changeset to associate the unit with (use '-' to remove in patch mode)")
 	unitUpdateCmd.Flags().StringVar(&changeorderSlug, "change-order", "", "change order to promote, with --upgrade or --resolve: it supplies both ends of the range, so --merge-end is not accepted alongside it; units its source doesn't cover are passed over, a unit that has merged past where it starts is an error, and one short of it is handled as --prior-revisions says. With --restore Before:ChangeOrder:<slug> it is the change order being undone instead: it must have an AbortedReason, the restore must name the same change order, the revisions restored are marked with the change order's restore tag, a unit already carrying that tag is passed over, and the merge pointers of the links that follow each restored unit are advanced onto the restored revision. \"cub variant demote\" is that over a whole space")
 	unitUpdateCmd.Flags().StringVar(&priorRevisions, "prior-revisions", "", "with --change-order and --upgrade or --resolve, what to do for a unit that has not merged as far as the change order's start on its source -- typically because a link in the source's space, such as a TransformPaths link, wrote revisions after the unit last merged: Include (the default) merges those revisions first, as revisions that do not carry the change order, and puts the start tag after them; Skip merges only the change order's range, as though the unit had already merged as far as its start; Error refuses, naming the unit, the link, and the revisions")
+	unitUpdateCmd.Flags().StringVarP(&unitUpdateToolchainType, "toolchain", "t", "", "toolchain type to change the unit to, for a unit created with the wrong one; the unit's data is not converted")
 	unitUpdateCmd.Flags().StringVar(&providerType, "provider", "", "provider type for the unit; None marks the unit as not applied and not included in releases")
 	unitUpdateCmd.Flags().StringVar(&restore, "restore", "", "restore to a revision: a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, Revision:uuid, an integer (revision number), a negative delta from head, or one of HeadRevisionNum/LastReleasedRevisionNum, optionally prefixed with Before:")
 	unitUpdateCmd.Flags().StringVar(&resolve, "resolve", "", "resolve links from this unit: Link:* for every link that can resolve, Link:<uuid> or Link:<slug> for one, just <slug> (e.g. space/link-name), or Link:<where expression> to select among them (e.g. \"Link:UpdateType = 'MergeUnits'\") -- the form to use in a bulk operation, where a uuid cannot be. An AutoUpdate link can be resolved by hand and does nothing when it is already level with its source")
@@ -309,8 +311,8 @@ func checkConflictingArgs(args []string) bool {
 			failOnError(fmt.Errorf("--filter, --where, or --unit can only be specified with --patch and no unit positional argument"))
 		}
 
-		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && len(permissionFlag) == 0 && changesetSlug == "" {
-			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --delete-gate, --destroy-gate, --permission, or --changeset"))
+		if isPatch && !flagPopulateModelFromStdin && flagFilename == "" && restore == "" && resolve == "" && !isUpgrade && mergeSource == "" && mergeExternalSource == "" && len(label) == 0 && len(deleteGate) == 0 && len(destroyGate) == 0 && len(permissionFlag) == 0 && changesetSlug == "" && providerType == "" && unitUpdateToolchainType == "" && !hasMetadataFlags() {
+			failOnError(fmt.Errorf("--patch requires one of: --from-stdin, --filename, --restore, --resolve, --upgrade, --merge-source, --merge-external-source, --label, --annotation, --display-name, --hidden-reason, --delete-gate, --destroy-gate, --permission, --changeset, --provider, or --toolchain"))
 		}
 	}
 
@@ -458,6 +460,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			if err != nil {
 				failOnError(err)
 			}
+			if unitUpdateToolchainType != "" {
+				patchMap["ToolchainType"] = unitUpdateToolchainType
+			}
 			if providerType != "" {
 				patchMap["ProviderType"] = providerType
 			}
@@ -505,6 +510,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 		}
 		// For non-patch operations, handle annotations and labels in the traditional way
+		setDisplayNameAndHiddenReason(&currentUnit.DisplayName, &currentUnit.HiddenReason)
 		err = setAnnotations(&currentUnit.Annotations)
 		if err != nil {
 			return err
@@ -523,6 +529,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		err = setDestroyGatesField(&currentUnit.DestroyGates)
 		if err != nil {
 			return err
+		}
+		if unitUpdateToolchainType != "" {
+			currentUnit.ToolchainType = unitUpdateToolchainType
 		}
 		if providerType != "" {
 			currentUnit.ProviderType = providerType
@@ -845,6 +854,9 @@ func runBulkUnitUpdate() error {
 		err := setDestroyGatesInPatch(patchMap)
 		if err != nil {
 			failOnError(err)
+		}
+		if unitUpdateToolchainType != "" {
+			patchMap["ToolchainType"] = unitUpdateToolchainType
 		}
 		if providerType != "" {
 			patchMap["ProviderType"] = providerType

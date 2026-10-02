@@ -688,7 +688,9 @@ type ChangeOrder struct {
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
 
 	// ChangeOrderID ChangeOrderID uniquely identifies a change order within the system.
-	ChangeOrderID  openapi_types.UUID  `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+	ChangeOrderID openapi_types.UUID `json:"ChangeOrderID,omitempty" yaml:"ChangeOrderID,omitempty"`
+
+	// ChangeWorkflow ChangeWorkflow governs how this ChangeOrder is promoted: the ordered stages it moves through and the gates that have to pass before it enters one. It is a copy taken when the workflow was associated, not a reference, so editing the ChangeWorkflow afterwards cannot change the rules a rollout already started under. Empty is a ChangeOrder no workflow governs, which is promoted ungated.
 	ChangeWorkflow *ChangeWorkflowSpec `json:"ChangeWorkflow,omitempty" yaml:"ChangeWorkflow,omitempty"`
 
 	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key.
@@ -728,10 +730,17 @@ type ChangeOrder struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
-	Parameters         map[string]interface{}         `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions        *Permissions                   `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	PromotionFailures  []ChangeOrderPromotionFailure  `json:"PromotionFailures,omitempty" yaml:"PromotionFailures,omitempty"`
+	Parameters  map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+	Permissions *Permissions           `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// PromotionFailures PromotionFailures records each promotion that did not complete: who ran it, when, into which Stage, and each Space it failed or was blocked in, with the Space's error or reason and the error of each Unit and Link whose write failed. The most recent entries are kept. Set by the server. (readonly)
+	PromotionFailures []ChangeOrderPromotionFailure `json:"PromotionFailures,omitempty" yaml:"PromotionFailures,omitempty"`
+
+	// PromotionOverrides PromotionOverrides records each promotion forced into a Stage whose gates did not hold: who forced it, when, into which Stage and Spaces, why, and which gates failed. The most recent entries are kept. Set by the server. (readonly)
 	PromotionOverrides []ChangeOrderPromotionOverride `json:"PromotionOverrides,omitempty" yaml:"PromotionOverrides,omitempty"`
+
+	// Promotions Promotions records each promotion that wrote the change into Spaces: who ran it, when, into which Stage, and which Spaces. A promotion entering several Stages records one entry per Stage. The most recent entries are kept. Set by the server. (readonly)
+	Promotions []ChangeOrderPromotion `json:"Promotions,omitempty" yaml:"Promotions,omitempty"`
 
 	// ReleasedRestoredSpaceIDs ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read.
 	ReleasedRestoredSpaceIDs []UUID `json:"ReleasedRestoredSpaceIDs,omitempty" yaml:"ReleasedRestoredSpaceIDs,omitempty"`
@@ -823,7 +832,7 @@ type ChangeOrder struct {
 	// The whole string must be query-encoded.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
 
-	// WhereUnit WhereUnit narrows which Units of each Space in scope an Invoke ChangeOrder covers, and is refused on the other UpdateTypes. Empty covers every Unit. Unlike InScopeSpaceIDs it is asked again on every read, so a Unit added to a Space afterwards counts against that Space. Immutable.
+	// WhereUnit WhereUnit narrows which Units of each Space in scope an Invoke ChangeOrder covers, and is refused on the other UpdateTypes. It takes what the where parameter of the Unit list does, attributes of what a Unit refers to included, as in `Space.Labels.Environment = 'prod'`. Empty covers every Unit. Unlike InScopeSpaceIDs it is asked again on every read, so a Unit added to a Space afterwards counts against that Space. Immutable.
 	WhereUnit string `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
 }
 
@@ -834,18 +843,34 @@ type ChangeOrderCreateOrUpdateResponse struct {
 	Error       *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 }
 
+// ChangeOrderPromotion defines model for ChangeOrderPromotion.
+type ChangeOrderPromotion struct {
+	PromotedAt time.Time          `json:"PromotedAt,omitempty" yaml:"PromotedAt,omitempty"`
+	SpaceIDs   []UUID             `json:"SpaceIDs,omitempty" yaml:"SpaceIDs,omitempty"`
+	Stage      string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+	UserID     openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+}
+
 // ChangeOrderPromotionFailure defines model for ChangeOrderPromotionFailure.
 type ChangeOrderPromotionFailure struct {
-	FailedAt    time.Time                          `json:"FailedAt,omitempty" yaml:"FailedAt,omitempty"`
-	Spaces      []ChangeOrderPromotionFailureSpace `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
-	TargetStage string                             `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
-	UserID      openapi_types.UUID                 `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	FailedAt time.Time                          `json:"FailedAt,omitempty" yaml:"FailedAt,omitempty"`
+	Spaces   []ChangeOrderPromotionFailureSpace `json:"Spaces,omitempty" yaml:"Spaces,omitempty"`
+	Stage    string                             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
+	UserID   openapi_types.UUID                 `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+}
+
+// ChangeOrderPromotionFailureLink defines model for ChangeOrderPromotionFailureLink.
+type ChangeOrderPromotionFailureLink struct {
+	Error  string              `json:"Error,omitempty" yaml:"Error,omitempty"`
+	LinkID *openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+	Slug   string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 }
 
 // ChangeOrderPromotionFailureSpace defines model for ChangeOrderPromotionFailureSpace.
 type ChangeOrderPromotionFailureSpace struct {
 	Action    string                            `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Error     string                            `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Links     []ChangeOrderPromotionFailureLink `json:"Links,omitempty" yaml:"Links,omitempty"`
 	Reason    string                            `json:"Reason,omitempty" yaml:"Reason,omitempty"`
 	SpaceID   openapi_types.UUID                `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 	SpaceSlug string                            `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
@@ -865,6 +890,7 @@ type ChangeOrderPromotionOverride struct {
 	FailedGates  []string           `json:"FailedGates,omitempty" yaml:"FailedGates,omitempty"`
 	OverriddenAt time.Time          `json:"OverriddenAt,omitempty" yaml:"OverriddenAt,omitempty"`
 	Reason       string             `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	SpaceIDs     []UUID             `json:"SpaceIDs,omitempty" yaml:"SpaceIDs,omitempty"`
 	Stage        string             `json:"Stage,omitempty" yaml:"Stage,omitempty"`
 	UserID       openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 }
@@ -1098,12 +1124,22 @@ type ClearanceRequirement struct {
 
 // Column defines model for Column.
 type Column struct {
-	ColumnSource     *ColumnSource `json:"ColumnSource,omitempty" yaml:"ColumnSource,omitempty"`
-	ColumnType       string        `json:"ColumnType,omitempty" yaml:"ColumnType,omitempty"`
-	DataType         string        `json:"DataType,omitempty" yaml:"DataType,omitempty"`
-	GroupBy          bool          `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
-	Name             string        `json:"Name" yaml:"Name"`
-	OrderByDirection string        `json:"OrderByDirection,omitempty" yaml:"OrderByDirection,omitempty"`
+	ColumnSource *ColumnSource `json:"ColumnSource,omitempty" yaml:"ColumnSource,omitempty"`
+
+	// ColumnType The kind of value: MetadataAttribute, MetadataExpression, DataPath or DataExpression.
+	ColumnType string `json:"ColumnType,omitempty" yaml:"ColumnType,omitempty"`
+
+	// DataType The expected data type of the column value: string, int, bool, uuid or time.
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// GroupBy Group by this column. Priority is in column list order, after the View's GroupBy.
+	GroupBy bool `json:"GroupBy,omitempty" yaml:"GroupBy,omitempty"`
+
+	// Name The display name for the column.
+	Name string `json:"Name" yaml:"Name"`
+
+	// OrderByDirection Sort by this column, ASC or DESC. Priority is in column list order, after the View's OrderBy.
+	OrderByDirection string `json:"OrderByDirection,omitempty" yaml:"OrderByDirection,omitempty"`
 }
 
 // ColumnSource defines model for ColumnSource.
@@ -1498,7 +1534,7 @@ type ExtendedFilter struct {
 type ExtendedGroup struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in.
+	// Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in. Bot Users are the exception: they are added to a Group through the API.
 	Group *Group `json:"Group,omitempty" yaml:"Group,omitempty"`
 }
 
@@ -2172,7 +2208,7 @@ type FunctionWorkerInfo struct {
 	ToolchainTypes []string `json:"ToolchainTypes" yaml:"ToolchainTypes"`
 }
 
-// Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in.
+// Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in. Bot Users are the exception: they are added to a Group through the API.
 type Group struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -2305,8 +2341,10 @@ type Link struct {
 	// AutoUpdate Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done.
 	AutoUpdate    bool                `json:"AutoUpdate,omitempty" yaml:"AutoUpdate,omitempty"`
 	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
-	Bindings      *BindingList        `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
-	Clearance     *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// Bindings The needs/provides attribute bindings resolution found for this Link and keeps up to date: one for each needed attribute of the downstream Unit it matched with an attribute the upstream Unit provides. Set by the server, and rebuilt by each resolve. A needed attribute that a binding in ManualBindings names is not matched again.
+	Bindings  *BindingList `json:"Bindings,omitempty" yaml:"Bindings,omitempty"`
+	Clearance *Clearance   `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -3070,6 +3108,9 @@ type Release struct {
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
 	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UserID The User who published the Release. Absent for Releases published before it was recorded. (readonly)
+	UserID *openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -3867,11 +3908,8 @@ type Trigger struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum.
-	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params      map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
-	Permissions *Permissions           `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	OtherDataSource string       `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
+	Permissions     *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Protect Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.
 	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
@@ -3914,7 +3952,7 @@ type Trigger struct {
 	// WhereResource Restricts which resources within a Unit's configuration data the Trigger's function operates on, using ConfigHub metadata path expressions.
 	WhereResource string `json:"WhereResource,omitempty" yaml:"WhereResource,omitempty"`
 
-	// WhereUnit A filter expression to restrict which Units this Trigger applies to.
+	// WhereUnit A filter expression to restrict which Units this Trigger applies to. It takes what the where parameter of the Unit list does, attributes of what a Unit refers to included, as in `Space.Labels.Environment = 'prod'` and `UpstreamUnit.Slug = 'base'`.
 	WhereUnit string `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
 }
 
@@ -4009,7 +4047,9 @@ type Unit struct {
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
-	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// PathAnnotations Annotations on locations within the Unit's configuration data, by resource and path.
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
 	Permissions     *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
@@ -4615,7 +4655,7 @@ type User struct {
 	// ExternalID Unique identifier for the External Identity Provider record matching this User.
 	ExternalID string `json:"ExternalID,omitempty" yaml:"ExternalID,omitempty"`
 
-	// GroupIDs The Groups the User belongs to, from the identity provider's claims at their last login. (readonly)
+	// GroupIDs The Groups the User belongs to, from the identity provider's claims at their last login. A bot User's Groups are the ones it was added to through the Group API instead. (readonly)
 	GroupIDs []UUID `json:"GroupIDs,omitempty" yaml:"GroupIDs,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -4773,10 +4813,10 @@ type WithheldGuard struct {
 type WorkerInfo struct {
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
 
-	// IsServerWorker If true, this is a server-hosted worker.
+	// IsServerWorker If true, this is a server-hosted worker. It cannot be changed after the worker is created.
 	IsServerWorker bool `json:"IsServerWorker,omitempty" yaml:"IsServerWorker,omitempty"`
 
-	// UseUserIdentity If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true.
+	// UseUserIdentity If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true. It cannot be changed after the worker is created.
 	UseUserIdentity bool `json:"UseUserIdentity,omitempty" yaml:"UseUserIdentity,omitempty"`
 }
 
@@ -5419,6 +5459,9 @@ type BulkCreateSpacesParams struct {
 
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a Space a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Space is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -6078,6 +6121,9 @@ type BulkCreateAttributesParams struct {
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
 
+	// PatchExisting With from_backing_units, patch a Attribute a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Attribute is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -6375,7 +6421,6 @@ type ListAllBridgeWorkersParams struct {
 type BulkPatchBridgeWorkersApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	Condition   *string             `json:"Condition" yaml:"Condition"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -6600,7 +6645,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6693,7 +6738,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6831,7 +6876,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6965,7 +7010,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -8246,6 +8291,9 @@ type BulkCreateChangeWorkflowsParams struct {
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
 
+	// PatchExisting With from_backing_units, patch a ChangeWorkflow a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the ChangeWorkflow is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -9106,6 +9154,9 @@ type BulkCreateFiltersParams struct {
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
 
+	// PatchExisting With from_backing_units, patch a Filter a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Filter is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -9365,8 +9416,8 @@ type InvokeFunctionsOnOrgParams struct {
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
 }
 
-// ListExtendedGroupsParams defines parameters for ListExtendedGroups.
-type ListExtendedGroupsParams struct {
+// ListGroupsParams defines parameters for ListGroups.
+type ListGroupsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
 	// the list of Groups returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -9406,6 +9457,19 @@ type ListExtendedGroupsParams struct {
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
 
+	// Filter UUID of a Filter entity to apply to the Group list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Group).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
 	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
 	//
 	// The search is case-insensitive and uses pattern matching to find entities containing the text.
@@ -9423,6 +9487,16 @@ type ListExtendedGroupsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
+	// Select Select clause for specifying which fields to include in the response for Group.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, GroupID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
 	// IncludeHidden Hidden Group entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -9431,6 +9505,19 @@ type ListExtendedGroupsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+}
+
+// GetGroupParams defines parameters for GetGroup.
+type GetGroupParams struct {
+	// Select Select clause for specifying which fields to include in the response for Group.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, GroupID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
 }
 
 // BulkDeleteInvocationsParams defines parameters for BulkDeleteInvocations.
@@ -9992,6 +10079,9 @@ type BulkCreateInvocationsParams struct {
 
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a Invocation a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Invocation is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -10683,6 +10773,9 @@ type BulkCreateLinksParams struct {
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
 
+	// PatchExisting With from_backing_units, patch a Link a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Link is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -10938,7 +11031,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12183,7 +12276,6 @@ type GetBridgeWorkerParams struct {
 type PatchBridgeWorkerApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
-	Condition   *string             `json:"Condition" yaml:"Condition"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -12255,7 +12347,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13560,7 +13652,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14207,13 +14299,10 @@ type PatchTriggerApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
-	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
-	Protect     *bool                               `json:"Protect" yaml:"Protect"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string                             `json:"OtherDataSource" yaml:"OtherDataSource"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect         *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -16814,13 +16903,10 @@ type BulkPatchTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
-	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
-	Protect     *bool                               `json:"Protect" yaml:"Protect"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string                             `json:"OtherDataSource" yaml:"OtherDataSource"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect         *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -16968,13 +17054,10 @@ type BulkCreateTriggersApplicationMergePatchPlusJSONBody struct {
 	InvocationID *openapi_types.UUID `json:"InvocationID" yaml:"InvocationID"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels          *map[string]*string `json:"Labels" yaml:"Labels"`
-	OtherDataSource *string             `json:"OtherDataSource" yaml:"OtherDataSource"`
-
-	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
-	Params      *map[string]interface{}             `json:"Params" yaml:"Params"`
-	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
-	Protect     *bool                               `json:"Protect" yaml:"Protect"`
+	Labels          *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OtherDataSource *string                             `json:"OtherDataSource" yaml:"OtherDataSource"`
+	Permissions     *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+	Protect         *bool                               `json:"Protect" yaml:"Protect"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug          *string             `json:"Slug" yaml:"Slug"`
@@ -17190,6 +17273,9 @@ type BulkCreateTriggersParams struct {
 
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a Trigger a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Trigger is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -19495,6 +19581,9 @@ type BulkCreateViewsParams struct {
 
 	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
 	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a View a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the View is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`

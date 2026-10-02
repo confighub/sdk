@@ -96,6 +96,33 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 		}
 	}
 
+	return VetAgainstSchemas(resourceProvider, options, parsedData, func(resourceType api.ResourceType) (*gojsonschema.Schema, error) {
+		schemaInterface, ok := schemaMap[string(resourceType)]
+		if !ok {
+			// No schema for this resource type, skip validation
+			return nil, nil
+		}
+		schemaBytes, err := json.Marshal(schemaInterface)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to marshal schema for resource type %s", resourceType)
+		}
+		schema, err := gojsonschema.NewSchema(gojsonschema.NewBytesLoader(schemaBytes))
+		if err != nil {
+			return nil, errors.Wrapf(err, "invalid schema for resource type %s", resourceType)
+		}
+		return schema, nil
+	})
+}
+
+// ErrNoSchema is what a schema lookup returns, wrapped, for a resource that has to have a schema
+// and has none. The resource fails validation with it, rather than the function failing.
+var ErrNoSchema = errors.New("no schema")
+
+// VetAgainstSchemas validates each resource against the schema schemaFor returns for its type,
+// and reports every violation as a failed path. schemaFor returns nil for a type it does not
+// validate, and an error wrapping ErrNoSchema for a type that fails for want of one.
+func VetAgainstSchemas(resourceProvider yamlkit.ResourceProvider, options *api.FunctionOptions, parsedData gaby.Container,
+	schemaFor func(api.ResourceType) (*gojsonschema.Schema, error)) (gaby.Container, any, error) {
 	var multiErrs []error
 	details := []string{}
 	failedPaths := api.AttributeValueList{}
@@ -108,18 +135,24 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 		// Get the resource type
 		resourceType := string(resourceInfo.ResourceType)
 
-		// Look up the schema for this resource type
-		schemaInterface, ok := schemaMap[resourceType]
-		if !ok {
-			// No schema for this resource type, skip validation
+		schema, err := schemaFor(resourceInfo.ResourceType)
+		if errors.Is(err, ErrNoSchema) {
+			passed = false
+			details = append(details, fmt.Sprintf("Resource %s/%s: %s", resourceType, resourceInfo.ResourceName, err.Error()))
+			failedPaths = append(failedPaths, api.AttributeValue{
+				AttributeInfo: api.AttributeInfo{
+					AttributeIdentifier: api.AttributeIdentifier{ResourceInfo: *resourceInfo, Path: "."},
+					AttributeMetadata:   api.AttributeMetadata{AttributeName: api.AttributeNameNone},
+				},
+			})
 			return output, nil
 		}
-
-		// Convert schema to JSON string
-		schemaBytes, err := json.Marshal(schemaInterface)
 		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "failed to marshal schema for resource type %s", resourceType))
+			errs = append(errs, err)
 			return output, errs
+		}
+		if schema == nil {
+			return output, nil
 		}
 
 		// Marshal the document to JSON for validation, stripping $comment$ keys
@@ -129,12 +162,8 @@ func GenericFnVetJSONSchema(resourceProvider yamlkit.ResourceProvider, options *
 			return output, errs
 		}
 
-		// Create loaders for gojsonschema
-		schemaLoader := gojsonschema.NewStringLoader(string(schemaBytes))
-		documentLoader := gojsonschema.NewBytesLoader(docJSON)
-
 		// Validate
-		result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+		result, err := schema.Validate(gojsonschema.NewBytesLoader(docJSON))
 		if err != nil {
 			errs = append(errs, errors.Wrapf(err, "validation error for resource %s/%s", resourceType, resourceInfo.ResourceName))
 			return output, errs

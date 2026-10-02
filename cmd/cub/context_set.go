@@ -22,10 +22,10 @@ wherever the UI is embedded in the server.
 Examples:
 `+"```"+`
   # The current context's UI is served on its own host
-  cub context set --ui-url=https://ui-next.testhub.confighub.net
+  cub context set --ui-url=https://ui.example.com
 
   # Set it for another context
-  cub context set hub-next --ui-url=https://ui-next.testhub.confighub.net
+  cub context set hub-next --ui-url=https://ui.example.com
 
   # Go back to the UI the server embeds
   cub context set --ui-url=

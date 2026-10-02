@@ -5,6 +5,10 @@
 # Generated from ConfigHub's entity definitions. Do not edit.
 resourceTypes:
 - applyPriority: 300
+  attributes:
+    immutable:
+    - path: ToolchainType
+    - path: DataType
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
@@ -25,12 +29,18 @@ resourceTypes:
   - Parameters.*.Schema.dependencies.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Parameters
   scope: Space
   type: Attribute
 - applyPriority: 200
+  attributes:
+    where-expression:
+    - dataType: string
+      path: Stages.*.WhereSpace
+      selects: Space
   listTypes:
   - path: Stages.*.Prerequisites
     type: set
@@ -46,6 +56,7 @@ resourceTypes:
   - Annotations.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: Name
     path: Stages
@@ -56,6 +67,10 @@ resourceTypes:
   scope: Space
   type: ChangeWorkflow
 - applyPriority: 100
+  attributes:
+    resource-name:
+    - path: AllowedChangeWorkflows.*
+      target: ChangeWorkflow
   listTypes:
   - path: AllowedChangeWorkflows
     type: set
@@ -65,21 +80,35 @@ resourceTypes:
   - Annotations.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   scope: Organization
   type: Component
 - applyPriority: 200
+  attributes:
+    resource-name:
+    - path: FromSpace
+      target: Space
+    where-expression:
+    - dataType: string
+      path: Where
+      prefixes: true
+      selects: '@From'
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   scope: Space
   type: Filter
 - applyPriority: 200
   attributes:
     immutable:
     - path: ToolchainType
+    resource-name:
+    - path: BridgeWorker
+      target: BridgeWorker
   listTypes:
   - path: FunctionInvocations
     type: atomic
@@ -93,6 +122,7 @@ resourceTypes:
   - Parameters.*.Schema.dependencies.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Parameters
@@ -102,6 +132,18 @@ resourceTypes:
   attributes:
     immutable:
     - path: UpdateType
+    resource-name:
+    - path: FromUnit
+      target: Unit
+    - path: ToUnit
+      target: Unit
+    - path: TransformInvocation
+      target: Invocation
+    where-expression:
+    - dataType: string
+      path: WhereMutation
+      prefixes: true
+      selects: Mutation
   listTypes:
   - path: Clearance.*.Values
     type: set
@@ -122,6 +164,7 @@ resourceTypes:
   - DownstreamSetters.*.FunctionInvocation.Guards.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - extraKeys:
     - Operator
@@ -152,15 +195,48 @@ resourceTypes:
   scope: Space
   type: Link
 - applyPriority: 100
+  attributes:
+    resource-name:
+    - path: TriggerFilter
+      target: Filter
+    - path: AttributeFilter
+      target: Filter
+    - path: ReleaseTarget
+      target: Target
+    - path: Component
+      target: Component
+    where-expression:
+    - dataType: string
+      path: WhereTrigger
+      prefixes: true
+      selects: Trigger
+    - dataType: string
+      path: WhereAttribute
+      prefixes: true
+      selects: Attribute
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   scope: Organization
   type: Space
 - applyPriority: 300
+  attributes:
+    resource-name:
+    - path: Invocation
+      target: Invocation
+    - path: BridgeWorker
+      target: BridgeWorker
+    - path: UnitFilter
+      target: Filter
+    where-expression:
+    - dataType: string
+      path: WhereUnit
+      prefixes: true
+      selects: Unit
   listTypes:
   - path: Clearance.*.Values
     type: set
@@ -171,6 +247,7 @@ resourceTypes:
   - Guards.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: ParameterName
     path: Arguments
@@ -181,12 +258,17 @@ resourceTypes:
   scope: Space
   type: Trigger
 - applyPriority: 300
+  attributes:
+    resource-name:
+    - path: Filter
+      target: Filter
   mapKeyPaths:
   - DeleteGates.*
   - Labels.*
   - Annotations.*
   - Permissions.*
   - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
   mergeKeys:
   - key: Name
     path: Columns

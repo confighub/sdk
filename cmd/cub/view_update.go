@@ -51,8 +51,11 @@ Examples:
 var (
 	viewPatch       bool
 	viewIdentifiers []string
-	viewUpdateArgs  struct {
+	// viewUpdateColumns are the flags that set fields of the columns of the view being updated.
+	viewUpdateColumns *listFlags
+	viewUpdateArgs    struct {
 		filter           string
+		of               string
 		columns          []string
 		groupBy          string
 		orderBy          string
@@ -62,6 +65,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(viewUpdateCmd)
+	addFieldEditFlags(viewUpdateCmd, "View")
 	enableUpdatePermissionFlag(viewUpdateCmd)
 	viewUpdateCmd.Flags().BoolVar(&viewPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(viewUpdateCmd)
@@ -70,13 +74,15 @@ func init() {
 
 	// Single update specific flags
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.filter, "filter-field", "", "filter to identify entities to include in the view (slug or UUID)")
-	viewUpdateCmd.Flags().StringSliceVar(&viewUpdateArgs.columns, "column", []string{}, "column names to display in the view (can be repeated or comma-separated)")
+	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.of, "of", "", "entity type to view (e.g., Unit, Space); it has to match the From of the view's filter, if it has one")
+	viewUpdateCmd.Flags().StringSliceVar(&viewUpdateArgs.columns, "column", []string{}, "column names to display in the view (can be repeated or comma-separated). The ones named are the columns the view has, in that order: one it had before keeps its other fields. With --patch the columns are replaced whole")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.groupBy, "group-by", "", "column name to group by")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.orderBy, "order-by", "", "column name to sort by")
 	viewUpdateCmd.Flags().StringVar(&viewUpdateArgs.orderByDirection, "order-by-direction", "", "sort direction (ASC or DESC, only valid with --order-by)")
 
 	addBackingUnitFlags(viewUpdateCmd, "View", false, false)
 	addFromBackingUnitsFlags(viewUpdateCmd, "View", false)
+	viewUpdateColumns = addListFlags(viewUpdateCmd, viewColumnFlags(&viewUpdateArgs.columns))
 	viewCmd.AddCommand(viewUpdateCmd)
 }
 
@@ -184,6 +190,10 @@ func runBulkViewUpdate() error {
 			patchData["Columns"] = columns
 		}
 
+		if viewUpdateArgs.of != "" {
+			patchData["Of"] = viewUpdateArgs.of
+		}
+
 		if viewUpdateArgs.groupBy != "" {
 			patchData["GroupBy"] = viewUpdateArgs.groupBy
 		}
@@ -233,6 +243,16 @@ func runBulkViewUpdate() error {
 
 func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkViewConflictingArgs(args)
+
+	// An update that writes the view whole keeps what each column it names again has. A patch
+	// replaces the columns, since it cannot merge a list, and can change no one column.
+	if isBulkPatchMode || viewPatch {
+		if err := viewUpdateColumns.queueFields(); err != nil {
+			return err
+		}
+	} else if err := viewUpdateColumns.queue(); err != nil {
+		return err
+	}
 
 	if isBulkPatchMode {
 		return runBulkViewUpdate()
@@ -298,6 +318,10 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 				patchData["Columns"] = columns
 			}
 
+			if viewUpdateArgs.of != "" {
+				patchData["Of"] = viewUpdateArgs.of
+			}
+
 			if viewUpdateArgs.groupBy != "" {
 				patchData["GroupBy"] = viewUpdateArgs.groupBy
 			}
@@ -344,6 +368,10 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentView.SpaceID = existingView.SpaceID
 		currentView.ViewID = existingView.ViewID
 	}
+	setDisplayNameAndHiddenReason(&currentView.DisplayName, &currentView.HiddenReason)
+	if err := setDeleteGates(&currentView.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentView.Annotations)
 	if err != nil {
 		return err
@@ -369,14 +397,8 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentView.FilterID = &fid
 	}
 
-	if len(viewUpdateArgs.columns) > 0 {
-		columns := make([]goclientnew.Column, 0, len(viewUpdateArgs.columns))
-		for _, columnName := range viewUpdateArgs.columns {
-			columns = append(columns, goclientnew.Column{
-				Name: columnName,
-			})
-		}
-		currentView.Columns = columns
+	if viewUpdateArgs.of != "" {
+		currentView.Of = viewUpdateArgs.of
 	}
 
 	if viewUpdateArgs.groupBy != "" {
@@ -391,6 +413,9 @@ func viewUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentView.OrderByDirection = viewUpdateArgs.orderByDirection
 	}
 
+	if err := applyFieldEdits("View", currentView); err != nil {
+		return err
+	}
 	viewRes, err := cubClientNew.UpdateViewWithResponse(ctx, spaceID, currentView.ViewID, &goclientnew.UpdateViewParams{DryRun: dryRunParam()}, *currentView)
 	if cubapi.IsAPIError(err, viewRes) {
 		return cubapi.InterpretErrorGeneric(err, viewRes)

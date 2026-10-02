@@ -78,6 +78,15 @@ Columns should be specified in the format used by list commands, such as:
 	return getCommandHelp(baseHelp, "")
 }
 
+// viewCreateColumns are the flags that set fields of the columns of the view being created.
+var viewCreateColumns *listFlags
+
+// viewColumnFlags describes the flags for a View's columns. columns holds the values of the
+// command's own --column.
+func viewColumnFlags(columns *[]string) listFlagsSpec {
+	return listFlagsSpec{entityType: "View", list: "Columns", key: "Name", element: "column", elements: columns, noun: "column"}
+}
+
 var viewCreateArgs struct {
 	destSpaces       []string
 	whereSpace       string
@@ -95,6 +104,7 @@ var viewCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(viewCreateCmd)
+	addFieldEditFlags(viewCreateCmd, "View")
 	enableCreatePermissionFlag(viewCreateCmd)
 	enableWhereFlag(viewCreateCmd)
 	enableFilterFlag(viewCreateCmd)
@@ -117,6 +127,7 @@ func init() {
 
 	addBackingUnitFlags(viewCreateCmd, "View", false, true)
 	addFromBackingUnitsFlags(viewCreateCmd, "View", true)
+	viewCreateColumns = addListFlags(viewCreateCmd, viewColumnFlags(&viewCreateArgs.columns))
 	viewCmd.AddCommand(viewCreateCmd)
 }
 
@@ -208,6 +219,11 @@ func viewCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// A single create builds the columns --column names itself; these are edits of what it built.
+	if err := viewCreateColumns.queueFields(); err != nil {
+		return err
+	}
+
 	if isBulkCreateMode {
 		return runBulkViewCreate()
 	}
@@ -223,6 +239,7 @@ func runSingleViewCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -296,6 +313,9 @@ func runSingleViewCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("View", &newBody); err != nil {
+		return err
+	}
 	viewRes, err := cubClientNew.CreateViewWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, viewRes) {
 		return cubapi.InterpretErrorGeneric(err, viewRes)
@@ -347,6 +367,7 @@ func runBulkViewCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

@@ -181,6 +181,7 @@ func runSingleChangeSetCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err

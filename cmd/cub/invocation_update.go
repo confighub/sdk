@@ -68,8 +68,11 @@ var (
 
 func init() {
 	addStandardUpdateFlags(invocationUpdateCmd)
+	addFieldEditFlags(invocationUpdateCmd, "Invocation")
+	addInvocationFunctionFlag(invocationUpdateCmd)
 	enableUpdatePermissionFlag(invocationUpdateCmd)
 	invocationUpdateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
+	invocationUpdateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "replace the declared parameters with the ones given, each as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
 	invocationUpdateCmd.Flags().BoolVar(&invocationPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(invocationUpdateCmd)
 	enableFilterFlag(invocationUpdateCmd)
@@ -96,12 +99,8 @@ func checkInvocationConflictingArgs(args []string) bool {
 	} else {
 		// Single update mode validation. The function positional argument is required unless the
 		// body supplies the function list, which is how a multi-function Invocation is set.
-		minArgs := 3
-		if flagPopulateModelFromStdin || flagFilename != "" {
-			minArgs = 2
-		}
-		if len(args) < minArgs {
-			failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with FunctionInvocations supplied by --from-stdin or --filename"))
+		if len(args) < invocationUpdateMinArgs() {
+			failOnError(errors.New("single invocation update requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with the functions supplied by --function, --from-stdin or --filename, or left as they are by an update that sets something else"))
 		}
 
 		if filter != "" || where != "" || len(invocationIdentifiers) > 0 {
@@ -152,11 +151,19 @@ func runBulkInvocationUpdate() error {
 		workerUUID = &workerID
 	}
 
+	declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
+	if err != nil {
+		return err
+	}
+
 	// Create enhancer function for invocation-specific fields
 	enhancer := func(patchMap map[string]interface{}) {
 		// Add worker if specified
 		if workerUUID != nil {
 			patchMap["BridgeWorkerID"] = workerUUID.String()
+		}
+		if len(declaredParams) > 0 {
+			patchMap["Parameters"] = declaredParams
 		}
 	}
 
@@ -195,15 +202,31 @@ func runBulkInvocationUpdate() error {
 	return handleBulkInvocationCreateOrUpdateResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "update", effectiveWhere)
 }
 
+// invocationUpdateMinArgs is how many arguments a single update needs. The function is required
+// unless something else supplies the functions, or the update changes something else and leaves
+// them alone.
+func invocationUpdateMinArgs() int {
+	if flagPopulateModelFromStdin || flagFilename != "" || len(invocationFunctionLines) > 0 ||
+		len(invocationDeclaredParameterFlags) > 0 || workerSlug != "" || hasMetadataFlags() ||
+		len(label) > 0 || len(deleteGate) > 0 || len(permissionFlag) > 0 {
+		return 2
+	}
+	return 3
+}
+
 func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkInvocationConflictingArgs(args)
+
+	if err := queueInvocationFunctionEdits(args); err != nil {
+		return err
+	}
 
 	if isBulkPatchMode {
 		return runBulkInvocationUpdate()
 	}
 
 	// Single invocation update logic
-	if len(args) < 3 {
+	if len(args) < invocationUpdateMinArgs() {
 		return errors.New("single invocation update requires: <slug or id> <toolchain type> <function> [arguments...]")
 	}
 
@@ -230,11 +253,19 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			workerID = &workerUUIDConverted
 		}
 
+		declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
+		if err != nil {
+			return err
+		}
+
 		// Build patch data using BuildPatchData with invocation enhancer
 		invocationEnhancer := func(patchData map[string]interface{}) {
 			// Add invocation-specific fields
 			if workerID != nil {
 				patchData["BridgeWorkerID"] = *workerID
+			}
+			if len(declaredParams) > 0 {
+				patchData["Parameters"] = declaredParams
 			}
 
 			// Add function details from args
@@ -282,6 +313,10 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentInvocation.SpaceID = existingInvocation.SpaceID
 		currentInvocation.InvocationID = existingInvocation.InvocationID
 	}
+	setDisplayNameAndHiddenReason(&currentInvocation.DisplayName, &currentInvocation.HiddenReason)
+	if err := setDeleteGates(&currentInvocation.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentInvocation.Annotations)
 	if err != nil {
 		return err
@@ -312,6 +347,18 @@ func invocationUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			FunctionName: args[2],
 			Arguments:    parseFunctionArguments(args[3:]),
 		}}
+	}
+	declaredParams, err := parseDeclaredParameterFlags(invocationDeclaredParameterFlags)
+	if err != nil {
+		return err
+	}
+	if len(declaredParams) > 0 {
+		// --parameter declares the whole parameter namespace. Without it, the invocation
+		// keeps the parameters it has, or the ones a file or stdin supplied.
+		currentInvocation.Parameters = declaredParams
+	}
+	if err := applyFieldEdits("Invocation", currentInvocation); err != nil {
+		return err
 	}
 	invocationRes, err := cubClientNew.UpdateInvocationWithResponse(ctx, spaceID, currentInvocation.InvocationID, &goclientnew.UpdateInvocationParams{DryRun: dryRunParam()}, *currentInvocation)
 	if cubapi.IsAPIError(err, invocationRes) {

@@ -20,7 +20,6 @@ func initFunctions(rp *k8skit.K8sResourceProviderType) {
 	initReferenceFunctions(rp)
 	initMetadataFunctions(rp)
 	initStandardFunctions(rp)
-	initContainerFunctions(rp)
 	initDefaultingFunctions(rp)
 	registerDeclaredAttributePaths(rp)
 }

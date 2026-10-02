@@ -57,7 +57,7 @@ Examples:
 }
 
 func init() {
-	addStandardUpdateFlags(releaseUpdateCmd)
+	addUpdateFlagsWithoutDisplayName(releaseUpdateCmd)
 	enableUpdatePermissionFlag(releaseUpdateCmd)
 	releaseUpdateCmd.Flags().BoolVar(&releaseUpdateArgs.patch, "patch", false,
 		"use the patch API, sending only the changes; required to remove a label, annotation, or delete gate")
@@ -121,6 +121,7 @@ func releaseUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err = setLabels(&currentRelease.Labels); err != nil {
 		return err
 	}
+	setHiddenReason(&currentRelease.HiddenReason)
 	if err = setAnnotations(&currentRelease.Annotations); err != nil {
 		return err
 	}

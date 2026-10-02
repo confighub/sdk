@@ -1,0 +1,1896 @@
+{
+  "$comment": "What a where expression can name, by entity type and then attribute name, extracted from the x-confighub-where extensions of the API's OpenAPI spec. Do not edit.",
+  "entityTypes": {
+    "Attestation": {
+      "AttestationID": {
+        "dataType": "uuid"
+      },
+      "ChangeOrderID": {
+        "dataType": "uuid",
+        "references": "ChangeOrder"
+      },
+      "Claims": {
+        "dataType": "map[string]string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "EvidenceAttestationIDs": {
+        "dataType": "[]uuid",
+        "references": "Attestation"
+      },
+      "ExpiresAt": {
+        "dataType": "time"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Note": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ReleaseID": {
+        "dataType": "uuid",
+        "references": "Release"
+      },
+      "Result": {
+        "dataType": "string"
+      },
+      "RevokedAttestationID": {
+        "dataType": "uuid",
+        "references": "Attestation"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Type": {
+        "dataType": "string"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
+    "Attribute": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "AttributeID": {
+        "dataType": "uuid"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DataType": {
+        "dataType": "string"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "Hash": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Parameters": {
+        "dataType": "JSON"
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ResourceTypePaths": {
+        "dataType": "JSON"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamAttributeID": {
+        "dataType": "uuid",
+        "references": "Attribute"
+      }
+    },
+    "BridgeWorker": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "BridgeWorkerID": {
+        "dataType": "uuid"
+      },
+      "Condition": {
+        "dataType": "string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "IPAddress": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "LastMessage": {
+        "dataType": "string"
+      },
+      "LastSeenAt": {
+        "dataType": "time"
+      },
+      "OrgRole": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ProvidedInfo": {
+        "dataType": "JSON"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
+    "BridgeWorkerStatus": {
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker"
+      },
+      "BridgeWorkerSlug": {
+        "dataType": "string"
+      },
+      "BridgeWorkerStatusID": {
+        "dataType": "uuid"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization"
+      },
+      "SeenAt": {
+        "dataType": "time"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      },
+      "Status": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "ChangeOrder": {
+      "AbortedReason": {
+        "dataType": "string"
+      },
+      "AdoptedEndTagID": {
+        "dataType": "uuid",
+        "references": "Tag"
+      },
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ChangeOrderID": {
+        "dataType": "uuid"
+      },
+      "ChangeWorkflow": {
+        "dataType": "JSON"
+      },
+      "ChangeWorkflowID": {
+        "dataType": "uuid",
+        "references": "ChangeWorkflow"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "EndTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "InScopeSpaceIDs": {
+        "dataType": "[]uuid",
+        "references": "Space"
+      },
+      "InvocationID": {
+        "dataType": "uuid",
+        "references": "Invocation",
+        "expandable": true
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Parameters": {
+        "dataType": "JSON"
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "PromotionFailures": {
+        "dataType": "JSON"
+      },
+      "PromotionOverrides": {
+        "dataType": "JSON"
+      },
+      "Promotions": {
+        "dataType": "JSON"
+      },
+      "ReleasedRestoredSpaceIDs": {
+        "dataType": "[]uuid"
+      },
+      "ReleasedSpaceIDs": {
+        "dataType": "[]uuid"
+      },
+      "ResolvedSpaceIDs": {
+        "dataType": "[]uuid"
+      },
+      "RestoreTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "RestoredSpaceIDs": {
+        "dataType": "[]uuid"
+      },
+      "SkippedUnits": {
+        "dataType": "map[uuid]string",
+        "references": "Unit"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Stage": {
+        "dataType": "string"
+      },
+      "StartTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "State": {
+        "dataType": "string"
+      },
+      "UnitFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "UpdateType": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "WhereSpace": {
+        "dataType": "string"
+      },
+      "WhereUnit": {
+        "dataType": "string"
+      }
+    },
+    "ChangeSet": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ChangeSetID": {
+        "dataType": "uuid"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "EndTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "StartTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "StartTagIsPriorRevision": {
+        "dataType": "bool"
+      },
+      "State": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "ChangeWorkflow": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "AttestationPrerequisites": {
+        "dataType": "JSON"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "ChangeWorkflowID": {
+        "dataType": "uuid"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "CustomPrerequisites": {
+        "dataType": "JSON"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "Final": {
+        "dataType": "JSON"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Stages": {
+        "dataType": "JSON"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamChangeWorkflowID": {
+        "dataType": "uuid",
+        "references": "ChangeWorkflow"
+      }
+    },
+    "Component": {
+      "AllowedChangeWorkflowIDs": {
+        "dataType": "[]uuid",
+        "references": "ChangeWorkflow"
+      },
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "ChangeWorkflowRequired": {
+        "dataType": "bool"
+      },
+      "ComponentID": {
+        "dataType": "uuid"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamComponentID": {
+        "dataType": "uuid",
+        "references": "Component"
+      }
+    },
+    "Filter": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "FilterID": {
+        "dataType": "uuid"
+      },
+      "From": {
+        "dataType": "string"
+      },
+      "FromSpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Hash": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "IncludeHidden": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ResourceType": {
+        "dataType": "string"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamFilterID": {
+        "dataType": "uuid",
+        "references": "Filter"
+      },
+      "Where": {
+        "dataType": "string"
+      },
+      "WhereData": {
+        "dataType": "string"
+      }
+    },
+    "FunctionOutput": {
+      "Description": {
+        "dataType": "string"
+      },
+      "OutputType": {
+        "dataType": "string"
+      },
+      "ResultName": {
+        "dataType": "string"
+      }
+    },
+    "FunctionSignature": {
+      "AttributeName": {
+        "dataType": "string"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "FunctionName": {
+        "dataType": "string"
+      },
+      "FunctionType": {
+        "dataType": "string"
+      },
+      "Hermetic": {
+        "dataType": "bool"
+      },
+      "Idempotent": {
+        "dataType": "bool"
+      },
+      "Mutating": {
+        "dataType": "bool"
+      },
+      "OutputInfo": {
+        "dataType": "uuid",
+        "references": "FunctionOutput"
+      },
+      "Replayable": {
+        "dataType": "bool"
+      },
+      "RequiredParameters": {
+        "dataType": "int"
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "Validating": {
+        "dataType": "bool"
+      },
+      "VarArgs": {
+        "dataType": "bool"
+      }
+    },
+    "Group": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "ExternalID": {
+        "dataType": "string"
+      },
+      "GroupID": {
+        "dataType": "uuid"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "Invocation": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker",
+        "expandable": true
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "FunctionInvocations": {
+        "dataType": "JSON"
+      },
+      "Hash": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "InvocationID": {
+        "dataType": "uuid"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Parameters": {
+        "dataType": "JSON"
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamInvocationID": {
+        "dataType": "uuid",
+        "references": "Invocation"
+      }
+    },
+    "Link": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "AutoUpdate": {
+        "dataType": "bool"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "Bindings": {
+        "dataType": "JSON"
+      },
+      "Clearance": {
+        "dataType": "JSON"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "DownstreamLastMergedRevisionNum": {
+        "dataType": "int"
+      },
+      "DownstreamPaths": {
+        "dataType": "JSON"
+      },
+      "DownstreamSetters": {
+        "dataType": "JSON"
+      },
+      "FromUnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "Guards": {
+        "dataType": "map[string]string"
+      },
+      "Hash": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "LinkID": {
+        "dataType": "uuid"
+      },
+      "ManualBindings": {
+        "dataType": "JSON"
+      },
+      "MergeEnableSubtraction": {
+        "dataType": "bool"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Protect": {
+        "dataType": "bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Squash": {
+        "dataType": "bool"
+      },
+      "Stale": {
+        "dataType": "bool"
+      },
+      "ToSpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "ToUnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "TransformInvocationID": {
+        "dataType": "uuid",
+        "references": "Invocation",
+        "expandable": true
+      },
+      "UpdateType": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamGetters": {
+        "dataType": "JSON"
+      },
+      "UpstreamLastMergedRevisionNum": {
+        "dataType": "int"
+      },
+      "UpstreamLinkID": {
+        "dataType": "uuid",
+        "references": "Link"
+      },
+      "UpstreamPaths": {
+        "dataType": "JSON"
+      },
+      "UpstreamSpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      }
+    },
+    "Mutation": {
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "FunctionInvocation.Arguments": {
+        "dataType": "JSON"
+      },
+      "FunctionInvocation.Clearance": {
+        "dataType": "JSON"
+      },
+      "FunctionInvocation.FunctionName": {
+        "dataType": "string"
+      },
+      "FunctionInvocation.Guards": {
+        "dataType": "map[string]string"
+      },
+      "FunctionInvocation.WhereResource": {
+        "dataType": "string"
+      },
+      "FunctionName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "InvocationID": {
+        "dataType": "uuid",
+        "references": "Invocation",
+        "expandable": true
+      },
+      "InvocationParams": {
+        "dataType": "JSON"
+      },
+      "LinkID": {
+        "dataType": "uuid",
+        "references": "Link",
+        "expandable": true
+      },
+      "MergeBaseRevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "MergeEndRevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "MergeSourceID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "MutationID": {
+        "dataType": "uuid"
+      },
+      "MutationNum": {
+        "dataType": "int"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "ReplayOutcome": {
+        "dataType": "string"
+      },
+      "ReplayReason": {
+        "dataType": "string"
+      },
+      "RestoredRevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "RevisionID": {
+        "dataType": "uuid",
+        "references": "Revision",
+        "expandable": true
+      },
+      "RevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Subgroup": {
+        "dataType": "string"
+      },
+      "TriggerID": {
+        "dataType": "uuid",
+        "references": "Trigger",
+        "expandable": true
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpgradedFromUpstreamRevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      }
+    },
+    "Organization": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "EmailDomain": {
+        "dataType": "string"
+      },
+      "ExternalID": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "OrganizationMember": {
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "ExternalID": {
+        "dataType": "uuid"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UserID": {
+        "dataType": "uuid"
+      },
+      "Username": {
+        "dataType": "string"
+      }
+    },
+    "QueuedOperation": {
+      "Action": {
+        "dataType": "string"
+      },
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DryRun": {
+        "dataType": "bool"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization"
+      },
+      "QueuedOperationID": {
+        "dataType": "uuid"
+      },
+      "RevisionNum": {
+        "dataType": "int"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      },
+      "Status": {
+        "dataType": "string"
+      },
+      "TargetID": {
+        "dataType": "uuid",
+        "references": "Target"
+      },
+      "UnitActionNum": {
+        "dataType": "int"
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      }
+    },
+    "Release": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ChangeOrderID": {
+        "dataType": "uuid",
+        "references": "ChangeOrder"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "Digest": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "ManifestDigest": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Published": {
+        "dataType": "bool"
+      },
+      "ReleaseID": {
+        "dataType": "uuid"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "TagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
+      },
+      "TargetID": {
+        "dataType": "uuid",
+        "references": "Target"
+      },
+      "UnitCount": {
+        "dataType": "int"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
+    "Resource": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "Data": {
+        "dataType": "JSON"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "ResourceID": {
+        "dataType": "uuid"
+      },
+      "ResourceIndex": {
+        "dataType": "int"
+      },
+      "ResourceName": {
+        "dataType": "string"
+      },
+      "ResourceType": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "TargetID": {
+        "dataType": "uuid",
+        "references": "Target",
+        "expandable": true
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "Revision": {
+      "ApplyGates": {
+        "dataType": "map[string]bool"
+      },
+      "ApplyWarnings": {
+        "dataType": "map[string]bool"
+      },
+      "Attestations": {
+        "dataType": "map[uuid]string",
+        "references": "Attestation",
+        "expandable": true
+      },
+      "ChangeOrders": {
+        "dataType": "map[uuid]string",
+        "references": "ChangeOrder",
+        "expandable": true
+      },
+      "ChangeSetID": {
+        "dataType": "uuid",
+        "references": "ChangeSet",
+        "expandable": true
+      },
+      "Conflicts": {
+        "dataType": "JSON"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DataHash": {
+        "dataType": "string"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "NeededPaths": {
+        "dataType": "JSON"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "ProvidedPaths": {
+        "dataType": "JSON"
+      },
+      "Releases": {
+        "dataType": "map[uuid]string",
+        "references": "Release",
+        "expandable": true
+      },
+      "RevisionID": {
+        "dataType": "uuid"
+      },
+      "RevisionNum": {
+        "dataType": "int"
+      },
+      "Source": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Tags": {
+        "dataType": "map[uuid]string",
+        "references": "Tag",
+        "expandable": true
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserAgent": {
+        "dataType": "string"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User",
+        "expandable": true
+      },
+      "ValidationErrors": {
+        "dataType": "map[string]bool"
+      },
+      "ValidationPassed": {
+        "dataType": "map[string]bool"
+      },
+      "ValidationTriggerIDs": {
+        "dataType": "map[string]uuid"
+      },
+      "ValidationWarnings": {
+        "dataType": "map[string]bool"
+      },
+      "ValueTriggerIDs": {
+        "dataType": "map[string]uuid"
+      },
+      "Values": {
+        "dataType": "map[string]string"
+      }
+    },
+    "Space": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "AttributeFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "AttributeHash": {
+        "dataType": "string"
+      },
+      "AttributeIDs": {
+        "dataType": "[]uuid",
+        "references": "Attribute",
+        "expandable": true
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "ComponentID": {
+        "dataType": "uuid",
+        "references": "Component",
+        "expandable": true
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ReleaseTargetID": {
+        "dataType": "uuid",
+        "references": "Target",
+        "expandable": true
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid"
+      },
+      "TriggerFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "TriggerHash": {
+        "dataType": "string"
+      },
+      "TriggerIDs": {
+        "dataType": "[]uuid",
+        "references": "Trigger",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamSpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      }
+    },
+    "Tag": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ChangeOrderID": {
+        "dataType": "uuid",
+        "references": "ChangeOrder"
+      },
+      "ChangeSetID": {
+        "dataType": "uuid",
+        "references": "ChangeSet",
+        "expandable": true
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ReleaseID": {
+        "dataType": "uuid",
+        "references": "Release"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "TagID": {
+        "dataType": "uuid"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "Target": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "Facts": {
+        "dataType": "map[string]string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "TargetID": {
+        "dataType": "uuid"
+      },
+      "TriggerFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "TriggerHash": {
+        "dataType": "string"
+      },
+      "TriggerIDs": {
+        "dataType": "[]uuid",
+        "references": "Trigger",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "Trigger": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "Arguments": {
+        "dataType": "JSON"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker",
+        "expandable": true
+      },
+      "Clearance": {
+        "dataType": "JSON"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "Description": {
+        "dataType": "string"
+      },
+      "Disabled": {
+        "dataType": "bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "Event": {
+        "dataType": "string"
+      },
+      "FunctionName": {
+        "dataType": "string"
+      },
+      "Guards": {
+        "dataType": "map[string]string"
+      },
+      "Hash": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "InvocationID": {
+        "dataType": "uuid",
+        "references": "Invocation",
+        "expandable": true
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "OtherDataSource": {
+        "dataType": "string"
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Protect": {
+        "dataType": "bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "TriggerID": {
+        "dataType": "uuid"
+      },
+      "UnitFilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamTriggerID": {
+        "dataType": "uuid",
+        "references": "Trigger"
+      },
+      "Validating": {
+        "dataType": "bool"
+      },
+      "Warn": {
+        "dataType": "bool"
+      },
+      "WhereResource": {
+        "dataType": "string"
+      },
+      "WhereUnit": {
+        "dataType": "string"
+      }
+    },
+    "Unit": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ApplyGates": {
+        "dataType": "map[string]bool"
+      },
+      "ApplyWarnings": {
+        "dataType": "map[string]bool"
+      },
+      "ChangeSetID": {
+        "dataType": "uuid",
+        "references": "ChangeSet",
+        "expandable": true
+      },
+      "Conflicts": {
+        "dataType": "JSON"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DataHash": {
+        "dataType": "string"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DestroyGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "FromLinkID": {
+        "dataType": "[]uuid",
+        "references": "Link",
+        "expandable": true
+      },
+      "HeadRevisionID": {
+        "dataType": "uuid"
+      },
+      "HeadRevisionNum": {
+        "dataType": "int",
+        "references": "Revision",
+        "expandable": true
+      },
+      "HeadUnitActionNum": {
+        "dataType": "int"
+      },
+      "HeadUnitEventNum": {
+        "dataType": "int"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "LastActionAt": {
+        "dataType": "time"
+      },
+      "LastChangeDescription": {
+        "dataType": "string"
+      },
+      "LastReleasedRevisionNum": {
+        "dataType": "int",
+        "references": "Revision",
+        "expandable": true
+      },
+      "NeededPaths": {
+        "dataType": "JSON"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ProvidedPaths": {
+        "dataType": "JSON"
+      },
+      "ProviderType": {
+        "dataType": "string"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "TargetID": {
+        "dataType": "uuid",
+        "references": "Target",
+        "expandable": true
+      },
+      "ToolchainType": {
+        "dataType": "string"
+      },
+      "UnitID": {
+        "dataType": "uuid"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamRevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "UpstreamSpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "UpstreamUnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "ValidationErrors": {
+        "dataType": "map[string]bool"
+      },
+      "ValidationTriggerIDs": {
+        "dataType": "map[string]uuid"
+      },
+      "ValidationWarnings": {
+        "dataType": "map[string]bool"
+      },
+      "ValueTriggerIDs": {
+        "dataType": "map[string]uuid"
+      },
+      "Values": {
+        "dataType": "map[string]string"
+      }
+    },
+    "UnitEvent": {
+      "Action": {
+        "dataType": "string"
+      },
+      "BridgeWorkerID": {
+        "dataType": "uuid",
+        "references": "BridgeWorker"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization"
+      },
+      "QueuedOperationID": {
+        "dataType": "uuid",
+        "references": "QueuedOperation"
+      },
+      "Result": {
+        "dataType": "string"
+      },
+      "RevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      },
+      "StartedAt": {
+        "dataType": "time"
+      },
+      "Status": {
+        "dataType": "string"
+      },
+      "TerminatedAt": {
+        "dataType": "time"
+      },
+      "UnitEventID": {
+        "dataType": "uuid"
+      },
+      "UnitEventNum": {
+        "dataType": "int"
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "User": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "ExternalID": {
+        "dataType": "uuid"
+      },
+      "GroupIDs": {
+        "dataType": "[]uuid",
+        "references": "Group"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid"
+      },
+      "Username": {
+        "dataType": "string"
+      }
+    },
+    "View": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
+      "Columns": {
+        "dataType": "JSON"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "FilterID": {
+        "dataType": "uuid",
+        "references": "Filter",
+        "expandable": true
+      },
+      "GroupBy": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "Of": {
+        "dataType": "string"
+      },
+      "OrderBy": {
+        "dataType": "string"
+      },
+      "OrderByDirection": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UpstreamViewID": {
+        "dataType": "uuid",
+        "references": "View"
+      },
+      "ViewID": {
+        "dataType": "uuid"
+      }
+    }
+  }
+}

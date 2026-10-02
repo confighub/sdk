@@ -133,6 +133,9 @@ Bulk Create Examples:
 	return getCommandHelp(baseHelp, "")
 }
 
+// changeworkflowCreateLists are the flags for the lists of the workflow being created.
+var changeworkflowCreateLists *changeWorkflowListFlags
+
 var changeworkflowCreateArgs struct {
 	// Single create specific flags
 	stages        []string
@@ -149,6 +152,7 @@ var changeworkflowCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(changeworkflowCreateCmd)
+	addFieldEditFlags(changeworkflowCreateCmd, "ChangeWorkflow")
 	enableCreatePermissionFlag(changeworkflowCreateCmd)
 	enableWhereFlag(changeworkflowCreateCmd)
 	enableFilterFlag(changeworkflowCreateCmd)
@@ -168,6 +172,7 @@ func init() {
 
 	addBackingUnitFlags(changeworkflowCreateCmd, "ChangeWorkflow", false, true)
 	addFromBackingUnitsFlags(changeworkflowCreateCmd, "ChangeWorkflow", true)
+	changeworkflowCreateLists = addChangeWorkflowListFlags(changeworkflowCreateCmd, &changeworkflowCreateArgs.stages)
 	changeworkflowCmd.AddCommand(changeworkflowCreateCmd)
 }
 
@@ -261,6 +266,11 @@ func changeworkflowCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// A single create builds the stages --stage names itself; the rest are edits of what it built.
+	if err := changeworkflowCreateLists.queue(false, nil); err != nil {
+		return err
+	}
+
 	if isBulkCreateMode {
 		return runBulkChangeWorkflowCreate()
 	}
@@ -316,6 +326,7 @@ func runSingleChangeWorkflowCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	if err := setAnnotations(&newBody.Annotations); err != nil {
 		return err
 	}
@@ -354,6 +365,9 @@ func runSingleChangeWorkflowCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("ChangeWorkflow", newBody); err != nil {
+		return err
+	}
 	changeWorkflowRes, err := cubClientNew.CreateChangeWorkflowWithResponse(ctx, spaceID, params, *newBody)
 	if cubapi.IsAPIError(err, changeWorkflowRes) {
 		return cubapi.InterpretErrorGeneric(err, changeWorkflowRes)
@@ -404,6 +418,7 @@ func runBulkChangeWorkflowCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

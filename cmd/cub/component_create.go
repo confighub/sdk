@@ -47,6 +47,7 @@ Examples:
 
 func init() {
 	addStandardCreateFlags(componentCreateCmd)
+	addFieldEditFlags(componentCreateCmd, "Component")
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions and releases may use (can be repeated or comma-separated)")
 	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
@@ -102,6 +103,7 @@ func componentCreateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	if err := setAnnotations(&newBody.Annotations); err != nil {
 		return err
 	}
@@ -144,6 +146,9 @@ func componentCreateCmdRun(cmd *cobra.Command, args []string) error {
 		params.AllowExists = &allowExistsStr
 	}
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Component", newBody); err != nil {
+		return err
+	}
 	componentRes, err := cubClientNew.CreateComponentWithResponse(ctx, params, *newBody)
 	if cubapi.IsAPIError(err, componentRes) {
 		return cubapi.InterpretErrorGeneric(err, componentRes)

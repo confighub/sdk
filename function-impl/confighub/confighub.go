@@ -26,6 +26,9 @@ func attributeDescriptors() map[api.AttributeName]yamlkit.AttributeDescriptor {
 		// path, read by vet-immutable -- so it has no getter, no setter, and a data type that
 		// admits anything.
 		cubkit.AttributeNameImmutable: {DataType: api.DataTypeYAML},
+		// A where expression is a string. vet-where-expressions reads the type each path selects
+		// from the specs, since the registry has nowhere to keep it.
+		cubkit.AttributeNameWhereExpression: {DataType: api.DataTypeString},
 	}
 }
 

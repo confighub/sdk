@@ -139,6 +139,18 @@ type AttributePath struct {
 	// matching property on the target's name, which is what lets matching tell two same-named
 	// targets in different scopes apart.
 	TargetScope string `json:"targetScope,omitempty"`
+
+	// Selects is the resource type an expression at this path selects, for a path that holds a
+	// selector rather than a value: a ConfigHub Space's WhereTrigger selects Triggers, as a
+	// Kubernetes label selector selects pods. It is "@<field>" for a path whose type is named
+	// by a sibling field, relative to the object holding the path: a ConfigHub Filter's Where
+	// selects what its From names, so it is "@From". Unlike Target it names nothing to resolve,
+	// so a selector is not a reference.
+	Selects string `json:"selects,omitempty"`
+
+	// Prefixes says the expression may name attributes of what the selected type's references
+	// name, by prefix: a ConfigHub Filter of Units may say UpstreamUnit.Slug.
+	Prefixes bool `json:"prefixes,omitempty"`
 }
 
 // ShapeEmbed places a shape at a path within a type or another shape. Shape is the shape's
@@ -444,6 +456,14 @@ func (c *CompiledSpecs) addDeclaration(
 						"it is relative to the object holding the reference, so it names one field of that object",
 						attributeName, attributePath.Path, attributePath.TargetScope)
 				}
+			}
+			if attributePath.Selects != "" && attributePath.Target != "" {
+				return fmt.Errorf("attribute %q path %q declares both selects and target; "+
+					"a path holds either a selector or a reference", attributeName, attributePath.Path)
+			}
+			if attributePath.Prefixes && attributePath.Selects == "" {
+				return fmt.Errorf("attribute %q path %q declares prefixes without selects; "+
+					"only a selector can name what its selected type refers to", attributeName, attributePath.Path)
 			}
 			attributePath.Path = JoinRelativePath(prefix, attributePath.Path)
 			c.attributes[key][attributeName] = append(c.attributes[key][attributeName], attributePath)
@@ -777,9 +797,9 @@ func (c *CompiledSpecs) RenderStructure(toolchainType workerapi.ToolchainType) s
 // handed straight to a visitor -- is covered by no other capture.
 func (c *CompiledSpecs) RenderAttributes(toolchainType workerapi.ToolchainType) string {
 	var b strings.Builder
-	// A target is written only where there is one, so that adding references to a type leaves
-	// every line that has none untouched in the capture.
-	b.WriteString("# declared attributes: resourceType\tattributeName\tpath\tdataType[\ttarget]\n")
+	// A target or a selected type is written only where there is one, so that adding references
+	// or selectors to a type leaves every line that has none untouched in the capture.
+	b.WriteString("# declared attributes: resourceType\tattributeName\tpath\tdataType[\ttarget][\tselects=type[,prefixes]]\n")
 	for _, rt := range resourceTypesFor(toolchainType, c.attributes) {
 		byAttribute := c.attributes[specKey{toolchainType, rt}]
 		for _, attributeName := range sortedAttributeNames(byAttribute) {
@@ -794,6 +814,12 @@ func (c *CompiledSpecs) RenderAttributes(toolchainType workerapi.ToolchainType) 
 				fmt.Fprintf(&b, "attribute\t%s\t%s\t%s\t%s", rt, attributeName, path.Path, path.DataType)
 				if path.Target != "" {
 					fmt.Fprintf(&b, "\t%s", path.Target)
+				}
+				if path.Selects != "" {
+					fmt.Fprintf(&b, "\tselects=%s", path.Selects)
+					if path.Prefixes {
+						b.WriteString(",prefixes")
+					}
 				}
 				b.WriteString("\n")
 			}

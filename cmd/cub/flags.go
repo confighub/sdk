@@ -82,6 +82,11 @@ func dryRunParam() *bool {
 // permissionFlag is --permission for the commands that declare no flag of their own for it;
 // space, component, target and worker do.
 var permissionFlag []string
+var displayNameFlag string
+var hiddenReasonFlag string
+
+// clearFlagValue is what a flag is given to clear the field it sets.
+const clearFlagValue = "-"
 
 func enableCreatePermissionFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
@@ -89,6 +94,65 @@ func enableCreatePermissionFlag(cmd *cobra.Command) {
 
 func enableUpdatePermissionFlag(cmd *cobra.Command) {
 	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+}
+
+func enableDisplayNameFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&displayNameFlag, "display-name", "", "friendly name for the entity, which need not be unique or URL-safe; an entity without one is shown by its slug")
+}
+
+func enableHiddenReasonFlag(cmd *cobra.Command) {
+	cmd.Flags().StringVar(&hiddenReasonFlag, "hidden-reason", "", "hide the entity, giving the reason as a name such as Archived: lists and bulk operations leave it out unless --include-hidden names the reason (use '-' to clear, which shows the entity again)")
+}
+
+// setDisplayNameAndHiddenReason applies --display-name and --hidden-reason to an entity that is
+// written whole. A patch gets them from BuildPatchDataWithPermissions instead.
+func setDisplayNameAndHiddenReason(displayName, hiddenReason *string) {
+	if displayNameFlag != "" {
+		*displayName = displayNameFlag
+	}
+	setHiddenReason(hiddenReason)
+}
+
+func setHiddenReason(hiddenReason *string) {
+	switch hiddenReasonFlag {
+	case "":
+	case clearFlagValue:
+		*hiddenReason = ""
+	default:
+		*hiddenReason = hiddenReasonFlag
+	}
+}
+
+// hasMetadataFlags reports whether --annotation, --display-name, --hidden-reason, --set, --unset
+// or a flag that is shorthand for those was given, for a command that refuses a patch nothing
+// would be in.
+func hasMetadataFlags() bool {
+	return len(annotation) > 0 || displayNameFlag != "" || hiddenReasonFlag != "" ||
+		len(setFlags) > 0 || len(unsetFlags) > 0 || len(pendingFieldEdits) > 0
+}
+
+// withDisplayNameAndHiddenReason adds --display-name and --hidden-reason to what enhancer puts in
+// a patch. It returns enhancer itself, which may be nil, when neither flag was given, so that a
+// patch nothing else adds to is left as it was read.
+func withDisplayNameAndHiddenReason(enhancer PatchEnhancer) PatchEnhancer {
+	if displayNameFlag == "" && hiddenReasonFlag == "" {
+		return enhancer
+	}
+	return func(patchMap map[string]interface{}) {
+		if enhancer != nil {
+			enhancer(patchMap)
+		}
+		if displayNameFlag != "" {
+			patchMap["DisplayName"] = displayNameFlag
+		}
+		switch hiddenReasonFlag {
+		case "":
+		case clearFlagValue:
+			patchMap["HiddenReason"] = ""
+		default:
+			patchMap["HiddenReason"] = hiddenReasonFlag
+		}
+	}
 }
 
 func enableDeleteGateFlag(cmd *cobra.Command) {
@@ -345,6 +409,8 @@ func addStandardListFlags(cmd *cobra.Command) {
 func addStandardCreateFlags(cmd *cobra.Command) {
 	addCreateFlagsWithoutDryRun(cmd)
 	enableDryRunFlag(cmd)
+	enableDisplayNameFlag(cmd)
+	enableHiddenReasonFlag(cmd)
 }
 
 // addCreateFlagsWithoutDryRun is addStandardCreateFlags for a create the identity provider holds,
@@ -365,6 +431,13 @@ func addStandardGetFlags(cmd *cobra.Command) {
 }
 
 func addStandardUpdateFlags(cmd *cobra.Command) {
+	addUpdateFlagsWithoutDisplayName(cmd)
+	enableDisplayNameFlag(cmd)
+}
+
+// addUpdateFlagsWithoutDisplayName is addStandardUpdateFlags for an entity with no DisplayName.
+func addUpdateFlagsWithoutDisplayName(cmd *cobra.Command) {
+	enableHiddenReasonFlag(cmd)
 	enableAnnotationFlag(cmd)
 	enableLabelFlag(cmd)
 	enableDeleteGateFlag(cmd)

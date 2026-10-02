@@ -15,6 +15,9 @@ import (
 
 func registerStandardFunctions(fh handler.FunctionRegistry, rp *cubkit.ConfigHubResourceProviderType) {
 	generic.RegisterStandardFunctions(fh, rp, rp)
+	registerMetadataFunctions(fh, rp)
+	registerSchemaFunctions(fh, rp)
+	registerWhereFunctions(fh, rp)
 }
 
 func initStandardFunctions(rp *cubkit.ConfigHubResourceProviderType) {
@@ -39,4 +42,6 @@ func initStandardFunctions(rp *cubkit.ConfigHubResourceProviderType) {
 			false, false,
 		)
 	}
+	initMetadataFunctions(rp)
+	initReferenceFunctions(rp)
 }

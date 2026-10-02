@@ -92,6 +92,7 @@ func targetCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	setDisplayNameAndHiddenReason(&newTarget.DisplayName, &newTarget.HiddenReason)
 	err := setAnnotations(&newTarget.Annotations)
 	if err != nil {
 		return err

@@ -29,7 +29,7 @@ func init() {
 }
 
 func groupGetCmdRun(cmd *cobra.Command, args []string) error {
-	extendedGroup, err := resolveGroup(args[0], "")
+	extendedGroup, err := resolveGroup(args[0], selectFields)
 	if err != nil {
 		return err
 	}

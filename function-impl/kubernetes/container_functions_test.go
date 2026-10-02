@@ -340,7 +340,7 @@ spec:
 			docs, err := gaby.ParseAll([]byte(tc.yamlFixture))
 			assert.NoError(t, err)
 
-			newYaml, _, err := setImageHandler(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs(tc.args)})
+			newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-image")(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs(tc.args)})
 			assert.NoError(t, err)
 			assert.Contains(t, newYaml.String(), tc.expectedImage)
 		})
@@ -374,7 +374,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageReferenceHandler(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs([]string{"example-container", ":1.15.0"})})
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-image-reference")(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs([]string{"example-container", ":1.15.0"})})
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "nginx:1.15.0")
 }
@@ -406,7 +406,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageUriHandler(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs([]string{"example-container", "nginx-plus"})})
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-repository-uri")(handler.FunctionImplementationArguments{FunctionContext: &fakeContext, ParsedData: docs, Arguments: stringArgsToFunctionArgs([]string{"example-container", "nginx-plus"})})
 	assert.NoError(t, err)
 	assert.Contains(t, newYaml.String(), "nginx-plus:1.14.2")
 }
@@ -433,7 +433,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageRegistryByRegistryHandler(handler.FunctionImplementationArguments{
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-image-registry-by-registry")(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
 		ParsedData:      docs,
 		Arguments:       stringArgsToFunctionArgs([]string{"", "us-central1-docker.pkg.dev/google-samples/microservices-demo"}),
@@ -467,7 +467,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setImageRegistryByRegistryHandler(handler.FunctionImplementationArguments{
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-image-registry-by-registry")(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
 		ParsedData:      docs,
 		Arguments:       stringArgsToFunctionArgs([]string{"", "us-central1-docker.pkg.dev/google-samples/microservices-demo", "server"}),
@@ -762,7 +762,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-flag")(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
 		ParsedData:      docs,
 		Arguments:       stringArgsToFunctionArgs([]string{"my-app", "port", "9090"}),
@@ -793,7 +793,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(yamlFixture))
 	assert.NoError(t, err)
 
-	newYaml, _, err := setContainerFlagHandler(handler.FunctionImplementationArguments{
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-flag")(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
 		ParsedData:      docs,
 		Arguments:       stringArgsToFunctionArgs([]string{"traefik", "entryPoints.web.address", ":9000/tcp"}),
@@ -828,7 +828,7 @@ spec:
 	docs, err := gaby.ParseAll([]byte(runnerSet))
 	require.NoError(t, err)
 
-	newYaml, _, err := setImageHandler(handler.FunctionImplementationArguments{
+	newYaml, _, err := testFunctionHandler.GetHandlerImplementation("set-container-image")(handler.FunctionImplementationArguments{
 		FunctionContext: &fakeContext,
 		ParsedData:      docs,
 		Arguments:       stringArgsToFunctionArgs([]string{"runner", "ghcr.io/actions/runner:2.999.0"}),

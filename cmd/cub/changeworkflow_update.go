@@ -26,9 +26,25 @@ under the edited rules, create a new change order for it.
 
 Single change workflow update:
 `+"```"+`
-  # Replace the stages with the ones named, gating each of them alike
+  # Name the stages and gate each of them alike. A stage the workflow already has keeps its
+  # other fields; one it does not have is added, and one not named is removed
   cub changeworkflow update --space workflows myapp-main-line \
     --stage dev --stage staging --stage prod --prerequisites Released
+
+  # Change one stage: which spaces it selects, and what gates entry to it
+  cub changeworkflow update --space workflows myapp-main-line \
+    --stage-where-space "prod=Labels.Stage = 'prod' AND Labels.Region = 'us-east1'" \
+    --stage-prerequisites 'prod=Released;Healthy;two-approvers'
+
+  # Declare an attestation prerequisite and a custom one, and require them at the end
+  cub changeworkflow update --space workflows myapp-main-line \
+    --attestation-prerequisite two-approvers --attestation-prerequisite-count two-approvers=2 \
+    --custom-prerequisite "code-freeze=cel:Space.Annotations['code-freeze'] != 'true'" \
+    --final-prerequisites 'Released;Healthy'
+
+  # Set any field by its path
+  cub changeworkflow update --space workflows myapp-main-line \
+    --set "Stages.?Name=prod.ReleasePrerequisites=release-manager"
 
   # Replace the whole workflow from a file
   cub changeworkflow update --space workflows myapp-main-line --filename workflow.yaml
@@ -57,6 +73,8 @@ Examples:
 var (
 	changeworkflowPatch       bool
 	changeworkflowIdentifiers []string
+	// changeworkflowUpdateLists are the flags for the lists of the workflow being updated.
+	changeworkflowUpdateLists *changeWorkflowListFlags
 	changeworkflowUpdateArgs  struct {
 		stages        []string
 		prerequisites []string
@@ -65,6 +83,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(changeworkflowUpdateCmd)
+	addFieldEditFlags(changeworkflowUpdateCmd, "ChangeWorkflow")
 	enableUpdatePermissionFlag(changeworkflowUpdateCmd)
 	changeworkflowUpdateCmd.Flags().BoolVar(&changeworkflowPatch, "patch", false, "use patch API for individual or bulk operations")
 	enableWhereFlag(changeworkflowUpdateCmd)
@@ -72,11 +91,12 @@ func init() {
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowIdentifiers, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
-	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.stages, "stage", nil, "replace the stages with the ones named (can be repeated or comma-separated), given in the order a change is promoted through them")
+	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. The ones named are the stages the workflow has: one it had before keeps its other fields, one it did not have selects the Spaces labeled with its name, and one not named is removed. With --patch the stages are replaced whole")
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated); requires --stage")
 
 	addBackingUnitFlags(changeworkflowUpdateCmd, "ChangeWorkflow", false, false)
 	addFromBackingUnitsFlags(changeworkflowUpdateCmd, "ChangeWorkflow", false)
+	changeworkflowUpdateLists = addChangeWorkflowListFlags(changeworkflowUpdateCmd, &changeworkflowUpdateArgs.stages)
 	changeworkflowCmd.AddCommand(changeworkflowUpdateCmd)
 }
 
@@ -201,6 +221,12 @@ func runBulkChangeWorkflowUpdate() error {
 func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkChangeWorkflowConflictingArgs(args)
 
+	// An update that writes the workflow whole keeps what each stage it names again has. A patch
+	// replaces the stages, since it cannot merge a list, and can change no one element.
+	if err := changeworkflowUpdateLists.queue(!isBulkPatchMode && !changeworkflowPatch, changeworkflowUpdateArgs.prerequisites); err != nil {
+		return err
+	}
+
 	if isBulkPatchMode {
 		return runBulkChangeWorkflowUpdate()
 	}
@@ -279,6 +305,10 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentChangeWorkflow.ChangeWorkflowID = existingChangeWorkflow.ChangeWorkflowID
 		currentChangeWorkflow.Slug = existingChangeWorkflow.Slug
 	}
+	setDisplayNameAndHiddenReason(&currentChangeWorkflow.DisplayName, &currentChangeWorkflow.HiddenReason)
+	if err := setDeleteGates(&currentChangeWorkflow.DeleteGates); err != nil {
+		return err
+	}
 	if err := setAnnotations(&currentChangeWorkflow.Annotations); err != nil {
 		return err
 	}
@@ -292,15 +322,9 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// If this was set from stdin, it will be overridden
 	currentChangeWorkflow.SpaceID = spaceID
 
-	if len(changeworkflowUpdateArgs.stages) > 0 {
-		stages, final, err := changeWorkflowStagesFromUpdateFlags()
-		if err != nil {
-			return err
-		}
-		currentChangeWorkflow.Stages = stages
-		currentChangeWorkflow.Final = final
+	if err := applyFieldEdits("ChangeWorkflow", currentChangeWorkflow); err != nil {
+		return err
 	}
-
 	changeWorkflowRes, err := cubClientNew.UpdateChangeWorkflowWithResponse(ctx, spaceID,
 		currentChangeWorkflow.ChangeWorkflowID, &goclientnew.UpdateChangeWorkflowParams{DryRun: dryRunParam()}, *currentChangeWorkflow)
 	if cubapi.IsAPIError(err, changeWorkflowRes) {

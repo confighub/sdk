@@ -146,6 +146,7 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTarget.Target.TargetID = existingTarget.TargetID
 	}
 
+	setDisplayNameAndHiddenReason(&currentTarget.Target.DisplayName, &currentTarget.Target.HiddenReason)
 	err = setAnnotations(&currentTarget.Target.Annotations)
 	if err != nil {
 		return err

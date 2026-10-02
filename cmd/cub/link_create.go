@@ -59,6 +59,23 @@ Single Link Examples:
 
   # Create a link between a cloned unit and a namespace
   cub link create --space my-space --json clone-to-ns my-clone my-ns --wait
+
+  # Roll a workload when its ConfigMap changes: hash the ConfigMap's data, and write the hash
+  # to an annotation of the pod template. A place in a unit is <resource-type>:<resource-name>:<path>
+  cub link create --space my-space config-hash my-deployment my-configmap \
+    --update-type TransformPaths --auto-update \
+    --upstream-getter 'configHash=get-hash data' \
+    --downstream-path 'apps/v1/Deployment:default/web:spec.template.metadata.annotations.confighub~1com/Hash={{.Params.configHash}}'
+
+  # Copy a value from the upstream unit, as an integer computed with CEL
+  cub link create --space my-space replicas my-canary my-deployment --update-type TransformPaths \
+    --upstream-path 'replicas=apps/v1/Deployment:default/web:spec.replicas' \
+    --downstream-path 'apps/v1/Deployment:default/web-canary:spec.replicas=int:cel:params.replicas / 10'
+
+  # State the binding of a NeedsProvides link: where the downstream unit needs a value, then
+  # where the upstream unit provides it
+  cub link create --space my-space subnet-to-rt subnet route-table --auto-update \
+    --manual-binding 'example.com/v1/Subnet:/public-2:spec.routeTableRef.name=example.com/v1/RouteTable:/public-rt:metadata.name'
 `+"```"+`
 
 Bulk Create (Copy) Examples:
@@ -83,8 +100,10 @@ Bulk Create (Copy) Examples:
 
 func init() {
 	addStandardCreateFlags(linkCreateCmd)
+	addFieldEditFlags(linkCreateCmd, "Link")
 	enableCreatePermissionFlag(linkCreateCmd)
 	enableWaitFlag(linkCreateCmd)
+	addLinkUpdateTypeFlag(linkCreateCmd)
 	addLinkFieldFlags(linkCreateCmd)
 
 	// Bulk create specific flags
@@ -186,6 +205,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newLink.DisplayName, &newLink.HiddenReason)
 	err := setAnnotations(&newLink.Annotations)
 	if err != nil {
 		return err
@@ -253,6 +273,9 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Link", newLink); err != nil {
+		return err
+	}
 	linkRes, err := cubClientNew.CreateLinkWithResponse(ctx, uuid.MustParse(selectedSpaceID), params, *newLink)
 	if cubapi.IsAPIError(err, linkRes) {
 		return cubapi.InterpretErrorGeneric(err, linkRes)
@@ -328,6 +351,7 @@ func runLinkCreateFromBackingUnits(cmd *cobra.Command) error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if allowExists {
 		s := "true"
 		params.AllowExists = &s

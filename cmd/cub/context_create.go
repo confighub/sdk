@@ -34,7 +34,7 @@ Examples:
 
   # A context whose web UI is served apart from the server
   cub context create hub-next --server=https://hub.confighub.com \
-    --ui-url=https://ui-next.testhub.confighub.net
+    --ui-url=https://ui.example.com
 `+"```"+`
 `, ""),
 	Args: cobra.RangeArgs(0, 1),

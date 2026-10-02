@@ -26,11 +26,18 @@ Examples:
   cub group list -o json
 
   # List your groups with custom JQ filter
-  cub group list -o jq='.[].GroupID'
+  cub group list -o jq='.[].Group.GroupID'
 `+"```"+`
 `, ""),
 	RunE: groupListCmdRun,
 }
+
+// Default columns to display when no custom columns are specified
+var defaultGroupColumns = []string{"Group.GroupID", "Group.ExternalID", "Group.DisplayName", "Group.Slug"}
+
+// groupBaseSelectFields are the fields always returned by group list queries. Slug is among
+// them because it is what names a group, in -o name and to group get.
+var groupBaseSelectFields = []string{"Slug", "GroupID"}
 
 // Group-specific aliases
 var groupAliases = map[string]string{
@@ -38,14 +45,26 @@ var groupAliases = map[string]string{
 	"ID":   "Group.GroupID",
 }
 
+// Group custom column dependencies
+var groupCustomColumnDependencies = map[string][]string{}
+
 func init() {
 	addStandardListFlags(groupListCmd)
 	groupCmd.AddCommand(groupListCmd)
 }
 
 func groupListCmdRun(cmd *cobra.Command, args []string) error {
+	filterID, err := parseFilterFlag(filter)
+	if err != nil {
+		return err
+	}
+
+	selectValue := handleSelectParameter(selectFields, selectFields, func() string {
+		return buildSelectList("Group", listColumnsFor("cub group list"), "", defaultGroupColumns, groupAliases, groupCustomColumnDependencies, groupBaseSelectFields)
+	})
 	groups, err := cubapi.ListGroups(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
-		Filter:        filter,
+		Select:        cubapi.SelectFields(selectValue),
+		Filter:        filterID,
 		Contains:      contains,
 		IncludeHidden: includeHidden,
 	})

@@ -53,6 +53,7 @@ With no name, --patch updates every component --where selects.
 
 func init() {
 	addStandardUpdateFlags(componentUpdateCmd)
+	addFieldEditFlags(componentUpdateCmd, "Component")
 	componentUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, to allow, or -<ChangeWorkflow> to stop allowing (can be repeated or comma-separated)")
@@ -139,6 +140,7 @@ func componentUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		newBody.OrganizationID = currentComponent.OrganizationID
 		newBody.ComponentID = currentComponent.ComponentID
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	if err := setAnnotations(&newBody.Annotations); err != nil {
 		return err
 	}
@@ -158,6 +160,9 @@ func componentUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		newBody.ChangeWorkflowRequired = componentUpdateArgs.changeWorkflowRequired
 	}
 
+	if err := applyFieldEdits("Component", newBody); err != nil {
+		return err
+	}
 	componentRes, err := cubClientNew.UpdateComponentWithResponse(ctx, componentID, &goclientnew.UpdateComponentParams{DryRun: dryRunParam()}, *newBody)
 	if cubapi.IsAPIError(err, componentRes) {
 		return cubapi.InterpretErrorGeneric(err, componentRes)

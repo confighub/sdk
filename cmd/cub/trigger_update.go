@@ -78,6 +78,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(triggerUpdateCmd)
+	addFieldEditFlags(triggerUpdateCmd, "Trigger")
 	enableUpdatePermissionFlag(triggerUpdateCmd)
 	triggerUpdateCmd.Flags().BoolVar(&disableTrigger, "disable", false, "Disable trigger")
 	triggerUpdateCmd.Flags().BoolVar(&enableTrigger, "enable", false, "Enable trigger (use with --patch for bulk)")
@@ -94,7 +95,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringSliceVar(&triggerIdentifiers, "trigger", []string{}, "target specific triggers by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	triggerUpdateCmd.Flags().StringVar(&invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
 	triggerUpdateCmd.Flags().StringVar(&triggerDescription, "description", "", "description explaining the trigger's purpose and how to fix failures")
-	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit)")
+	triggerUpdateCmd.Flags().StringVar(&triggerWhereUnit, "where-unit-field", "", "filter expression to restrict which Units this trigger applies to (its WhereUnit). It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\"")
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
@@ -477,6 +478,10 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTrigger.Trigger.SpaceID = existingTrigger.SpaceID
 		currentTrigger.Trigger.TriggerID = existingTrigger.TriggerID
 	}
+	setDisplayNameAndHiddenReason(&currentTrigger.Trigger.DisplayName, &currentTrigger.Trigger.HiddenReason)
+	if err := setDeleteGates(&currentTrigger.Trigger.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentTrigger.Trigger.Annotations)
 	if err != nil {
 		return err
@@ -576,6 +581,9 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("invalid --fail-open-after duration: %w", err)
 		}
 		currentTrigger.Trigger.FailOpenAfter = int(duration)
+	}
+	if err := applyFieldEdits("Trigger", currentTrigger.Trigger); err != nil {
+		return err
 	}
 	triggerRes, err := cubClientNew.UpdateTriggerWithResponse(ctx, spaceID, currentTrigger.Trigger.TriggerID, &goclientnew.UpdateTriggerParams{DryRun: dryRunParam()}, *currentTrigger.Trigger)
 	if cubapi.IsAPIError(err, triggerRes) {

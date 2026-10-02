@@ -53,6 +53,8 @@ var (
 
 func init() {
 	addStandardUpdateFlags(attributeUpdateCmd)
+	addFieldEditFlags(attributeUpdateCmd, "Attribute")
+	addAttributeParameterFlag(attributeUpdateCmd)
 	enableUpdatePermissionFlag(attributeUpdateCmd)
 	attributeUpdateCmd.Flags().StringVar(&attributeDescription, "description", "", "Description for the attribute")
 	attributeUpdateCmd.Flags().BoolVar(&attributePatch, "patch", false, "use patch API for individual or bulk operations")
@@ -162,6 +164,10 @@ func runBulkAttributeUpdate() error {
 func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkAttributeUpdateConflictingArgs(args)
 
+	if err := queueAttributeParameterEdits(); err != nil {
+		return err
+	}
+
 	if isBulkPatchMode {
 		return runBulkAttributeUpdate()
 	}
@@ -211,6 +217,10 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentAttr.Attribute.SpaceID = existingAttr.SpaceID
 		currentAttr.Attribute.AttributeID = existingAttr.AttributeID
 	}
+	setDisplayNameAndHiddenReason(&currentAttr.Attribute.DisplayName, &currentAttr.Attribute.HiddenReason)
+	if err := setDeleteGates(&currentAttr.Attribute.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentAttr.Attribute.Annotations)
 	if err != nil {
 		return err
@@ -229,6 +239,9 @@ func attributeUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentAttr.Attribute.Description = attributeDescription
 	}
 
+	if err := applyFieldEdits("Attribute", currentAttr.Attribute); err != nil {
+		return err
+	}
 	attrRes, err := cubClientNew.UpdateAttributeWithResponse(ctx, spaceID, currentAttr.Attribute.AttributeID, &goclientnew.UpdateAttributeParams{DryRun: dryRunParam()}, *currentAttr.Attribute)
 	if cubapi.IsAPIError(err, attrRes) {
 		return cubapi.InterpretErrorGeneric(err, attrRes)

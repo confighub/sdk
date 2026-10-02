@@ -92,6 +92,8 @@ const (
 	AttributeNameHostname                = AttributeName("hostname")
 	AttributeNameDomain                  = AttributeName("domain")
 	AttributeNameSubdomain               = AttributeName("subdomain")
+	AttributeNameLabelValue              = AttributeName("label-value")
+	AttributeNameAnnotationValue         = AttributeName("annotation-value")
 )
 
 // PropertyKeyResourceType is the needs/provides property naming the resource type a reference

@@ -15,6 +15,8 @@ import (
 
 var variantCreateArgs struct {
 	target           string
+	releaseTarget    string
+	permissions      []string
 	spacePattern     string
 	stage            string
 	environment      string
@@ -82,6 +84,10 @@ Metadata flags are split by what they target, space vs. unit, as on "cub variant
   --unit-delete-gate / --unit-destroy-gate   copied values. Destroy gates are unit-only (spaces have
                                              no destroy gates). Use --unit-delete-gate critical to
                                              protect a prod variant's units.
+  --permission                               add to, or with a leading "-" remove from, the
+                                             permissions copied from the upstream space.
+  --release-target                           the new space's release Target, which its units take;
+                                             --target sets it too, so use one or the other.
   --change-desc / --changeset                describe the clones' first revision and put the clones
                                              in a changeset (<space>/<slug> names one in another
                                              space).
@@ -165,6 +171,9 @@ func init() {
 	enableAllowExistsFlag(variantCreateCmd)
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.spacePattern, "space-pattern", "", "a pattern string for the new space's slug, prefix 'template:' to use a Go template with .SourceEntitySlug for the upstream slug, .Component for the cloned space's Component, and .Labels for the cloned space's labels; defaults to 'template:{{.Component.Slug}}-{{.Labels.Variant}}' when the cloned space has a Component")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.target, "target", "", "target for the cloned units, in <target-slug> or <space-slug>/<target-slug> form; also sets the TargetID annotation on the new space, and for an OCI target the new space's ReleaseTargetID (required by 'cub release publish')")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.releaseTarget, "release-target", "", "Target to use as the new space's release Target, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted). The cloned units that are released through a Target take it as theirs. --target sets the same Target on the space and the units and also records it in the space's TargetID annotation, so the two flags cannot be combined")
+	variantCreateCmd.MarkFlagsMutuallyExclusive("target", "release-target")
+	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.permissions, "permission", []string{}, "permission on the new space in format Action:UserIDOrUsername to add to those copied from the upstream space, or -Action:UserIDOrUsername to remove one of them (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.stage, "stage", "", "set the \"Stage\" label on the new space (example: \"Canary\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.environment, "environment", "", "set the \"Environment\" label on the new space (example: \"Prod\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.region, "region", "", "set the \"Region\" label on the new space (example: \"us-east2\")")
@@ -224,6 +233,8 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Step 2: resolve the target (if specified) and set it as the new space's ReleaseTargetID:
 	// releases are published per space ("cub release publish <space>"), and publish requires it.
+	// --release-target sets the same field and leaves the units to the server, which gives a
+	// space's release Target to the units released through one.
 	// Resolved after the space exists so that <new-space-slug>/<target-slug> can be used.
 	var targetID *uuid.UUID
 	var target *goclientnew.Target
@@ -233,8 +244,17 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 			return err
 		}
 		targetID = &target.TargetID
-
-		if err := patchVariantSpaceTarget(newSpace.SpaceID, target.TargetID); err != nil {
+	}
+	releaseTargetID := targetID
+	if variantCreateArgs.releaseTarget != "" {
+		id, err := resolveTargetID(variantCreateArgs.releaseTarget)
+		if err != nil {
+			return err
+		}
+		releaseTargetID = &id
+	}
+	if releaseTargetID != nil {
+		if err := patchVariantSpaceTarget(newSpace.SpaceID, *releaseTargetID); err != nil {
 			return err
 		}
 	}
@@ -386,7 +406,7 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 	annotations := append([]string{}, variantCreateArgs.spaceAnnotations...)
 	annotations = append(annotations, AnnotationUpstreamSpaceID+"="+upstreamSpaceID.String())
 	patchJSON, err := EnhancePatchData([]byte("null"),
-		annotations, variantCreateArgs.spaceLabels, variantCreateArgs.spaceDeleteGates, nil, nil)
+		annotations, variantCreateArgs.spaceLabels, variantCreateArgs.spaceDeleteGates, variantCreateArgs.permissions, nil)
 	if err != nil {
 		return nil, err
 	}

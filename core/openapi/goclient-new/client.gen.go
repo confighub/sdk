@@ -294,11 +294,17 @@ type ClientInterface interface {
 
 	InvokeFunctionsOnOrg(ctx context.Context, params *InvokeFunctionsOnOrgParams, body InvokeFunctionsOnOrgJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ListExtendedGroups request
-	ListExtendedGroups(ctx context.Context, params *ListExtendedGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// ListGroups request
+	ListGroups(ctx context.Context, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// GetExtendedGroup request
-	GetExtendedGroup(ctx context.Context, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// GetGroup request
+	GetGroup(ctx context.Context, groupId openapi_types.UUID, params *GetGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveGroupBotUser request
+	RemoveGroupBotUser(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddGroupBotUser request
+	AddGroupBotUser(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ApiInfo request
 	ApiInfo(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -1992,8 +1998,8 @@ func (c *Client) InvokeFunctionsOnOrg(ctx context.Context, params *InvokeFunctio
 	return c.Client.Do(req)
 }
 
-func (c *Client) ListExtendedGroups(ctx context.Context, params *ListExtendedGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewListExtendedGroupsRequest(c.Server, params)
+func (c *Client) ListGroups(ctx context.Context, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListGroupsRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -2004,8 +2010,32 @@ func (c *Client) ListExtendedGroups(ctx context.Context, params *ListExtendedGro
 	return c.Client.Do(req)
 }
 
-func (c *Client) GetExtendedGroup(ctx context.Context, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewGetExtendedGroupRequest(c.Server, groupId)
+func (c *Client) GetGroup(ctx context.Context, groupId openapi_types.UUID, params *GetGroupParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGroupRequest(c.Server, groupId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) RemoveGroupBotUser(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveGroupBotUserRequest(c.Server, groupId, userId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AddGroupBotUser(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddGroupBotUserRequest(c.Server, groupId, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -6399,6 +6429,22 @@ func NewBulkCreateSpacesRequestWithBody(server string, params *BulkCreateSpacesP
 
 		}
 
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -7263,6 +7309,22 @@ func NewBulkCreateAttributesRequestWithBody(server string, params *BulkCreateAtt
 		if params.FilterUnit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -10162,6 +10224,22 @@ func NewBulkCreateChangeWorkflowsRequestWithBody(server string, params *BulkCrea
 
 		}
 
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -11796,6 +11874,22 @@ func NewBulkCreateFiltersRequestWithBody(server string, params *BulkCreateFilter
 
 		}
 
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -12398,8 +12492,8 @@ func NewInvokeFunctionsOnOrgRequestWithBody(server string, params *InvokeFunctio
 	return req, nil
 }
 
-// NewListExtendedGroupsRequest generates requests for ListExtendedGroups
-func NewListExtendedGroupsRequest(server string, params *ListExtendedGroupsParams) (*http.Request, error) {
+// NewListGroupsRequest generates requests for ListGroups
+func NewListGroupsRequest(server string, params *ListGroupsParams) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -12436,9 +12530,41 @@ func NewListExtendedGroupsRequest(server string, params *ListExtendedGroupsParam
 
 		}
 
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.Contains != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -12479,8 +12605,8 @@ func NewListExtendedGroupsRequest(server string, params *ListExtendedGroupsParam
 	return req, nil
 }
 
-// NewGetExtendedGroupRequest generates requests for GetExtendedGroup
-func NewGetExtendedGroupRequest(server string, groupId openapi_types.UUID) (*http.Request, error) {
+// NewGetGroupRequest generates requests for GetGroup
+func NewGetGroupRequest(server string, groupId openapi_types.UUID, params *GetGroupParams) (*http.Request, error) {
 	var err error
 
 	var pathParam0 string
@@ -12505,7 +12631,111 @@ func NewGetExtendedGroupRequest(server string, groupId openapi_types.UUID) (*htt
 		return nil, err
 	}
 
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
 	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRemoveGroupBotUserRequest generates requests for RemoveGroupBotUser
+func NewRemoveGroupBotUserRequest(server string, groupId openapi_types.UUID, userId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_id", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/group/%s/user/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddGroupBotUserRequest generates requests for AddGroupBotUser
+func NewAddGroupBotUserRequest(server string, groupId openapi_types.UUID, userId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "group_id", runtime.ParamLocationPath, groupId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "user_id", runtime.ParamLocationPath, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/group/%s/user/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -13216,6 +13446,22 @@ func NewBulkCreateInvocationsRequestWithBody(server string, params *BulkCreateIn
 		if params.FilterUnit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14028,6 +14274,22 @@ func NewBulkCreateLinksRequestWithBody(server string, params *BulkCreateLinksPar
 		if params.FilterUnit != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -30489,6 +30751,22 @@ func NewBulkCreateTriggersRequestWithBody(server string, params *BulkCreateTrigg
 
 		}
 
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -34220,6 +34498,22 @@ func NewBulkCreateViewsRequestWithBody(server string, params *BulkCreateViewsPar
 
 		}
 
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -34635,11 +34929,17 @@ type ClientWithResponsesInterface interface {
 
 	InvokeFunctionsOnOrgWithResponse(ctx context.Context, params *InvokeFunctionsOnOrgParams, body InvokeFunctionsOnOrgJSONRequestBody, reqEditors ...RequestEditorFn) (*InvokeFunctionsOnOrgResponse, error)
 
-	// ListExtendedGroupsWithResponse request
-	ListExtendedGroupsWithResponse(ctx context.Context, params *ListExtendedGroupsParams, reqEditors ...RequestEditorFn) (*ListExtendedGroupsResponse, error)
+	// ListGroupsWithResponse request
+	ListGroupsWithResponse(ctx context.Context, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*ListGroupsResponse, error)
 
-	// GetExtendedGroupWithResponse request
-	GetExtendedGroupWithResponse(ctx context.Context, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetExtendedGroupResponse, error)
+	// GetGroupWithResponse request
+	GetGroupWithResponse(ctx context.Context, groupId openapi_types.UUID, params *GetGroupParams, reqEditors ...RequestEditorFn) (*GetGroupResponse, error)
+
+	// RemoveGroupBotUserWithResponse request
+	RemoveGroupBotUserWithResponse(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RemoveGroupBotUserResponse, error)
+
+	// AddGroupBotUserWithResponse request
+	AddGroupBotUserWithResponse(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*AddGroupBotUserResponse, error)
 
 	// ApiInfoWithResponse request
 	ApiInfoWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ApiInfoResponse, error)
@@ -36875,7 +37175,7 @@ func (r InvokeFunctionsOnOrgResponse) StatusCode() int {
 	return 0
 }
 
-type ListExtendedGroupsResponse struct {
+type ListGroupsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *[]ExtendedGroup
@@ -36888,7 +37188,7 @@ type ListExtendedGroupsResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r ListExtendedGroupsResponse) Status() string {
+func (r ListGroupsResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -36896,14 +37196,14 @@ func (r ListExtendedGroupsResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r ListExtendedGroupsResponse) StatusCode() int {
+func (r ListGroupsResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type GetExtendedGroupResponse struct {
+type GetGroupResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *ExtendedGroup
@@ -36916,7 +37216,7 @@ type GetExtendedGroupResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r GetExtendedGroupResponse) Status() string {
+func (r GetGroupResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -36924,7 +37224,66 @@ func (r GetExtendedGroupResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r GetExtendedGroupResponse) StatusCode() int {
+func (r GetGroupResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type RemoveGroupBotUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveGroupBotUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveGroupBotUserResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type AddGroupBotUserResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *User
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r AddGroupBotUserResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddGroupBotUserResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -43454,22 +43813,40 @@ func (c *ClientWithResponses) InvokeFunctionsOnOrgWithResponse(ctx context.Conte
 	return ParseInvokeFunctionsOnOrgResponse(rsp)
 }
 
-// ListExtendedGroupsWithResponse request returning *ListExtendedGroupsResponse
-func (c *ClientWithResponses) ListExtendedGroupsWithResponse(ctx context.Context, params *ListExtendedGroupsParams, reqEditors ...RequestEditorFn) (*ListExtendedGroupsResponse, error) {
-	rsp, err := c.ListExtendedGroups(ctx, params, reqEditors...)
+// ListGroupsWithResponse request returning *ListGroupsResponse
+func (c *ClientWithResponses) ListGroupsWithResponse(ctx context.Context, params *ListGroupsParams, reqEditors ...RequestEditorFn) (*ListGroupsResponse, error) {
+	rsp, err := c.ListGroups(ctx, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseListExtendedGroupsResponse(rsp)
+	return ParseListGroupsResponse(rsp)
 }
 
-// GetExtendedGroupWithResponse request returning *GetExtendedGroupResponse
-func (c *ClientWithResponses) GetExtendedGroupWithResponse(ctx context.Context, groupId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetExtendedGroupResponse, error) {
-	rsp, err := c.GetExtendedGroup(ctx, groupId, reqEditors...)
+// GetGroupWithResponse request returning *GetGroupResponse
+func (c *ClientWithResponses) GetGroupWithResponse(ctx context.Context, groupId openapi_types.UUID, params *GetGroupParams, reqEditors ...RequestEditorFn) (*GetGroupResponse, error) {
+	rsp, err := c.GetGroup(ctx, groupId, params, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParseGetExtendedGroupResponse(rsp)
+	return ParseGetGroupResponse(rsp)
+}
+
+// RemoveGroupBotUserWithResponse request returning *RemoveGroupBotUserResponse
+func (c *ClientWithResponses) RemoveGroupBotUserWithResponse(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*RemoveGroupBotUserResponse, error) {
+	rsp, err := c.RemoveGroupBotUser(ctx, groupId, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveGroupBotUserResponse(rsp)
+}
+
+// AddGroupBotUserWithResponse request returning *AddGroupBotUserResponse
+func (c *ClientWithResponses) AddGroupBotUserWithResponse(ctx context.Context, groupId openapi_types.UUID, userId openapi_types.UUID, reqEditors ...RequestEditorFn) (*AddGroupBotUserResponse, error) {
+	rsp, err := c.AddGroupBotUser(ctx, groupId, userId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddGroupBotUserResponse(rsp)
 }
 
 // ApiInfoWithResponse request returning *ApiInfoResponse
@@ -49885,15 +50262,15 @@ func ParseInvokeFunctionsOnOrgResponse(rsp *http.Response) (*InvokeFunctionsOnOr
 	return response, nil
 }
 
-// ParseListExtendedGroupsResponse parses an HTTP response from a ListExtendedGroupsWithResponse call
-func ParseListExtendedGroupsResponse(rsp *http.Response) (*ListExtendedGroupsResponse, error) {
+// ParseListGroupsResponse parses an HTTP response from a ListGroupsWithResponse call
+func ParseListGroupsResponse(rsp *http.Response) (*ListGroupsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &ListExtendedGroupsResponse{
+	response := &ListGroupsResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -49953,15 +50330,15 @@ func ParseListExtendedGroupsResponse(rsp *http.Response) (*ListExtendedGroupsRes
 	return response, nil
 }
 
-// ParseGetExtendedGroupResponse parses an HTTP response from a GetExtendedGroupWithResponse call
-func ParseGetExtendedGroupResponse(rsp *http.Response) (*GetExtendedGroupResponse, error) {
+// ParseGetGroupResponse parses an HTTP response from a GetGroupWithResponse call
+func ParseGetGroupResponse(rsp *http.Response) (*GetGroupResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &GetExtendedGroupResponse{
+	response := &GetGroupResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -50001,6 +50378,163 @@ func ParseGetExtendedGroupResponse(rsp *http.Response) (*GetExtendedGroupRespons
 			return nil, err
 		}
 		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseRemoveGroupBotUserResponse parses an HTTP response from a RemoveGroupBotUserWithResponse call
+func ParseRemoveGroupBotUserResponse(rsp *http.Response) (*RemoveGroupBotUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveGroupBotUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAddGroupBotUserResponse parses an HTTP response from a AddGroupBotUserWithResponse call
+func ParseAddGroupBotUserResponse(rsp *http.Response) (*AddGroupBotUserResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddGroupBotUserResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest User
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

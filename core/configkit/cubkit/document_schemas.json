@@ -1,0 +1,1483 @@
+{
+  "$comment": "JSON Schemas of ConfigHub/YAML entity documents, one per entity type that can be managed as a document, with the definitions they share. Generated from ConfigHub's entity definitions. Do not edit.",
+  "definitions": {
+    "AttributeDetails": {
+      "properties": {
+        "BoundLinkID": {
+          "description": "ID of the Link that bound this needed path to a provided value",
+          "format": "uuid",
+          "type": "string"
+        },
+        "BoundProvidedProperties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
+          "type": "object"
+        },
+        "DefaultValue": {
+          "description": "Value a defaulting function writes at this path, if any"
+        },
+        "Description": {
+          "description": "Description of the attribute",
+          "type": "string"
+        },
+        "IsNeeded": {
+          "description": "Whether this attribute is a needed value",
+          "type": "boolean"
+        },
+        "IsProvided": {
+          "description": "Whether this attribute is a provided value",
+          "type": "boolean"
+        },
+        "NeededPreferred": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Preferred properties for matching; more matches produce a stronger match preference",
+          "type": "object"
+        },
+        "NeededRequired": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Required properties that a provided value must have in order to match",
+          "type": "object"
+        },
+        "ProvidedProperties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key/value properties describing what this provided value offers, for matching",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "AttributeSelector": {
+      "properties": {
+        "Path": {
+          "type": "string"
+        },
+        "WhereResource": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Binding": {
+      "properties": {
+        "AttributeName": {
+          "description": "Shared attribute name that matched the need to the provide",
+          "type": "string"
+        },
+        "DataType": {
+          "description": "DataType of the bound value",
+          "type": "string"
+        },
+        "Key": {
+          "description": "Identifies a binding within its Link's ManualBindings, so that a merge of two versions of the Link matches bindings by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.",
+          "type": "string"
+        },
+        "NeededPath": {
+          "description": "Resolved path within the needed resource",
+          "type": "string"
+        },
+        "NeededResource": {
+          "$ref": "#/definitions/ResourceInfo"
+        },
+        "ProvidedPath": {
+          "description": "Resolved path within the provided resource",
+          "type": "string"
+        },
+        "ProvidedResource": {
+          "$ref": "#/definitions/ResourceInfo"
+        }
+      },
+      "type": "object"
+    },
+    "BindingList": {
+      "items": {
+        "$ref": "#/definitions/Binding"
+      },
+      "type": "array"
+    },
+    "ChangeWorkflowAttestationPrerequisite": {
+      "properties": {
+        "AllowAuthors": {
+          "description": "Count an attester who wrote a Revision of the change. By default one does not count.",
+          "type": "boolean"
+        },
+        "Count": {
+          "description": "How many distinct attesters must record a Pass on each Revision. 1 when zero.",
+          "type": "integer"
+        },
+        "Description": {
+          "description": "What the requirement is for, in the author's words.",
+          "type": "string"
+        },
+        "DistinctGroups": {
+          "description": "Reserved: each counted attester must be from a different group of FromGroupIDs. Refused until Groups are recorded on Attestations.",
+          "type": "boolean"
+        },
+        "FromGroupIDs": {
+          "description": "Reserved: Groups whose members' Attestations count. Refused until Groups are recorded on Attestations.",
+          "items": {
+            "$ref": "#/definitions/UUID"
+          },
+          "type": "array"
+        },
+        "FromUserIDs": {
+          "description": "The Users whose Attestations count. Empty is anyone who may record an Attestation in the Space.",
+          "items": {
+            "$ref": "#/definitions/UUID"
+          },
+          "type": "array"
+        },
+        "IgnoreFail": {
+          "description": "Count only passes. By default an unrevoked Fail from an eligible attester fails the requirement, however many passes there are.",
+          "type": "boolean"
+        },
+        "MaxAge": {
+          "description": "How old an Attestation may be and still count, as a duration such as 72h. No limit when empty.",
+          "type": "string"
+        },
+        "Name": {
+          "description": "What a stage, its ReleasePrerequisites, or Final gates on. Unique among the workflow's prerequisites, and refused if it shadows a built-in name.",
+          "type": "string"
+        },
+        "Type": {
+          "description": "The Attestation Type that counts. Approval when empty.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name"
+      ],
+      "type": "object"
+    },
+    "ChangeWorkflowFinalStage": {
+      "properties": {
+        "Prerequisites": {
+          "description": "Evaluated over the last stage's Spaces, and named the same way a stage's entry gates are.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ChangeWorkflowPrerequisite": {
+      "properties": {
+        "Description": {
+          "description": "What the gate checks, in the author's words. A promotion this gate holds up reports the prerequisite by Name, so this is where the reason lives. Read by nobody: it is not part of what the gate evaluates.",
+          "type": "string"
+        },
+        "Expression": {
+          "description": "The check itself, carrying the \"cel:\" prefix. Evaluated against the Space under consideration, the change order being promoted, and that Space's Release. Compiled when the workflow is written.",
+          "type": "string"
+        },
+        "Name": {
+          "description": "What a stage or Final gates on. Unique within a workflow, and refused if it shadows a built-in name.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name",
+        "Expression"
+      ],
+      "type": "object"
+    },
+    "ChangeWorkflowStage": {
+      "properties": {
+        "Name": {
+          "description": "Identifies the stage within the workflow, and is what a promotion reports the change as having entered. Unique within a workflow.",
+          "type": "string"
+        },
+        "Prerequisites": {
+          "description": "The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage ahead of this one, so the first stage's are never evaluated.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "ReleasePrerequisites": {
+          "description": "Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites. Evaluated over the Revisions the Release bundles.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "WhereSpace": {
+          "description": "Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name"
+      ],
+      "type": "object"
+    },
+    "Clearance": {
+      "items": {
+        "$ref": "#/definitions/ClearanceRequirement"
+      },
+      "type": "array"
+    },
+    "ClearanceRequirement": {
+      "properties": {
+        "Key": {
+          "description": "The guard key this requirement is about",
+          "type": "string"
+        },
+        "Operator": {
+          "description": "Exists, In, NotIn, or DoesNotExist",
+          "type": "string"
+        },
+        "Values": {
+          "description": "The values In and NotIn compare against; unused by Exists and DoesNotExist",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Column": {
+      "properties": {
+        "ColumnSource": {
+          "$ref": "#/definitions/ColumnSource"
+        },
+        "ColumnType": {
+          "description": "The kind of value: MetadataAttribute, MetadataExpression, DataPath or DataExpression.",
+          "type": "string"
+        },
+        "DataType": {
+          "description": "The expected data type of the column value: string, int, bool, uuid or time.",
+          "type": "string"
+        },
+        "GroupBy": {
+          "description": "Group by this column. Priority is in column list order, after the View's GroupBy.",
+          "type": "boolean"
+        },
+        "Name": {
+          "description": "The display name for the column.",
+          "type": "string"
+        },
+        "OrderByDirection": {
+          "description": "Sort by this column, ASC or DESC. Priority is in column list order, after the View's OrderBy.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "Name"
+      ],
+      "type": "object"
+    },
+    "ColumnSource": {
+      "properties": {
+        "DataExpression": {
+          "type": "string"
+        },
+        "DataPath": {
+          "$ref": "#/definitions/AttributeSelector"
+        },
+        "MetadataAttribute": {
+          "type": "string"
+        },
+        "MetadataExpression": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "FunctionArgument": {
+      "properties": {
+        "Evaluator": {
+          "type": "string"
+        },
+        "ParameterName": {
+          "type": "string"
+        },
+        "Value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "format": "int64",
+              "type": "integer"
+            },
+            {
+              "type": "boolean"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "FunctionInvocation": {
+      "properties": {
+        "Arguments": {
+          "description": "Function arguments",
+          "items": {
+            "$ref": "#/definitions/FunctionArgument"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "Clearance": {
+          "$ref": "#/definitions/Clearance"
+        },
+        "FunctionName": {
+          "description": "Function name",
+          "type": "string"
+        },
+        "Guards": {
+          "$ref": "#/definitions/GuardStamp"
+        },
+        "Params": {
+          "additionalProperties": {},
+          "description": "Caller-supplied parameter values for expanding templated argument Values; transient, not persisted",
+          "type": "object"
+        },
+        "WhereResource": {
+          "description": "Per-invocation resource filter. AND-combined with the request-level WhereResource. Same path syntax as the request-level field (see ParseAndValidateWhereResource).",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "FunctionInvocationList": {
+      "items": {
+        "$ref": "#/definitions/FunctionInvocation"
+      },
+      "type": [
+        "array",
+        "null"
+      ]
+    },
+    "FunctionParameter": {
+      "properties": {
+        "DataType": {
+          "description": "Data type of the parameter",
+          "type": "string"
+        },
+        "Description": {
+          "description": "Description of the parameter",
+          "type": "string"
+        },
+        "EnumValues": {
+          "description": "List of valid enum values; applies to enum parameters",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "Example": {
+          "description": "Example value",
+          "type": "string"
+        },
+        "Max": {
+          "description": "Maximum allowed value; applies to int parameters",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "Min": {
+          "description": "Minimum allowed value; applies to int parameters",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "ParameterName": {
+          "description": "Name of the parameter in kabob-case",
+          "type": "string"
+        },
+        "Regexp": {
+          "description": "Regular expression matching valid values; applies to string parameters",
+          "type": "string"
+        },
+        "Required": {
+          "description": "Whether the parameter is required",
+          "type": "boolean"
+        },
+        "Schema": {
+          "$ref": "#/definitions/Schema"
+        }
+      },
+      "type": "object"
+    },
+    "GuardStamp": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "type": "object"
+    },
+    "NamedFunctionResult": {
+      "properties": {
+        "FunctionInvocation": {
+          "$ref": "#/definitions/FunctionInvocation"
+        },
+        "Name": {
+          "description": "Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "NamedPath": {
+      "properties": {
+        "Name": {
+          "description": "Identifier used to reference the value from a DownstreamPath Expression; must be a legal Go and CEL identifier",
+          "type": "string"
+        },
+        "Path": {
+          "description": "Resolved path within Resource to read via get-paths",
+          "type": "string"
+        },
+        "Resource": {
+          "$ref": "#/definitions/ResourceInfo"
+        }
+      },
+      "type": "object"
+    },
+    "ParameterizedFunction": {
+      "properties": {
+        "FunctionInvocation": {
+          "$ref": "#/definitions/FunctionInvocation"
+        },
+        "Key": {
+          "description": "Identifies the entry within DownstreamSetters, so that a merge of two versions of the Link matches entries by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.",
+          "type": "string"
+        },
+        "Parameters": {
+          "description": "Names of upstream values whose values are exposed to string-argument template expansion. Each entry must match a Name in UpstreamPaths or UpstreamGetters.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "PathExpression": {
+      "properties": {
+        "DataType": {
+          "description": "Data type of the resulting AttributeValue: string, int, or bool. The Expression result (a string) is coerced to this type.",
+          "type": "string"
+        },
+        "Evaluator": {
+          "description": "Expression evaluator: \"template\" for Go templates or \"cel\" for CEL",
+          "type": "string"
+        },
+        "Expression": {
+          "description": "Go template or CEL expression that evaluates to the value to write. Parameters and FunctionContext fields are in scope.",
+          "type": "string"
+        },
+        "Key": {
+          "description": "Identifies the entry within DownstreamPaths, so that a merge of two versions of the Link matches entries by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.",
+          "type": "string"
+        },
+        "Parameters": {
+          "description": "Names of upstream values referenced by Expression. Each entry must be a legal identifier and must match a Name in UpstreamPaths or UpstreamGetters.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "Path": {
+          "description": "Unresolved path within Resource to write via set-attributes",
+          "type": "string"
+        },
+        "Resource": {
+          "$ref": "#/definitions/ResourceInfo"
+        }
+      },
+      "type": "object"
+    },
+    "PathToVisitorInfoType": {
+      "additionalProperties": {
+        "$ref": "#/definitions/PathVisitorInfo"
+      },
+      "type": "object"
+    },
+    "PathVisitorInfo": {
+      "properties": {
+        "AttributeName": {
+          "description": "AttributeName for the path",
+          "type": "string"
+        },
+        "DataType": {
+          "description": "DataType of the attribute at the path",
+          "type": "string"
+        },
+        "Details": {
+          "$ref": "#/definitions/AttributeDetails"
+        },
+        "EmbeddedAccessorConfig": {
+          "description": "Configuration of the embedded accessor, if any",
+          "type": "string"
+        },
+        "EmbeddedAccessorType": {
+          "description": "Embedded accessor to use, if any",
+          "type": "string"
+        },
+        "Path": {
+          "description": "Unresolved path pattern",
+          "type": "string"
+        },
+        "ResolvedPath": {
+          "description": "Specific resolved path",
+          "type": "string"
+        },
+        "TypeExceptions": {
+          "additionalProperties": {
+            "type": "object"
+          },
+          "description": "Resource types to skip",
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Permissions": {
+      "additionalProperties": {
+        "$ref": "#/definitions/Subjects"
+      },
+      "type": "object"
+    },
+    "ResourceInfo": {
+      "properties": {
+        "ResourceCategory": {
+          "description": "Category of configuration element represented in the configuration data; Kubernetes resources are of category Resource, and application configuration files are of category AppConfig",
+          "type": "string"
+        },
+        "ResourceName": {
+          "description": "Name of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form \u003cmetadata.namespace\u003e/\u003cmetadata.name\u003e; not all ToolchainTypes necessarily use '/' as a separator between any scope(s) and name or other client-chosen ID",
+          "type": "string"
+        },
+        "ResourceNameStableCore": {
+          "description": "Name of a resource in the system under management represented in the configuration data with generated prefixes and suffixes stripped; empty if nothing to strip",
+          "type": "string"
+        },
+        "ResourceNameWithoutScope": {
+          "description": "Name of a resource in the system under management represented in the configuration data, without any uniquifying scope, such as Namespace, Project, Account, Region, etc.; Kubernetes resources are represented in the form \u003cmetadata.name\u003e",
+          "type": "string"
+        },
+        "ResourceType": {
+          "description": "Type of a resource in the system under management represented in the configuration data; Kubernetes resources are represented in the form \u003capiVersion\u003e/\u003ckind\u003e (aka group-version-kind)",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ResourceTypePathsEntry": {
+      "properties": {
+        "BoundLinkID": {
+          "description": "ID of the Link that bound this needed path to a provided value",
+          "format": "uuid",
+          "type": "string"
+        },
+        "BoundProvidedProperties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "ProvidedProperties of the provided path that was bound to this needed path, for cross-link score comparison",
+          "type": "object"
+        },
+        "IsNeeded": {
+          "description": "Whether this attribute is a needed value",
+          "type": "boolean"
+        },
+        "IsProvided": {
+          "description": "Whether this attribute is a provided value",
+          "type": "boolean"
+        },
+        "NeededPreferred": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Preferred properties for matching; more matches produce a stronger match preference",
+          "type": "object"
+        },
+        "NeededRequired": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Required properties that a provided value must have in order to match",
+          "type": "object"
+        },
+        "Paths": {
+          "$ref": "#/definitions/PathToVisitorInfoType"
+        },
+        "ProvidedProperties": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Key/value properties describing what this provided value offers, for matching",
+          "type": "object"
+        },
+        "ResourceType": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Schema": {},
+    "Subjects": {
+      "properties": {
+        "GroupIDs": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "type": "object"
+        },
+        "UserIDs": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "UUID": {
+      "format": "uuid",
+      "type": "string"
+    }
+  },
+  "documents": {
+    "Attribute": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "DataType": {
+          "description": "DataType specifies the data type of the attribute value. Must be one of: string, int, bool.",
+          "type": "string"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "Description": {
+          "description": "Description describes the attribute and its generated functions.",
+          "type": "string"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Attribute"
+          ]
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Parameters": {
+          "description": "Parameters specifies the function parameters for the getter and setter functions.",
+          "items": {
+            "$ref": "#/definitions/FunctionParameter"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "ResourceTypePaths": {
+          "description": "ResourceTypePaths maps resource types to their path-to-visitor-info mappings.",
+          "items": {
+            "$ref": "#/definitions/ResourceTypePathsEntry"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "ToolchainType": {
+          "description": "ToolchainType specifies the type of toolchain this attribute works with.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug",
+        "ToolchainType",
+        "DataType"
+      ],
+      "type": "object"
+    },
+    "ChangeWorkflow": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "AttestationPrerequisites": {
+          "description": "The Attestations a stage, its releases, or Final may require. Declared once and named wherever they apply.",
+          "items": {
+            "$ref": "#/definitions/ChangeWorkflowAttestationPrerequisite"
+          },
+          "type": "array"
+        },
+        "CustomPrerequisites": {
+          "description": "CustomPrerequisites declares the checks a stage or Final may gate on beyond the built-in ones, each carrying a Name to gate on and a \"cel:\" Expression to evaluate. Declared once and named wherever they apply.",
+          "items": {
+            "$ref": "#/definitions/ChangeWorkflowPrerequisite"
+          },
+          "type": "array"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "ChangeWorkflow"
+          ]
+        },
+        "Final": {
+          "$ref": "#/definitions/ChangeWorkflowFinalStage"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Stages": {
+          "description": "Stages is the series a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.",
+          "items": {
+            "$ref": "#/definitions/ChangeWorkflowStage"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "AllowedChangeWorkflows": {
+          "description": "The ChangeWorkflows it refers to, each named as one reference is.",
+          "items": {
+            "description": "The ChangeWorkflow it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+            "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "ChangeWorkflowRequired": {
+          "description": "Whether a ChangeWorkflow must be used for promotions and releases of this component's Variants. Changing it requires Manage permission on the component. (optional)",
+          "type": "boolean"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Component"
+          ]
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    },
+    "Filter": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Filter"
+          ]
+        },
+        "From": {
+          "description": "From specifies the type of entity (Unit, Space, etc.) to filter, in PascalCase.",
+          "type": "string"
+        },
+        "FromSpace": {
+          "description": "The Space it refers to, by its slug.",
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "IncludeHidden": {
+          "type": "string"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "ResourceType": {
+          "description": "Resource type to match for the desired ToolchainType, for example apps/v1/Deployment. Valid only for Units. (optional)",
+          "type": "string"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Where": {
+          "description": "Where specifices the where filter expression in the syntax used in list and search API query parameters. (optional)",
+          "type": "string"
+        },
+        "WhereData": {
+          "description": "WhereData specifies a filter expression for configuration data. Valid only for Units. (optional)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug",
+        "From"
+      ],
+      "type": "object"
+    },
+    "Invocation": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "BridgeWorker": {
+          "description": "The BridgeWorker it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Invocation"
+          ]
+        },
+        "FunctionInvocations": {
+          "$ref": "#/definitions/FunctionInvocationList"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Parameters": {
+          "items": {
+            "$ref": "#/definitions/FunctionParameter"
+          },
+          "type": "array"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "ToolchainType": {
+          "description": "ToolchainType specifies the type of toolchain this invocation works with.\n\t\tThis determines which configuration formats the invocation can process.",
+          "required": [
+            "true"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug",
+        "ToolchainType"
+      ],
+      "type": "object"
+    },
+    "Link": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "AutoUpdate": {
+          "description": "Automatically update the downstream Unit when the upstream Unit changes. A Link created without an UpdateType is a NeedsProvides Link with AutoUpdate set, which is what such a Link has always done.",
+          "type": "boolean"
+        },
+        "Clearance": {
+          "$ref": "#/definitions/Clearance"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "DownstreamPaths": {
+          "description": "Values to write to the downstream Unit when resolving a TransformPaths Link. Each entry evaluates Expression (a Go template or CEL expression, per Evaluator) with the named upstream values (UpstreamPaths and UpstreamGetters) and Space/Unit metadata in scope, coerces the result to DataType, and writes it via set-attributes. Only valid when UpdateType is TransformPaths.",
+          "items": {
+            "$ref": "#/definitions/PathExpression"
+          },
+          "type": "array"
+        },
+        "DownstreamSetters": {
+          "description": "Mutating function invocations to run on the downstream Unit. String arguments are template-expanded using the upstream values listed in Parameters (plus Space/Unit metadata) in scope. Each function must be mutating. Worker functions are not supported. Only valid when UpdateType is TransformPaths.",
+          "items": {
+            "$ref": "#/definitions/ParameterizedFunction"
+          },
+          "type": "array"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Link"
+          ]
+        },
+        "FromUnit": {
+          "description": "The Unit it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Guards": {
+          "$ref": "#/definitions/GuardStamp"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "ManualBindings": {
+          "$ref": "#/definitions/BindingList"
+        },
+        "MergeEnableSubtraction": {
+          "description": "Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch and the stored values are not consulted. Only meaningful for UpgradeUnit and MergeUnits Links.",
+          "type": "boolean"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Protect": {
+          "description": "Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.",
+          "type": "boolean"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Squash": {
+          "description": "Merge this Link's range as one rebased diff in one Revision instead of walking it. By default a resolve replays the source's recorded function invocations against this Unit where they can be re-executed, and records each source Revision that has an effect as a Revision of its own. Only meaningful for UpgradeUnit and MergeUnits Links, which are the ones with a range to walk.",
+          "type": "boolean"
+        },
+        "ToUnit": {
+          "description": "The Unit it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "TransformInvocation": {
+          "description": "The Invocation it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "UpdateType": {
+          "description": "The ConfigHub operation performed using this Link. Valid values are NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, and TransformPaths. A create that omits it gets NeedsProvides with AutoUpdate set, which is what omitting it has always produced. UpgradeUnit is like MergeUnits but also keeps the downstream unit's UpstreamRevision fields in sync. Upsert pulls one or more resources produced by the upstream Unit (optionally through a TransformInvocation) and inserts or replaces them in the downstream Unit. TransformPaths reads values from the upstream Unit (UpstreamPaths) and writes expression-derived values to the downstream Unit (DownstreamPaths). Immutable.",
+          "type": "string"
+        },
+        "UpstreamGetters": {
+          "description": "Getter function invocations whose first AttributeValue Value is exposed to DownstreamPaths expressions and DownstreamSetters argument templates by Name, alongside UpstreamPaths. Each function must be non-mutating and produce OutputTypeAttributeValueList. Worker functions are not supported. Only valid when UpdateType is TransformPaths.",
+          "items": {
+            "$ref": "#/definitions/NamedFunctionResult"
+          },
+          "type": "array"
+        },
+        "UpstreamPaths": {
+          "description": "Values to read from the upstream Unit when resolving a TransformPaths Link. Each NamedPath is read via get-paths and made available to DownstreamPaths expressions by its Name. Only valid when UpdateType is TransformPaths.",
+          "items": {
+            "$ref": "#/definitions/NamedPath"
+          },
+          "type": "array"
+        },
+        "WhereMutation": {
+          "description": "Where expression selecting Mutations of the downstream Unit whose paths this Link's merges must not overwrite. Unioned with the Protected values stored on the downstream Unit's MutationSources, so it protects further paths and never re-opens one the Unit already claimed.",
+          "type": "string"
+        },
+        "WhereResource": {
+          "description": "Where expression used to select which resources of the upstream Unit should be eligible for propagation to the downstream Unit.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug",
+        "FromUnit",
+        "ToUnit"
+      ],
+      "type": "object"
+    },
+    "Space": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "AttributeFilter": {
+          "description": "The Filter it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Component": {
+          "description": "The Component it refers to, by its slug.",
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Space"
+          ]
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "ReleaseTarget": {
+          "description": "The Target it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "TriggerFilter": {
+          "description": "The Filter it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "WhereAttribute": {
+          "description": "Filter expression to identify Attributes that should be registered in the Space's FunctionExecutor. The specified string is an expression for the purpose of filtering\nthe list of Attributes returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Attribute: Annotations, AttributeID, BackingUnitID, CreatedAt, DataType, DeleteGates, DisplayName, Hash, HiddenReason, Labels, OrganizationID, Parameters, Permissions, ResourceTypePaths, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.\n\nThe whole string must be query-encoded.",
+          "type": "string"
+        },
+        "WhereTrigger": {
+          "description": "Filter expression to identify Triggers that should be invoked on Units within this Space. With neither it nor TriggerFilterID, the Triggers in the Space are invoked; a clone of such a Space selects the Triggers in the Space it was cloned from. The specified string is an expression for the purpose of filtering\nthe list of Triggers returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.\n\nThe whole string must be query-encoded.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    },
+    "Trigger": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "Arguments": {
+          "description": "Function arguments",
+          "items": {
+            "$ref": "#/definitions/FunctionArgument"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
+        "BridgeWorker": {
+          "description": "The BridgeWorker it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Clearance": {
+          "$ref": "#/definitions/Clearance"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "Description": {
+          "description": "A longer description which explains what the trigger checks and how to fix validation failures. Shown as a pop-up when hovering over an ApplyGate in the UI.",
+          "type": "string"
+        },
+        "Disabled": {
+          "description": "Disabled indicates whether this trigger is currently disabled.\n\t\tWhen disabled, the trigger will not be executed even when matching events occur.",
+          "type": "boolean"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Trigger"
+          ]
+        },
+        "Event": {
+          "description": "Event specifies the type of event that will activate this trigger. Valid values are Mutation and PostClone",
+          "type": "string"
+        },
+        "FailOpenAfter": {
+          "description": "Duration after which a disconnected BridgeWorker's triggers are treated as fail-open. Can only be set when BridgeWorkerID is set.",
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "FunctionName": {
+          "description": "Function name",
+          "type": "string"
+        },
+        "Guards": {
+          "$ref": "#/definitions/GuardStamp"
+        },
+        "Invocation": {
+          "description": "The Invocation it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "OtherDataSource": {
+          "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum.",
+          "type": "string"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Protect": {
+          "description": "Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.",
+          "type": "boolean"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "ToolchainType": {
+          "description": "ToolchainType specifies the type of toolchain this trigger works with.\n\t\tThis determines which configuration formats the trigger can process.",
+          "required": [
+            "true"
+          ],
+          "type": "string"
+        },
+        "UnitFilter": {
+          "description": "The Filter it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "Warn": {
+          "description": "Warn indicates whether this trigger produces ValidationWarnings instead of ValidationErrors when its validating function fails. ValidationWarnings are non-blocking.",
+          "type": "boolean"
+        },
+        "WhereResource": {
+          "description": "Restricts which resources within a Unit's configuration data the Trigger's function operates on, using ConfigHub metadata path expressions.",
+          "type": "string"
+        },
+        "WhereUnit": {
+          "description": "A filter expression to restrict which Units this Trigger applies to. It takes what the where parameter of the Unit list does, attributes of what a Unit refers to included, as in `Space.Labels.Environment = 'prod'` and `UpstreamUnit.Slug = 'base'`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug",
+        "Event",
+        "ToolchainType"
+      ],
+      "type": "object"
+    },
+    "View": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "Columns": {
+          "description": "Columns to display, in order. (optional)",
+          "items": {
+            "$ref": "#/definitions/Column"
+          },
+          "type": "array"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "View"
+          ]
+        },
+        "Filter": {
+          "description": "The Filter it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "GroupBy": {
+          "description": "Column to group by (optional).",
+          "type": "string"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Of": {
+          "description": "Entity type to view (e.g., Unit, Space). At least one of FilterID or Of must be specified. If both are specified, Of must match Filter.From. (optional)",
+          "type": "string"
+        },
+        "OrderBy": {
+          "description": "Column to sort by. (optional)",
+          "type": "string"
+        },
+        "OrderByDirection": {
+          "description": "Columnn sort order, ASC or DESC. Default is ASC. Only should be specified if OrderBy is specified. (optional)",
+          "type": "string"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    }
+  }
+}

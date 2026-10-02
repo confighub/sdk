@@ -55,8 +55,9 @@ Once a named argument is used, all subsequent arguments must be named. Use "--" 
 
 An Invocation can call several functions, which are executed in the order they are listed.
 The positional form creates an Invocation that calls one function; to create one that calls
-several, supply the FunctionInvocations list with --from-stdin or --filename and omit the
-function positional arguments.
+several, give each with --function, written as on the cub function do command line with an
+argument that holds whitespace in quotes, and omit the function positional arguments. The
+FunctionInvocations list can also come from --from-stdin or --filename.
 
 BULK INVOCATION CREATION:
 
@@ -80,11 +81,9 @@ Single Invocation Examples:
   # Using named arguments for clarity (note the "--" separator)
   cub invocation create --space my-space -o json stamp Kubernetes/YAML -- set-annotation --annotation-key=cloned --annotation-value=true
 
-  # Create an invocation that calls several functions in order
-  echo '{"FunctionInvocations": [
-           {"FunctionName": "set-default-names"},
-           {"FunctionName": "set-annotation", "Arguments": [{"Value": "cloned"}, {"Value": "true"}]}
-         ]}' | cub invocation create --space my-space --from-stdin stamp-and-name Kubernetes/YAML
+  # Create an invocation that calls two functions, in order
+  cub invocation create --space my-space stamp-and-name Kubernetes/YAML \
+    --function set-default-names --function 'set-annotation cloned true'
 ` + "```" + `
 
 Bulk Create Examples:
@@ -120,6 +119,8 @@ var invocationDeclaredParameterFlags []string
 
 func init() {
 	addStandardCreateFlags(invocationCreateCmd)
+	addFieldEditFlags(invocationCreateCmd, "Invocation")
+	addInvocationFunctionFlag(invocationCreateCmd)
 	enableCreatePermissionFlag(invocationCreateCmd)
 	invocationCreateCmd.Flags().StringVar(&workerSlug, "worker", "", "worker to execute the invocation function")
 	invocationCreateCmd.Flags().StringArrayVar(&invocationDeclaredParameterFlags, "parameter", nil, "declare a parameter as name[:datatype[:required]] (datatype defaults to string, required defaults to true; can be repeated). Reference declared parameters from templated argument values via {{ .Params.<name> }}.")
@@ -174,11 +175,11 @@ func checkInvocationCreateConflictingArgs(args []string) (bool, error) {
 		// the body supplies the function list, which is how a multi-function Invocation is
 		// created.
 		minArgs := 3
-		if flagPopulateModelFromStdin || flagFilename != "" {
+		if flagPopulateModelFromStdin || flagFilename != "" || len(invocationFunctionLines) > 0 {
 			minArgs = 2
 		}
 		if len(args) < minArgs {
-			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with FunctionInvocations supplied by --from-stdin or --filename")
+			return false, errors.New("single invocation creation requires: <slug> <toolchain type> <function> [arguments...], or <slug> <toolchain type> with the functions supplied by --function, --from-stdin or --filename")
 		}
 
 		if filter != "" || where != "" ||
@@ -217,6 +218,10 @@ func invocationCreateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if err := queueInvocationFunctionEdits(args); err != nil {
+		return err
+	}
+
 	if isBulkCreateMode {
 		return runBulkInvocationCreate()
 	}
@@ -232,6 +237,7 @@ func runSingleInvocationCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -288,6 +294,9 @@ func runSingleInvocationCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Invocation", &newBody); err != nil {
+		return err
+	}
 	invocationRes, err := cubClientNew.CreateInvocationWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, invocationRes) {
 		return cubapi.InterpretErrorGeneric(err, invocationRes)
@@ -375,6 +384,7 @@ func runBulkInvocationCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

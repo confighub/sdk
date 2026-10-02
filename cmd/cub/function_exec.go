@@ -37,6 +37,10 @@ Example Functions:
   - vet-cel: Validate resources using CEL expressions
 
 The syntax is the same as the cub function do command line, but without "cub function do" and without flags.
+An argument that holds whitespace is quoted with ' or ". A quote opens at the start of an argument,
+or straight after the = of a --name=value argument, and closes at the same character followed by
+whitespace or the end of the line; a quote anywhere else is part of the argument. Inside a quoted
+argument, write the quote that whitespace follows with a backslash before it.
 
 Like do, exec accepts any kind of function and applies no kind restriction to the
 list, which is the point of it: one request can inspect, mutate, and validate. For
@@ -52,6 +56,7 @@ Where functions.txt contains:
 set-replicas 3
 set-container-image nginx nginx:v234
 set-namespace myns
+vet-cel "r.kind != 'Deployment' || r.spec.replicas > 1"
 `+"```"+`
 `, ""),
 	Args:        cobra.MaximumNArgs(1),
@@ -158,14 +163,14 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		// Parse functions from file content
 		invocations := []goclientnew.FunctionInvocation{}
 		lines := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
-		for _, line := range lines {
-			args := strings.Fields(line)
-			if len(args) == 0 {
+		for i, line := range lines {
+			invocation, err := parseFunctionLine(line)
+			if err != nil {
+				return nil, nil, fmt.Errorf("line %d: %w", i+1, err)
+			}
+			if invocation == nil {
 				continue
 			}
-			functionName := args[0]
-			invokeArgs := args[1:]
-			invocation := initializeFunctionInvocation(functionName, invokeArgs)
 			invocations = append(invocations, *invocation)
 		}
 

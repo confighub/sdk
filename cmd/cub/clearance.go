@@ -19,12 +19,15 @@ import (
 // they come from:
 //
 //	KEY              cleared for the key whatever its value      (Exists)
-//	KEY=A[,B...]     cleared for those values                    (In)
-//	KEY!=A[,B...]    cleared for any value but those             (NotIn)
+//	KEY=A[;B...]     cleared for those values                    (In)
+//	KEY!=A[;B...]    cleared for any value but those             (NotIn)
 //	!KEY             refuse any path carrying the key at all     (DoesNotExist)
 //
 // The last is a precondition rather than a clearance: it is how an operation says "I am cleared
 // for owner guards, but never touch anything carrying a policy-exception".
+//
+// The values of one requirement are separated by semicolons, which is what separates the items
+// of a list inside a flag value throughout cub. They have to be quoted in a shell.
 
 // formatClearance renders a Clearance back in the same four forms the --clearance flag takes,
 // so what is displayed is what would be typed to set it again.
@@ -40,9 +43,9 @@ func formatClearance(clearance *goclientnew.Clearance) string {
 		case api.ClearanceOperatorDoesNotExist:
 			specs = append(specs, "!"+requirement.Key)
 		case api.ClearanceOperatorIn:
-			specs = append(specs, requirement.Key+"="+strings.Join(requirement.Values, ","))
+			specs = append(specs, requirement.Key+"="+strings.Join(requirement.Values, clearanceValueSeparator))
 		case api.ClearanceOperatorNotIn:
-			specs = append(specs, requirement.Key+"!="+strings.Join(requirement.Values, ","))
+			specs = append(specs, requirement.Key+"!="+strings.Join(requirement.Values, clearanceValueSeparator))
 		default:
 			specs = append(specs, fmt.Sprintf("%s %s %v", requirement.Key, requirement.Operator, requirement.Values))
 		}
@@ -72,11 +75,11 @@ func parseClearanceSpecs(specs []string) (goclientnew.Clearance, error) {
 func parseClearanceSpec(spec string) (goclientnew.ClearanceRequirement, error) {
 	malformed := func() (goclientnew.ClearanceRequirement, error) {
 		return goclientnew.ClearanceRequirement{}, fmt.Errorf(
-			"--clearance %q must be KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY", spec)
+			"--clearance %q must be KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY", spec)
 	}
 
 	if key, found := strings.CutPrefix(spec, "!"); found {
-		if key == "" || strings.ContainsAny(key, "=,") {
+		if key == "" || strings.ContainsAny(key, "=,;") {
 			return malformed()
 		}
 		return goclientnew.ClearanceRequirement{
@@ -90,10 +93,14 @@ func parseClearanceSpec(spec string) (goclientnew.ClearanceRequirement, error) {
 		if key == "" || values == "" {
 			return malformed()
 		}
+		split, err := splitClearanceValues(spec, values)
+		if err != nil {
+			return goclientnew.ClearanceRequirement{}, err
+		}
 		return goclientnew.ClearanceRequirement{
 			Key:      key,
 			Operator: string(api.ClearanceOperatorNotIn),
-			Values:   splitClearanceValues(values),
+			Values:   split,
 		}, nil
 	}
 
@@ -101,10 +108,14 @@ func parseClearanceSpec(spec string) (goclientnew.ClearanceRequirement, error) {
 		if key == "" || values == "" {
 			return malformed()
 		}
+		split, err := splitClearanceValues(spec, values)
+		if err != nil {
+			return goclientnew.ClearanceRequirement{}, err
+		}
 		return goclientnew.ClearanceRequirement{
 			Key:      key,
 			Operator: string(api.ClearanceOperatorIn),
-			Values:   splitClearanceValues(values),
+			Values:   split,
 		}, nil
 	}
 
@@ -114,15 +125,23 @@ func parseClearanceSpec(spec string) (goclientnew.ClearanceRequirement, error) {
 	}, nil
 }
 
-// splitClearanceValues splits a comma-separated value list. A guard value may not contain a
-// comma -- that is exactly why the character class excludes it -- so the split is unambiguous.
-func splitClearanceValues(values string) []string {
-	parts := strings.Split(values, ",")
+// clearanceValueSeparator separates the values of one requirement.
+const clearanceValueSeparator = ";"
+
+// splitClearanceValues splits the values of one requirement. A guard value may contain neither a
+// semicolon nor a comma, so the split is unambiguous, and a comma can only be a list written with
+// the wrong separator: it is refused here, where the message can say so, rather than sent as one
+// value for the server to refuse as malformed.
+func splitClearanceValues(spec, values string) ([]string, error) {
+	if strings.Contains(values, ",") {
+		return nil, fmt.Errorf("--clearance %q: separate values with %q, as in KEY=VALUE;VALUE", spec, clearanceValueSeparator)
+	}
+	parts := strings.Split(values, clearanceValueSeparator)
 	trimmed := make([]string, 0, len(parts))
 	for _, part := range parts {
 		trimmed = append(trimmed, strings.TrimSpace(part))
 	}
-	return trimmed
+	return trimmed, nil
 }
 
 // changeClearance holds the --clearance flag shared by the commands that change configuration
@@ -133,7 +152,7 @@ var changeClearance []string
 // addClearanceFlag registers --clearance on a command that writes configuration data.
 func addClearanceFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&changeClearance, "clearance", nil,
-		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
 }
 
 // clearanceJSON renders the --clearance flag for the wire, or "" when none was given. The
@@ -166,7 +185,7 @@ func clearanceJSON() (string, error) {
 // configuration data.
 func addPersistentClearanceFlag(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringArrayVar(&changeClearance, "clearance", nil,
-		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
+		"class of guarded reason this change is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). A guarded path this does not cover is not written, and the withheld change is reported as a conflict")
 }
 
 // triggerClearance holds the --clearance flag on trigger create and update. Separate from
@@ -177,5 +196,5 @@ var triggerClearance []string
 // addTriggerClearanceFlag registers --clearance on a trigger command.
 func addTriggerClearanceFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerClearance, "clearance", nil,
-		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash, unlike --protect: changing it changes what a re-run lands")
+		"class of guarded reason this trigger's function is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Part of the trigger's Hash, unlike --protect: changing it changes what a re-run lands")
 }

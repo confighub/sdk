@@ -335,20 +335,19 @@ func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 }
 
 // ListGroups returns the Groups the caller belongs to matching where. The endpoint takes no
-// select, include or filter.
+// include.
 func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedGroup, error) {
 	if err := where.Err(); err != nil {
 		return nil, err
 	}
-	if opts.Filter != "" {
-		return nil, fmt.Errorf("groups cannot be listed with a filter; use a where clause")
-	}
-	params := &goclientnew.ListExtendedGroupsParams{
+	params := &goclientnew.ListGroupsParams{
 		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
 	}
-	res, err := c.API.ListExtendedGroupsWithResponse(ctx, params)
+	res, err := c.API.ListGroupsWithResponse(ctx, params)
 	if IsAPIError(err, res) {
 		return nil, InterpretErrorGeneric(err, res)
 	}

@@ -164,8 +164,11 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 			view.Append([]string{"Prerequisite " + required.Name, formatAttestationPrerequisite(required)})
 		}
 	}
-	// Why a change order has not moved, when a promotion of it did not complete. The most recent
-	// one only: it is the one still being worked on, and -o json has the rest.
+	// Who last moved the change order and where to, and why it has not moved, when a promotion of
+	// it did not complete. The most recent of each only: -o json has the rest.
+	if n := len(changeorderDetails.Promotions); n > 0 {
+		view.Append([]string{"Last Promotion", changeorderPromotion(changeorderDetails.Promotions[n-1], n)})
+	}
 	if n := len(changeorderDetails.PromotionFailures); n > 0 {
 		view.Append([]string{"Last Promotion Failure", changeorderPromotionFailure(changeorderDetails.PromotionFailures[n-1], n)})
 	}
@@ -191,13 +194,29 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	view.Render()
 }
 
-// changeorderPromotionFailure renders one recorded failure: when, and each Space and Unit it
+// changeorderPromotionWhen heads a recorded promotion or failure: when it ran, the stage it
+// entered when a change workflow governs the change order, and how many more are recorded.
+func changeorderPromotionWhen(at time.Time, stage string, recorded int) string {
+	when := at.Format(time.RFC3339)
+	if stage != "" {
+		when += ", stage " + stage
+	}
+	if recorded > 1 {
+		when += fmt.Sprintf(" (%d recorded; -o json lists them all)", recorded)
+	}
+	return when
+}
+
+// changeorderPromotion renders one recorded promotion: when, and the spaces it promoted into.
+func changeorderPromotion(promotion goclientnew.ChangeOrderPromotion, recorded int) string {
+	return changeorderPromotionWhen(promotion.PromotedAt, promotion.Stage, recorded) + "\n" +
+		changeorderSpaceSlugs(promotion.SpaceIDs)
+}
+
+// changeorderPromotionFailure renders one recorded failure: when, and each Space, Unit and Link it
 // failed in with its error, one per line.
 func changeorderPromotionFailure(failure goclientnew.ChangeOrderPromotionFailure, recorded int) string {
-	lines := []string{failure.FailedAt.Format(time.RFC3339)}
-	if recorded > 1 {
-		lines[0] += fmt.Sprintf(" (%d recorded; -o json lists them all)", recorded)
-	}
+	lines := []string{changeorderPromotionWhen(failure.FailedAt, failure.Stage, recorded)}
 	for _, space := range failure.Spaces {
 		switch {
 		case space.Error != "":
@@ -207,6 +226,9 @@ func changeorderPromotionFailure(failure goclientnew.ChangeOrderPromotionFailure
 		}
 		for _, unit := range space.Units {
 			lines = append(lines, fmt.Sprintf("%s/%s: %s", space.SpaceSlug, unit.Slug, unit.Error))
+		}
+		for _, link := range space.Links {
+			lines = append(lines, fmt.Sprintf("%s: link %s: %s", space.SpaceSlug, link.Slug, link.Error))
 		}
 	}
 	return strings.Join(lines, "\n")

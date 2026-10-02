@@ -97,6 +97,7 @@ var filterCreateArgs struct {
 
 func init() {
 	addStandardCreateFlags(filterCreateCmd)
+	addFieldEditFlags(filterCreateCmd, "Filter")
 	enableCreatePermissionFlag(filterCreateCmd)
 	enableWhereFlag(filterCreateCmd)
 	enableFilterFlag(filterCreateCmd)
@@ -207,6 +208,7 @@ func runSingleFilterCreate(args []string) error {
 			return err
 		}
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err := setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -261,6 +263,9 @@ func runSingleFilterCreate(args []string) error {
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Filter", &newBody); err != nil {
+		return err
+	}
 	filterRes, err := cubClientNew.CreateFilterWithResponse(ctx, spaceID, params, newBody)
 	if cubapi.IsAPIError(err, filterRes) {
 		return cubapi.InterpretErrorGeneric(err, filterRes)
@@ -337,6 +342,7 @@ func runBulkFilterCreate() error {
 	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
 		return err
 	}
+	params.PatchExisting = patchExistingParam()
 	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
 		params.Where = nil
 	}

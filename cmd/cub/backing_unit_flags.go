@@ -22,6 +22,7 @@ var backingUnitArgs struct {
 	fromBackingUnits bool
 	whereUnit        string
 	filterUnit       string
+	patchExisting    bool
 }
 
 // addBackingUnitFlags adds --with-backing-units to a command that creates or updates entities, and
@@ -56,6 +57,8 @@ func addFromBackingUnitsFlags(cmd *cobra.Command, entityName string, create bool
 			fmt.Sprintf("create a %s from each ConfigHub/YAML Unit --where-unit, --filter-unit and --space select that describes one, in the Unit's space, with the Unit as its backing Unit", entityName))
 		cmd.Flags().StringVar(&backingUnitArgs.whereUnit, "where-unit", "", "where expression over Units selecting those to create from, with --from-backing-units")
 		cmd.Flags().StringVar(&backingUnitArgs.filterUnit, "filter-unit", "", "filter, by slug or UUID, over Units selecting those to create from, with --from-backing-units")
+		cmd.Flags().BoolVar(&backingUnitArgs.patchExisting, "patch-existing", false,
+			fmt.Sprintf("with --from-backing-units, patch a %s a selected Unit already backs with what the Unit holds that it has not taken yet, rather than report that the Unit backs it", entityName))
 	} else {
 		cmd.Flags().BoolVar(&backingUnitArgs.fromBackingUnits, "from-backing-units", false,
 			fmt.Sprintf("patch each %s selected with what its backing Unit holds that it has not taken yet; the patch the other flags make is applied after it", entityName))
@@ -73,6 +76,9 @@ func addFromBackingUnitsFlags(cmd *cobra.Command, entityName string, create bool
 				return errors.New("--where-unit and --filter-unit select backing units, with --from-backing-units; a trigger's own WhereUnit is --where-unit-field")
 			}
 			return errors.New("--where-unit and --filter-unit are only used with --from-backing-units")
+		}
+		if backingUnitArgs.patchExisting && !backingUnitArgs.fromBackingUnits {
+			return errors.New("--patch-existing is only used with --from-backing-units")
 		}
 		if create && backingUnitArgs.fromBackingUnits && (where != "" || filter != "") {
 			return errors.New("--from-backing-units selects the Units to create from with --where-unit and --filter-unit, not --where and --filter")
@@ -120,6 +126,14 @@ func fromBackingUnitsParam() *bool {
 		return nil
 	}
 	return &backingUnitArgs.fromBackingUnits
+}
+
+// patchExistingParam is the request's patch_existing: set only when the flag is.
+func patchExistingParam() *bool {
+	if !backingUnitArgs.patchExisting {
+		return nil
+	}
+	return &backingUnitArgs.patchExisting
 }
 
 // fromBackingUnitsCreateParams are the where_unit and filter_unit of a create with

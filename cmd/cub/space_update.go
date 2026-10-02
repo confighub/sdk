@@ -17,6 +17,7 @@ import (
 var spaceUpdateArgs struct {
 	whereTrigger    string
 	triggerFilter   string
+	attributes      *spaceAttributeFlagValues
 	releaseTarget   string
 	component       string
 	permissions     []string
@@ -56,10 +57,12 @@ Bulk update examples:
 
 func init() {
 	addStandardUpdateFlags(spaceUpdateCmd)
+	addFieldEditFlags(spaceUpdateCmd, "Space")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk patch (can be repeated or comma-separated)")
 	spaceUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API for individual or bulk operations")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units within this Space; with neither it nor a trigger filter, the Triggers in the Space are (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units within this Space (use '-' to clear)")
+	spaceUpdateArgs.attributes = addSpaceAttributeFlags(spaceUpdateCmd)
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted; use '-' to clear)")
 	spaceUpdateCmd.Flags().StringVar(&spaceUpdateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of (use '-' to clear)")
 	spaceUpdateCmd.Flags().StringSliceVar(&spaceUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
@@ -160,6 +163,11 @@ func runSingleSpaceUpdate(args []string) error {
 			triggerFilterUUID = &parsed
 		}
 
+		attributeEnhancer, err := spaceUpdateArgs.attributes.patchEnhancer()
+		if err != nil {
+			return err
+		}
+
 		// Resolve ReleaseTargetID if provided
 		var releaseTargetUUID *uuid.UUID
 		if spaceUpdateArgs.releaseTarget != "" && spaceUpdateArgs.releaseTarget != "-" {
@@ -194,6 +202,8 @@ func runSingleSpaceUpdate(args []string) error {
 			} else if triggerFilterUUID != nil {
 				patchMap["TriggerFilterID"] = triggerFilterUUID.String()
 			}
+			// Add WhereAttribute and AttributeFilterID if provided
+			attributeEnhancer(patchMap)
 			// Add ReleaseTargetID if provided
 			if spaceUpdateArgs.releaseTarget == "-" {
 				patchMap["ReleaseTargetID"] = nil
@@ -241,6 +251,7 @@ func runSingleSpaceUpdate(args []string) error {
 		newBody.OrganizationID = currentSpace.OrganizationID
 		newBody.SpaceID = currentSpace.SpaceID
 	}
+	setDisplayNameAndHiddenReason(&newBody.DisplayName, &newBody.HiddenReason)
 	err = setAnnotations(&newBody.Annotations)
 	if err != nil {
 		return err
@@ -279,6 +290,11 @@ func runSingleSpaceUpdate(args []string) error {
 		newBody.TriggerFilterID = &triggerFilterUUID
 	}
 
+	// Set WhereAttribute and AttributeFilterID if provided
+	if err := spaceUpdateArgs.attributes.apply(newBody); err != nil {
+		return err
+	}
+
 	// Set ReleaseTargetID if provided
 	if spaceUpdateArgs.releaseTarget == "-" {
 		newBody.ReleaseTargetID = nil
@@ -306,6 +322,9 @@ func runSingleSpaceUpdate(args []string) error {
 		updateParams.RefreshTriggers = &spaceUpdateArgs.refreshTriggers
 	}
 	updateParams.DryRun = dryRunParam()
+	if err := applyFieldEdits("Space", newBody); err != nil {
+		return err
+	}
 	spaceRes, err := cubClientNew.UpdateSpaceWithResponse(ctx, currentSpaceID, updateParams, *newBody)
 	if cubapi.IsAPIError(err, spaceRes) {
 		return cubapi.InterpretErrorGeneric(err, spaceRes)
@@ -371,6 +390,11 @@ func runBulkSpaceUpdate() error {
 		triggerFilterUUID = &parsed
 	}
 
+	attributeEnhancer, err := spaceUpdateArgs.attributes.patchEnhancer()
+	if err != nil {
+		return err
+	}
+
 	// Resolve ReleaseTargetID if provided
 	var releaseTargetUUID *uuid.UUID
 	if spaceUpdateArgs.releaseTarget != "" && spaceUpdateArgs.releaseTarget != "-" {
@@ -405,6 +429,8 @@ func runBulkSpaceUpdate() error {
 		} else if triggerFilterUUID != nil {
 			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
 		}
+		// Add WhereAttribute and AttributeFilterID if provided
+		attributeEnhancer(patchMap)
 		// Add ReleaseTargetID if provided
 		if spaceUpdateArgs.releaseTarget == "-" {
 			patchMap["ReleaseTargetID"] = nil

@@ -207,6 +207,7 @@ var refArgKinds = map[string][]*refKind{
 	"changeset get": {kindChangeSet}, "changeset update": {kindChangeSet}, "changeset delete": {kindChangeSet},
 	"changeworkflow get": {kindChangeWorkflow}, "changeworkflow update": {kindChangeWorkflow}, "changeworkflow delete": {kindChangeWorkflow},
 	"filter get": {kindFilter}, "filter update": {kindFilter}, "filter delete": {kindFilter},
+	"group add-worker": {nil, kindWorker}, "group remove-worker": {nil, kindWorker},
 	"invocation get": {kindInvocation}, "invocation update": {kindInvocation}, "invocation delete": {kindInvocation},
 	"invocation invoke get": {kindInvocation}, "invocation invoke set": {kindInvocation}, "invocation invoke vet": {kindInvocation},
 	"k8s collect":     {kindTarget},

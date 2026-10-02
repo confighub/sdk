@@ -24,9 +24,6 @@ import (
 	quantity "k8s.io/apimachinery/pkg/api/resource"
 )
 
-var setImageHandler, setImageUriHandler, setImageReferenceHandler, setImageReferenceByUriHandler, setContainerFlagHandler handler.FunctionImplementation
-var setImageRegistryByRegistryHandler handler.FunctionImplementation
-
 // See:
 // https://github.com/kubernetes/apimachinery/blob/master/pkg/util/validation/validation.go
 // https://github.com/kubernetes/kubernetes/blob/master/pkg/apis/core/validation/validation.go
@@ -77,7 +74,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-image", imageParameters,
 		" the image for a container", api.AttributeNameContainerImage, rp, true, false, false)
-	setImageHandler = fh.GetHandlerImplementation("set-container-image") // for testing
 	// Deprecated aliases
 	generic.RegisterPathSetterAndGetter(fh, "image", imageParameters,
 		" the image for a container. [Deprecated: use get-container-image/set-container-image]", api.AttributeNameContainerImage, rp, true, false, false)
@@ -101,7 +97,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-repository-uri", imageURIParameters,
 		" the image repository URI for a container", api.AttributeNameContainerRepositoryURI, rp, true, false, false)
-	setImageUriHandler = fh.GetHandlerImplementation("set-container-repository-uri") // for testing
 	// Deprecated aliases
 	generic.RegisterPathSetterAndGetter(fh, "image-uri", imageURIParameters,
 		" the image repository URI for a container. [Deprecated: use get-container-repository-uri/set-container-repository-uri]", api.AttributeNameContainerRepositoryURI, rp, true, false, false)
@@ -125,7 +120,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-image-reference", imageReferenceParameters,
 		" the image reference for a container", api.AttributeNameContainerImageReference, rp, true, false, false)
-	setImageReferenceHandler = fh.GetHandlerImplementation("set-container-image-reference") // for testing
 	// Deprecated aliases
 	generic.RegisterPathSetterAndGetter(fh, "image-reference", imageReferenceParameters,
 		" the image reference for a container. [Deprecated: use get-container-image-reference/set-container-image-reference]", api.AttributeNameContainerImageReference, rp, true, false, false)
@@ -157,7 +151,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}
 	generic.RegisterPathSetterAndGetter(fh, "container-flag", pflagParameters,
 		" the value of a POSIX-style flag (--flag=value) in container args", attributeNameContainerFlag, rp, true, false, false)
-	setContainerFlagHandler = fh.GetHandlerImplementation("set-container-flag") // for testing
 
 	resourceTypes := yamlkit.ResourceTypesForAttribute(api.AttributeNameContainerImage, rp)
 	if err := fh.RegisterFunction("set-image-reference-by-uri", &handler.FunctionRegistration{
@@ -198,7 +191,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
-	setImageReferenceByUriHandler = fh.GetHandlerImplementation("set-image-reference-by-uri") // for testing
 	if err := fh.RegisterFunction("set-image-registry-by-registry", &handler.FunctionRegistration{
 		FunctionSignature: api.FunctionSignature{
 			FunctionName: "set-image-registry-by-registry",
@@ -244,7 +236,6 @@ func registerContainerFunctions(fh handler.FunctionRegistry, rp *k8skit.K8sResou
 	}); err != nil {
 		slog.Error("failed to register function", "error", err)
 	}
-	setImageRegistryByRegistryHandler = fh.GetHandlerImplementation("set-image-registry-by-registry") // for testing
 	minValue := 0
 	replicasParameters := []api.FunctionParameter{
 		{
@@ -676,9 +667,24 @@ var (
 	imageURIReferenceRegexpString = fmt.Sprintf("^%s%s$", imageURIRegexpString, imageReferenceRegexpString)
 )
 
-var imageURIReferenceAccessor *yamlkit.RegexpAccessor
+// mustCompileWithGroups compiles an expression whose capture groups are indexed by position
+// where it is used, and panics if it does not have as many of them as that code expects.
+func mustCompileWithGroups(expr string, groups int) *regexp.Regexp {
+	compiled := regexp.MustCompile(expr)
+	if compiled.NumSubexp() != groups {
+		panic(fmt.Sprintf("regexp %q has %d capture groups, expected %d", expr, compiled.NumSubexp(), groups))
+	}
+	return compiled
+}
+
+// A process builds more than one executor, and functions run while it does, so these are
+// compiled when the package is initialized rather than as each executor is built.
 var (
-	imageRegexp, imageURIReferenceRegexp *regexp.Regexp
+	// imageRegexp breaks down an image into its components, but is more complicated to use
+	// for confighubplaceholder. It's not currently used, but is here in case we need it.
+	imageRegexp = mustCompileWithGroups(fmt.Sprintf("^(?:(?P<registry>%s)/)?(?P<repository>%s)(?:\\:(?P<tag>%s)|@(?P<digest>%s))?$",
+		imageRegistryHostRegexpString, imageRepositoryRegexpString, imageTagReferenceRegexpString, imageDigestReferenceRegexpString), 4)
+	imageURIReferenceRegexp = mustCompileWithGroups(imageURIReferenceRegexpString, 2)
 )
 
 // Reference from K8s (and the named RFCs: 1035, 1123, etc.):
@@ -696,8 +702,7 @@ const dnsSubdomainDomainRegexpString = "^" + dnsSubdomainRegexpString + "\\." + 
 // TODO: Check max length
 const dnsMaxLength = 255
 
-var dnsSubdomainAccessor *yamlkit.RegexpAccessor
-var dnsSubdomainRegexp *regexp.Regexp
+var dnsSubdomainRegexp = mustCompileWithGroups(dnsSubdomainDomainRegexpString, 2)
 
 const (
 	attributeNameEnvValue           = api.AttributeName("env-value")
@@ -705,33 +710,6 @@ const (
 	attributeNameContainerResources = api.AttributeName("container-resources")
 	attributeNameContainerFlag      = api.AttributeName("container-flag")
 )
-
-func initContainerFunctions(rp *k8skit.K8sResourceProviderType) {
-	// This regular expression breaks down an image into its components, but is more
-	// complicated to use for confighubplaceholder. It's not currently used, but is here in case we need it.
-	imageRegexpString := fmt.Sprintf("^(?:(?P<registry>%s)/)?(?P<repository>%s)(?:\\:(?P<tag>%s)|@(?P<digest>%s))?$",
-		imageRegistryHostRegexpString, imageRepositoryRegexpString, imageTagReferenceRegexpString, imageDigestReferenceRegexpString)
-	imageRegexp = regexp.MustCompile(imageRegexpString)
-	segmentNames := imageRegexp.SubexpNames()
-	if len(segmentNames) != 5 {
-		slog.Error("Image regexp doesn't contain exactly 4 segments", "count", len(segmentNames))
-		panic("Image regexp doesn't contain exactly 4 segments")
-	}
-
-	imageURIReferenceRegexp = regexp.MustCompile(imageURIReferenceRegexpString)
-	segmentNames = imageURIReferenceRegexp.SubexpNames()
-	if len(segmentNames) != 3 {
-		slog.Error("Image URI+reference regexp doesn't contain exactly 2 segments", "count", len(segmentNames))
-		panic("Image URI+reference regexp doesn't contain exactly 2 segments")
-	}
-
-	dnsSubdomainRegexp = regexp.MustCompile(dnsSubdomainDomainRegexpString)
-	segmentNames = dnsSubdomainRegexp.SubexpNames()
-	if len(segmentNames) != 3 {
-		slog.Error("DNS subdomain+domain regexp doesn't contain exactly 2 segments", "count", len(segmentNames))
-		panic("DNS subdomain+domain regexp doesn't contain exactly 2 segments")
-	}
-}
 
 func makeK8sFnSetImageReferenceByURI(rp *k8skit.K8sResourceProviderType) handler.FunctionImplementation {
 	return func(fArgs handler.FunctionImplementationArguments) (gaby.Container, any, error) {

@@ -1,4 +1,4 @@
-# declared attributes: resourceType	attributeName	path	dataType[	target]
+# declared attributes: resourceType	attributeName	path	dataType[	target][	selects=type[,prefixes]]
 attribute	actions.github.com/v1alpha1/AutoscalingListener	automount-service-account-token	spec.template.spec.automountServiceAccountToken	bool
 attribute	actions.github.com/v1alpha1/AutoscalingListener	configmap-hash	spec.template.metadata.annotations.confighub~1com/Hash	
 attribute	actions.github.com/v1alpha1/AutoscalingListener	container-flag	spec.template.spec.containers.?name:container-name=%s.args.?flag:container-flag=%s#value	

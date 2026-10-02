@@ -43,8 +43,14 @@ var (
 	linkTransformInvocation          string
 )
 
-func addLinkFieldFlags(cmd *cobra.Command) {
+// addLinkUpdateTypeFlag registers --update-type, which only a create takes: a Link's UpdateType is
+// immutable.
+func addLinkUpdateTypeFlag(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&linkUpdateType, "update-type", "", "link update type (NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths); the default is a NeedsProvides link that updates itself")
+}
+
+func addLinkFieldFlags(cmd *cobra.Command) {
+	addLinkElementFlags(cmd)
 	cmd.Flags().BoolVar(&linkAutoUpdate, "auto-update", false, "enable automatic downstream unit updates when upstream changes; a link created with no --update-type gets this without asking")
 	cmd.Flags().BoolVar(&linkNoAutoUpdate, "no-auto-update", false, "disable automatic downstream unit updates; a link that does not update itself instead reports Stale when its upstream moves past it")
 	cmd.Flags().StringVar(&linkWhereMutation, "where-mutation", "", "where expression selecting mutations of the downstream unit whose paths this link's merges must not overwrite; unioned with the unit's stored path protection, so it protects more and never re-opens a path the unit claimed")
@@ -54,7 +60,7 @@ func addLinkFieldFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&linkProtect, "protect", false, "record the paths this link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them; refused on UpgradeUnit and MergeUnits links")
 	cmd.Flags().BoolVar(&linkNoProtect, "no-protect", false, "return this link to the default: its resolve claims nothing it writes")
 	cmd.Flags().StringArrayVar(&linkClearance, "clearance", nil,
-		"class of guarded reason this link's merges are cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
+		"class of guarded reason this link's merges are cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY to refuse any path carrying KEY (repeatable). Pass an empty value to clear")
 	cmd.Flags().StringArrayVar(&linkGuardSpecs, "guard", nil,
 		"reason to record on the paths this link's resolve writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths; refused on UpgradeUnit and MergeUnits links, whose guards propagate from upstream. Pass an empty value to clear")
 	cmd.Flags().BoolVar(&linkSquash, "squash", false, "merge this link's range as one rebased diff in one revision instead of walking it: by default a resolve re-runs the upstream's recorded function invocations against the downstream unit where it can, and records one revision per upstream revision that has an effect; only meaningful for UpgradeUnit and MergeUnits links")
@@ -92,7 +98,7 @@ func validateLinkFieldFlags(cmd *cobra.Command) error {
 	if linkUpdateType != "" && linkUpdateType != "NeedsProvides" && linkUpdateType != "MergeUnits" && linkUpdateType != "UpgradeUnit" && linkUpdateType != "None" && linkUpdateType != "Insert" && linkUpdateType != "Upsert" && linkUpdateType != "TransformPaths" {
 		return fmt.Errorf("--update-type must be NeedsProvides, MergeUnits, UpgradeUnit, None, Insert, Upsert, or TransformPaths, got %q", linkUpdateType)
 	}
-	return nil
+	return queueLinkElementEdits()
 }
 
 // makeCurrentPointers returns the merged-revision pointers that mark a link as
@@ -196,12 +202,6 @@ func setLinkFieldsOnCreate(link *goclientnew.Link, cmd *cobra.Command) error {
 // setLinkFieldsOnUpdate sets link-specific fields on an existing Link for update operations.
 // Only sets fields that were explicitly changed via flags.
 func setLinkFieldsOnUpdate(link *goclientnew.Link, cmd *cobra.Command) error {
-	// Empty means the flag was not given, which on an update leaves the link's own type
-	// alone -- unlike on create, where it names the default kind. UpdateType is immutable
-	// anyway, so the only value this ever writes is the one the link already has.
-	if linkUpdateType != "" {
-		link.UpdateType = linkUpdateType
-	}
 	if linkAutoUpdate {
 		link.AutoUpdate = true
 	} else if linkNoAutoUpdate {
@@ -272,6 +272,7 @@ func linkFieldsEnhancer(cmd *cobra.Command) PatchEnhancer {
 		return nil
 	}
 	return func(patchMap map[string]interface{}) {
+		// Only a create has the flag, where it sets the type of the links a bulk create makes.
 		if cmd.Flags().Changed("update-type") {
 			patchMap["UpdateType"] = linkUpdateType
 		}

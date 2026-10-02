@@ -5,6 +5,7 @@ package cubkit
 
 import (
 	_ "embed"
+	"sort"
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
@@ -30,6 +31,10 @@ const (
 // AttributeNameImmutable is the attribute declaring the fields that cannot change once an entity
 // is created. vet-immutable reads it.
 const AttributeNameImmutable = api.AttributeName("immutable")
+
+// AttributeNameWhereExpression is the attribute declaring the fields that hold where expressions,
+// each with the entity type it selects. vet-where-expressions reads it.
+const AttributeNameWhereExpression = api.AttributeName("where-expression")
 
 // BuiltinSpecSet returns the generated ConfigHub/YAML resource-type specs, parsed afresh, so a
 // caller cannot disturb the compiled ones.
@@ -66,4 +71,21 @@ func RegisterDeclaredAttributePaths(rp *ConfigHubResourceProviderType,
 // whether the type declares one.
 func ApplyPriorityOf(entityType api.ResourceType) (int, bool) {
 	return compiledSpecs.ApplyPriorityOf(workerapi.ToolchainConfigHubYAML, entityType)
+}
+
+// DeclaredReferences returns every path the specs declare as naming another entity, with the
+// type it names, sorted. A reference's value is the referent's slug, or <space>/<slug> for a
+// referent in another Space than the document's: the scope is part of the name, rather than a
+// field beside it as a Kubernetes namespace is.
+func DeclaredReferences() []yamlkit.DeclaredReference {
+	return compiledSpecs.ReferencePaths(workerapi.ToolchainConfigHubYAML)
+}
+
+// DeclaredWhereExpressions returns the paths of an entity type's fields that hold where
+// expressions, each with the entity type it selects, sorted by path.
+func DeclaredWhereExpressions(entityType api.ResourceType) []yamlkit.AttributePath {
+	paths := append([]yamlkit.AttributePath(nil),
+		compiledSpecs.DeclaredAttributes(workerapi.ToolchainConfigHubYAML, entityType)[AttributeNameWhereExpression]...)
+	sort.Slice(paths, func(i, j int) bool { return paths[i].Path < paths[j].Path })
+	return paths
 }

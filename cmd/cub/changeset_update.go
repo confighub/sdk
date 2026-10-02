@@ -240,6 +240,10 @@ func changesetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentChangeSet.SpaceID = existingChangeSet.SpaceID
 		currentChangeSet.ChangeSetID = existingChangeSet.ChangeSetID
 	}
+	setDisplayNameAndHiddenReason(&currentChangeSet.DisplayName, &currentChangeSet.HiddenReason)
+	if err := setDeleteGates(&currentChangeSet.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentChangeSet.Annotations)
 	if err != nil {
 		return err

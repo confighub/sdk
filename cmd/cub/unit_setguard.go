@@ -82,7 +82,7 @@ func init() {
 	unitSetGuardCmd.Flags().StringArrayVar(&removeGuardSpecs, "remove-guard", nil,
 		"guard to remove, as RESOURCE_TYPE:RESOURCE_NAME:PATH=KEY (repeatable)")
 	unitSetGuardCmd.Flags().StringArrayVar(&setGuardClearance, "clearance", nil,
-		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[,VALUE...], KEY!=VALUE[,VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
+		"class of guarded reason this edit is cleared for, as KEY, KEY=VALUE[;VALUE...], KEY!=VALUE[;VALUE...], or !KEY (repeatable). Required to edit a path that already carries guards")
 	addStandardDisplayFlags(unitSetGuardCmd)
 	enableOptionalSpace(unitSetGuardCmd)
 	unitCmd.AddCommand(unitSetGuardCmd)

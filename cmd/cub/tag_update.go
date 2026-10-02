@@ -238,6 +238,10 @@ func tagUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentTag.SpaceID = existingTag.SpaceID
 		currentTag.TagID = existingTag.TagID
 	}
+	setDisplayNameAndHiddenReason(&currentTag.DisplayName, &currentTag.HiddenReason)
+	if err := setDeleteGates(&currentTag.DeleteGates); err != nil {
+		return err
+	}
 	err = setAnnotations(&currentTag.Annotations)
 	if err != nil {
 		return err

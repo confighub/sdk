@@ -112,6 +112,7 @@ var (
 
 func init() {
 	addStandardUpdateFlags(linkUpdateCmd)
+	addFieldEditFlags(linkUpdateCmd, "Link")
 	enableUpdatePermissionFlag(linkUpdateCmd)
 	enableWaitFlag(linkUpdateCmd)
 	addLinkFieldFlags(linkUpdateCmd)
@@ -249,9 +250,9 @@ func runBulkLinkUpdate(cmd *cobra.Command) error {
 		return err
 	}
 
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse &&
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasMetadataFlags() && !hasLinkFieldFlags(cmd) && !linkReverse &&
 		!backingUnitArgs.withBackingUnits {
-		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --delete-gate, --permission, --reverse, --with-backing-units, or link field flags")
+		return fmt.Errorf("bulk patch requires one of: --from-stdin, --filename, --label, --annotation, --display-name, --hidden-reason, --set, --unset, --delete-gate, --permission, --reverse, --with-backing-units, or link field flags")
 	}
 
 	effectiveWhere, err := buildLinkBulkEffectiveWhere(linkIdentifiers, where, selectedSpaceID)
@@ -533,8 +534,8 @@ func successfullyReversedSourceIDs(res *goclientnew.BulkCreateLinksResponse) []u
 }
 
 func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
-	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasLinkFieldFlags(cmd) && !linkReverse {
-		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --delete-gate, --permission, --reverse, or link field flags")
+	if !flagPopulateModelFromStdin && flagFilename == "" && len(label) == 0 && len(deleteGate) == 0 && len(permissionFlag) == 0 && !hasMetadataFlags() && !hasLinkFieldFlags(cmd) && !linkReverse {
+		return fmt.Errorf("--patch requires one of: --from-stdin, --filename, --label, --annotation, --display-name, --hidden-reason, --set, --unset, --delete-gate, --permission, --reverse, or link field flags")
 	}
 
 	// Get the current link for space and link ID
@@ -655,6 +656,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		currentLink.SpaceID = existingLink.SpaceID
 		currentLink.LinkID = existingLink.LinkID
 	}
+	setDisplayNameAndHiddenReason(&currentLink.DisplayName, &currentLink.HiddenReason)
 	err = setAnnotations(&currentLink.Annotations)
 	if err != nil {
 		return err
@@ -705,6 +707,9 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 			makeCurrentPointers(fromUnit.Unit, toUnit.Unit)
 	}
 
+	if err := applyFieldEdits("Link", currentLink); err != nil {
+		return err
+	}
 	linkRes, err := cubClientNew.UpdateLinkWithResponse(ctx, spaceID, currentLink.LinkID, &goclientnew.UpdateLinkParams{DryRun: dryRunParam()}, *currentLink)
 	if cubapi.IsAPIError(err, linkRes) {
 		return cubapi.InterpretErrorGeneric(err, linkRes)
