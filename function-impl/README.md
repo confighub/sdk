@@ -196,10 +196,10 @@ In the future we expect to provide a way to define these sets of paths dynamical
 
 ## Registering functions
 
-Functions you add here can be built into the worker in this repo, or built into your own worker.
+The functions in this module are built into ConfigHub. A function of your own is an [external function](https://docs.confighub.com/guide/external-functions/): you register it with an executor in a program you build and run, which connects to ConfigHub as a Worker.
 
-There's an example here:
-https://github.com/confighub/sdk/tree/main/examples/hello-world-function
+There's a complete example here:
+https://github.com/confighub/examples/tree/main/custom-workers/hello-world-function
 
 ```
 	executor.RegisterFunction(workerapi.ToolchainKubernetesYAML, handler.FunctionRegistration{
@@ -238,11 +238,11 @@ func GetHelloWorldFunctionSignature() api.FunctionSignature {
 ```
 
 There are many more examples here:
-https://github.com/confighub/sdk/tree/main/function/internal/handlers/kubernetes
+https://github.com/confighub/sdk/tree/main/function-impl/kubernetes
 
 Function names, parameter names, and result names are expected to be in `kabob-case`, for consistency with the CLI.
 
-This is the FunctionSignature type, defined as part of the [function API](https://github.com/confighub/sdk/tree/main/function/api):
+This is the FunctionSignature type, defined as part of the [function API](https://github.com/confighub/sdk/tree/main/core/function/api):
 
 ```
 // FunctionSignature specifies the parameter names and values, required and optional parameters,
@@ -335,7 +335,7 @@ const (
 ## The function API
 
 The function API was mentioned several times:
-https://github.com/confighub/sdk/tree/main/function/api
+https://github.com/confighub/sdk/tree/main/core/function/api
 
 The invocation request is currently:
 
@@ -473,7 +473,7 @@ type ConfigConverter interface {
 
 `NativeToYAML` converts from the native format to YAML so that the `yamlkit` and `gaby` libraries can traverse and manipulate the configuration data, and so that a set of common / standard functions can be implemented generically for all formats. `YAMLToNative` converts back. These functions are here:
 
-https://github.com/confighub/sdk/tree/main/function/internal/handlers/generic
+https://github.com/confighub/sdk/tree/main/function-impl/generic
 
 For non-YAML formats (TOML, INI, Properties, Env, JSON, HCL), `NativeToYAML` parses the native format and produces YAML. For YAML-native formats (AppConfig/YAML, ConfigHub/YAML, Kubernetes/YAML), the data is already YAML, but `NativeToYAML` / `YAMLToNative` still perform comment conversion (see below).
 

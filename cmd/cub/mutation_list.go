@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 
 	"github.com/google/uuid"
@@ -76,6 +77,7 @@ var mutationCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(mutationListCmd)
+	enableListPagingFlags(mutationListCmd)
 	enableOptionalSpace(mutationListCmd)
 	mutationCmd.AddCommand(mutationListCmd)
 }
@@ -216,20 +218,28 @@ func apiListMutations(spaceID string, unitID string, whereFilter string, selectP
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
-	muteRes, err := cubClientNew.ListExtendedMutationsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
-	if cubapi.IsAPIError(err, muteRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, muteRes)
+	opts := listPageOpts("DESC:MutationNum")
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
 	}
-
-	muteSlice := make([]*goclientnew.ExtendedMutation, len(*muteRes.JSON200))
-	for i, mutation := range *muteRes.JSON200 {
-		muteSlice[i] = &mutation
-	}
-
-	// Sort by MutationNum descending
-	sort.Slice(muteSlice, func(i, j int) bool {
-		return muteSlice[i].Mutation.MutationNum > muteSlice[j].Mutation.MutationNum
+	muteSlice, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedMutation, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListExtendedMutationsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort by MutationNum descending, unless --order-by asked for another order.
+	if listOrderBy == "" {
+		sort.Slice(muteSlice, func(i, j int) bool {
+			return muteSlice[i].Mutation.MutationNum > muteSlice[j].Mutation.MutationNum
+		})
+	}
 
 	return muteSlice, nil
 }

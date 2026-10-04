@@ -199,7 +199,9 @@ func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 			parentPath := strings.Join(parts[:len(parts)-1], ".")
 			sectionHeadKey := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
 			if text, ok := comments[flatCommentPath(parentPath, sectionHeadKey)]; ok {
-				doc.Set(text, appendPath(parentPath, sectionHeadKey)...)
+				if err := yamlkit.SetPath(doc, text, appendPath(parentPath, sectionHeadKey)...); err != nil {
+					return nil, err
+				}
 				delete(comments, flatCommentPath(parentPath, sectionHeadKey))
 			}
 		}
@@ -221,18 +223,24 @@ func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 			headKey := yamlkit.CommentKey(yamlkit.CommentHead, key.Name())
 			flatHead := flatCommentPath(commentParentPath, headKey)
 			if text, ok := comments[flatHead]; ok {
-				doc.Set(text, appendPath(commentParentPath, headKey)...)
+				if err := yamlkit.SetPath(doc, text, appendPath(commentParentPath, headKey)...); err != nil {
+					return nil, err
+				}
 				delete(comments, flatHead)
 			}
 
 			// Add the data value
-			doc.Set(value, dataPath...)
+			if err := yamlkit.SetPath(doc, value, dataPath...); err != nil {
+				return nil, err
+			}
 
 			// Add line comment for this key
 			lineKey := yamlkit.CommentKey(yamlkit.CommentLine, key.Name())
 			flatLine := flatCommentPath(commentParentPath, lineKey)
 			if text, ok := comments[flatLine]; ok {
-				doc.Set(text, appendPath(commentParentPath, lineKey)...)
+				if err := yamlkit.SetPath(doc, text, appendPath(commentParentPath, lineKey)...); err != nil {
+					return nil, err
+				}
 				delete(comments, flatLine)
 			}
 		}
@@ -240,7 +248,9 @@ func (*INIResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 
 	// Add any remaining comments (e.g., trailing foot comments)
 	for path, text := range comments {
-		doc.Set(text, strings.Split(path, ".")...)
+		if err := yamlkit.SetPath(doc, text, strings.Split(path, ".")...); err != nil {
+			return nil, err
+		}
 	}
 
 	return doc.Bytes(), nil

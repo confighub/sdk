@@ -77,10 +77,10 @@ type Settings struct {
 	// runs in comes from the command line.
 	DefaultSpace string `yaml:"defaultSpace,omitempty" json:"defaultSpace,omitempty"`
 
-	// UIURL is where the web UI for this context is served, when that is not the
-	// server itself. The server does not know where a UI runs, so links into one
-	// are the client's to build. Empty means the server URL, which is right
-	// wherever the UI is embedded in the server.
+	// UIURL is where the server said its web UI is served (UIURL in /api/info)
+	// at the last login. Empty means the server did not say, and links into the
+	// UI go to the server URL, which is right wherever the UI is served on the
+	// server's own host.
 	UIURL string `yaml:"uiURL,omitempty" json:"uiURL,omitempty"`
 }
 

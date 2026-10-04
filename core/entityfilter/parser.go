@@ -18,7 +18,6 @@ import (
 const (
 	maxFilterLength = api.MaxFilterLength
 	lengthFunction  = "LEN"
-	andOperator     = "AND"
 
 	attributeNameCoreRegexpString = "[A-Za-z][A-Za-z]{0,40}"
 	uuidPrefixRegexpString        = "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
@@ -209,14 +208,12 @@ func (p *Parser) Parse(queryString string) ([]*Expression, error) {
 			return nil, err
 		}
 		expressions = append(expressions, expression)
-		queryString = remaining
-
-		// Handle logical operators (AND)
-		queryString = api.SkipWhitespaceWithLimit(queryString, 255)
-		var operator string
-		queryString, operator = api.GetLogicalOperator(queryString)
-		if operator == andOperator {
-			queryString = api.SkipWhitespaceWithLimit(queryString, 255)
+		if len(expressions) > api.MaxTerms {
+			return nil, fmt.Errorf("expression has more than %d terms", api.MaxTerms)
+		}
+		queryString, err = api.ConsumeConjunction(remaining)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -395,6 +392,7 @@ func (p *Parser) parseAndValidateBinaryExpression(decodedQueryString string) (*E
 	}
 
 	// Validate length expression support
+	lengthClosed := false
 	if lengthExpr {
 		if !supportsLengthExpression(attribs.DataType) {
 			return nil, decodedQueryString, errors.Newf("length not supported for attribute `%s` of type %s", attributeName, attribs.DataType)
@@ -402,8 +400,11 @@ func (p *Parser) parseAndValidateBinaryExpression(decodedQueryString string) (*E
 		// For Permissions type with path like LEN(Permissions.Edit.UserIDs), delay skipping the closing paren
 		// until after parsing the map key. For other types like LEN(Labels), skip it now.
 		if attribs.DataType != api.DataTypeStringStringUUIDBoolMap || (len(decodedQueryString) > 0 && decodedQueryString[0] == ')') {
-			// Skip the closing parenthesis
+			if !strings.HasPrefix(decodedQueryString, ")") {
+				return nil, decodedQueryString, errors.Newf("expected `)` to close LEN at `%s`", decodedQueryString)
+			}
 			decodedQueryString = decodedQueryString[1:]
+			lengthClosed = true
 		}
 	}
 
@@ -472,7 +473,10 @@ func (p *Parser) parseAndValidateBinaryExpression(decodedQueryString string) (*E
 			// mapKey is the action (e.g., "Edit"), nestedMapKey is the field (e.g., "UserIDs")
 		}
 		// For LEN expressions on Permissions with a path, skip the closing paren now
-		if lengthExpr && len(decodedQueryString) > 0 && decodedQueryString[0] == ')' {
+		if lengthExpr && !lengthClosed {
+			if !strings.HasPrefix(decodedQueryString, ")") {
+				return nil, decodedQueryString, errors.Newf("expected `)` to close LEN at `%s`", decodedQueryString)
+			}
 			decodedQueryString = decodedQueryString[1:]
 		}
 	}
@@ -539,8 +543,7 @@ func (p *Parser) parseOperator(decodedQueryString string, attribs *Attribute, le
 	inPos := inOperatorRegexp.FindStringIndex(decodedQueryString)
 	if inPos != nil {
 		operator := decodedQueryString[inPos[0]:inPos[1]]
-		remaining := api.SkipWhitespaceWithLimit(decodedQueryString[inPos[1]:], 255)
-		return operator, remaining, nil
+		return operator, decodedQueryString[inPos[1]:], nil
 	}
 
 	// Parse standard operators
@@ -549,8 +552,10 @@ func (p *Parser) parseOperator(decodedQueryString string, attribs *Attribute, le
 		return "", decodedQueryString, errors.Newf("invalid operator at `%s`", decodedQueryString)
 	}
 
+	// Whitespace after the operator is the operand's to skip: IS NULL takes none, and what
+	// follows it is the separator before the next term.
 	operator := decodedQueryString[pos[0]:pos[1]]
-	remaining := api.SkipWhitespaceWithLimit(decodedQueryString[pos[1]:], 255)
+	remaining := decodedQueryString[pos[1]:]
 
 	// Validate operator for data type
 	if err := p.validateOperator(operator, attribs, lengthExpr); err != nil {
@@ -616,6 +621,7 @@ func (p *Parser) parseOperand(decodedQueryString string, attribs *Attribute, len
 	if operator == "IS NULL" || operator == "IS NOT NULL" {
 		return "", attribs.DataType, decodedQueryString, "", false, nil
 	}
+	decodedQueryString = api.SkipWhitespaceWithLimit(decodedQueryString, 255)
 
 	// Handle IN/NOT IN operators specially
 	if operator == "IN" || operator == "NOT IN" {
@@ -643,6 +649,9 @@ func (p *Parser) parseOperand(decodedQueryString string, attribs *Attribute, len
 	// Try to parse as literal first using public API
 	remaining, literal, dataType, err := api.ParseLiteral(decodedQueryString)
 	if err == nil {
+		if err := api.ValidatePatternOperand(operator, literal, dataType); err != nil {
+			return "", api.DataTypeNone, decodedQueryString, "", false, err
+		}
 		// For map types and array types, we accept string literals and process them specially
 		if (expectedDataType == api.DataTypeStringMap || expectedDataType == api.DataTypeStringBoolMap || expectedDataType == api.DataTypeUUIDStringMap || expectedDataType == api.DataTypeUUIDArray) && dataType == api.DataTypeString {
 			return literal, dataType, remaining, "", false, nil
@@ -653,6 +662,9 @@ func (p *Parser) parseOperand(decodedQueryString string, attribs *Attribute, len
 		// times as strings would be lexicographic -- right only while both sides happen to be
 		// written the same way. The DataTypeTime case parses the literal itself.
 		if expectedDataType == api.DataTypeTime && dataType == api.DataTypeString {
+			if err := api.ValidateTimeLiteral(literal); err != nil {
+				return "", api.DataTypeNone, decodedQueryString, "", false, err
+			}
 			return literal, expectedDataType, remaining, "", false, nil
 		}
 		// For boolean map types, we accept boolean literals
@@ -664,6 +676,9 @@ func (p *Parser) parseOperand(decodedQueryString string, attribs *Attribute, len
 		// Only for a lone UUID -- a map keyed by them takes the literal as a key, which is a
 		// string.
 		if expectedDataType == api.DataTypeUUID && dataType == api.DataTypeString {
+			if _, uuidErr := uuid.Parse(strings.Trim(literal, "'")); uuidErr != nil {
+				return "", api.DataTypeNone, decodedQueryString, "", false, errors.Newf("expected a UUID literal, got %s", literal)
+			}
 			return literal, expectedDataType, remaining, "", false, nil
 		}
 		if expectedDataType == api.DataTypeUUIDStringMap && dataType == api.DataTypeString {
@@ -698,10 +713,18 @@ func (p *Parser) parseOperand(decodedQueryString string, attribs *Attribute, len
 		return literal, dataType, remaining, "", false, nil
 	}
 
+	// A quote begins a literal, so what is wrong with it is what to report.
+	if strings.HasPrefix(decodedQueryString, "'") {
+		return "", api.DataTypeNone, decodedQueryString, "", false, err
+	}
+
 	// Try to parse as attribute reference
-	remaining, attributeRef, entityPrefix, isExtendedRef, err := p.parseAttributeReference(decodedQueryString, expectedDataType)
-	if err == nil {
+	remaining, attributeRef, entityPrefix, isExtendedRef, refErr := p.parseAttributeReference(decodedQueryString, expectedDataType)
+	if refErr == nil {
 		return attributeRef, expectedDataType, remaining, entityPrefix, isExtendedRef, nil
+	}
+	if attributeNameRegexp.MatchString(decodedQueryString) {
+		return "", api.DataTypeNone, decodedQueryString, "", false, refErr
 	}
 
 	return "", api.DataTypeNone, decodedQueryString, "", false, errors.Newf("no valid operand found at `%s`", decodedQueryString)
@@ -766,9 +789,16 @@ func (p *Parser) parseAttributeReference(decodedQueryString string, expectedData
 		}
 	}
 
-	// For substituted entities, we can't validate the attribute type since we'll substitute the value
-	// We'll trust that the substitution will provide the correct type
-	if _, isSubstituted := p.substitutedTypes[entityPrefix]; isSubstituted {
+	// A substituted entity's attribute is read from the value the caller holds, so its type is not
+	// checked against the left side's here; the substitution compares the two values. Its name is
+	// checked against the entity's type, as the left side's is: the value is read by reflection,
+	// which would otherwise reach any exported field of the entity, whether filterable or not.
+	if substitutedType, isSubstituted := p.substitutedTypes[entityPrefix]; isSubstituted {
+		if entityPrefix != p.primaryEntityName {
+			if _, found := p.attributes.Attribute(substitutedType, attributeName); !found {
+				return decodedQueryString, "", "", false, errors.Newf("unrecognized attribute name `%s` of `%s`", attributeName, entityPrefix)
+			}
+		}
 		// Mark as extended if it's not the primary entity
 		if entityPrefix != p.primaryEntityName {
 			isExtendedTerm = true

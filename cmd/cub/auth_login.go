@@ -162,6 +162,8 @@ func authLoginCmdRun(cmd *cobra.Command, args []string) error {
 	if err := updateContextFromSession(coordinate, session); err != nil {
 		return fmt.Errorf("failed to update context: %w", err)
 	}
+	// A worker opens no browser, so it is not told when there is no UI to open.
+	noteWebUILocation(asWorker)
 
 	if organizationSearchTerm != "" {
 		switchToOrganization(organizationSearchTerm)

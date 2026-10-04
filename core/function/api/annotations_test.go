@@ -562,3 +562,63 @@ func TestSetGuardsOverwritesAKeyAndLeavesTheRestAlone(t *testing.T) {
 		"policy-exception": "host-network",
 	}, table[0].PathAnnotationMap[path][api.AnnotationKindGuard])
 }
+
+// A change has to be cleared for the guards it records: otherwise its own guard withholds it the
+// next time it writes the same path.
+func TestCheckGuardStampCleared(t *testing.T) {
+	stamp := api.GuardStamp{"owner": "release", "policy-exception": "capacity"}
+	tests := []struct {
+		name      string
+		stamp     api.GuardStamp
+		clearance api.Clearance
+		wantErr   string
+	}{
+		{name: "no guards need no clearance", stamp: nil, clearance: nil},
+		{
+			name:  "every key covered",
+			stamp: stamp,
+			clearance: api.Clearance{
+				{Key: "owner", Operator: api.ClearanceOperatorIn, Values: []string{"release"}},
+				{Key: "policy-exception", Operator: api.ClearanceOperatorExists},
+			},
+		},
+		{
+			name:      "no clearance names the first key in order",
+			stamp:     stamp,
+			clearance: nil,
+			wantErr:   "the guards include owner=release, which the clearance does not cover; a change is withheld by guards it is not cleared for, including its own, so add the clearance owner=release",
+		},
+		{
+			name:      "a key left uncovered",
+			stamp:     stamp,
+			clearance: api.Clearance{{Key: "owner", Operator: api.ClearanceOperatorExists}},
+			wantErr:   "add the clearance policy-exception=capacity",
+		},
+		{
+			name:      "a value outside the clearance",
+			stamp:     api.GuardStamp{"owner": "release"},
+			clearance: api.Clearance{{Key: "owner", Operator: api.ClearanceOperatorIn, Values: []string{"platform"}}},
+			wantErr:   "add the clearance owner=release",
+		},
+		{
+			name:  "a key the clearance forbids",
+			stamp: api.GuardStamp{"owner": "release"},
+			clearance: api.Clearance{
+				{Key: "owner", Operator: api.ClearanceOperatorExists},
+				{Key: "owner", Operator: api.ClearanceOperatorDoesNotExist},
+			},
+			wantErr: "which the clearance forbids with !owner",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := api.CheckGuardStampCleared(tt.stamp, tt.clearance)
+			if tt.wantErr == "" {
+				require.NoError(t, err)
+				return
+			}
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tt.wantErr)
+		})
+	}
+}

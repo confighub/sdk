@@ -15,3 +15,10 @@ package constants
 // generator, which links internal/views -> cubapi -> goclient-new: a broken client
 // then blocks regenerating that same client.
 const ServerVersionHeader = "ConfigHub-Version"
+
+// ContinueHeader is the response header a List or Search returns the continue token in when
+// there may be more entities after the page it returned. Pass the token as the next request's
+// "continue" query parameter, with the request's other parameters unchanged, and keep reading
+// until a response has no ContinueHeader: a page can be shorter than the limit, or empty, and
+// still be followed by more.
+const ContinueHeader = "ConfigHub-Continue"

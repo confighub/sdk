@@ -179,29 +179,39 @@ func (*TOMLResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 		headCK := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
 		flatHead := flatCommentPath(parentPath, headCK)
 		if text, ok := comments[flatHead]; ok {
-			doc.Set(text, splitPath(flatHead)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatHead)...); err != nil {
+				return nil, err
+			}
 			delete(comments, flatHead)
 		}
 
 		// Look up the value in the decoded data
 		value := lookupValue(tomlData, path)
-		// Only set leaf values (skip tables/maps — gaby creates them implicitly)
-		if !isTable(value) {
-			doc.Set(value, path...)
+		// Only set leaf values (skip tables/maps — gaby creates them implicitly).
+		// TOML has no null, so a nil value is a key inside an array of tables,
+		// which was set along with the array.
+		if value != nil && !isTable(value) {
+			if err := yamlkit.SetPath(doc, value, path...); err != nil {
+				return nil, err
+			}
 		}
 
 		// Add line comment for this key
 		lineCK := yamlkit.CommentKey(yamlkit.CommentLine, targetKey)
 		flatLine := flatCommentPath(parentPath, lineCK)
 		if text, ok := comments[flatLine]; ok {
-			doc.Set(text, splitPath(flatLine)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatLine)...); err != nil {
+				return nil, err
+			}
 			delete(comments, flatLine)
 		}
 	}
 
 	// Add any remaining comments (e.g., trailing foot comments)
 	for path, text := range comments {
-		doc.Set(text, splitPath(path)...)
+		if err := yamlkit.SetPath(doc, text, splitPath(path)...); err != nil {
+			return nil, err
+		}
 	}
 
 	return doc.Bytes(), nil

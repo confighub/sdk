@@ -54,6 +54,9 @@ var variantPromoteArgs struct {
 	force             bool
 	forceReason       string
 	expectedPlan      string
+	protect           bool
+	tag               string
+	subgroup          string
 }
 
 var variantPromoteCmd = &cobra.Command{
@@ -132,6 +135,19 @@ stage it has not reached; --target-stage names the stage instead. Naming a stage
 change is headed, not that it may skip what precedes it. --force promotes past gates that do not
 hold, requires --force-reason, and is recorded on the change order.
 
+The writes take the options a unit update does, and every write of the promotion carries them:
+the upgrades, the set-namespace on added and revived units, and a change order's invocation.
+--protect records the paths each write changes as protected local overrides, and is refused on a
+promotion that merges -- one without --change-order, or of an UpgradeUnit or MergeUnits change
+order -- since merges are what protection holds paths against. --clearance names the guarded
+reasons the writes are cleared for, and a guarded path it does not cover is withheld and reported
+as a conflict; --guard records reasons on the paths written, which a later operation must be
+cleared for, this promotion's later writes included, so --clearance has to cover them;
+--subgroup is recorded on each write's mutations. --tag marks the revision
+each unit the promotion writes is left at, added units included, and leaves units it does not
+change untagged. It cannot be used with --change-order, whose own tags mark what it promotes, and
+a variant with a unit to write that the tag already marks is not promoted.
+
 A stage is promoted one variant at a time and can land partway. A variant that fails is reported
 and the ones after it are still promoted. Running the stage again repairs it.
 
@@ -170,6 +186,9 @@ Examples:
 
   # Promote within a changeset, with a change description
   cub variant promote web-prod --changeset release-2024-06 --change-desc "Promote to prod"
+
+  # Promote, tagging what it writes and taking guarded paths owned by the platform team
+  cub variant promote web-prod --tag web-base/release-2024-06 --clearance owner=platform
 `+"```"+`
 `, ""),
 	Args: cobra.MaximumNArgs(1),
@@ -189,6 +208,11 @@ func init() {
 	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.force, "force", false, "promote past ChangeWorkflow gates that do not hold; requires --force-reason, and is recorded on the change order")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.forceReason, "force-reason", "", "why the gates are overridden; required with --force")
 	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.expectedPlan, "expected-plan", "", "the Plan a --dry-run of the same promotion returned; nothing is written if the promotion would now do anything different")
+	variantPromoteCmd.Flags().BoolVar(&variantPromoteArgs.protect, "protect", false, "record the paths each write of the promotion changes as protected local overrides, so a later merge from upstream does not overwrite them; only with a change order that is promoted by invocation or by Insert, Upsert, or TransformPaths links, since a promotion that merges is what protection holds paths against")
+	addClearanceFlag(variantPromoteCmd)
+	addGuardFlag(variantPromoteCmd)
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each unit the promotion writes is left at; not with --change-order, whose own tags mark what it promotes")
+	variantPromoteCmd.Flags().StringVar(&variantPromoteArgs.subgroup, "subgroup", "", "category recorded on the mutations of each write of the promotion: alphanumeric, at most 64 characters")
 	addStandardDisplayFlags(variantPromoteCmd)
 	variantCmd.AddCommand(variantPromoteCmd)
 }
@@ -207,6 +231,9 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	if variantPromoteArgs.force && variantPromoteArgs.forceReason == "" {
 		return errors.New("--force requires --force-reason: an override of the gates is recorded with the reason for it")
 	}
+	if variantPromoteArgs.tag != "" && variantPromoteArgs.changeorderSlug != "" {
+		return errors.New("--tag cannot be used with --change-order; the change order tags the revisions it promotes")
+	}
 
 	req := goclientnew.PromoteRequest{
 		ChangeDescription: variantPromoteArgs.changeDescription,
@@ -217,6 +244,22 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 		WhereSpace:        variantPromoteArgs.whereSpace,
 		ExpectedPlan:      variantPromoteArgs.expectedPlan,
 		PriorRevisions:    goclientnew.PromoteRequestPriorRevisions(variantPromoteArgs.priorRevisions),
+		Protect:           variantPromoteArgs.protect,
+		Subgroup:          variantPromoteArgs.subgroup,
+	}
+	if len(changeClearance) > 0 {
+		clearance, err := parseClearanceSpecs(changeClearance)
+		if err != nil {
+			return err
+		}
+		req.Clearance = &clearance
+	}
+	if len(changeGuards) > 0 {
+		guards, err := parseGuardStampSpecs(changeGuards)
+		if err != nil {
+			return err
+		}
+		req.Guards = &guards
 	}
 
 	// A bare change order slug resolves where the change was authored: the upstream of the space
@@ -258,6 +301,13 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 			return errors.Wrap(err, "failed to get changeset")
 		}
 		req.ChangeSetID = &changeSetID
+	}
+	if variantPromoteArgs.tag != "" {
+		tagID, err := resolveTagID(variantPromoteArgs.tag)
+		if err != nil {
+			return errors.Wrap(err, "failed to get tag")
+		}
+		req.TagID = &tagID
 	}
 
 	var with []func(*goclientnew.PromoteParams)

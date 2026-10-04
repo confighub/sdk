@@ -183,6 +183,15 @@ func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 	return latest, nil
 }
 
+// liveStatusSummary renders a Release's LiveStatus as Sync/Health, or nothing for a Release no
+// deploying tool has reported on.
+func liveStatusSummary(status *goclientnew.ReleaseLiveStatus) string {
+	if status == nil {
+		return ""
+	}
+	return string(status.Sync) + "/" + string(status.Health)
+}
+
 func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tablewriter.Table) {
 	view.Append([]string{"ID", releaseDetails.ReleaseID.String()})
 	// Published is omitempty in the generated client, so a withdrawn Release
@@ -191,6 +200,21 @@ func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tabl
 	view.Append([]string{"Published", strconv.FormatBool(releaseDetails.Published)})
 	view.Append([]string{"Digest", releaseDetails.Digest})
 	view.Append([]string{"Manifest Digest", releaseDetails.ManifestDigest})
+	if status := releaseDetails.LiveStatus; status != nil {
+		live := liveStatusSummary(status)
+		if status.Operation != "" {
+			live += " (" + string(status.Operation) + ")"
+		}
+		live += ", reported by " + status.Reporter
+		if status.DataSource != "" {
+			live += " from " + status.DataSource
+		}
+		live += " at " + status.ObservedAt.String()
+		view.Append([]string{"Live Status", live})
+		if status.Message != "" {
+			view.Append([]string{"Live Message", status.Message})
+		}
+	}
 	view.Append([]string{"Organization ID", releaseDetails.OrganizationID.String()})
 	view.Append([]string{"Created At", releaseDetails.CreatedAt.String()})
 	view.Append([]string{"Labels", labelsToString(releaseDetails.Labels)})

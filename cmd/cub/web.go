@@ -5,8 +5,9 @@ package main
 
 import (
 	"fmt"
-	"net/url"
+	"net/http"
 	"strings"
+	"time"
 
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/skratchdot/open-golang/open"
@@ -44,13 +45,14 @@ func openWebUI(url string) error {
 }
 
 // webUIServerURL returns the base URL the web UI is served from for the active
-// context: the context's UI URL if one is set, and otherwise its server URL,
-// which is right wherever the UI is embedded in the server.
+// context.
 func webUIServerURL() string {
 	return contextUIURL(contextManager.ActiveContext())
 }
 
-// contextUIURL is the base URL ctx's web UI is served from.
+// contextUIURL is the base URL ctx's web UI is served from: the one its server
+// advertised at the last login, else the server URL, which is right wherever the
+// UI is served on the server's own host.
 func contextUIURL(ctx *Context) string {
 	if ctx.Settings.UIURL != "" {
 		return ctx.Settings.UIURL
@@ -58,15 +60,40 @@ func contextUIURL(ctx *Context) string {
 	return ctx.Coordinate.ServerURL
 }
 
-// normalizeUIURL checks a UI URL given on the command line and returns it without
-// a trailing slash. Empty is allowed and means the server URL.
-func normalizeUIURL(raw string) (string, error) {
-	if raw == "" {
-		return "", nil
+// noteWebUILocation records on the active context where its server says the web
+// UI is, so that the commands that open a browser go there. When the server does
+// not say and its own address serves no UI, it says so, unless quiet: those
+// commands would otherwise open a dead page, and the fix is on the server
+// (CONFIGHUB_UI_URL). A login never fails over any of this.
+func noteWebUILocation(quiet bool) {
+	ctx := contextManager.ActiveContext()
+	apiInfo, err := getApiInfo(ctx.Coordinate)
+	if err != nil {
+		return
 	}
-	u, err := url.Parse(raw)
-	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-		return "", fmt.Errorf("--ui-url must be an http or https URL, like https://ui.example.com; got %q", raw)
+	advertised := strings.TrimRight(apiInfo.UIURL, "/")
+	if advertised != ctx.Settings.UIURL {
+		ctx.Settings.UIURL = advertised
+		if err := contextManager.SaveConfig(); err != nil {
+			return
+		}
 	}
-	return strings.TrimRight(raw, "/"), nil
+	if quiet || advertised != "" || servesWebUI(ctx.Coordinate.ServerURL) {
+		return
+	}
+	tprint("Note: %s does not serve the web UI and does not say where it is, so the commands that open a browser have nowhere to go.", ctx.Coordinate.ServerURL)
+}
+
+// servesWebUI reports whether a web UI answers at serverURL. A UI answers
+// /config.json, with its runtime configuration or, lacking one, with the app; the
+// API server alone answers it 404. When that cannot be determined the answer is
+// true, so that a network hiccup does not produce advice.
+func servesWebUI(serverURL string) bool {
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Get(strings.TrimRight(serverURL, "/") + "/config.json")
+	if err != nil {
+		return true
+	}
+	defer resp.Body.Close()
+	return resp.StatusCode != http.StatusNotFound
 }

@@ -19,8 +19,10 @@ package cubapi
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 
+	"github.com/confighub/sdk/core/constants"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
@@ -174,6 +176,51 @@ type ListOpts struct {
 	// HiddenReasons (comma-separated), or for any reason with "*". A where
 	// clause naming entities by Slug or ID returns them hidden or not.
 	IncludeHidden string
+	// Limit is the most entities to return; 0 returns every one. The list helpers
+	// read pages of at most [MaxListPageSize] until they have Limit entities or
+	// the server has no more.
+	Limit int
+	// OrderBy orders the entities, as comma-separated 'ASC:Field', 'DESC:Field'
+	// or 'Field' terms. They are ordered by their IDs after the fields named,
+	// and by their IDs alone when it is empty.
+	OrderBy string
+}
+
+// MaxListPageSize is the most entities the server returns in one page.
+const MaxListPageSize = 1000
+
+// ReadPages reads a List or Search page by page. read requests one page, with
+// the given limit and continue token, and returns the response and its entities.
+// With a limit, it follows the continue token the server returns in
+// [constants.ContinueHeader] until it has opts.Limit entities or the server has
+// no more. Without one, it makes a single request, which returns every entity.
+//
+// A page can hold fewer entities than were asked for, or none, and still be
+// followed by more: only the absence of a token means there are no more.
+func ReadPages[T any](opts ListOpts, read func(limit *int, token *string) (*http.Response, *[]T, error)) ([]*T, error) {
+	// Not nil: a list with no entities is empty, as derefPtrs returns it, not null.
+	all := []*T{}
+	var token *string
+	for {
+		var limit *int
+		if opts.Limit > 0 {
+			limit = new(int)
+			*limit = min(opts.Limit-len(all), MaxListPageSize)
+		}
+		res, page, err := read(limit, token)
+		if err != nil {
+			return nil, err
+		}
+		all = append(all, derefPtrs(page)...)
+		next := ""
+		if res != nil {
+			next = res.Header.Get(constants.ContinueHeader)
+		}
+		if limit == nil || next == "" || len(all) >= opts.Limit {
+			return all, nil
+		}
+		token = &next
+	}
 }
 
 func ptrIf(s string) *string {
@@ -210,15 +257,19 @@ func ListUnits(ctx context.Context, c *Client, where Where, opts ListOpts, with 
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	res, err := c.API.ListAllUnitsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUnit, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllUnitsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListSpaces returns spaces across the organization matching where. ListSpaces
@@ -236,15 +287,19 @@ func ListSpaces(ctx context.Context, c *Client, where Where, opts ListOpts, with
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	res, err := c.API.ListSpacesWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedSpace, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListSpacesWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListComponents returns the Component entities in the organization matching where.
@@ -259,12 +314,16 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListComponentsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedComponent, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListComponentsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListOrganizations returns the organizations the caller belongs to matching
@@ -326,12 +385,16 @@ func ListUsers(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListUsersWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedUser, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListUsersWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListGroups returns the Groups the caller belongs to matching where. The endpoint takes no
@@ -346,12 +409,16 @@ func ListGroups(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListGroupsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedGroup, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListGroupsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListTargets returns targets across the organization matching where.
@@ -366,12 +433,16 @@ func ListTargets(ctx context.Context, c *Client, where Where, opts ListOpts) ([]
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllTargetsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTarget, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllTargetsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListTriggers returns triggers across the organization matching where.
@@ -386,12 +457,16 @@ func ListTriggers(ctx context.Context, c *Client, where Where, opts ListOpts) ([
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllTriggersWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTrigger, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllTriggersWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListFilters returns filters across the organization matching where. Filter-
@@ -408,15 +483,19 @@ func ListFilters(ctx context.Context, c *Client, where Where, opts ListOpts, wit
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	res, err := c.API.ListAllFiltersWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedFilter, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllFiltersWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListInvocations returns stored invocations across the organization matching
@@ -432,12 +511,16 @@ func ListInvocations(ctx context.Context, c *Client, where Where, opts ListOpts)
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllInvocationsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedInvocation, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllInvocationsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListChangeSets returns change sets across the organization matching where.
@@ -452,12 +535,16 @@ func ListChangeSets(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllChangeSetsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeSet, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllChangeSetsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListChangeOrders returns change orders across the organization matching where.
@@ -472,12 +559,16 @@ func ListChangeOrders(ctx context.Context, c *Client, where Where, opts ListOpts
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllChangeOrdersWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeOrder, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllChangeOrdersWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListChangeWorkflows returns change workflows across the organization matching where.
@@ -492,12 +583,16 @@ func ListChangeWorkflows(ctx context.Context, c *Client, where Where, opts ListO
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllChangeWorkflowsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChangeWorkflow, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllChangeWorkflowsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListTags returns tags across the organization matching where.
@@ -512,12 +607,16 @@ func ListTags(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*go
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllTagsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedTag, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllTagsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListAttestations returns Attestations across the organization matching where.
@@ -532,12 +631,16 @@ func ListAttestations(ctx context.Context, c *Client, where Where, opts ListOpts
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllAttestationsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttestation, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllAttestationsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListViews returns views across the organization matching where.
@@ -552,12 +655,16 @@ func ListViews(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllViewsWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedView, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllViewsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListResources returns the resources of units across the organization matching
@@ -577,15 +684,19 @@ func ListResources(ctx context.Context, c *Client, where Where, opts ListOpts, w
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	res, err := c.API.ListAllResourcesWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedResource, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllResourcesWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListAttributes returns attributes across the organization matching where.
@@ -600,12 +711,16 @@ func ListAttributes(ctx context.Context, c *Client, where Where, opts ListOpts) 
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.ListAllAttributesWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedAttribute, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllAttributesWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListLinks returns links across the organization matching where. Links have no
@@ -621,12 +736,16 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
-	res, err := c.API.SearchListLinksWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedLink, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.SearchListLinksWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListBridgeWorkers returns bridge workers across the organization matching
@@ -643,15 +762,19 @@ func ListBridgeWorkers(ctx context.Context, c *Client, where Where, opts ListOpt
 		Filter:        ptrIf(opts.Filter),
 		Contains:      ptrIf(opts.Contains),
 		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
 	}
 	for _, fn := range with {
 		fn(params)
 	}
-	res, err := c.API.ListAllBridgeWorkersWithResponse(ctx, params)
-	if IsAPIError(err, res) {
-		return nil, InterpretErrorGeneric(err, res)
-	}
-	return derefPtrs(res.JSON200), nil
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedBridgeWorker, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllBridgeWorkersWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
 }
 
 // ListMarkedUnits returns the units a trigger has marked -- ValidationWarnings from an

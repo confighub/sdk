@@ -141,6 +141,15 @@ app.name=MyApp
 	}
 }
 
+// A key that is also the prefix of another key cannot be both a value and a map
+// in YAML, so the conversion fails rather than dropping one of them.
+func TestPropertiesToYAMLKeyPrefixConflict(t *testing.T) {
+	_, err := NewPropertiesResourceProvider().NativeToYAML([]byte("a=1\na.b=2\n"))
+	if err == nil || !strings.Contains(err.Error(), `"a.b"`) {
+		t.Fatalf("Expected an error naming a.b, got %v", err)
+	}
+}
+
 func TestYAMLToPropertiesWithComments(t *testing.T) {
 	yamlData := []byte(`database:
   $comment$head$host: Database host

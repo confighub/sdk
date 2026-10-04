@@ -40,6 +40,9 @@ func InitializeClient(ctx *Context) (*goclientnew.ClientWithResponses, error) {
 		// knowing after the fact, and it lets the server flag a skewed client.
 		UserAgent: "cub/" + Version,
 		Debug:     debug,
+		// A --where bulk command acts on any number of entities, more than one request can
+		// within the server's timeout.
+		PageBulkOperations: true,
 	}
 	// A missing token is not fatal: some commands run unauthenticated, and the
 	// client simply omits the Authorization header in that case.

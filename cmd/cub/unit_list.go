@@ -196,6 +196,7 @@ var unitCustomColumnDependencies = map[string][]string{
 
 func init() {
 	addStandardListFlags(unitListCmd)
+	enableListPagingFlags(unitListCmd)
 	unitListCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	unitListCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	unitListCmd.Flags().StringVar(&whereTrigger, "where-trigger", "", "where expression to match triggers for validation filtering")
@@ -449,6 +450,8 @@ func apiListAllUnits(where cubapi.Where, resourceType string, whereData string, 
 		return buildSelectList("Unit", effectiveColumns(), selectInclude, defaultUnitColumns, unitAliases, unitCustomColumnDependencies, unitBaseSelectFields)
 	})
 	return cubapi.ListUnits(ctx, cubClient, where, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       unitListInclude,
 		Filter:        filterParam,

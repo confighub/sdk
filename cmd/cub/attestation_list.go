@@ -42,6 +42,7 @@ var attestationAliases = map[string]string{
 
 func init() {
 	addStandardListFlags(attestationListCmd)
+	enableListPagingFlags(attestationListCmd)
 	attestationCmd.AddCommand(attestationListCmd)
 }
 
@@ -55,6 +56,8 @@ func attestationListCmdRun(cmd *cobra.Command, args []string) error {
 		w = w.Eq("SpaceID", selectedSpaceID)
 	}
 	attestations, err := cubapi.ListAttestations(ctx, cubClient, w, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        attestationSelectValue(),
 		Filter:        filterID,
 		Contains:      contains,

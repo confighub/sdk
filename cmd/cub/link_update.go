@@ -681,15 +681,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	fromUnitID := fromUnit.Unit.UnitID
-	toSpaceID := selectedSpaceID
-	if len(args) == 4 {
-		toSpace, err := resolveSpace(args[3], "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		toSpaceID = toSpace.Space.SpaceID.String()
-	}
-	toUnit, err := resolveUnit(args[2], toSpaceID, "*") // get all fields for now
+	toUnit, err := resolveLinkToUnit(args[2:], selectedSpaceID)
 	if err != nil {
 		return err
 	}
@@ -697,7 +689,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	currentLink.FromUnitID = fromUnitID
 	currentLink.ToUnitID = toUnitID
-	currentLink.ToSpaceID = uuid.MustParse(toSpaceID)
+	currentLink.ToSpaceID = toUnit.Unit.SpaceID
 	if err := setLinkFieldsOnUpdate(currentLink, cmd); err != nil {
 		return err
 	}

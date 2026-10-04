@@ -77,6 +77,27 @@ func GenerateEd25519(externalID string) (*Pair, error) {
 	return &Pair{PublicJWK: publicJWK, PrivateJWK: privateJWK, Kid: kid}, nil
 }
 
+// PublicEd25519 returns the public half of an Ed25519 private JWK, in the form
+// GenerateEd25519 renders it, so a key generated earlier can be registered again
+// without being regenerated.
+func PublicEd25519(privateJWK json.RawMessage) (json.RawMessage, error) {
+	var parsed map[string]any
+	if err := json.Unmarshal(privateJWK, &parsed); err != nil {
+		return nil, fmt.Errorf("malformed JWK: %w", err)
+	}
+	if kty, _ := parsed["kty"].(string); kty != "OKP" {
+		return nil, fmt.Errorf("unsupported key type %q: expected OKP", kty)
+	}
+	if crv, _ := parsed["crv"].(string); crv != "Ed25519" {
+		return nil, fmt.Errorf("unsupported curve %q: expected Ed25519", crv)
+	}
+	x, _ := parsed["x"].(string)
+	if pub, err := base64.RawURLEncoding.DecodeString(x); err != nil || len(pub) != ed25519.PublicKeySize {
+		return nil, fmt.Errorf("JWK member %q is not an Ed25519 public key", "x")
+	}
+	return json.RawMessage(fmt.Sprintf(`{"kty":"OKP","crv":"Ed25519","x":%q}`, x)), nil
+}
+
 // requiredMembers lists, per key type, the members RFC 7638 §3.2 includes in a
 // thumbprint. Nothing else participates -- not "alg", "use", or "kid" -- so the
 // thumbprint is a property of the key rather than of how it was described.

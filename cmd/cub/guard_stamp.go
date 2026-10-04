@@ -31,7 +31,7 @@ import (
 // `cub unit set-guard --remove-guard`, which says so deliberately -- a removal is a decision
 // about the Unit's policy rather than a by-product of writing a value.
 
-const guardFlagUsage = "reason to record on the paths this change writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths. Adds and overwrites only; retiring a guard is cub unit set-guard --remove-guard"
+const guardFlagUsage = "reason to record on the paths this change writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, this one included, so --clearance has to cover it. Adds and overwrites only; retiring a guard is cub unit set-guard --remove-guard"
 
 // parseGuardStampSpecs turns --guard flag values into the key/value map the wire carries.
 func parseGuardStampSpecs(specs []string) (goclientnew.GuardStamp, error) {
@@ -69,8 +69,8 @@ func formatGuardStamp(stamp *goclientnew.GuardStamp) string {
 }
 
 // changeGuards holds the --guard flag shared by the commands that change configuration data: a
-// function invocation, a run, a unit update. Declared once because the flag means the same thing
-// on each of them, for the reason changeClearance is.
+// function invocation, a run, a unit update, a promotion. Declared once because the flag means
+// the same thing on each of them, for the reason changeClearance is.
 var changeGuards []string
 
 // addGuardFlag registers --guard on a command that writes configuration data.
@@ -120,5 +120,5 @@ var (
 // addTriggerGuardFlag registers --guard on a trigger command.
 func addTriggerGuardFlag(cmd *cobra.Command) {
 	cmd.Flags().StringArrayVar(&triggerGuards, "guard", nil,
-		"reason to record on the paths this trigger's function writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths. Part of the trigger's Hash, unlike --protect: changing it changes what a re-run leaves behind")
+		"reason to record on the paths this trigger's function writes, as KEY=VALUE (repeatable). A later operation must be cleared for it before overwriting those paths, the trigger's next run included, so --clearance has to cover it. Part of the trigger's Hash, unlike --protect: changing it changes what a re-run leaves behind")
 }

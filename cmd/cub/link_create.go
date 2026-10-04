@@ -34,7 +34,7 @@ Create a single link between two units. Links define relationships between units
 A link can be created:
 
   1. Between units in the same space
-  2. Between units across different spaces (by specifying the target space)
+  2. Between units across different spaces (by naming the to unit as <space>/<unit>, or by specifying the to space)
 
 BULK LINK CREATION (COPY):
 
@@ -59,6 +59,11 @@ Single Link Examples:
 
   # Create a link between a cloned unit and a namespace
   cub link create --space my-space --json clone-to-ns my-clone my-ns --wait
+
+  # Create a link to a namespace in another space, spelled either way. The link is created in
+  # --space, where the from unit is
+  cub link create --space my-space dep-to-ns my-deployment platform/my-ns
+  cub link create --space my-space dep-to-ns my-deployment my-ns platform
 
   # Roll a workload when its ConfigMap changes: hash the ConfigMap's data, and write the hash
   # to an annotation of the pod template. A place in a unit is <resource-type>:<resource-name>:<path>
@@ -237,15 +242,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	fromUnitID := fromUnit.Unit.UnitID
-	toSpaceID := selectedSpaceID
-	if len(args) == 4 {
-		toSpace, err := resolveSpace(args[3], "*") // get all fields for now
-		if err != nil {
-			return err
-		}
-		toSpaceID = toSpace.Space.SpaceID.String()
-	}
-	toUnit, err := resolveUnit(args[2], toSpaceID, "*") // get all fields for now
+	toUnit, err := resolveLinkToUnit(args[2:], selectedSpaceID)
 	if err != nil {
 		return err
 	}
@@ -253,7 +250,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 
 	newLink.FromUnitID = fromUnitID
 	newLink.ToUnitID = toUnitID
-	newLink.ToSpaceID = uuid.MustParse(toSpaceID)
+	newLink.ToSpaceID = toUnit.Unit.SpaceID
 	if err := setLinkFieldsOnCreate(newLink, cmd); err != nil {
 		return err
 	}

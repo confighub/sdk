@@ -58,6 +58,7 @@ var attributeCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(attributeListCmd)
+	enableListPagingFlags(attributeListCmd)
 	attributeCmd.AddCommand(attributeListCmd)
 }
 
@@ -130,6 +131,8 @@ func apiListAllAttributes(where cubapi.Where, selectParam string, filterParam st
 		return buildSelectList("Attribute", listColumnsFor("cub attribute list"), attributeListInclude, defaultAttributeColumns, attributeAliases, attributeCustomColumnDependencies, attributeBaseSelectFields)
 	})
 	return cubapi.ListAttributes(ctx, cubClient, where, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       attributeListInclude,
 		Filter:        filterParam,

@@ -82,6 +82,30 @@ const (
 	QueuedOperationStatusProgressing  QueuedOperationStatus = "Progressing"
 )
 
+// Defines values for ReleaseLiveStatusHealth.
+const (
+	ReleaseLiveStatusHealthDegraded    ReleaseLiveStatusHealth = "Degraded"
+	ReleaseLiveStatusHealthHealthy     ReleaseLiveStatusHealth = "Healthy"
+	ReleaseLiveStatusHealthMissing     ReleaseLiveStatusHealth = "Missing"
+	ReleaseLiveStatusHealthProgressing ReleaseLiveStatusHealth = "Progressing"
+	ReleaseLiveStatusHealthSuspended   ReleaseLiveStatusHealth = "Suspended"
+	ReleaseLiveStatusHealthUnknown     ReleaseLiveStatusHealth = "Unknown"
+)
+
+// Defines values for ReleaseLiveStatusOperation.
+const (
+	ReleaseLiveStatusOperationFailed    ReleaseLiveStatusOperation = "Failed"
+	ReleaseLiveStatusOperationRunning   ReleaseLiveStatusOperation = "Running"
+	ReleaseLiveStatusOperationSucceeded ReleaseLiveStatusOperation = "Succeeded"
+)
+
+// Defines values for ReleaseLiveStatusSync.
+const (
+	OutOfSync ReleaseLiveStatusSync = "OutOfSync"
+	Synced    ReleaseLiveStatusSync = "Synced"
+	Unknown   ReleaseLiveStatusSync = "Unknown"
+)
+
 // Defines values for UnitActionStatus.
 const (
 	UnitActionStatusAborted      UnitActionStatus = "Aborted"
@@ -178,6 +202,7 @@ type ApiInfo struct {
 	OCIPort               string `json:"OCIPort,omitempty" yaml:"OCIPort,omitempty"`
 	TokenExchangeAudience string `json:"TokenExchangeAudience,omitempty" yaml:"TokenExchangeAudience,omitempty"`
 	TokenExchangeEndpoint string `json:"TokenExchangeEndpoint,omitempty" yaml:"TokenExchangeEndpoint,omitempty"`
+	UIURL                 string `json:"UIURL,omitempty" yaml:"UIURL,omitempty"`
 
 	// Version Version of the server, either a release (e.g. v1.2.3) or a build from a working tree (e.g. v1.2-dev). Its first two numbers are the API version: pre-1.0, a change in the second is not backward compatible. Also sent on every response in the ConfigHub-Version header.
 	Version string `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -592,7 +617,7 @@ type BridgeWorker struct {
 	// LastSeenAt LastSeenAt is the time the worker was last seen (heartbeat, connection, or any event).
 	LastSeenAt time.Time `json:"LastSeenAt,omitempty" yaml:"LastSeenAt,omitempty"`
 
-	// OrgRole Organization-level permission for the BridgeWorker User.
+	// OrgRole Organization-level role of the BridgeWorker User. Defaults to none, which leaves the User with only the permissions granted to it.
 	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
@@ -748,6 +773,9 @@ type ChangeOrder struct {
 	// ReleasedSpaceIDs ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. Derived when the ChangeOrder is read.
 	ReleasedSpaceIDs []UUID `json:"ReleasedSpaceIDs,omitempty" yaml:"ReleasedSpaceIDs,omitempty"`
 
+	// Releases Releases names, for each Space in ReleasedSpaceIDs, the earliest published Release of the Space that carries the change, which is the Release the gates read. A Space whose Releases no longer carry the change, such as one whose Release was withdrawn, has no entry. Derived when the ChangeOrder is read.
+	Releases []ChangeOrderRelease `json:"Releases,omitempty" yaml:"Releases,omitempty"`
+
 	// ResolvedSpaceIDs ResolvedSpaceIDs is where the ChangeOrder has been fully propagated to: the Spaces in scope whose Links of its UpdateType have all merged it, plus the Space it resides in. For an Invoke ChangeOrder it is the Spaces in scope where every Unit WhereUnit selects carries the end Tag, and its own Space counts only if it is one of them. Derived when the ChangeOrder is read.
 	ResolvedSpaceIDs []UUID `json:"ResolvedSpaceIDs,omitempty" yaml:"ResolvedSpaceIDs,omitempty"`
 
@@ -895,6 +923,18 @@ type ChangeOrderPromotionOverride struct {
 	UserID       openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 }
 
+// ChangeOrderRelease defines model for ChangeOrderRelease.
+type ChangeOrderRelease struct {
+	// ReleaseID The earliest published Release of the Space that carries the change.
+	ReleaseID openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
+
+	// ReleaseNum The Release's number within its Target.
+	ReleaseNum int64 `json:"ReleaseNum,omitempty" yaml:"ReleaseNum,omitempty"`
+
+	// SpaceID The Space the Release was published from.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+}
+
 // ChangeSet Defines an entity changeset.
 type ChangeSet struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -1032,10 +1072,10 @@ type ChangeWorkflowAttestationPrerequisite struct {
 	// Description What the requirement is for, in the author's words.
 	Description string `json:"Description,omitempty" yaml:"Description,omitempty"`
 
-	// DistinctGroups Reserved: each counted attester must be from a different group of FromGroupIDs. Refused until Groups are recorded on Attestations.
+	// DistinctGroups Require an attester from each group of FromGroupIDs, which it requires. A user in several of the groups covers only one of them, and Count does not apply.
 	DistinctGroups bool `json:"DistinctGroups,omitempty" yaml:"DistinctGroups,omitempty"`
 
-	// FromGroupIDs Reserved: Groups whose members' Attestations count. Refused until Groups are recorded on Attestations.
+	// FromGroupIDs The Groups whose members' Attestations count, beside the Users FromUserIDs names. Membership is read when the gate is evaluated, not when the Attestation was recorded.
 	FromGroupIDs []UUID `json:"FromGroupIDs,omitempty" yaml:"FromGroupIDs,omitempty"`
 
 	// FromUserIDs The Users whose Attestations count. Empty is anyone who may record an Attestation in the Space.
@@ -1654,7 +1694,7 @@ type ExtendedRelease struct {
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, and DeleteGates can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
 
 	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
@@ -2873,6 +2913,10 @@ type PromoteRequest struct {
 
 	// ChangeSetID An existing open ChangeSet to record every write in.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
+	Clearance   *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
 	// ExpectedPlan The Plan a previous dry run returned. If the plan now differs, nothing is written and the request fails with 412.
 	ExpectedPlan string `json:"ExpectedPlan,omitempty" yaml:"ExpectedPlan,omitempty"`
@@ -2881,16 +2925,26 @@ type PromoteRequest struct {
 	Force bool `json:"Force,omitempty" yaml:"Force,omitempty"`
 
 	// ForceReason Why the gates were overridden. Required with Force.
-	ForceReason string `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
+	ForceReason string      `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
+	Guards      *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// PriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include (the default) merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start; Error refuses, naming the Revisions. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
 	PriorRevisions PromoteRequestPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
+
+	// Protect Record the paths each Unit write changes as protected local overrides, so a later merge from upstream does not overwrite them. By default a write claims nothing and each path keeps the protection it already had. Accepted only for an Invoke ChangeOrder and for one that follows Insert, Upsert, or TransformPaths Links: refused for a promotion that merges, which protection holds paths against.
+	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
 
 	// SpaceFilterID A Filter over Spaces selecting the Spaces to promote. Intersected with the other selectors.
 	SpaceFilterID *openapi_types.UUID `json:"SpaceFilterID,omitempty" yaml:"SpaceFilterID,omitempty"`
 
 	// Squash Merge each Unit's range as one rebased Revision rather than replaying each upstream Revision.
 	Squash bool `json:"Squash,omitempty" yaml:"Squash,omitempty"`
+
+	// Subgroup A category recorded on the Mutations of each Unit write. Alphanumeric, at most 64 characters, and not starting with ConfigHub.
+	Subgroup string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
+
+	// TagID A Tag to put on the Revision each Unit the promotion writes is left at, clones included. Units the promotion leaves Unchanged are not tagged. Requires Use permission on the Tag, and cannot be used with ChangeOrderID, whose own Tags mark what it promotes. A selected Space with a Unit to write that the Tag already marks fails, and nothing in it is written.
+	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 
 	// TargetStage A Stage of the ChangeOrder's ChangeWorkflow to promote into. Requires a ChangeOrder with a ChangeWorkflow. When empty, and neither WhereSpace nor SpaceFilterID is given, the next Stage the change has not reached.
 	TargetStage string `json:"TargetStage,omitempty" yaml:"TargetStage,omitempty"`
@@ -3051,7 +3105,7 @@ type QueuedOperation struct {
 // QueuedOperationStatus Status indicates the current status of the unit action. v2 statuses: Initializing (being set up), Pending (waiting), Delivered (sent to worker), Progressing (being processed), Completed (success), Failed (error). v1 compatibility: 'pending' = Pending, 'delivered' = Completed (legacy 'delivered' meant work done).
 type QueuedOperationStatus string
 
-// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, and DeleteGates can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
 type Release struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -3079,7 +3133,8 @@ type Release struct {
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Labels     map[string]string  `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	LiveStatus *ReleaseLiveStatus `json:"LiveStatus,omitempty" yaml:"LiveStatus,omitempty"`
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
@@ -3115,6 +3170,48 @@ type Release struct {
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
 }
+
+// ReleaseLiveStatus defines model for ReleaseLiveStatus.
+type ReleaseLiveStatus struct {
+	// DataSource The object the status was read from, such as the name of the Argo CD Application.
+	DataSource string `json:"DataSource,omitempty" yaml:"DataSource,omitempty"`
+
+	// Health The aggregate health of what the Release deployed: Healthy, Progressing, Degraded, Suspended, Missing, or Unknown.
+	Health ReleaseLiveStatusHealth `json:"Health,omitempty" yaml:"Health,omitempty"`
+
+	// Message A short human-readable status or error message.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// ObservedAt When the reporter observed this status.
+	ObservedAt time.Time `json:"ObservedAt,omitempty" yaml:"ObservedAt,omitempty"`
+
+	// Operation The state of the operation applying the Release, when the reporter runs one: Running, Succeeded, or Failed.
+	Operation ReleaseLiveStatusOperation `json:"Operation,omitempty" yaml:"Operation,omitempty"`
+
+	// Reporter The client that reported the status, such as argobot.
+	Reporter string `json:"Reporter,omitempty" yaml:"Reporter,omitempty"`
+
+	// ReporterHealth The health in the reporter's own words.
+	ReporterHealth string `json:"ReporterHealth,omitempty" yaml:"ReporterHealth,omitempty"`
+
+	// ReporterOperation The operation phase in the reporter's own words, such as Argo CD's Error or Terminating.
+	ReporterOperation string `json:"ReporterOperation,omitempty" yaml:"ReporterOperation,omitempty"`
+
+	// ReporterSync The sync status in the reporter's own words, such as Argo CD's OutOfSync.
+	ReporterSync string `json:"ReporterSync,omitempty" yaml:"ReporterSync,omitempty"`
+
+	// Sync Whether what is running matches the Release: Synced, OutOfSync, or Unknown.
+	Sync ReleaseLiveStatusSync `json:"Sync,omitempty" yaml:"Sync,omitempty"`
+}
+
+// ReleaseLiveStatusHealth The aggregate health of what the Release deployed: Healthy, Progressing, Degraded, Suspended, Missing, or Unknown.
+type ReleaseLiveStatusHealth string
+
+// ReleaseLiveStatusOperation The state of the operation applying the Release, when the reporter runs one: Running, Succeeded, or Failed.
+type ReleaseLiveStatusOperation string
+
+// ReleaseLiveStatusSync Whether what is running matches the Release: Synced, OutOfSync, or Unknown.
+type ReleaseLiveStatusSync string
 
 // ReleasePublishRequest defines model for ReleasePublishRequest.
 type ReleasePublishRequest struct {
@@ -4813,11 +4910,8 @@ type WithheldGuard struct {
 type WorkerInfo struct {
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
 
-	// IsServerWorker If true, this is a server-hosted worker. It cannot be changed after the worker is created.
+	// IsServerWorker If true, this is a server-hosted worker: an identity that no worker process connects as, and that runs no functions. It cannot be changed after the worker is created.
 	IsServerWorker bool `json:"IsServerWorker,omitempty" yaml:"IsServerWorker,omitempty"`
-
-	// UseUserIdentity If true, the server worker operates using the requesting user's identity rather than the worker's bot identity. Requires IsServerWorker to be true. It cannot be changed after the worker is created.
-	UseUserIdentity bool `json:"UseUserIdentity,omitempty" yaml:"UseUserIdentity,omitempty"`
 }
 
 // BulkDeleteComponentsParams defines parameters for BulkDeleteComponents.
@@ -4908,6 +5002,12 @@ type BulkDeleteComponentsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Component entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Component entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchComponentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchComponents.
@@ -5027,6 +5127,12 @@ type BulkPatchComponentsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Component entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Component entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// WithBackingUnits Give each Component written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Component's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
 
@@ -5128,6 +5234,12 @@ type BulkDeleteSpacesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Space entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Space entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Recursive Valid values are true and false. False is the default if unspecified. If true, recursively delete all entities within the deleted space(s) so long as none have delete gates.
 	Recursive *string `form:"recursive,omitempty" json:"recursive,omitempty" yaml:"recursive,omitempty"`
@@ -5258,6 +5370,12 @@ type BulkPatchSpacesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Space entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Space entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// RefreshTriggers If true, re-list the Triggers the Space selects (with WhereTrigger and/or TriggerFilterID, or the ones in it with neither) even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
@@ -5395,6 +5513,12 @@ type BulkCreateSpacesParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Space entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Space entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Space names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -5450,7 +5574,7 @@ type BulkCreateSpacesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -5571,6 +5695,29 @@ type ListAllAttestationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Attestation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Attestation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Attestation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Attestation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkDeleteAttributesParams defines parameters for BulkDeleteAttributes.
@@ -5661,6 +5808,12 @@ type BulkDeleteAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Attribute entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllAttributesParams defines parameters for ListAllAttributes.
@@ -5761,6 +5914,29 @@ type ListAllAttributesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Attribute entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Attribute results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Attribute: AttributeID, BackingUnitID, CreatedAt, DataType, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Attribute's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Attribute entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchAttributesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchAttributes.
@@ -5881,6 +6057,12 @@ type BulkPatchAttributesParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Attribute entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each Attribute written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Attribute's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -6011,6 +6193,12 @@ type BulkCreateAttributesParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Attribute entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Attribute names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -6111,7 +6299,7 @@ type BulkCreateAttributesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -6310,6 +6498,12 @@ type BulkDeleteBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of BridgeWorker entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the BridgeWorker entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -6412,6 +6606,29 @@ type ListAllBridgeWorkersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Summary Include summary information in the response
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -6533,6 +6750,12 @@ type BulkPatchBridgeWorkersParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of BridgeWorker entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the BridgeWorker entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -6607,6 +6830,29 @@ type ListQueuedOperationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkDeleteChangeOrdersParams defines parameters for BulkDeleteChangeOrders.
@@ -6645,7 +6891,7 @@ type BulkDeleteChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6698,6 +6944,12 @@ type BulkDeleteChangeOrdersParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of ChangeOrder entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeOrder entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -6738,7 +6990,7 @@ type ListAllChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6800,6 +7052,29 @@ type ListAllChangeOrdersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeOrder entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeOrder results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeOrder: AbortedReason, AdoptedEndTagID, ChangeOrderID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, InvocationID, OrganizationID, RestoreTagID, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeOrder's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeOrder entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchChangeOrdersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeOrders.
@@ -6876,7 +7151,7 @@ type BulkPatchChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -6928,6 +7203,12 @@ type BulkPatchChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeOrder entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeOrder entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// RefreshSpaces If true, re-evaluate WhereSpace and/or SpaceFilterID into InScopeSpaceIDs, and re-derive what the ChangeOrder covers if the Spaces they select have changed, even if neither field has changed. Has no effect on a ChangeOrder with neither set.
 	RefreshSpaces *bool `form:"refresh_spaces,omitempty" json:"refresh_spaces,omitempty" yaml:"refresh_spaces,omitempty"`
@@ -7010,7 +7291,7 @@ type BulkCreateChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -7062,6 +7343,12 @@ type BulkCreateChangeOrdersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeOrder entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeOrder entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeOrder names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
@@ -7222,6 +7509,12 @@ type BulkDeleteChangeSetsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of ChangeSet entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeSet entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -7324,6 +7617,29 @@ type ListAllChangeSetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeSet entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeSet entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchChangeSetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeSets.
@@ -7440,6 +7756,12 @@ type BulkPatchChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeSet entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeSet entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -7559,6 +7881,12 @@ type BulkCreateChangeSetsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeSet entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeSet entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeSet names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
@@ -7811,6 +8139,12 @@ type BulkDeleteChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeWorkflow entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllChangeWorkflowsParams defines parameters for ListAllChangeWorkflows.
@@ -7911,6 +8245,29 @@ type ListAllChangeWorkflowsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeWorkflow entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeWorkflow results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeWorkflow's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeWorkflow entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchChangeWorkflowsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChangeWorkflows.
@@ -8038,6 +8395,12 @@ type BulkPatchChangeWorkflowsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ChangeWorkflow entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each ChangeWorkflow written a backing Unit if it has none: a ConfigHub/YAML Unit holding the ChangeWorkflow's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -8175,6 +8538,12 @@ type BulkCreateChangeWorkflowsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of ChangeWorkflow entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned ChangeWorkflow names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -8281,7 +8650,7 @@ type BulkCreateChangeWorkflowsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -8489,6 +8858,29 @@ type ListComponentsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Component entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Component results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Component: BackingUnitID, ChangeWorkflowRequired, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, UpdatedAt, UpstreamComponentID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Component's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Component entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateComponentParams defines parameters for CreateComponent.
@@ -8680,6 +9072,12 @@ type BulkDeleteFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Filter entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllFiltersParams defines parameters for ListAllFilters.
@@ -8780,6 +9178,29 @@ type ListAllFiltersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Filter entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Filter results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Filter: BackingUnitID, CreatedAt, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Filter's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Filter entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
@@ -8907,6 +9328,12 @@ type BulkPatchFiltersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Filter entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each Filter written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Filter's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -9038,6 +9465,12 @@ type BulkCreateFiltersParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Filter entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Filter names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -9144,7 +9577,7 @@ type BulkCreateFiltersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -9362,7 +9795,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -9505,6 +9938,29 @@ type ListGroupsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Group entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Group results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Group: CreatedAt, DisplayName, ExternalID, GroupID, Slug, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Group's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Group entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // GetGroupParams defines parameters for GetGroup.
@@ -9610,6 +10066,12 @@ type BulkDeleteInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Invocation entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllInvocationsParams defines parameters for ListAllInvocations.
@@ -9712,6 +10174,29 @@ type ListAllInvocationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Invocation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Invocation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Invocation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Invocation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchInvocationsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchInvocations.
@@ -9833,6 +10318,12 @@ type BulkPatchInvocationsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Invocation entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each Invocation written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Invocation's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -9964,6 +10455,12 @@ type BulkCreateInvocationsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Invocation entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Invocation names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -10070,7 +10567,7 @@ type BulkCreateInvocationsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10270,6 +10767,12 @@ type BulkDeleteLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Link entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Link entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // SearchListLinksParams defines parameters for SearchListLinks.
@@ -10370,6 +10873,29 @@ type SearchListLinksParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Link entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Link results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Link: AutoUpdate, BackingUnitID, CreatedAt, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, HiddenReason, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Link's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Link entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchLinksApplicationMergePatchPlusJSONBody defines parameters for BulkPatchLinks.
@@ -10509,6 +11035,12 @@ type BulkPatchLinksParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Link entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Link entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Reverse Swap the FromUnit and ToUnit directions of the links
 	Reverse *bool `form:"reverse,omitempty" json:"reverse,omitempty" yaml:"reverse,omitempty"`
@@ -10763,7 +11295,7 @@ type BulkCreateLinksParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -10988,7 +11520,7 @@ type ListOrganizationMembersParams struct {
 
 // PromoteParams defines parameters for Promote.
 type PromoteParams struct {
-	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
+	// DryRun Deprecated: use DryRun in the request body. Plan the promotion, evaluate its gates, and return the same response without writing anything. Either one asks for a dry run.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. On a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
@@ -11031,7 +11563,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11093,6 +11625,29 @@ type ListAllReleasesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Release entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Release results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Release's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Release entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllResourcesParams defines parameters for ListAllResources.
@@ -11196,24 +11751,31 @@ type ListAllResourcesParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Resource's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Resource entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Resource entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -11323,24 +11885,31 @@ type ListAllRevisionsParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Revision's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Revision entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
 	//
@@ -11456,24 +12025,31 @@ type SearchRevisionDataParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Revision's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Revision entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
 	//
@@ -11589,24 +12165,31 @@ type SearchRevisionMutationSourcesParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Revision's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Revision entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// DistinctOn Entity to return at most one Revision per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
 	//
@@ -11719,6 +12302,29 @@ type ListSpacesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Space entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Space results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Space: AttributeFilterID, AttributeHash, BackingUnitID, ComponentID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamSpaceID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Space's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Space entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Summary Return summarized entity data
 	Summary *bool `form:"summary,omitempty" json:"summary,omitempty" yaml:"summary,omitempty"`
@@ -11923,6 +12529,29 @@ type ListExtendedAttestationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Attestation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Attestation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Attestation: AttestationID, ChangeOrderID, CreatedAt, ExpiresAt, HiddenReason, Note, OrganizationID, ReleaseID, Result, RevokedAttestationID, SpaceID, Type, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Attestation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Attestation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateAttestationParams defines parameters for CreateAttestation.
@@ -12051,6 +12680,29 @@ type ListAttributesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Attribute entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Attribute results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Attribute: AttributeID, BackingUnitID, CreatedAt, DataType, DisplayName, Hash, HiddenReason, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamAttributeID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Attribute's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Attribute entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateAttributeParams defines parameters for CreateAttribute.
@@ -12233,6 +12885,29 @@ type ListBridgeWorkersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of BridgeWorker entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort BridgeWorker results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering BridgeWorker: BridgeWorkerID, Condition, CreatedAt, DisplayName, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrgRole, OrganizationID, Slug, SpaceID, UpdatedAt, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the BridgeWorker's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the BridgeWorker entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateBridgeWorkerParams defines parameters for CreateBridgeWorker.
@@ -12347,7 +13022,7 @@ type ListChangeOrdersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	// Supported attributes for filtering on ChangeOrder: AbortedReason, AdoptedEndTagID, Annotations, ChangeOrderID, ChangeWorkflow, ChangeWorkflowID, CreatedAt, DeleteGates, Description, DisplayName, EndTagID, HiddenReason, InScopeSpaceIDs, InvocationID, Labels, OrganizationID, Parameters, Permissions, PromotionFailures, PromotionOverrides, Promotions, ReleasedRestoredSpaceIDs, ReleasedSpaceIDs, Releases, ResolvedSpaceIDs, RestoreTagID, RestoredSpaceIDs, SkippedUnits, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, State, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -12409,6 +13084,29 @@ type ListChangeOrdersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeOrder entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeOrder results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeOrder: AbortedReason, AdoptedEndTagID, ChangeOrderID, ChangeWorkflowID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, InvocationID, OrganizationID, RestoreTagID, Slug, SpaceFilterID, SpaceID, Stage, StartTagID, UnitFilterID, UpdateType, UpdatedAt, WhereSpace, WhereUnit.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeOrder's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeOrder entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateChangeOrderParams defines parameters for CreateChangeOrder.
@@ -12602,6 +13300,29 @@ type ListChangeSetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeSet entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeSet results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeSet: ChangeSetID, CreatedAt, Description, DisplayName, EndTagID, HiddenReason, OrganizationID, Slug, SpaceID, StartTagID, StartTagIsPriorRevision, State, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeSet's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeSet entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateChangeSetParams defines parameters for CreateChangeSet.
@@ -12777,6 +13498,29 @@ type ListChangeWorkflowsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ChangeWorkflow entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ChangeWorkflow results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ChangeWorkflow: BackingUnitID, ChangeWorkflowID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamChangeWorkflowID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ChangeWorkflow's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ChangeWorkflow entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateChangeWorkflowParams defines parameters for CreateChangeWorkflow.
@@ -12972,6 +13716,29 @@ type ListFiltersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Filter entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Filter results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Filter: BackingUnitID, CreatedAt, DisplayName, FilterID, From, FromSpaceID, Hash, HiddenReason, IncludeHidden, OrganizationID, ResourceType, Slug, SpaceID, UpdatedAt, UpstreamFilterID, Where, WhereData.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Filter's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Filter entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// Entity Entity type to filter for (e.g., Unit, Space). Must be specified together with 'id' parameter.
 	Entity *string `form:"entity,omitempty" json:"entity,omitempty" yaml:"entity,omitempty"`
@@ -13177,7 +13944,7 @@ type InvokeFunctionsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -13331,6 +14098,29 @@ type ListInvocationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Invocation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Invocation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Invocation: BackingUnitID, BridgeWorkerID, CreatedAt, DisplayName, Hash, HiddenReason, InvocationID, OrganizationID, Slug, SpaceID, ToolchainType, UpdatedAt, UpstreamInvocationID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Invocation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Invocation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateInvocationParams defines parameters for CreateInvocation.
@@ -13512,6 +14302,29 @@ type ListLinksParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Link entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Link results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Link: AutoUpdate, BackingUnitID, CreatedAt, DisplayName, DownstreamLastMergedRevisionNum, FromUnitID, Hash, HiddenReason, LinkID, MergeEnableSubtraction, OrganizationID, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamLastMergedRevisionNum, UpstreamLinkID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Link's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Link entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateLinkParams defines parameters for CreateLink.
@@ -13652,7 +14465,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13714,6 +14527,29 @@ type ListExtendedReleasesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Release entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Release results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Release's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Release entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // DeleteReleaseParams defines parameters for DeleteRelease.
@@ -13757,6 +14593,7 @@ type PatchReleaseApplicationMergePatchPlusJSONBody struct {
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
 	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	LiveStatus  *map[string]interface{}             `json:"LiveStatus" yaml:"LiveStatus"`
 	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
@@ -13873,6 +14710,29 @@ type ListTagsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Tag entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Tag results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Tag: ChangeOrderID, ChangeSetID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Tag's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Tag entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateTagParams defines parameters for CreateTag.
@@ -14047,6 +14907,29 @@ type ListTargetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Target entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Target's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Target entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateTargetParams defines parameters for CreateTarget.
@@ -14232,6 +15115,29 @@ type ListTriggersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Trigger entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Trigger results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Trigger's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateTriggerParams defines parameters for CreateTrigger.
@@ -14372,7 +15278,7 @@ type ListUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -14436,6 +15342,29 @@ type ListUnitsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -14943,6 +15872,29 @@ type ListExtendedMutationsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Mutation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Mutation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Mutation: BridgeWorkerID, CreatedAt, FunctionName, HiddenReason, InvocationID, LinkID, MergeBaseRevisionNum, MergeEndRevisionNum, MergeSourceID, MutationID, MutationNum, OrganizationID, ReplayOutcome, ReplayReason, RestoredRevisionNum, RevisionID, RevisionNum, Subgroup, TriggerID, UnitID, UpdatedAt, UpgradedFromUpstreamRevisionNum.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Mutation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Mutation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // GetExtendedMutationParams defines parameters for GetExtendedMutation.
@@ -15068,24 +16020,31 @@ type ListExtendedResourcesParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
+	// Supported attributes for ordering Resource: CreatedAt, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Resource's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Resource entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Resource entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -15114,25 +16073,6 @@ type GetExtendedResourceParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// Limit Maximum number of Resource entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Resource entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort Resource results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering Resource: CreatedAt, Data, HiddenReason, OrganizationID, ResourceID, ResourceIndex, ResourceName, ResourceType, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// If not specified, results are returned in the database's default order.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 
 	// View UUID of a View whose columns to extract for each resource, returned as ViewColumns. DataPath columns are read from the stored JSON rather than by invoking a function.
 	View *string `form:"view,omitempty" json:"view,omitempty" yaml:"view,omitempty"`
@@ -15242,24 +16182,31 @@ type ListExtendedRevisionsParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
+	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for ordering Revision: ChangeSetID, CreatedAt, DataHash, Description, HiddenReason, OrganizationID, RevisionID, RevisionNum, Source, UnitID, UpdatedAt, UserAgent, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the Revision's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Revision entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// Offset Deprecated: use continue. Number of Revision entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
 }
 
 // GetExtendedRevisionParams defines parameters for GetExtendedRevision.
@@ -15282,25 +16229,6 @@ type GetExtendedRevisionParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
-
-	// Limit Maximum number of Revision entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of Revision entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort Revision results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// If not specified, results are returned in the database's default order.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
 }
 
 // ListUnitActionsParams defines parameters for ListUnitActions.
@@ -15373,6 +16301,29 @@ type ListUnitActionsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListUnitEventsParams defines parameters for ListUnitEvents.
@@ -15446,25 +16397,6 @@ type ListUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// If not specified, results are returned in the database's default order.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
 	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -15473,28 +16405,32 @@ type ListUnitEventsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
-}
 
-// GetUnitEventParams defines parameters for GetUnitEvent.
-type GetUnitEventParams struct {
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
+	// Offset Deprecated: use continue. Number of UnitEvent entities to skip before returning results. Cannot be combined with continue.
 	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
 
 	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
-	// If not specified, results are returned in the database's default order.
+	// Results are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.
 	//
 	// The whole string must be query-encoded.
 	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListViewsParams defines parameters for ListViews.
@@ -15595,6 +16531,29 @@ type ListViewsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of View entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort View results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the View's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the View entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // CreateViewParams defines parameters for CreateView.
@@ -15769,6 +16728,12 @@ type BulkDeleteTagsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Tag entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Tag entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -15871,6 +16836,29 @@ type ListAllTagsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Tag entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Tag results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Tag: ChangeOrderID, ChangeSetID, CreatedAt, DisplayName, HiddenReason, OrganizationID, ReleaseID, Slug, SpaceID, TagID, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Tag's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Tag entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchTagsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTags.
@@ -15986,6 +16974,12 @@ type BulkPatchTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Tag entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Tag entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -16104,6 +17098,12 @@ type BulkCreateTagsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Tag entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Tag entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Tag names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
@@ -16357,6 +17357,12 @@ type BulkDeleteTargetsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Target entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Target entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -16459,6 +17465,29 @@ type ListAllTargetsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Target entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Target's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Target entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTargets.
@@ -16578,8 +17607,207 @@ type BulkPatchTargetsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Target entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Target entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkCreateTargetsApplicationMergePatchPlusJSONBody defines parameters for BulkCreateTargets.
+type BulkCreateTargetsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string             `json:"DisplayName" yaml:"DisplayName"`
+	Facts       *map[string]*string `json:"Facts" yaml:"Facts"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug            *string             `json:"Slug" yaml:"Slug"`
+	TriggerFilterID *openapi_types.UUID `json:"TriggerFilterID" yaml:"TriggerFilterID"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version      *int    `json:"Version" yaml:"Version"`
+	WhereTrigger *string `json:"WhereTrigger" yaml:"WhereTrigger"`
+}
+
+// BulkCreateTargetsParams defines parameters for BulkCreateTargets.
+type BulkCreateTargetsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of Targets returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the Target list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Target).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for Target include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden Target entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for Target.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for Target are OrganizationID, SpaceID, TriggerFilterID, TriggerIDs.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Target entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Target entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// NamePrefixes Comma-separated list of prefixes to apply to cloned Target names
+	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
+
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Target labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
+	// WhereSpace The specified string is an expression for the purpose of filtering
+	// the list of Spaces returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
+	//
+	// Where expression to select destination spaces for cloning targets
+	//
+	// The whole string must be query-encoded.
+	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty" yaml:"where_space,omitempty"`
+
+	// FilterSpace UUID of a Filter entity to apply to the Space list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (Space).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	FilterSpace *string `form:"filter_space,omitempty" json:"filter_space,omitempty" yaml:"filter_space,omitempty"`
+
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -16768,6 +17996,12 @@ type BulkDeleteTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Trigger entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllTriggersParams defines parameters for ListAllTriggers.
@@ -16870,6 +18104,29 @@ type ListAllTriggersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Trigger entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Trigger results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Trigger: BackingUnitID, BridgeWorkerID, CreatedAt, Description, Disabled, DisplayName, Event, FunctionName, Hash, HiddenReason, InvocationID, OrganizationID, OtherDataSource, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Trigger's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Trigger entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchTriggersApplicationMergePatchPlusJSONBody defines parameters for BulkPatchTriggers.
@@ -17012,6 +18269,12 @@ type BulkPatchTriggersParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Trigger entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each Trigger written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Trigger's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -17164,6 +18427,12 @@ type BulkCreateTriggersParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Trigger entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Trigger names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -17264,7 +18533,7 @@ type BulkCreateTriggersParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -17410,7 +18679,7 @@ type BulkDeleteUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -17465,6 +18734,12 @@ type BulkDeleteUnitsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of Unit entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Unit entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
 }
@@ -17505,7 +18780,7 @@ type ListAllUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -17569,6 +18844,29 @@ type ListAllUnitsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -17669,7 +18967,7 @@ type BulkPatchUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -17723,6 +19021,12 @@ type BulkPatchUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Unit entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Unit entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// DryRun Dry run mode: return changed unit(s) but don't update configuration data
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -17910,7 +19214,7 @@ type BulkCreateUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -17964,6 +19268,12 @@ type BulkCreateUnitsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of Unit entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Unit entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Unit names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
@@ -18118,7 +19428,7 @@ type BulkCancelUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18210,7 +19520,7 @@ type BulkMoveUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18305,7 +19615,7 @@ type BulkTagUnitsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18431,6 +19741,29 @@ type ListAllUnitActionsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Limit Maximum number of QueuedOperation entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort QueuedOperation results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering QueuedOperation: Action, BridgeWorkerID, CreatedAt, DryRun, OrganizationID, QueuedOperationID, RevisionNum, Status, TargetID, UnitActionNum, UnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the QueuedOperation's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the QueuedOperation entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // SearchUnitDataParams defines parameters for SearchUnitData.
@@ -18469,7 +19802,7 @@ type SearchUnitDataParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18534,6 +19867,29 @@ type SearchUnitDataParams struct {
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
 
+	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
 
@@ -18592,7 +19948,7 @@ type SearchUnitDiffParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18637,6 +19993,29 @@ type SearchUnitDiffParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -18743,25 +20122,6 @@ type ListAllUnitEventsParams struct {
 	// The whole string must be query-encoded.
 	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
 
-	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400.
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
-
-	// Offset Number of UnitEvent entities to skip before returning results. Typically used together with 'limit' for pagination. If not specified, no entities are skipped.
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
-
-	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
-	//
-	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
-	//
-	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, SpaceID, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
-	//
-	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
-	//
-	// If not specified, results are returned in the database's default order.
-	//
-	// The whole string must be query-encoded.
-	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
-
 	// IncludeHidden Hidden UnitEvent entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
 	//
 	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
@@ -18770,6 +20130,32 @@ type ListAllUnitEventsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Offset Deprecated: use continue. Number of UnitEvent entities to skip before returning results. Cannot be combined with continue.
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" yaml:"offset,omitempty"`
+
+	// Limit Maximum number of UnitEvent entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort UnitEvent results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering UnitEvent: Action, BridgeWorkerID, CreatedAt, HiddenReason, OrganizationID, QueuedOperationID, Result, RevisionNum, StartedAt, Status, TerminatedAt, UnitEventID, UnitEventNum, UnitID, UpdatedAt.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the UnitEvent's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the UnitEvent entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// DistinctOn Entity to return at most one UnitEvent per. The result set applies DISTINCT ON this key, keeping the most recent row for each.
 	//
@@ -18820,7 +20206,7 @@ type SearchUnitMutationSourcesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 	//
@@ -18884,6 +20270,29 @@ type SearchUnitMutationSourcesParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of Unit entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort Unit results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering Unit: ChangeSetID, CreatedAt, DataHash, DisplayName, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, LastChangeDescription, LastReleasedRevisionNum, OrganizationID, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamUnitID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the Unit's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the Unit entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// ResourceType Resource type: Resource type to match for the desired ToolchainType, for example apps/v1/Deployment
 	ResourceType *string `form:"resource_type,omitempty" json:"resource_type,omitempty" yaml:"resource_type,omitempty"`
@@ -19005,6 +20414,29 @@ type ListUsersParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of User entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort User results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering User: CreatedAt, DisplayName, ExternalID, HiddenReason, Slug, UpdatedAt, UserID, Username.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the User's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the User entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // GetUserParams defines parameters for GetUser.
@@ -19114,6 +20546,12 @@ type BulkDeleteViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of View entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // ListAllViewsParams defines parameters for ListAllViews.
@@ -19214,6 +20652,29 @@ type ListAllViewsParams struct {
 	//
 	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
 	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of View entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort View results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering View: BackingUnitID, CreatedAt, DisplayName, FilterID, GroupBy, HiddenReason, Of, OrderBy, OrderByDirection, OrganizationID, Slug, SpaceID, UpdatedAt, UpstreamViewID, ViewID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the View's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the View entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 }
 
 // BulkPatchViewsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchViews.
@@ -19335,6 +20796,12 @@ type BulkPatchViewsParams struct {
 	//
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of View entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// WithBackingUnits Give each View written a backing Unit if it has none: a ConfigHub/YAML Unit holding the View's configuration, which is then kept in step with it.
 	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
@@ -19466,6 +20933,12 @@ type BulkCreateViewsParams struct {
 	// The whole string must be query-encoded.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 
+	// Limit Maximum number of View entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned View names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
@@ -19572,7 +21045,7 @@ type BulkCreateViewsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastActionAt, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 	//
 	// The Units to create entities from, with from_backing_units.
 	//
@@ -19978,6 +21451,9 @@ type BulkMoveTagsJSONRequestBody = MoveRequest
 
 // BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchTargets for application/merge-patch+json ContentType.
 type BulkPatchTargetsApplicationMergePatchPlusJSONRequestBody BulkPatchTargetsApplicationMergePatchPlusJSONBody
+
+// BulkCreateTargetsApplicationMergePatchPlusJSONRequestBody defines body for BulkCreateTargets for application/merge-patch+json ContentType.
+type BulkCreateTargetsApplicationMergePatchPlusJSONRequestBody BulkCreateTargetsApplicationMergePatchPlusJSONBody
 
 // BulkMoveTargetsJSONRequestBody defines body for BulkMoveTargets for application/json ContentType.
 type BulkMoveTargetsJSONRequestBody = MoveRequest

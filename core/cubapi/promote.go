@@ -48,7 +48,7 @@ func (e *PromoteRefusedError) Error() string {
 // server selects the Spaces, evaluates any ChangeWorkflow gates, and decides what each Unit and
 // Link needs, so every client promotes the same way.
 //
-// With dryRun set nothing is written and the result describes what would happen. A partial
+// With dryRun set, or req.DryRun, nothing is written and the result describes what would happen. A partial
 // success (some Unit or Link write failed, each carrying its own error) is returned as a result
 // rather than an error; check each result's Error. A refusal by the gates is a
 // *PromoteRefusedError carrying the result.
@@ -56,6 +56,9 @@ func Promote(ctx context.Context, c *Client, req goclientnew.PromoteRequest, dry
 	with ...func(*goclientnew.PromoteParams)) (*goclientnew.PromoteResult, error) {
 	params := &goclientnew.PromoteParams{}
 	if dryRun {
+		req.DryRun = true
+		// Also as the deprecated query parameter, which is all a server that predates DryRun in
+		// the body reads: sent only in the body, a dry run would be applied there.
 		params.DryRun = &dryRun
 	}
 	for _, fn := range with {

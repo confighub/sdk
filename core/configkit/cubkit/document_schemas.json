@@ -117,11 +117,11 @@
           "type": "string"
         },
         "DistinctGroups": {
-          "description": "Reserved: each counted attester must be from a different group of FromGroupIDs. Refused until Groups are recorded on Attestations.",
+          "description": "Require an attester from each group of FromGroupIDs, which it requires. A user in several of the groups covers only one of them, and Count does not apply.",
           "type": "boolean"
         },
         "FromGroupIDs": {
-          "description": "Reserved: Groups whose members' Attestations count. Refused until Groups are recorded on Attestations.",
+          "description": "The Groups whose members' Attestations count, beside the Users FromUserIDs names. Membership is read when the gate is evaluated, not when the Attestation was recorded.",
           "items": {
             "$ref": "#/definitions/UUID"
           },

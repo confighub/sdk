@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -54,6 +55,7 @@ var unitEventCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(unitEventListCmd)
+	enableListPagingFlags(unitEventListCmd)
 	unitEventCmd.AddCommand(unitEventListCmd)
 }
 
@@ -114,7 +116,7 @@ func fetchUnitsForEvents(events []*goclientnew.UnitEvent) (map[uuid.UUID]*goclie
 		quoted = append(quoted, fmt.Sprintf("'%s'", event.UnitID.String()))
 	}
 	whereClause := fmt.Sprintf("UnitID IN (%s)", strings.Join(quoted, ","))
-	extendedUnits, err := apiListAllUnits(cubapi.NewWhere(whereClause), "", "", "", "", false, "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug", "", "")
+	extendedUnits, err := cubapi.ListUnits(ctx, cubClient, cubapi.NewWhere(whereClause), cubapi.ListOpts{Select: "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug"})
 	if err != nil {
 		return nil, err
 	}
@@ -226,19 +228,28 @@ func apiListUnitEvents(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string, 
 	// } else if selectFields != "" {
 	//     newParams.Select = &selectFields
 	// }
-	eventsRes, err := cubClientNew.ListUnitEventsWithResponse(ctx, spaceID, unitID, newParams)
-	if cubapi.IsAPIError(err, eventsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, eventsRes)
+	opts := listPageOpts("DESC:CreatedAt")
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
 	}
-	events := make([]*goclientnew.UnitEvent, 0, len(*eventsRes.JSON200))
-	for _, event := range *eventsRes.JSON200 {
-		events = append(events, &event)
+	events, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.UnitEvent, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListUnitEventsWithResponse(ctx, spaceID, unitID, newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	// Sort by CreatedAt descending (most recent first)
-	sort.Slice(events, func(i, j int) bool {
-		return events[i].CreatedAt.After(events[j].CreatedAt)
-	})
+	// Sort by CreatedAt descending (most recent first), unless --order-by asked for another order.
+	if listOrderBy == "" {
+		sort.Slice(events, func(i, j int) bool {
+			return events[i].CreatedAt.After(events[j].CreatedAt)
+		})
+	}
 
 	return events, nil
 }

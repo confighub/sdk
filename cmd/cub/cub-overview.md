@@ -111,6 +111,8 @@ There are also some common flags that affect the output, input, or operation.
 - `--where`: The specified string is an expression for the purpose of filtering the list of entities returned or operated upon. The expression syntax was inspired by SQL. For syntax details, see [our documentation](https://docs.confighub.com/concepts/filters/). Applies to `list` and to all [bulk operations](https://docs.confighub.com/concepts/bulk-operations/).
 - `--contains`: Free text search for entities containing the specified text. Searches across string fields (like Slug, DisplayName) and map fields (like Labels, Annotations). Case-insensitive matching. Can be combined with `--where` using AND logic. Example: `--contains backend` to find entities with "backend" in any searchable field. Applies to `list`.
 - `--filter`: Use a saved Filter entity in `<space>/<filter>` syntax to filter the operation.
+- `--order-by`: Order the entities by the named fields, as comma-separated `ASC:Field`, `DESC:Field` or `Field` terms, such as `--order-by DESC:CreatedAt`. Entities with equal values are ordered by ID. Applies to `list`.
+- `--limit`: Return at most this many entities. cub reads them from the server in pages of at most 1000, so the limit can be larger than that. With `--order-by`, it decides which entities are returned; without it, a list displayed newest first returns the newest. Applies to `list`.
 
 #### Display flags
 

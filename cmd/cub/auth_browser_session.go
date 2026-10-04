@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os/exec"
 	"runtime"
 
@@ -89,7 +88,7 @@ func authBrowserSessionCmdRun(cmd *cobra.Command, args []string) error {
 	if err := json.Unmarshal(body, &ticket); err != nil {
 		return fmt.Errorf("failed to parse the response: %w", err)
 	}
-	link, err := browserSignInLink(ctx, ticket)
+	link, err := browserSignInLink(ticket)
 	if err != nil {
 		return err
 	}
@@ -112,17 +111,10 @@ func authBrowserSessionCmdRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-// browserSignInLink is the link that signs a browser in with ticket. With a UI URL
-// set on the context, it is that UI's sign-in page carrying the ticket in the
-// fragment, which the page redeems; the server does not know where that UI runs.
-// Otherwise it is the link the server built, which opens the UI it embeds.
-func browserSignInLink(ctx *Context, ticket browserSessionResponse) (string, error) {
-	if ctx.Settings.UIURL != "" {
-		if ticket.Ticket == "" {
-			return "", fmt.Errorf("the server returned no ticket")
-		}
-		return ctx.Settings.UIURL + "/cli-signin#ticket=" + url.QueryEscape(ticket.Ticket), nil
-	}
+// browserSignInLink is the link that signs a browser in with ticket: the one the
+// server built, from the UI URL it is configured with or, without one, its own
+// host.
+func browserSignInLink(ticket browserSessionResponse) (string, error) {
 	if ticket.URL == "" {
 		return "", fmt.Errorf("the server returned no login link")
 	}

@@ -1,68 +1,43 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package livestatus
+package livestatus_test
 
 import (
-	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/confighub/sdk/core/livestatus"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 )
 
-// TestStatusJSONFieldNames locks the wire contract: the confighub.com/live-status
-// value is consumed by argobot (Go writer) and the UI (TypeScript reader), so the
-// lowerCamelCase field names must not drift.
-func TestStatusJSONFieldNames(t *testing.T) {
-	s := Status{
-		Source:         "argobot",
-		App:            "orders-prod",
-		SyncStatus:     "Synced",
-		HealthStatus:   "Healthy",
-		OperationPhase: "Succeeded",
-		Revision:       "sha256:abc",
-		Message:        "ok",
-		ObservedAt:     "2026-07-24T18:04:11Z",
+func TestFromArgoCD(t *testing.T) {
+	tests := []struct {
+		sync, health, phase string
+		want                goclientnew.ReleaseLiveStatus
+	}{
+		{"Synced", "Healthy", "Succeeded", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthHealthy,
+			Operation: goclientnew.ReleaseLiveStatusOperationSucceeded}},
+		{"OutOfSync", "Progressing", "Running", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.OutOfSync, Health: goclientnew.ReleaseLiveStatusHealthProgressing,
+			Operation: goclientnew.ReleaseLiveStatusOperationRunning}},
+		{"Synced", "Degraded", "Error", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthDegraded,
+			Operation: goclientnew.ReleaseLiveStatusOperationFailed}},
+		{"Synced", "Suspended", "Terminating", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.Synced, Health: goclientnew.ReleaseLiveStatusHealthSuspended,
+			Operation: goclientnew.ReleaseLiveStatusOperationRunning}},
+		// What Argo CD has not decided, or a value it adds later, is Unknown, and no operation is none.
+		{"", "", "", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.Unknown, Health: goclientnew.ReleaseLiveStatusHealthUnknown}},
+		{"Unknown", "Missing", "", goclientnew.ReleaseLiveStatus{
+			Sync: goclientnew.Unknown, Health: goclientnew.ReleaseLiveStatusHealthMissing}},
 	}
-	b, err := json.Marshal(s)
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
+	for _, tt := range tests {
+		got := livestatus.FromArgoCD(tt.sync, tt.health, tt.phase)
+		tt.want.ReporterSync, tt.want.ReporterHealth, tt.want.ReporterOperation = tt.sync, tt.health, tt.phase
+		assert.Equal(t, tt.want, got, "%s/%s/%s", tt.sync, tt.health, tt.phase)
 	}
-
-	var got map[string]any
-	if err := json.Unmarshal(b, &got); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-
-	want := []string{"source", "app", "syncStatus", "healthStatus", "operationPhase", "revision", "message", "observedAt"}
-	for _, k := range want {
-		if _, ok := got[k]; !ok {
-			t.Errorf("expected JSON key %q, missing from %s", k, b)
-		}
-	}
-	if len(got) != len(want) {
-		t.Errorf("unexpected JSON keys: got %v, want exactly %v", keys(got), want)
-	}
-}
-
-// TestStatusOmitEmpty confirms only the two required fields are emitted for a
-// minimal Status, keeping the annotation small.
-func TestStatusOmitEmpty(t *testing.T) {
-	b, err := json.Marshal(Status{Source: "argobot", ObservedAt: "2026-07-24T18:04:11Z"})
-	if err != nil {
-		t.Fatalf("marshal: %v", err)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(b, &got); err != nil {
-		t.Fatalf("unmarshal: %v", err)
-	}
-	if len(got) != 2 {
-		t.Errorf("expected only source and observedAt, got %v", keys(got))
-	}
-}
-
-func keys(m map[string]any) []string {
-	out := make([]string, 0, len(m))
-	for k := range m {
-		out = append(out, k)
-	}
-	return out
 }

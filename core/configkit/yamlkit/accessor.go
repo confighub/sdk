@@ -6,6 +6,7 @@ package yamlkit
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 
 	"github.com/cockroachdb/errors"
@@ -185,4 +186,14 @@ func (ra *RegexpAccessor) Data(scalarYamlDoc *gaby.YamlDoc, path string) (any, e
 		return "", EmbeddedPathNotFound
 	}
 	return ra.Extract(value, path)
+}
+
+// SetPath sets value at path in doc, creating the maps along the path. It fails
+// when the path runs through a value that is not a map, as it does for a flat
+// key `a.b` in a format such as properties when `a` also has a value.
+func SetPath(doc *gaby.YamlDoc, value any, path ...string) error {
+	if _, err := doc.Set(value, path...); err != nil {
+		return errors.Wrapf(err, "cannot set %q", strings.Join(path, "."))
+	}
+	return nil
 }

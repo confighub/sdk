@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/cockroachdb/errors"
 	"github.com/google/uuid"
@@ -85,7 +86,53 @@ var (
 	inClauseStringTokenRegexp = regexp.MustCompile(stringLiteralRegexpString + "$")
 	inClauseIntValueRegexp    = regexp.MustCompile(integerLiteralRegexpString + "$")
 	inClauseBoolValueRegexp   = regexp.MustCompile(booleanLiteralRegexpString + "$")
+	pathFullRegexp            = regexp.MustCompile(PathRegexpString + "$")
 )
+
+const (
+	// MaxTerms bounds the number of terms in one expression. Each can become a subquery.
+	MaxTerms = 100
+	// MaxInValues bounds the number of values in one IN or NOT IN list.
+	MaxInValues = 1000
+)
+
+// CheckStringLiteralText checks the text of a string literal, without its quotes, for what no
+// engine should be handed: invalid UTF-8, which PostgreSQL rejects, and control characters,
+// which no expression has a way to write deliberately.
+func CheckStringLiteralText(text string) error {
+	if !utf8.ValidString(text) {
+		return fmt.Errorf("string literal is not valid UTF-8")
+	}
+	for _, r := range text {
+		if r < 0x20 || r == 0x7f {
+			return fmt.Errorf("string literal contains control character %U", r)
+		}
+	}
+	return nil
+}
+
+// ConsumeConjunction reads what follows a term: nothing, or `AND` with whitespace on both sides
+// and another term after it. It returns the rest of the expression, starting at the next term,
+// or "" at the end. Anything else between two terms is an error, so that the terms of an
+// expression are exactly the ones a reader sees.
+func ConsumeConjunction(rest string) (string, error) {
+	afterSpace := SkipWhitespaceWithLimit(rest, 255)
+	if afterSpace == "" {
+		return "", nil
+	}
+	if afterSpace == rest || !strings.HasPrefix(afterSpace, andOperator) {
+		return rest, fmt.Errorf("expected AND before `%s`", afterSpace)
+	}
+	afterAnd := afterSpace[len(andOperator):]
+	next := SkipWhitespaceWithLimit(afterAnd, 255)
+	if next == "" {
+		return rest, fmt.Errorf("expected a term after the final AND")
+	}
+	if next == afterAnd {
+		return rest, fmt.Errorf("expected whitespace after AND at `%s`", afterAnd)
+	}
+	return next, nil
+}
 
 func ParseLiteral(decodedQueryString string) (string, string, DataType, error) {
 	pos := IntegerLiteralRegexp.FindStringIndex(decodedQueryString)
@@ -103,6 +150,9 @@ func ParseLiteral(decodedQueryString string) (string, string, DataType, error) {
 	pos = StringLiteralRegexp.FindStringIndex(decodedQueryString)
 	if pos != nil {
 		literal := decodedQueryString[pos[0]:pos[1]]
+		if err := CheckStringLiteralText(literal[1 : len(literal)-1]); err != nil {
+			return decodedQueryString, "", DataTypeNone, err
+		}
 		decodedQueryString = decodedQueryString[pos[1]:]
 		return decodedQueryString, literal, DataTypeString, nil
 	}
@@ -188,6 +238,9 @@ func parseAndValidateBinaryExpressionWithRegex(decodedQueryString string, operat
 		if dataType == DataTypeBool && (operator != "=" && operator != "!=") {
 			return decodedQueryString, &expression, fmt.Errorf("invalid boolean operator `%s`", operator)
 		}
+		if err := ValidatePatternOperand(operator, literal, dataType); err != nil {
+			return decodedQueryString, &expression, err
+		}
 	}
 
 	expression.Path = path
@@ -209,21 +262,13 @@ func SkipWhitespaceWithLimit(decodedQueryString string, limit int) string {
 		return decodedQueryString // No whitespace allowed
 	}
 
-	var regexPattern string
-	if limit < 0 {
-		// No limit - use unlimited pattern
-		regexPattern = whitespaceRegexpString
-	} else {
-		// Use limited pattern
-		regexPattern = fmt.Sprintf("^[ \t][ \t]{0,%d}", limit)
+	// At most limit+1 characters, as `^[ \t][ \t]{0,limit}` would match.
+	n := 0
+	for n < len(decodedQueryString) && (limit < 0 || n <= limit) &&
+		(decodedQueryString[n] == ' ' || decodedQueryString[n] == '\t') {
+		n++
 	}
-
-	limitedRegexp := regexp.MustCompile(regexPattern)
-	pos := limitedRegexp.FindStringIndex(decodedQueryString)
-	if pos != nil {
-		return decodedQueryString[pos[1]:]
-	}
-	return decodedQueryString
+	return decodedQueryString[n:]
 }
 
 func GetLogicalOperator(decodedQueryString string) (string, string) {
@@ -245,8 +290,7 @@ func ValidatePath(path string) error {
 	if len(path) > MaxPathLength {
 		return fmt.Errorf("path exceeds maximum length of %d", MaxPathLength)
 	}
-	fullMatch := regexp.MustCompile(PathRegexpString + "$")
-	if !fullMatch.MatchString(path) {
+	if !pathFullRegexp.MatchString(path) {
 		return fmt.Errorf("invalid path: %s", path)
 	}
 	return nil
@@ -270,11 +314,12 @@ func ParseAndValidateWhereFilter(queryString string) ([]*VisitorRelationalExpres
 			return expressions, err
 		}
 		expressions = append(expressions, expression)
-		decodedQueryString = SkipWhitespace(decodedQueryString)
-		var operator string
-		decodedQueryString, operator = GetLogicalOperator(decodedQueryString)
-		if operator == andOperator {
-			decodedQueryString = SkipWhitespace(decodedQueryString)
+		if len(expressions) > MaxTerms {
+			return expressions, fmt.Errorf("expression has more than %d terms", MaxTerms)
+		}
+		decodedQueryString, err = ConsumeConjunction(decodedQueryString)
+		if err != nil {
+			return expressions, err
 		}
 	}
 
@@ -291,6 +336,15 @@ func ParseInClause(decodedQueryString string) (string, string, error) {
 
 	literal := decodedQueryString[pos[0]:pos[1]]
 	remaining := decodedQueryString[pos[1]:]
+	values := ParseInClauseValues(literal)
+	if len(values) > MaxInValues {
+		return decodedQueryString, "", fmt.Errorf("IN clause has more than %d values", MaxInValues)
+	}
+	for _, value := range values {
+		if err := CheckStringLiteralText(value); err != nil {
+			return decodedQueryString, "", err
+		}
+	}
 
 	// inClauseRegexp enforces that the list contains only quoted-string/int/bool tokens, so no
 	// quote, operator, comment, or cast text can reach the generated SQL. Per-column-type
@@ -339,8 +393,28 @@ func ValidateInClauseValues(literal string, dataType DataType) error {
 		if !want.MatchString(token) {
 			return fmt.Errorf("invalid %s IN clause value `%s`", kind, token)
 		}
+		value := unquoteInClauseToken(token)
+		switch dataType {
+		case DataTypeUUID, DataTypeStringUUIDMap:
+			if _, err := uuid.Parse(value); err != nil {
+				return fmt.Errorf("invalid UUID IN clause value `%s`", token)
+			}
+		case DataTypeTime:
+			if _, err := parseTimeLiteral(value); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
+}
+
+// unquoteInClauseToken removes the quotes of one quoted value of an IN list, leaving a bare
+// integer or boolean as it is.
+func unquoteInClauseToken(token string) string {
+	if len(token) >= 2 && token[0] == '\'' && token[len(token)-1] == '\'' {
+		return token[1 : len(token)-1]
+	}
+	return token
 }
 
 // Import-specific operator support
@@ -388,11 +462,12 @@ func ParseAndValidateWhereFilterForImport(queryString string) ([]*VisitorRelatio
 			return expressions, err
 		}
 		expressions = append(expressions, expression)
-		decodedQueryString = SkipWhitespace(decodedQueryString)
-		var operator string
-		decodedQueryString, operator = GetLogicalOperator(decodedQueryString)
-		if operator == andOperator {
-			decodedQueryString = SkipWhitespace(decodedQueryString)
+		if len(expressions) > MaxTerms {
+			return expressions, fmt.Errorf("expression has more than %d terms", MaxTerms)
+		}
+		decodedQueryString, err = ConsumeConjunction(decodedQueryString)
+		if err != nil {
+			return expressions, err
 		}
 	}
 
@@ -514,21 +589,15 @@ func extractValuesFromExpression(expr *VisitorRelationalExpression) []string {
 
 // ParseInClauseValues parses values from IN/NOT IN clauses like "('value1', 'value2')"
 // Exported for use by internal packages
+//
+// The values are read with the expression that validated the list, so a comma inside a quoted
+// value stays in it, and an empty string is a value.
 func ParseInClauseValues(literal string) []string {
-	// Remove outer parentheses
-	literal = strings.Trim(literal, "()")
-
-	// Split by comma and clean up each value
-	parts := strings.Split(literal, ",")
-	var values []string
-	for _, part := range parts {
-		value := strings.TrimSpace(part)
-		value = strings.Trim(value, "'")
-		if value != "" {
-			values = append(values, value)
-		}
+	tokens := inClauseValueRegexp.FindAllString(literal, -1)
+	values := make([]string, 0, len(tokens))
+	for _, token := range tokens {
+		values = append(values, unquoteInClauseToken(token))
 	}
-
 	return values
 }
 
@@ -926,8 +995,13 @@ func EvaluateExpression(expr *RelationalExpression, leftValue any, rightValue an
 	}
 }
 
+// parseStringLiteral removes the quotes around a string literal: one at each end, so that a
+// substituted value beginning or ending with a quote keeps it.
 func parseStringLiteral(literal string) string {
-	return strings.Trim(literal, "'")
+	if len(literal) >= 2 && literal[0] == '\'' && literal[len(literal)-1] == '\'' {
+		return literal[1 : len(literal)-1]
+	}
+	return literal
 }
 
 // evaluateStringExpression evaluates string relational expressions with custom comparators
@@ -1032,18 +1106,21 @@ func evaluateLikeExpression(value, pattern string, caseInsensitive bool) (bool, 
 		return false, err
 	}
 
-	// Compile regex with case sensitivity option
-	var regex *regexp.Regexp
-	if caseInsensitive {
-		regex, err = regexp.Compile("(?i)" + regexPattern)
-	} else {
-		regex, err = regexp.Compile(regexPattern)
-	}
+	regex, err := compileCached(regexFlags(caseInsensitive) + regexPattern)
 	if err != nil {
 		return false, errors.Wrap(err, "invalid LIKE pattern")
 	}
 
 	return regex.MatchString(value), nil
+}
+
+// regexFlags are the flags every pattern is compiled with: `s`, so that `.` -- and LIKE's `_` and
+// `%` -- match a newline, as they do in PostgreSQL. See ValidatePortableRegex.
+func regexFlags(caseInsensitive bool) string {
+	if caseInsensitive {
+		return "(?si)"
+	}
+	return "(?s)"
 }
 
 // convertLikePatternToRegex converts SQL LIKE pattern to regex
@@ -1072,14 +1149,7 @@ func convertLikePatternToRegex(pattern string) (string, error) {
 
 // evaluateRegexExpression evaluates POSIX regular expression operators (~, ~*, !~, !~*)
 func evaluateRegexExpression(value, pattern string, caseInsensitive bool) (bool, error) {
-	// Compile regex with case sensitivity option
-	var regex *regexp.Regexp
-	var err error
-	if caseInsensitive {
-		regex, err = regexp.Compile("(?i)" + pattern)
-	} else {
-		regex, err = regexp.Compile(pattern)
-	}
+	regex, err := compileCached(regexFlags(caseInsensitive) + pattern)
 	if err != nil {
 		return false, errors.Wrap(err, "invalid regular expression")
 	}
@@ -1215,6 +1285,19 @@ var timeLiteralLayouts = []string{
 	"2006-01-02T15:04:05",
 	"2006-01-02 15:04:05",
 	"2006-01-02",
+}
+
+// ValidateTimeLiteral checks that a literal is a time in one of the forms a time attribute is
+// compared with.
+func ValidateTimeLiteral(literal string) error {
+	_, err := parseTimeLiteral(literal)
+	return err
+}
+
+// ParseTimeLiteral reads a time literal, with or without its quotes, in one of the forms a time
+// attribute is compared with. A time without a zone is UTC.
+func ParseTimeLiteral(literal string) (time.Time, error) {
+	return parseTimeLiteral(literal)
 }
 
 func parseTimeLiteral(literal string) (time.Time, error) {

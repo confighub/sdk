@@ -33,7 +33,7 @@ Examples:
   eval "$(cub worker get-envs --space my-space worker-1)"
 
   # Create a server-hosted worker and let it pull from a Target
-  cub worker create --space infra --is-server-worker --org-role none argo
+  cub worker create --space infra --is-server-worker argo
   bot=$(cub worker get --space infra argo -o jq=.BridgeWorker.UserID)
   cub target update --space infra prod --permission View:$bot --permission ViewChildren:$bot
 `+"```"+`
@@ -53,9 +53,10 @@ var workerCreateUseUserIdentity bool
 func init() {
 	addStandardCreateFlags(workerCreateCmd)
 	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
-	workerCreateCmd.Flags().StringVar(&workerCreateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
+	workerCreateCmd.Flags().StringVar(&workerCreateOrgRole, "org-role", "", "organization-level role for the worker (admin, manager, editor, user, viewer, creator, member, or none); the default is none, which leaves the worker with only the permissions granted to its bot user")
 	workerCreateCmd.Flags().BoolVar(&workerCreateIsServerWorker, "is-server-worker", false, "mark this worker as a server-hosted worker")
-	workerCreateCmd.Flags().BoolVar(&workerCreateUseUserIdentity, "use-user-identity", false, "server worker operates using the requesting user's identity (requires --is-server-worker)")
+	workerCreateCmd.Flags().BoolVar(&workerCreateUseUserIdentity, "use-user-identity", false, "has no effect")
+	_ = workerCreateCmd.Flags().MarkDeprecated("use-user-identity", "it has no effect: a worker always acts as its own bot user")
 	workerCmd.AddCommand(workerCreateCmd)
 }
 
@@ -97,16 +98,11 @@ func workerCreateCmdRun(cmd *cobra.Command, args []string) error {
 		workerDetails.OrgRole = workerCreateOrgRole
 	}
 
-	if workerCreateIsServerWorker || workerCreateUseUserIdentity {
+	if workerCreateIsServerWorker {
 		if workerDetails.ProvidedInfo == nil {
 			workerDetails.ProvidedInfo = &goclientnew.WorkerInfo{}
 		}
-		if workerCreateIsServerWorker {
-			workerDetails.ProvidedInfo.IsServerWorker = true
-		}
-		if workerCreateUseUserIdentity {
-			workerDetails.ProvidedInfo.UseUserIdentity = true
-		}
+		workerDetails.ProvidedInfo.IsServerWorker = true
 	}
 
 	workerDetails, err = apiCreateWorker(workerDetails, workerDetails.SpaceID)

@@ -183,7 +183,7 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	}
 	view.Append([]string{"In-Scope Spaces", changeorderSpaceSlugs(changeorderDetails.InScopeSpaceIDs)})
 	view.Append([]string{"Resolved Spaces", changeorderSpaceSlugs(changeorderDetails.ResolvedSpaceIDs)})
-	view.Append([]string{"Released Spaces", changeorderSpaceSlugs(changeorderDetails.ReleasedSpaceIDs)})
+	view.Append([]string{"Released Spaces", changeorderReleasedSpaces(changeorderDetails)})
 	// Where it has been taken back out again, which only a change order somebody has undone has
 	// anything to say about.
 	if len(changeorderDetails.RestoredSpaceIDs) > 0 {
@@ -271,6 +271,25 @@ func changeorderSkippedUnits(skipped map[string]string) string {
 
 // changeorderSpaceSlugs names Spaces by slug, falling back to the ID for one that cannot be read --
 // a change order can reach a Space the caller has no View permission on.
+// changeorderReleasedSpaces lists the Spaces the change has been released in, each with the
+// Release that released it there when the server names one.
+func changeorderReleasedSpaces(changeorder *goclientnew.ChangeOrder) string {
+	releaseNums := make(map[uuid.UUID]int64, len(changeorder.Releases))
+	for _, release := range changeorder.Releases {
+		releaseNums[release.SpaceID] = release.ReleaseNum
+	}
+	entries := make([]string, 0, len(changeorder.ReleasedSpaceIDs))
+	for _, spaceID := range changeorder.ReleasedSpaceIDs {
+		entry := changeorderSpaceSlugs([]uuid.UUID{spaceID})
+		if num, ok := releaseNums[spaceID]; ok {
+			entry += fmt.Sprintf(" (release %d)", num)
+		}
+		entries = append(entries, entry)
+	}
+	sort.Strings(entries)
+	return strings.Join(entries, ", ")
+}
+
 func changeorderSpaceSlugs(spaceIDs []uuid.UUID) string {
 	slugs := make([]string, 0, len(spaceIDs))
 	for _, spaceID := range spaceIDs {

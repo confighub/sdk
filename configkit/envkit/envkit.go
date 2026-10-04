@@ -245,18 +245,24 @@ func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 		headCK := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
 		flatHead := flatCommentPath(parentPath, headCK)
 		if text, ok := comments[flatHead]; ok {
-			doc.Set(text, splitPath(flatHead)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatHead)...); err != nil {
+				return nil, err
+			}
 			delete(comments, flatHead)
 		}
 
 		// Env values are always strings — shells don't have typed variables.
-		doc.Set(value, parts...)
+		if err := yamlkit.SetPath(doc, value, parts...); err != nil {
+			return nil, err
+		}
 
 		// Add line comment
 		lineCK := yamlkit.CommentKey(yamlkit.CommentLine, targetKey)
 		flatLine := flatCommentPath(parentPath, lineCK)
 		if text, ok := comments[flatLine]; ok {
-			doc.Set(text, splitPath(flatLine)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatLine)...); err != nil {
+				return nil, err
+			}
 			delete(comments, flatLine)
 		}
 	}
@@ -267,7 +273,9 @@ func (*EnvResourceProviderType) NativeToYAML(data []byte) ([]byte, error) {
 
 	// Add any remaining comments (e.g., trailing foot comments)
 	for path, text := range comments {
-		doc.Set(text, splitPath(path)...)
+		if err := yamlkit.SetPath(doc, text, splitPath(path)...); err != nil {
+			return nil, err
+		}
 	}
 
 	return doc.Bytes(), nil

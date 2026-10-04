@@ -124,3 +124,30 @@ func TestGeneratedKeysAreDistinct(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEqual(t, a.Kid, b.Kid)
 }
+
+// The public half derived later must be byte-for-byte what was generated, since
+// the server compares registered keys by thumbprint and an operator compares the
+// environment variable by eye.
+func TestPublicEd25519RecoversTheGeneratedPublicHalf(t *testing.T) {
+	for _, externalID := range []string{"", "confighub:test:alice"} {
+		pair, err := jwk.GenerateEd25519(externalID)
+		require.NoError(t, err)
+
+		pub, err := jwk.PublicEd25519(pair.PrivateJWK)
+		require.NoError(t, err)
+		assert.Equal(t, string(pair.PublicJWK), string(pub))
+	}
+}
+
+func TestPublicEd25519RejectsOtherKeys(t *testing.T) {
+	for name, key := range map[string]string{
+		"not JSON":    `{`,
+		"RSA":         `{"kty":"RSA","n":"AQAB","e":"AQAB"}`,
+		"other curve": `{"kty":"OKP","crv":"X25519","x":"` + base64.RawURLEncoding.EncodeToString(make([]byte, 32)) + `"}`,
+		"short x":     `{"kty":"OKP","crv":"Ed25519","x":"AAAA"}`,
+		"missing x":   `{"kty":"OKP","crv":"Ed25519"}`,
+	} {
+		_, err := jwk.PublicEd25519(json.RawMessage(key))
+		assert.Error(t, err, name)
+	}
+}

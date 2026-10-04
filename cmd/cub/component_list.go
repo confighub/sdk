@@ -70,6 +70,7 @@ func init() {
 	enableWhereFlag(componentListCmd)
 	enableFilterFlag(componentListCmd)
 	enableContainsFlag(componentListCmd)
+	enableListPagingFlags(componentListCmd)
 	addStandardListDisplayFlags(componentListCmd)
 	componentCmd.AddCommand(componentListCmd)
 }
@@ -83,6 +84,8 @@ func componentListCmdRun(_ *cobra.Command, _ []string) error {
 		return buildSelectList("Component", listColumnsFor("cub component list"), "", defaultComponentColumns, componentAliases, componentCustomColumnDependencies, componentBaseSelectFields)
 	})
 	components, err := cubapi.ListComponents(ctx, cubClient, cubapi.NewWhere(where), cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Filter:        filterID,
 		Contains:      contains,

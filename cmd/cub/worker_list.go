@@ -55,6 +55,7 @@ var workerCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(workerListCmd)
+	enableListPagingFlags(workerListCmd)
 	workerCmd.AddCommand(workerListCmd)
 }
 
@@ -87,6 +88,8 @@ func apiListAllBridgeWorkers(where cubapi.Where, selectParam string, filterParam
 		return buildSelectList("BridgeWorker", listColumnsFor("cub worker list"), workerListInclude, defaultWorkerColumns, workerAliases, workerCustomColumnDependencies, workerBaseSelectFields)
 	})
 	return cubapi.ListBridgeWorkers(ctx, cubClient, where, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       workerListInclude,
 		Filter:        filterParam,

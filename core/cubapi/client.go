@@ -56,6 +56,12 @@ type ClientOptions struct {
 	UserAgent  string
 	Debug      bool         // dump requests and responses to stdout
 	HTTPClient *http.Client // base client; defaults to a client using http.DefaultTransport
+
+	// PageBulkOperations sends each bulk patch, create and delete in pages, following the
+	// server's continue tokens, and answers with one response for all of them, so that an
+	// operation selecting many entities does not outlive a request's timeout. See
+	// bulkPagingTransport.
+	PageBulkOperations bool
 }
 
 // Client wraps the generated API client together with the resolved server URL
@@ -100,8 +106,12 @@ func NewClient(opts ClientOptions) (*Client, error) {
 		rt = http.DefaultTransport
 	}
 	transport := &clientTransport{base: rt, agent: agent, debug: opts.Debug}
+	var outer http.RoundTripper = transport
+	if opts.PageBulkOperations {
+		outer = &bulkPagingTransport{base: transport}
+	}
 	httpClient := &http.Client{
-		Transport:     transport,
+		Transport:     outer,
 		CheckRedirect: base.CheckRedirect,
 		Jar:           base.Jar,
 		Timeout:       base.Timeout,

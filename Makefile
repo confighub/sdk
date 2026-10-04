@@ -1,5 +1,4 @@
 GOTESTSUM_V?=1.12.0
-GOCI_LINT_V?=v1.61.0
 PRE_COMMIT_V?=v4.0.1
 OS?=$(shell go env GOOS)
 ARCH?=$(shell go env GOARCH)
@@ -59,18 +58,14 @@ all-local: all-prep build-modules build-cli build-funcexec build-worker build-k8
 all: all-local ## Builds all the things, without tests or lints
 
 .PHONY: lint
-lint: ## Run linters
-ifdef CI
-	mkdir -p ./test/results
-	cd core && golangci-lint run --out-format json ./... > ../test/results/public-lint-tests.json
-else
-	cd core && golangci-lint run -v ./...
+lint: ## Run golangci-lint on each Go module (it lints one module per run), and gitleaks
+	@status=0; \
+	for mod in $$(find . -name go.mod -not -path '*/testdata/*' -not -path '*/node_modules/*' | sort); do \
+		dir=$$(dirname $$mod); echo "==> $$dir"; \
+		(cd $$dir && golangci-lint run ./...) || status=1; \
+	done; \
+	exit $$status
 	gitleaks detect -v --redact
-endif
-
-.PHONY: format
-format: ## Format source code based on golang-ci configuration
-	cd core && golangci-lint run --fix -v ./...
 
 # RELEASE is for non-container builds
 # Use abspath so the output path survives the cd into cmd/cub

@@ -141,6 +141,7 @@ var spaceCustomColumns = func() map[string]func(any) string {
 
 func init() {
 	addStandardListFlags(spaceListCmd)
+	enableListPagingFlags(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
 }
 
@@ -253,6 +254,8 @@ func apiListExtendedSpaces(whereFilter string, selectParam string, filterParam s
 		include = "ComponentID"
 	}
 	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(whereFilter), cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       include,
 		Filter:        filterParam,

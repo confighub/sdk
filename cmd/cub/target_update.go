@@ -216,47 +216,9 @@ func targetIndividualPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	spaceID := currentTarget.Target.SpaceID
 
-	// Parse TriggerFilterID if provided
-	var triggerFilterUUID *uuid.UUID
-	if targetUpdateArgs.triggerFilter == "-" {
-		// Explicitly clear
-		triggerFilterUUID = nil
-	} else if targetUpdateArgs.triggerFilter != "" {
-		triggerFilterID, err := parseFilterFlag(targetUpdateArgs.triggerFilter)
-		if err != nil {
-			return err
-		}
-		parsed := uuid.MustParse(triggerFilterID)
-		triggerFilterUUID = &parsed
-	}
-
-	// Build patch data using consolidated function with target enhancer
-	targetEnhancer := func(patchMap map[string]interface{}) {
-		// Add Facts if provided
-		if len(fact) > 0 {
-			factMap := make(map[string]interface{})
-			if existingFacts, ok := patchMap["Facts"]; ok {
-				if factMapInterface, ok := existingFacts.(map[string]interface{}); ok {
-					for k, v := range factMapInterface {
-						factMap[k] = v
-					}
-				}
-			}
-			_ = patchKeyValues(factMap, fact)
-			patchMap["Facts"] = factMap
-		}
-		// Add WhereTrigger if provided
-		if targetUpdateArgs.whereTrigger == "-" {
-			patchMap["WhereTrigger"] = ""
-		} else if targetUpdateArgs.whereTrigger != "" {
-			patchMap["WhereTrigger"] = targetUpdateArgs.whereTrigger
-		}
-		// Add TriggerFilterID if provided
-		if targetUpdateArgs.triggerFilter == "-" {
-			patchMap["TriggerFilterID"] = nil
-		} else if triggerFilterUUID != nil {
-			patchMap["TriggerFilterID"] = triggerFilterUUID.String()
-		}
+	targetEnhancer, err := targetPatchEnhancer(targetUpdateArgs.whereTrigger, targetUpdateArgs.triggerFilter)
+	if err != nil {
+		return err
 	}
 
 	patchJSON, err := BuildPatchDataWithPermissions(targetEnhancer, targetUpdateArgs.permissions)

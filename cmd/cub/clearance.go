@@ -145,8 +145,8 @@ func splitClearanceValues(spec, values string) ([]string, error) {
 }
 
 // changeClearance holds the --clearance flag shared by the commands that change configuration
-// data: a function invocation, a run, a unit update. Declared once because the flag means the
-// same thing on each of them, and an operator should not have to learn three spellings.
+// data: a function invocation, a run, a unit update, a promotion. Declared once because the flag
+// means the same thing on each of them, and an operator should not have to learn three spellings.
 var changeClearance []string
 
 // addClearanceFlag registers --clearance on a command that writes configuration data.

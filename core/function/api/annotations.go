@@ -804,6 +804,32 @@ func ApplyGuardDelta(table PathAnnotationList, resource ResourceInfo, delta *Gua
 	return table, changed
 }
 
+// CheckGuardStampCleared refuses guards a change would record that its own clearance does not
+// cover. A change is withheld by every guard it is not cleared for, its own included, so a stamp
+// the change is not cleared for stops it the next time it writes the same path: the next
+// Revision of a replayed merge, the next run of a Trigger, the next resolve of a Link, the same
+// edit made again. The guards and the clearance that covers them are stated together.
+func CheckGuardStampCleared(stamp GuardStamp, clearance Clearance) error {
+	// One key at a time, in order, so that the guard an error names does not depend on map
+	// iteration.
+	for _, key := range slices.Sorted(maps.Keys(stamp)) {
+		admitted, withheld := clearance.Admits(map[string]string{key: stamp[key]})
+		if !admitted {
+			return guardStampNotClearedError(withheld)
+		}
+	}
+	return nil
+}
+
+func guardStampNotClearedError(withheld WithheldGuard) error {
+	if withheld.Precondition {
+		return fmt.Errorf("the guards include %s=%s, which the clearance forbids with !%s; a change is withheld by guards it is not cleared for, including its own",
+			withheld.Key, withheld.Value, withheld.Key)
+	}
+	return fmt.Errorf("the guards include %s=%s, which the clearance does not cover; a change is withheld by guards it is not cleared for, including its own, so add the clearance %s",
+		withheld.Key, withheld.Value, ClearanceSuggestion(withheld))
+}
+
 // ClearanceSuggestion renders the narrowest clearance requirement that would admit a withheld
 // guard, in the form the CLI accepts, so a report can say what would allow the change rather
 // than only what stopped it. Empty for a precondition, where the answer is not to add a

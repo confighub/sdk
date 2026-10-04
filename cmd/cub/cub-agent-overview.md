@@ -65,7 +65,7 @@ The `--where` flag accepts expressions in a simple query language. The formal EB
 ```ebnf
 (* ConfigHub Query Language EBNF Grammar *)
 
-query_expression    ::= binary_expression ( whitespace 'AND' whitespace binary_expression )*
+query_expression    ::= binary_expression ( required_whitespace 'AND' required_whitespace binary_expression )*
 
 binary_expression   ::= left_operand whitespace operator ( whitespace right_operand )? ( whitespace truth_test )?
 
@@ -103,11 +103,12 @@ slug                ::= slug_char ( slug_mid_char* slug_char )?
 function_name       ::= alnum ( function_name_char )*
 
 string_literal      ::= "'" string_char* "'"
-string_char         ::= [^'"\\]
+string_char         ::= [^'"\\] (* and not a control character *)
 integer_literal     ::= digit ( digit )*
 boolean_literal     ::= 'true' | 'false'
 
 whitespace          ::= ( ' ' | '\t' )*
+required_whitespace ::= ( ' ' | '\t' )+
 
 (* Character classes *)
 letter              ::= [A-Za-z]
@@ -134,10 +135,13 @@ The following constraints apply but are not expressible in pure EBNF:
 - **label_key**: max 128 characters, matches `^[A-Za-z0-9]([\-_\./A-Za-z0-9]*[A-Za-z0-9])?$`
 - **slug**: max 128 characters, matches `^[A-Za-z0-9]([\-_A-Za-z0-9]*[A-Za-z0-9])?$`
 - **function_name**: max 128 characters, matches `^[A-Za-z0-9]([\-_A-Za-z0-9]{0,127})?$`
-- **string_char**: max 255 characters in string_literal content
+- **string_char**: valid UTF-8, and no control characters (tab and newline included)
 - **integer_literal**: max 10 digits total
 - **whitespace**: max 256 characters total
-- **Overall query length**: max 4096 characters
+- **Terms**: max 100 binary expressions
+- **in_list**: max 1000 values, all of one kind (strings, integers, or booleans)
+- **Regular expressions** (`~`, `~*`, `!~`, `!~*`): literal characters, `.`, `^`, `$`, `*`, `+`, `?`, bounds `{n}`, `{n,}` and `{n,m}` up to 255, `|`, `( )`, and bracket expressions with ranges. Not supported: anything beginning `(?`, lazy quantifiers, backslashes, and `[:class:]`; write `[.]` or `[{]` for a literal character. `.` matches a newline. Max 1024 characters, as for LIKE patterns.
+- **Overall query length**: max 8192 characters
 
 #### Query Examples
 
@@ -201,7 +205,7 @@ The `--where-data` flag (available only with `cub unit list`) accepts expression
 ```ebnf
 (* ConfigHub Where-Data Query Language EBNF Grammar *)
 
-query_expression       ::= binary_expression ( whitespace 'AND' whitespace binary_expression )*
+query_expression       ::= binary_expression ( required_whitespace 'AND' required_whitespace binary_expression )*
 
 binary_expression      ::= path_expression whitespace operator whitespace literal
 
@@ -230,16 +234,18 @@ parameter_name         ::= letter ( param_char )*
 (* Associative match value - anything except '.' *)
 associative_value      ::= assoc_char ( assoc_char )*
 
-operator               ::= '<=' | '>=' | '<' | '>' | '=' | '!='
+operator               ::= '<=' | '>=' | '<' | '>' | '=' | '!=' | 'IN' | 'NOT' whitespace 'IN' | 'NOT' whitespace 'LIKE' | 'LIKE' | 'ILIKE' | '~~' | '!~~' | '~' | '~*' | '!~' | '!~*'
 
-literal                ::= string_literal | integer_literal | boolean_literal
+literal                ::= string_literal | integer_literal | boolean_literal | in_list
+in_list                ::= '(' whitespace literal ( whitespace ',' whitespace literal )* whitespace ')'  (* after IN or NOT IN *)
 
 string_literal         ::= "'" string_char* "'"
-string_char            ::= [^']
+string_char            ::= [^'"\\] (* and not a control character *)
 integer_literal        ::= digit ( digit )*
 boolean_literal        ::= 'true' | 'false'
 
 whitespace             ::= ( ' ' | '\t' )*
+required_whitespace    ::= ( ' ' | '\t' )+
 
 (* Character classes *)
 letter                 ::= [A-Za-z]
@@ -258,9 +264,10 @@ The following constraints apply but are not expressible in pure EBNF:
 - **parameter_name**: max 128 characters total, starts with letter
 - **index_segment**: max 10 digits total
 - **associative_value**: any characters except '.'
-- **string_char**: any characters except single quote
+- **string_char**: any characters except quotes, backslashes and control characters
 - **escaped_char**: `~1` represents '.', `~2` represents '/'
-- **Overall query length**: limits apply
+- **Regular expressions**: the same subset as `--where`
+- **Overall query length**: max 8192 characters, and max 100 binary expressions
 
 #### Configuration Data Path Syntax
 

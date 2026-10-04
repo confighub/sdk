@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/confighub/sdk/core/cubapi"
 	"strings"
 	"time"
 
@@ -396,6 +397,29 @@ func addStandardListDisplayFlags(cmd *cobra.Command) {
 	enableNoheaderFlag(cmd)
 	enableColumnsFlag(cmd)
 	addStandardDisplayFlags(cmd)
+}
+
+var (
+	listLimit   int
+	listOrderBy string
+)
+
+// enableListPagingFlags adds --limit and --order-by to a list command. The list helpers read them,
+// so a command that also lists entities to look something up has to pass its own options.
+func enableListPagingFlags(cmd *cobra.Command) {
+	cmd.Flags().IntVar(&listLimit, "limit", 0, "Return at most this many entities; 0 returns all of them. They are read from the server in pages of at most 1000")
+	cmd.Flags().StringVar(&listOrderBy, "order-by", "", "Order the entities by these fields, as comma-separated 'ASC:Field', 'DESC:Field' or 'Field' terms, such as \"DESC:CreatedAt\". Entities with equal values are ordered by ID. With --limit, this decides which entities are returned")
+}
+
+// listPageOpts returns a list command's --limit and --order-by. newestFirst is the order to read in
+// when there is a --limit and no --order-by, for a list displayed newest first, so that the limit
+// keeps the newest entities.
+func listPageOpts(newestFirst string) cubapi.ListOpts {
+	orderBy := listOrderBy
+	if orderBy == "" && listLimit > 0 {
+		orderBy = newestFirst
+	}
+	return cubapi.ListOpts{Limit: listLimit, OrderBy: orderBy}
 }
 
 func addStandardListFlags(cmd *cobra.Command) {

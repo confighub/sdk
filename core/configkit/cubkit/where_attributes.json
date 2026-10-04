@@ -300,6 +300,9 @@
       "ReleasedSpaceIDs": {
         "dataType": "[]uuid"
       },
+      "Releases": {
+        "dataType": "JSON"
+      },
       "ResolvedSpaceIDs": {
         "dataType": "[]uuid"
       },
@@ -1099,6 +1102,9 @@
       "Labels": {
         "dataType": "map[string]string"
       },
+      "LiveStatus": {
+        "dataType": "JSON"
+      },
       "ManifestDigest": {
         "dataType": "string"
       },
@@ -1658,9 +1664,6 @@
       },
       "Labels": {
         "dataType": "map[string]string"
-      },
-      "LastActionAt": {
-        "dataType": "time"
       },
       "LastChangeDescription": {
         "dataType": "string"

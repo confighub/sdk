@@ -266,25 +266,33 @@ func (*PropertiesResourceProviderType) NativeToYAML(data []byte) ([]byte, error)
 		headCK := yamlkit.CommentKey(yamlkit.CommentHead, targetKey)
 		flatHead := flatCommentPath(parentPath, headCK)
 		if text, ok := comments[flatHead]; ok {
-			doc.Set(text, splitPath(flatHead)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatHead)...); err != nil {
+				return []byte{}, err
+			}
 			delete(comments, flatHead)
 		}
 
 		// Add data value
-		doc.Set(parser.convertValue(parser.properties[flatKey]), parts...)
+		if err := yamlkit.SetPath(doc, parser.convertValue(parser.properties[flatKey]), parts...); err != nil {
+			return []byte{}, err
+		}
 
 		// Add line comment
 		lineCK := yamlkit.CommentKey(yamlkit.CommentLine, targetKey)
 		flatLine := flatCommentPath(parentPath, lineCK)
 		if text, ok := comments[flatLine]; ok {
-			doc.Set(text, splitPath(flatLine)...)
+			if err := yamlkit.SetPath(doc, text, splitPath(flatLine)...); err != nil {
+				return []byte{}, err
+			}
 			delete(comments, flatLine)
 		}
 	}
 
 	// Add any remaining comments (e.g., trailing foot comments)
 	for path, text := range comments {
-		doc.Set(text, splitPath(path)...)
+		if err := yamlkit.SetPath(doc, text, splitPath(path)...); err != nil {
+			return []byte{}, err
+		}
 	}
 
 	// Convert mapping nodes with contiguous 0-based integer keys to sequences.

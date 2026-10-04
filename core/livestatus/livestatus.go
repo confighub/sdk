@@ -1,58 +1,72 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-// Package livestatus defines the contract for live-infrastructure status that a
-// client running next to a workload (e.g. argobot) reports back to ConfigHub.
+// Package livestatus maps what a deployment tool reports about a running Release onto the
+// normalized values of Release.LiveStatus.
 //
-// The feedback lands as the confighub.com/live-status annotation on a deployment
-// Space, carrying a JSON-encoded Status. It is best-effort and describes observed
-// reality, not intent: a missed or stale report costs freshness, never
-// correctness. A client maps a live object back to its Space by the Space slug
-// the object already carries — for argobot, an Argo CD Application's OCI source
-// (.../space/<slug>) names the deployment Space — and writes Status back to it.
+// A Release's LiveStatus is written by the client that deploys it -- argobot, for Argo CD -- as a
+// patch of the Release, which EditChildren on the Release's Target authorizes. The server reads
+// only the normalized Sync, Health and Operation, so a gate means the same whatever the tool; the
+// tool's own words are kept beside them for display. A client finds the Release to write by the
+// digest its tool reports: for Argo CD, the Application's status.sync.revision is the Release's
+// ManifestDigest, and the newest Release of the Space with that ManifestDigest is the one.
 package livestatus
 
-// Annotation is the well-known deployment-Space annotation key whose value is a
-// JSON-encoded Status. Space annotation values are capped at 1024 bytes, so
-// Status is intentionally small.
-const Annotation = "confighub.com/live-status"
+import (
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+)
 
-// Status is a concise projection of the live state of the infrastructure a
-// deployment Space is deployed to. Fields mirror the vocabulary of the reporting
-// client (for argobot, an Argo CD Application's sync/health/operation state).
-// All string fields keep the raw values the client observed; ConfigHub and the
-// UI treat them as opaque display data. Kept small to fit the Space-annotation
-// size limit — Message in particular should be truncated by the writer.
-type Status struct {
-	// Source identifies the reporting client, e.g. "argobot". Required so a reader
-	// can tell where the observation came from and, later, distinguish reporters.
-	Source string `json:"source"`
+// FromArgoCD normalizes an Argo CD Application's sync status, health status, and operation phase,
+// keeping each value as Argo CD reported it. Reporter, DataSource, Message and ObservedAt are the
+// caller's to fill in.
+func FromArgoCD(syncStatus, healthStatus, operationPhase string) goclientnew.ReleaseLiveStatus {
+	return goclientnew.ReleaseLiveStatus{
+		Sync:              argoCDSync(syncStatus),
+		Health:            argoCDHealth(healthStatus),
+		Operation:         argoCDOperation(operationPhase),
+		ReporterSync:      syncStatus,
+		ReporterHealth:    healthStatus,
+		ReporterOperation: operationPhase,
+	}
+}
 
-	// App is the name of the live object the status was projected from, e.g. the
-	// Argo CD Application name. Optional; aids debugging and log lines.
-	App string `json:"app,omitempty"`
+func argoCDSync(status string) goclientnew.ReleaseLiveStatusSync {
+	switch status {
+	case "Synced":
+		return goclientnew.Synced
+	case "OutOfSync":
+		return goclientnew.OutOfSync
+	}
+	return goclientnew.Unknown
+}
 
-	// SyncStatus is whether live state matches the desired revision, e.g. Argo's
-	// "Synced" / "OutOfSync" / "Unknown".
-	SyncStatus string `json:"syncStatus,omitempty"`
+func argoCDHealth(status string) goclientnew.ReleaseLiveStatusHealth {
+	switch status {
+	case "Healthy":
+		return goclientnew.ReleaseLiveStatusHealthHealthy
+	case "Progressing":
+		return goclientnew.ReleaseLiveStatusHealthProgressing
+	case "Degraded":
+		return goclientnew.ReleaseLiveStatusHealthDegraded
+	case "Suspended":
+		return goclientnew.ReleaseLiveStatusHealthSuspended
+	case "Missing":
+		return goclientnew.ReleaseLiveStatusHealthMissing
+	}
+	return goclientnew.ReleaseLiveStatusHealthUnknown
+}
 
-	// HealthStatus is the aggregate health, e.g. Argo's "Healthy" / "Progressing"
-	// / "Degraded" / "Missing" / "Suspended" / "Unknown".
-	HealthStatus string `json:"healthStatus,omitempty"`
-
-	// OperationPhase is the phase of an in-flight operation when one is running,
-	// e.g. Argo's "Running" / "Succeeded" / "Failed" / "Error" / "Terminating".
-	OperationPhase string `json:"operationPhase,omitempty"`
-
-	// Revision is the revision live state was last synced to (an OCI digest or a
-	// git SHA, per the source).
-	Revision string `json:"revision,omitempty"`
-
-	// Message is a short human-readable status or error message. The writer should
-	// truncate it so the encoded Status stays within the annotation size limit.
-	Message string `json:"message,omitempty"`
-
-	// ObservedAt is the RFC 3339 timestamp at which the client made the
-	// observation. Required so a reader can tell how fresh the report is.
-	ObservedAt string `json:"observedAt"`
+// argoCDOperation folds Argo CD's five operation phases into three: an operation still under way
+// (Running, or Terminating on its way to stopping) is Running, and one that did not complete
+// (Failed, or Error) is Failed. No phase means no operation has run.
+func argoCDOperation(phase string) goclientnew.ReleaseLiveStatusOperation {
+	switch phase {
+	case "Running", "Terminating":
+		return goclientnew.ReleaseLiveStatusOperationRunning
+	case "Succeeded":
+		return goclientnew.ReleaseLiveStatusOperationSucceeded
+	case "Failed", "Error":
+		return goclientnew.ReleaseLiveStatusOperationFailed
+	}
+	return ""
 }

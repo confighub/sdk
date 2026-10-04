@@ -120,6 +120,7 @@ var resourceViewSlug string
 
 func init() {
 	addStandardListFlags(resourceListCmd)
+	enableListPagingFlags(resourceListCmd)
 	resourceListCmd.Flags().BoolVar(&resourceListRawData, "raw-data", false,
 		"include each resource's configuration in its original form (YAML for Kubernetes), as RawData in --json output")
 	resourceListCmd.Flags().StringVar(&resourceViewSlug, "view", "",
@@ -249,6 +250,8 @@ func apiListResources(spaceID string, whereFilter string, selectParam string, fi
 		return buildSelectList("Resource", listColumnsFor("cub resource list"), resourceListInclude, defaultResourceColumns, resourceAliases, resourceCustomColumnDependencies, resourceBaseSelectFields)
 	})
 	return cubapi.ListResources(ctx, cubClient, where, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       resourceListInclude,
 		Filter:        filterParam,

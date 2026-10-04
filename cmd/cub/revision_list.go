@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -89,6 +90,7 @@ var (
 
 func init() {
 	addStandardListFlags(revisionListCmd)
+	enableListPagingFlags(revisionListCmd)
 	revisionListCmd.Flags().StringVar(&revisionTagSlug, "tag", "", "filter revisions by tag slug or UUID")
 	revisionListCmd.Flags().StringVar(&revisionChangeOrderSlug, "change-order", "", "filter revisions by change order slug, space/slug, or UUID: the revisions the change landed on, in whichever space they are in")
 	revisionListCmd.Flags().StringVar(&revisionChangeSetStartTag, "changeset-starttag", "", "filter revisions by changeset start tag slug or UUID")
@@ -414,24 +416,28 @@ func apiListRevisions(spaceID string, unitID string, whereFilter string, selectP
 	if selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
-	revsRes, err := cubClientNew.ListExtendedRevisionsWithResponse(ctx,
-		uuid.MustParse(spaceID),
-		uuid.MustParse(unitID),
-		newParams,
-	)
-	if cubapi.IsAPIError(err, revsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, revsRes)
+	opts := listPageOpts("DESC:RevisionNum")
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
 	}
-
-	revisions := make([]*goclientnew.ExtendedRevision, len(*revsRes.JSON200))
-	for i, er := range *revsRes.JSON200 {
-		revisions[i] = &er
-	}
-
-	// Sort by RevisionNum descending
-	sort.Slice(revisions, func(i, j int) bool {
-		return revisions[i].Revision.RevisionNum > revisions[j].Revision.RevisionNum
+	revisions, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedRevision, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListExtendedRevisionsWithResponse(ctx, uuid.MustParse(spaceID), uuid.MustParse(unitID), newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort by RevisionNum descending, unless --order-by asked for another order.
+	if listOrderBy == "" {
+		sort.Slice(revisions, func(i, j int) bool {
+			return revisions[i].Revision.RevisionNum > revisions[j].Revision.RevisionNum
+		})
+	}
 
 	return revisions, nil
 }

@@ -4,6 +4,7 @@
 package main
 
 import (
+	"net/http"
 	"strconv"
 
 	"github.com/confighub/sdk/core/cubapi"
@@ -34,7 +35,7 @@ Examples:
 	Annotations: map[string]string{"OrgLevel": ""},
 }
 
-var defaultReleaseColumns = []string{"Release.ReleaseID", "Release.Published", "Release.ManifestDigest", "Release.CreatedAt"}
+var defaultReleaseColumns = []string{"Release.ReleaseID", "Release.Published", "Release.ManifestDigest", "Release.LiveStatus", "Release.CreatedAt"}
 
 var releaseAliases = map[string]string{
 	"ID": "ReleaseID",
@@ -44,6 +45,7 @@ var releaseCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(releaseListCmd)
+	enableListPagingFlags(releaseListCmd)
 	releaseCmd.AddCommand(releaseListCmd)
 }
 
@@ -84,7 +86,7 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 	}
 	table := tableView()
 	if !noheader {
-		table.SetHeader([]string{"Release-ID", "Published", "Manifest-Digest", "Created"})
+		table.SetHeader([]string{"Release-ID", "Published", "Manifest-Digest", "Live", "Created"})
 	}
 	for _, er := range releases {
 		rel := er.Release
@@ -92,7 +94,9 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 		created := ""
 		releaseID := ""
 		published := ""
+		live := ""
 		if rel != nil {
+			live = liveStatusSummary(rel.LiveStatus)
 			manifestDigest = rel.ManifestDigest
 			created = rel.CreatedAt.String()
 			releaseID = rel.ReleaseID.String()
@@ -100,7 +104,7 @@ func displayReleaseList(releases []*goclientnew.ExtendedRelease) {
 			// for both values rather than leaving the false case blank.
 			published = strconv.FormatBool(rel.Published)
 		}
-		table.Append([]string{releaseID, published, manifestDigest, created})
+		table.Append([]string{releaseID, published, manifestDigest, live, created})
 	}
 	table.Render()
 }
@@ -129,14 +133,22 @@ func apiListReleases(spaceID string, whereFilter string, selectParam string, fil
 	if selectValue := releaseSelectValue(selectParam, ""); selectValue != "" && selectValue != "*" {
 		newParams.Select = &selectValue
 	}
-	relRes, err := cubClientNew.ListExtendedReleasesWithResponse(ctx,
-		uuid.MustParse(spaceID),
-		newParams,
-	)
-	if cubapi.IsAPIError(err, relRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, relRes)
+	opts := listPageOpts("")
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
 	}
-	return extendedReleasePtrs(relRes.JSON200), nil
+	releases, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedRelease, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListExtendedReleasesWithResponse(ctx, uuid.MustParse(spaceID), newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return releases, nil
 }
 
 func apiSearchListReleases(whereFilter string, selectParam string, filterParam string) ([]*goclientnew.ExtendedRelease, error) {

@@ -411,13 +411,7 @@ func columnToHeader(provider *DynamicColumnProvider, col string) string {
 		}
 	}
 
-	// Special cases for common abbreviations
-	header := string(result)
-	header = strings.Replace(header, "ID", "ID", -1)
-	header = strings.Replace(header, "URL", "URL", -1)
-	header = strings.Replace(header, "API", "API", -1)
-
-	return header
+	return string(result)
 }
 
 var mapFields = map[string]bool{

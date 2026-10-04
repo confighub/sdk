@@ -79,6 +79,7 @@ var (
 
 func init() {
 	addStandardListFlags(filterListCmd)
+	enableListPagingFlags(filterListCmd)
 
 	// Add entity-type and entity-id flags for filtering
 	filterListCmd.Flags().StringVar(&entityType, "entity-type", "", "Entity type to filter for (e.g., Space). Must be specified together with --entity-id.")
@@ -181,6 +182,8 @@ func apiListAllFilters(where cubapi.Where, selectParam string) ([]*goclientnew.E
 	}
 
 	return cubapi.ListFilters(ctx, cubClient, where, cubapi.ListOpts{
+		Limit:         listLimit,
+		OrderBy:       listOrderBy,
 		Select:        cubapi.SelectFields(selectValue),
 		Include:       filterListInclude,
 		Contains:      contains,

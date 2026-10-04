@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 
@@ -57,6 +58,7 @@ var unitActionCustomColumnDependencies = map[string][]string{}
 
 func init() {
 	addStandardListFlags(unitActionListCmd)
+	enableListPagingFlags(unitActionListCmd)
 	unitActionCmd.AddCommand(unitActionListCmd)
 }
 
@@ -159,7 +161,7 @@ func fetchUnitsForActions(actions []*goclientnew.UnitAction) (map[uuid.UUID]*goc
 		quoted = append(quoted, fmt.Sprintf("'%s'", action.UnitID.String()))
 	}
 	whereClause := fmt.Sprintf("UnitID IN (%s)", strings.Join(quoted, ","))
-	extendedUnits, err := apiListAllUnits(cubapi.NewWhere(whereClause), "", "", "", "", false, "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug", "", "")
+	extendedUnits, err := cubapi.ListUnits(ctx, cubClient, cubapi.NewWhere(whereClause), cubapi.ListOpts{Select: "Slug,UnitID,SpaceID,OrganizationID,SpaceSlug"})
 	if err != nil {
 		return nil, err
 	}
@@ -264,19 +266,28 @@ func apiListUnitActions(spaceID uuid.UUID, unitID uuid.UUID, whereFilter string,
 	// } else if selectFields != "" {
 	//     newParams.Select = &selectFields
 	// }
-	actionsRes, err := cubClientNew.ListUnitActionsWithResponse(ctx, spaceID, unitID, newParams)
-	if cubapi.IsAPIError(err, actionsRes) {
-		return nil, cubapi.InterpretErrorGeneric(err, actionsRes)
+	opts := listPageOpts("DESC:CreatedAt")
+	if opts.OrderBy != "" {
+		newParams.OrderBy = &opts.OrderBy
 	}
-	actions := make([]*goclientnew.UnitAction, 0, len(*actionsRes.JSON200))
-	for _, action := range *actionsRes.JSON200 {
-		actions = append(actions, &action)
+	actions, err := cubapi.ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.UnitAction, error) {
+		newParams.Limit, newParams.Continue = limit, token
+		res, err := cubClientNew.ListUnitActionsWithResponse(ctx, spaceID, unitID, newParams)
+		if cubapi.IsAPIError(err, res) {
+			return nil, nil, cubapi.InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	// Sort by CreatedAt descending (most recent first)
-	sort.Slice(actions, func(i, j int) bool {
-		return actions[i].CreatedAt.After(actions[j].CreatedAt)
-	})
+	// Sort by CreatedAt descending (most recent first), unless --order-by asked for another order.
+	if listOrderBy == "" {
+		sort.Slice(actions, func(i, j int) bool {
+			return actions[i].CreatedAt.After(actions[j].CreatedAt)
+		})
+	}
 
 	return actions, nil
 }
