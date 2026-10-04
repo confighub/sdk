@@ -20,13 +20,14 @@ import (
 const releaseReferenceLatest = "latest"
 
 var releaseGetCmd = &cobra.Command{
-	Use:   "get [release-id]",
+	Use:   "get [release-num | release-id]",
 	Short: "Get details about a release",
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Get detailed information about a specific release.
 
-The release may be identified by its id argument, or (within a specific --space)
-by an OCI reference via one of the following flags:
+The release may be identified by its number within a specific --space, the number
+cub release list shows, or by its id. Within a specific --space, it may instead be
+identified by an OCI reference via one of the following flags:
 
   --oci-reference <ref>    An OCI image reference. A manifest digest (sha256:...)
                            selects the release with that manifest digest.
@@ -36,6 +37,9 @@ by an OCI reference via one of the following flags:
 
 Examples:
 `+"```"+`
+  # Get details about release 3 of a space
+  cub release get --space my-space 3
+
   # Get details about a release by id
   cub release get --space my-space 61f26b06-3c34-4363-8b9d-7d0a7c2b5f1c
 
@@ -70,7 +74,7 @@ func init() {
 
 func releaseGetCmdRun(cmd *cobra.Command, args []string) error {
 	if len(args) > 0 && (releaseGetOCIReference != "" || releaseGetBundleDigest != "") {
-		return fmt.Errorf("--oci-reference, --bundle-digest and ReleaseID cannot be used together, use only one")
+		return fmt.Errorf("--oci-reference, --bundle-digest and a release argument cannot be used together, use only one")
 	}
 
 	// The OCI-reference and bundle-digest lookups resolve via list within a
@@ -103,20 +107,39 @@ func releaseGetCmdRun(cmd *cobra.Command, args []string) error {
 		release, err = apiGetExtendedReleaseByWhere(selectedSpaceID,
 			"Digest = '"+releaseGetBundleDigest+"'", fmt.Sprintf("bundle digest %q", releaseGetBundleDigest))
 	case len(args) == 1:
-		var releaseID uuid.UUID
-		releaseID, err = uuid.Parse(args[0])
-		if err != nil {
-			return fmt.Errorf("invalid release id %q: %w", args[0], err)
-		}
-		release, err = apiGetExtendedReleaseByID(releaseID, selectFields)
+		release, err = apiGetExtendedReleaseByArg(args[0])
 	default:
-		return fmt.Errorf("specify a release id argument, --oci-reference, or --bundle-digest")
+		return fmt.Errorf("specify a release number or id argument, --oci-reference, or --bundle-digest")
 	}
 	if err != nil {
 		return err
 	}
 	displayGetResults(release, displayExtendedReleaseDetails)
 	return nil
+}
+
+// apiGetExtendedReleaseByArg reads the Release an argument names: an id, or a number within the
+// selected Space. Numbers are only unique within a Space, so one needs a specific --space.
+func apiGetExtendedReleaseByArg(arg string) (*goclientnew.ExtendedRelease, error) {
+	if releaseID, err := uuid.Parse(arg); err == nil {
+		return apiGetExtendedReleaseByID(releaseID, selectFields)
+	}
+	num, err := strconv.ParseInt(arg, 10, 64)
+	if err != nil || num < 1 {
+		return nil, fmt.Errorf("invalid release %q: expected a release number or id", arg)
+	}
+	if selectedSpaceID == "" || selectedSpaceID == "*" {
+		return nil, fmt.Errorf("a release number requires a specific --space")
+	}
+	return apiGetExtendedReleaseByWhere(selectedSpaceID, fmt.Sprintf("ReleaseNum = %d", num), fmt.Sprintf("number %d", num))
+}
+
+// releaseSpaceName names a Space in a message by the slug the user selected it with, when it is that one.
+func releaseSpaceName(spaceID string) string {
+	if spaceID == selectedSpaceID && selectedSpaceSlug != "" {
+		return selectedSpaceSlug
+	}
+	return spaceID
 }
 
 // isOCIDigest reports whether ref is an OCI digest (sha256:...).
@@ -148,7 +171,7 @@ func apiGetExtendedReleaseByWhere(spaceID, where, describe string) (*goclientnew
 		}
 	}
 	if latest == nil {
-		return nil, fmt.Errorf("no release found for %s in space %s", describe, spaceID)
+		return nil, fmt.Errorf("no release found for %s in space %s", describe, releaseSpaceName(spaceID))
 	}
 	return latest, nil
 }
@@ -178,7 +201,7 @@ func apiGetLatestRelease(spaceID string) (*goclientnew.ExtendedRelease, error) {
 		}
 	}
 	if latest == nil {
-		return nil, fmt.Errorf("no release found in space %s", spaceID)
+		return nil, fmt.Errorf("no release found in space %s", releaseSpaceName(spaceID))
 	}
 	return latest, nil
 }
@@ -194,6 +217,7 @@ func liveStatusSummary(status *goclientnew.ReleaseLiveStatus) string {
 
 func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tablewriter.Table) {
 	view.Append([]string{"ID", releaseDetails.ReleaseID.String()})
+	view.Append([]string{"Release Num", strconv.FormatInt(releaseDetails.ReleaseNum, 10)})
 	// Published is omitempty in the generated client, so a withdrawn Release
 	// decodes as false rather than being reported as absent; format it explicitly
 	// so withdrawal is visible here instead of showing an empty cell.

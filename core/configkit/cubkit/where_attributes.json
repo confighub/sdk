@@ -1122,6 +1122,9 @@
       "ReleaseID": {
         "dataType": "uuid"
       },
+      "ReleaseNum": {
+        "dataType": "int"
+      },
       "SpaceID": {
         "dataType": "uuid",
         "references": "Space",

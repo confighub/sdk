@@ -11563,7 +11563,7 @@ type ListAllReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -11633,7 +11633,7 @@ type ListAllReleasesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -14465,7 +14465,7 @@ type ListExtendedReleasesParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14535,7 +14535,7 @@ type ListExtendedReleasesParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+	// Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//

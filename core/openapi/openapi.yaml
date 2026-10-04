@@ -15702,7 +15702,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -15804,7 +15804,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+          Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -25818,7 +25818,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+          Supported attributes for filtering on Release: Annotations, ChangeOrderID, CreatedAt, DeleteGates, Digest, HiddenReason, Labels, LiveStatus, ManifestDigest, OrganizationID, Permissions, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 
           The whole string must be query-encoded.
         in: query
@@ -25920,7 +25920,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
+          Supported attributes for ordering Release: ChangeOrderID, CreatedAt, Digest, HiddenReason, ManifestDigest, OrganizationID, Published, ReleaseID, ReleaseNum, SpaceID, TagID, TargetID, UnitCount, UpdatedAt, UserID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -49956,6 +49956,8 @@ components:
           format: int64
           readOnly: true
           type: integer
+          x-confighub-where:
+            dataType: int
           x-go-type-skip-optional-pointer: true
         SpaceID:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
