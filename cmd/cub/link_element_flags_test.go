@@ -118,11 +118,40 @@ func TestParseNamedFunction(t *testing.T) {
 	if err != nil || key != "" || invocation.FunctionName != "set-annotation" || len(invocation.Arguments) != 2 {
 		t.Fatalf("got %q, %s, %v", key, asJSON(t, invocation), err)
 	}
-	if parameters := referencedParameters(functionArgumentTexts(invocation)...); !reflect.DeepEqual(parameters, []string{"configHash", "source"}) {
+	if parameters := referencedParameters(evaluatedArgumentTexts(invocation)...); !reflect.DeepEqual(parameters, []string{"configHash", "source"}) {
 		t.Errorf("the setter's parameters are %v", parameters)
+	}
+	// A positional argument takes the prefix too, and a literal one refers to no upstream value.
+	_, invocation, err = parseNamedFunction("downstream-setter", "set-image-reference-by-uri ghcr.io/params.x/app template::{{.Params.tag}}", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parameters := referencedParameters(evaluatedArgumentTexts(invocation)...); !reflect.DeepEqual(parameters, []string{"tag"}) {
+		t.Errorf("the setter's parameters are %v", parameters)
+	}
+	// A template with no evaluator would be passed as written, whatever it refers to.
+	for _, test := range []struct{ flag, value string }{
+		{"downstream-setter", "set-image-reference-by-uri ghcr.io/app :{{.Params.tag}}"},
+		{"downstream-setter", "set-annotation note --value={{.UnitSlug}}"},
+		{"upstream-getter", "configHash=get-hash '{{.UnitSlug}}'"},
+	} {
+		if _, invocation, err := parseNamedFunction(test.flag, test.value, test.flag == "upstream-getter"); err == nil {
+			t.Errorf("--%s %q was accepted as %s", test.flag, test.value, asJSON(t, invocation))
+		}
 	}
 	if _, _, err := parseNamedFunction("upstream-getter", "get-hash --path=data", true); err == nil {
 		t.Error("a getter with no name was accepted")
+	}
+}
+
+func TestUpstreamGetterRefersToNoUpstreamValue(t *testing.T) {
+	previous := linkElementArgs
+	t.Cleanup(func() { linkElementArgs = previous })
+	linkElementArgs.upstreamGetters = []string{"hash=get-hash template:{{.Params.path}}"}
+
+	useFieldEditFlags(t, nil, nil)
+	if err := queueLinkElementEdits(); err == nil {
+		t.Error("a getter that refers to an upstream value was accepted")
 	}
 }
 

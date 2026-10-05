@@ -14,12 +14,10 @@ import (
 )
 
 // Well-known Space labels. A Space's component is the Component it names with
-// ComponentID, not a label; labelComponent is the label a Stage's selector may
-// not name, since the component is the change order's own (see stageWhereSpace).
+// ComponentID, not a label.
 const (
-	labelComponent = "Component"
-	labelVariant   = "Variant"
-	labelOwner     = "Owner"
+	labelVariant = "Variant"
+	labelOwner   = "Owner"
 )
 
 // labelNamespace is the Space label recording the Kubernetes namespace a variant's

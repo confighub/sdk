@@ -27,6 +27,7 @@ var referenceOperandCommands = []string{
 	"unit blame", "unit conflicts", "unit data", "unit diff", "unit data-edit", "unit mutation-sources",
 	"unit set-guard", "unit set-protection",
 	"revision get", "revision data", "mutation get", "mutation list", "release get",
+	"review-comment get", "review-comment list", "review-comment create",
 	"attestation get", "attestation revoke",
 	"unit-action get", "unit-action data", "unit-event get",
 	"target access", "k8s collect",

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/cockroachdb/errors"
-	funcApi "github.com/confighub/sdk/core/function/api"
 	"github.com/google/uuid"
 )
 
@@ -117,9 +116,6 @@ type ActionResult struct {
 	QueuedOperationID uuid.UUID `description:"UUID of the operation corresponding to the action request"`
 	ActionResultBaseMeta
 	Data []byte `json:",omitempty" swaggertype:"string" format:"byte" description:"Updated configuration Data of the Unit (for refresh and import)"`
-	// ResourceStatuses contains per-resource sync and readiness status.
-	// Key format: "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
-	ResourceStatuses ResourceStatusMap `json:",omitempty" description:"Per-resource sync and readiness status"`
 	// ErrorMessages contains warning or error messages to surface to the user.
 	ErrorMessages []string `json:",omitempty" description:"Warning or error messages to surface to the user"`
 }
@@ -149,60 +145,3 @@ func ValidateActionResultData(ar *ActionResult) error {
 	}
 	return nil
 }
-
-// ResourceSyncStatusType represents the sync status of an individual resource.
-// Sync status indicates whether the configuration has been pushed to the target.
-type ResourceSyncStatusType string
-
-const (
-	// ResourceSyncStatusSynced indicates the config was successfully pushed to the target
-	ResourceSyncStatusSynced ResourceSyncStatusType = "Synced"
-	// ResourceSyncStatusPending indicates the resource is waiting to be synced
-	ResourceSyncStatusPending ResourceSyncStatusType = "Pending"
-	// ResourceSyncStatusFailed indicates the sync operation failed
-	ResourceSyncStatusFailed ResourceSyncStatusType = "Failed"
-)
-
-// ResourceReadinessType represents the readiness status of an individual resource.
-// Readiness status is derived from kstatus polling and indicates whether the resource
-// has reached a ready/healthy state in the target system.
-type ResourceReadinessType string
-
-const (
-	// ResourceReadinessReady indicates the resource is ready/healthy
-	ResourceReadinessReady ResourceReadinessType = "Ready"
-	// ResourceReadinessInProgress indicates the resource is progressing towards ready state
-	ResourceReadinessInProgress ResourceReadinessType = "InProgress"
-	// ResourceReadinessStuck indicates the resource has been InProgress without
-	// observed progress for longer than the staleness threshold. Its controller
-	// may be suspended, missing, broken, or backpressured. The resource is not
-	// failed; if progress resumes it transitions back to InProgress.
-	ResourceReadinessStuck ResourceReadinessType = "Stuck"
-	// ResourceReadinessFailed indicates the resource failed to reach ready state
-	ResourceReadinessFailed ResourceReadinessType = "Failed"
-	// ResourceReadinessTerminating indicates the resource is being deleted
-	ResourceReadinessTerminating ResourceReadinessType = "Terminating"
-	// ResourceReadinessUnknown indicates the resource readiness cannot be determined
-	ResourceReadinessUnknown ResourceReadinessType = "Unknown"
-)
-
-// ResourceStatus represents the sync and readiness status of a single resource.
-// It tracks both whether configuration was pushed (SyncStatus) and whether the
-// resource has become healthy/ready (Readiness), along with a timestamp for
-// tracking progress duration.
-type ResourceStatus struct {
-	// SyncStatus indicates whether config was pushed to the target
-	SyncStatus ResourceSyncStatusType `json:",omitempty" description:"Whether config was pushed to the target (Synced or NotSynced)"`
-	// Readiness indicates the health/ready state from kstatus
-	Readiness ResourceReadinessType `json:",omitempty" description:"Health state from kstatus (Ready, InProgress, Failed, Unknown)"`
-	// Message provides human-readable status details
-	Message string `json:",omitempty" description:"Human-readable status details or error message"`
-	// UpdatedAt is the timestamp when this resource status was last updated
-	UpdatedAt time.Time `json:",omitempty" description:"Timestamp when this resource status was last updated"`
-}
-
-// ResourceStatusMap maps ResourceTypeAndName to ResourceStatus.
-// Key format: "apiVersion/kind#namespace/name" following K8sResourceProviderType conventions
-// Examples: "apps/v1/Deployment#default/my-app", "v1/ConfigMap#/my-config"
-// This format includes namespace to distinguish resources with the same name in different namespaces.
-type ResourceStatusMap map[funcApi.ResourceTypeAndName]ResourceStatus

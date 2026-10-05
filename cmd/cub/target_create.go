@@ -80,6 +80,9 @@ func init() {
 	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	targetCreateCmd.Flags().StringSliceVar(&targetCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
 	targetCreateCmd.Flags().StringVar(&targetCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Target and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
+	addBackingUnitFlags(targetCreateCmd, "Target", false, true)
+	addFromBackingUnitsFlags(targetCreateCmd, "Target", true)
+	addFieldEditFlags(targetCreateCmd, "Target")
 	targetCmd.AddCommand(targetCreateCmd)
 }
 
@@ -93,7 +96,7 @@ func checkTargetCreateConflictingArgs(args []string) (bool, error) {
 		if len(targetCreateArgs.destSpaces) > 0 && targetCreateArgs.whereSpace != "" {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
-		if len(targetCreateArgs.destSpaces) == 0 && targetCreateArgs.whereSpace == "" && targetCreateArgs.filterSpace == "" &&
+		if !backingUnitArgs.fromBackingUnits && len(targetCreateArgs.destSpaces) == 0 && targetCreateArgs.whereSpace == "" && targetCreateArgs.filterSpace == "" &&
 			len(targetCreateArgs.namePrefixes) == 0 && len(targetCreateArgs.variantLabels) == 0 {
 			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --filter-space, --name-prefix, or --variant-labels")
 		}
@@ -225,12 +228,16 @@ func runSingleTargetCreate(args []string) error {
 
 	// Create params with AllowExists if needed
 	params := &goclientnew.CreateTargetParams{}
+	params.WithBackingUnits = withBackingUnitsParam()
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
 	}
 
 	params.DryRun = dryRunParam()
+	if err := applyFieldEdits("Target", &newTarget); err != nil {
+		return err
+	}
 	targetRes, err := cubClientNew.CreateTargetWithResponse(ctx, spaceID, params, newTarget)
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
@@ -272,6 +279,14 @@ func runBulkTargetCreate() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	if params.WhereUnit, params.FilterUnit, err = fromBackingUnitsCreateParams(selectedSpaceID); err != nil {
+		return err
+	}
+	params.PatchExisting = patchExistingParam()
+	if params.FromBackingUnits = fromBackingUnitsParam(); params.FromBackingUnits != nil {
+		params.Where = nil
+	}
 	if filterID != "" {
 		params.Filter = &filterID
 	}

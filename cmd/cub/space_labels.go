@@ -45,6 +45,30 @@ func addStandardSpaceLabelFlags(cmd *cobra.Command) spaceLabelFlagValues {
 	return values
 }
 
+// addStandardSpaceLabelFilterFlags registers one flag per well-known Space
+// label, named for the label in lower case, that lists only the Spaces with that
+// label value. The returned values are read back with addToWhereClause().
+func addStandardSpaceLabelFilterFlags(cmd *cobra.Command) spaceLabelFlagValues {
+	values := make(spaceLabelFlagValues, len(standardSpaceLabels))
+	for _, name := range standardSpaceLabels {
+		value := new(string)
+		values[name] = value
+		cmd.Flags().StringVar(value, strings.ToLower(name), "",
+			fmt.Sprintf("only list Spaces whose %q label has this value (e.g. %s); ANDed with --where",
+				name, standardSpaceLabelExamples[name]))
+	}
+	return values
+}
+
+// addToWhereClause AND's a Labels.<name> equality constraint into the where
+// clause for each well-known label flag that was set.
+func (values spaceLabelFlagValues) addToWhereClause(whereClause string) string {
+	for _, name := range standardSpaceLabels {
+		whereClause = addEqualityToWhereClause(whereClause, "Labels."+name, *values[name])
+	}
+	return whereClause
+}
+
 // apply prepends the labels set by the well-known label flags to the --label
 // slice, so that both the whole-body path (setLabels) and the patch path
 // (BuildPatchData) pick them up. They go first so that an explicit --label for

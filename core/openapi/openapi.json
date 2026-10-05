@@ -15736,6 +15736,622 @@
         }
       }
     },
+    "/review_comment": {
+      "delete": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Bulk delete multiple review comments",
+        "description": "Delete multiple review comments selected by query parameters, among those the caller made or whose space the caller manages",
+        "operationId": "BulkDeleteReviewComments",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the ReviewComment list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (ReviewComment).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of ReviewComment entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "continue",
+            "in": "query",
+            "description": "The token from the ConfigHub-Continue header of the previous request, to act on the ReviewComment entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ConfigHub-Continue": {
+                "style": "simple",
+                "description": "The token to pass as the continue parameter of the next request, when there may be more entities after this page. It is absent on the last page. A page can hold fewer entities than the limit, or none, and still have one.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeleteResponse"
+                  }
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Multi-Status: Mixed success and failure results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeleteResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unable to delete entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "List of ReviewComments across spaces",
+        "description": "Retrieves a list of ReviewComments across spaces in the Organization",
+        "operationId": "ListAllReviewComments",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the ReviewComment list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (ReviewComment).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "description": "Select clause for specifying which fields to include in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\nIf not specified, all fields are returned.\nEntity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.\nFields used in where and contains filters, and fields named by order_by, are also automatically included.\nExample: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "continue",
+            "in": "query",
+            "description": "The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.\n\nThe request's other parameters, except limit, must be the same as those of the request that returned the token.\n\nKeep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ConfigHub-Continue": {
+                "style": "simple",
+                "description": "The token to pass as the continue parameter of the next request, when there may be more entities after this page. It is absent on the last page. A page can hold fewer entities than the limit, or none, and still have one.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtendedReviewComment"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Bulk patch multiple review comments",
+        "description": "Apply JSON merge patch to multiple review comments selected by query parameters. Only Text can change, and only on comments the caller made or whose space the caller manages.",
+        "operationId": "BulkPatchReviewComments",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the ReviewComment list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (ReviewComment).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of ReviewComment entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "continue",
+            "in": "query",
+            "description": "The token from the ConfigHub-Continue header of the previous request, to act on the ReviewComment entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "HiddenReason": {
+                    "type": "string",
+                    "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+                    "nullable": true
+                  },
+                  "Path": {
+                    "type": "string",
+                    "description": "Path to which the remark is attached; optional",
+                    "nullable": true
+                  },
+                  "ReplyToID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "Resource": {
+                    "type": "object",
+                    "description": "Resource to which the remark is attached; optional",
+                    "nullable": true
+                  },
+                  "RevisionID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "RevisionNum": {
+                    "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Text": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Version": {
+                    "type": "integer",
+                    "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+                    "nullable": true
+                  }
+                },
+                "description": "JSON Merge Patch schema for ReviewComment. All fields are optional and nullable. Readonly fields are ignored."
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ConfigHub-Continue": {
+                "style": "simple",
+                "description": "The token to pass as the continue parameter of the next request, when there may be more entities after this page. It is absent on the last page. A page can hold fewer entities than the limit, or none, and still have one.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewCommentCreateOrUpdateResponse"
+                  }
+                }
+              }
+            }
+          },
+          "207": {
+            "description": "Multi-Status: Mixed success and failure results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReviewCommentCreateOrUpdateResponse"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/revision": {
       "get": {
         "tags": [
@@ -27556,7 +28172,7 @@
           "Release"
         ],
         "summary": "Publish a Release",
-        "description": "Publish a Release for the consuming Target, bundling the Units/Revisions of the Space in the path. Optionally pins each Unit to a tagged Revision via TagID.",
+        "description": "Publish a Release for the consuming Target, bundling the Units/Revisions of the Space in the path. Optionally pins each Unit to a tagged Revision via TagID. When the bundle is identical to the Space's latest published Release, no Release is created: the response carries that latest Release and a Message saying so.",
         "operationId": "PublishRelease",
         "parameters": [
           {
@@ -27591,11 +28207,11 @@
             }
           },
           "200": {
-            "description": "Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.",
+            "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Release"
+                  "$ref": "#/components/schemas/ReleasePublishResponse"
                 }
               }
             }
@@ -29381,7 +29997,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -29446,7 +30062,7 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -29563,6 +30179,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "with_backing_units",
+            "in": "query",
+            "description": "Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -30266,6 +30891,240 @@
           },
           "409": {
             "description": "Target data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/target/{target_id}/document": {
+      "get": {
+        "tags": [
+          "Target"
+        ],
+        "summary": "Get the document of a Target to edit",
+        "description": "Returns the Target as the document its backing Unit would hold: the fields a write can set, with the entities it refers to named rather than identified by ID, and its Version.",
+        "operationId": "GetTargetDocument",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "path",
+            "description": "Unique identifier for a target_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntityDocument"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Target request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing Target.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Target"
+        ],
+        "summary": "Update a Target from an edit of its document",
+        "description": "Applies the change from Base, the document as read, to Document, as edited, as a patch of the Target: a field the edit leaves alone keeps what the Target holds, and a field it removes is cleared. A Version other than the Target's is a conflict.",
+        "operationId": "UpdateTargetDocument",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "target_id",
+            "in": "path",
+            "description": "Unique identifier for a target_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntityDocumentEdit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Target"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Target request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Target not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The Target changed since the document was read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -34641,6 +35500,924 @@
         }
       }
     },
+    "/space/{space_id}/unit/{unit_id}/review_comment": {
+      "get": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "List ReviewComments",
+        "description": "List ReviewComments",
+        "operationId": "ListReviewComments",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "where",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of ReviewComments returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "description": "UUID of a Filter entity to apply to the ReviewComment list.\n\nThe Filter must be in the same Organization as the user credentials.\n\nThe Filter's From field must match the entity type being filtered (ReviewComment).\n\nFor Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.\n\nThe Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.\n\nIf both 'filter' and 'where' parameters are specified, they are combined with AND logic.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contains",
+            "in": "query",
+            "description": "Free text search that approximately matches the specified string against string fields and map keys/values.\n\nThe search is case-insensitive and uses pattern matching to find entities containing the text.\n\nSearchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.\n\nFor map fields (like Labels and Annotations), the search matches both map keys and values.\n\nThe search uses OR logic across all searchable fields, so matching any field will return the entity.\n\nIf both 'where' and 'contains' parameters are specified, they are combined with AND logic.\n\nSearchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "description": "Select clause for specifying which fields to include in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\nIf not specified, all fields are returned.\nEntity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.\nFields used in where and contains filters, and fields named by order_by, are also automatically included.\nExample: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "include_hidden",
+            "in": "query",
+            "description": "Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.\n\nIt is a comma-separated list of HiddenReasons, or `*` for all of them.\n\nA where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.\n\nConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.",
+            "required": false,
+            "schema": {
+              "maximum": 1000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "order_by",
+            "in": "query",
+            "description": "Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "continue",
+            "in": "query",
+            "description": "The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.\n\nThe request's other parameters, except limit, must be the same as those of the request that returned the token.\n\nKeep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "headers": {
+              "ConfigHub-Continue": {
+                "style": "simple",
+                "description": "The token to pass as the continue parameter of the next request, when there may be more entities after this page. It is absent on the last page. A page can hold fewer entities than the limit, or none, and still have one.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExtendedReviewComment"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Create ReviewComment",
+        "description": "Create ReviewComment",
+        "operationId": "CreateReviewComment",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewComment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/space/{space_id}/unit/{unit_id}/review_comment/{review_comment_id}": {
+      "delete": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Delete ReviewComment",
+        "description": "Delete ReviewComment",
+        "operationId": "DeleteReviewComment",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "review_comment_id",
+            "in": "path",
+            "description": "Unique identifier for a review_comment_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Response for successful delete operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ReviewComment could not be deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Get ReviewComment",
+        "description": "Get ReviewComment",
+        "operationId": "GetReviewComment",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "description": "Include clause for expanding related entities in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\n\nSupported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "select",
+            "in": "query",
+            "description": "Select clause for specifying which fields to include in the response for ReviewComment.\nThe attribute names are case-sensitive, PascalCase, and\nexpected in a comma-separated list format as in the JSON encoding.\nIf not specified, all fields are returned.\nEntity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.\nFields used in where and contains filters, and fields named by order_by, are also automatically included.\nExample: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "review_comment_id",
+            "in": "path",
+            "description": "Unique identifier for a review_comment_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtendedReviewComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Patch ReviewComment",
+        "description": "Patch ReviewComment",
+        "operationId": "PatchReviewComment",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "review_comment_id",
+            "in": "path",
+            "description": "Unique identifier for a review_comment_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/merge-patch+json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "HiddenReason": {
+                    "type": "string",
+                    "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+                    "nullable": true
+                  },
+                  "Path": {
+                    "type": "string",
+                    "description": "Path to which the remark is attached; optional",
+                    "nullable": true
+                  },
+                  "ReplyToID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "Resource": {
+                    "type": "object",
+                    "description": "Resource to which the remark is attached; optional",
+                    "nullable": true
+                  },
+                  "RevisionID": {
+                    "type": "string",
+                    "description": "",
+                    "format": "uuid",
+                    "nullable": true
+                  },
+                  "RevisionNum": {
+                    "type": "integer",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Text": {
+                    "type": "string",
+                    "description": "",
+                    "nullable": true
+                  },
+                  "Version": {
+                    "type": "integer",
+                    "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+                    "nullable": true
+                  }
+                },
+                "description": "JSON Merge Patch schema for ReviewComment. All fields are optional and nullable. Readonly fields are ignored."
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "ReviewComment"
+        ],
+        "summary": "Update ReviewComment",
+        "description": "Update ReviewComment",
+        "operationId": "UpdateReviewComment",
+        "parameters": [
+          {
+            "name": "space_id",
+            "in": "path",
+            "description": "Unique identifier for a space_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "unit_id",
+            "in": "path",
+            "description": "Unique identifier for a unit_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "review_comment_id",
+            "in": "path",
+            "description": "Unique identifier for a review_comment_id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewComment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewComment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ReviewComment request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ReviewComment not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ReviewComment data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ReviewComment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/space/{space_id}/unit/{unit_id}/revision": {
       "get": {
         "tags": [
@@ -38099,7 +39876,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38300,7 +40077,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38365,7 +40142,7 @@
           {
             "name": "order_by",
             "in": "query",
-            "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
+            "description": "Comma-separated list of fields to sort Target results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.\n\nField names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.\n\nSupported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.\n\nExample: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.\n\nResults are ordered by the Target's ID after the fields named, and by the ID alone if none are.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38477,7 +40254,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38543,6 +40320,24 @@
             "name": "refresh_triggers",
             "in": "query",
             "description": "Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "with_backing_units",
+            "in": "query",
+            "description": "Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Patch each selected Target with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.",
             "required": false,
             "schema": {
               "type": "boolean"
@@ -38742,6 +40537,16 @@
               }
             }
           },
+          "422": {
+            "description": "A backing Unit has outstanding ValidationErrors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Target.",
             "content": {
@@ -38765,7 +40570,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -38879,6 +40684,51 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "with_backing_units",
+            "in": "query",
+            "description": "Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Create Targets from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "where_unit",
+            "in": "query",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Units returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.\n\nThe Units to create entities from, with from_backing_units.\n\nThe whole string must be query-encoded.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filter_unit",
+            "in": "query",
+            "description": "A Filter, by ID, over the Units to create entities from, with from_backing_units.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "patch_existing",
+            "in": "query",
+            "description": "With from_backing_units, patch a Target a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Target is returned as it is.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           },
           {
@@ -39075,6 +40925,16 @@
               }
             }
           },
+          "422": {
+            "description": "A backing Unit has outstanding ValidationErrors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Something went wrong while processing Target.",
             "content": {
@@ -39100,7 +40960,7 @@
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Targets returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -45607,9 +47467,6 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
             "x-go-type-skip-optional-pointer": true
           },
-          "ResourceStatuses": {
-            "$ref": "#/components/schemas/ResourceStatusMap"
-          },
           "Result": {
             "$ref": "#/components/schemas/ActionResultType"
           },
@@ -47327,7 +49184,7 @@
             "items": {
               "$ref": "#/components/schemas/UUID"
             },
-            "description": "ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. Derived when the ChangeOrder is read.",
+            "description": "ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. A Space with no ReleaseTargetID is never here, since nothing releases it. Derived when the ChangeOrder is read.",
             "readOnly": true,
             "x-confighub-where": {
               "dataType": "[]uuid"
@@ -47459,7 +49316,7 @@
           },
           "State": {
             "type": "string",
-            "description": "State is how far the ChangeOrder has got: New until a Space other than its own has taken it, InProgress while some have and some have not, Resolved once every Space in scope has, Released once every Space in scope has released what it took, Aborted whenever AbortedReason is set, Restored once every Space that had taken it has been restored to the Revisions before it, and RestoreReleased once every Space that had released it has released the restored Revisions. Derived when the ChangeOrder is read.",
+            "description": "State is how far the ChangeOrder has got: New until a Space other than its own has taken it, InProgress while some have and some have not, Resolved once every Space in scope has, Released once every Space in scope that has a ReleaseTargetID has released what it took (a Space with none has nothing to release), Aborted whenever AbortedReason is set, Restored once every Space that had taken it has been restored to the Revisions before it, and RestoreReleased once every Space that had released it has released the restored Revisions. Derived when the ChangeOrder is read.",
             "readOnly": true,
             "x-confighub-where": {
               "dataType": "string"
@@ -47479,7 +49336,7 @@
           },
           "UpdateType": {
             "type": "string",
-            "description": "UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's component into it: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.",
+            "description": "UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's scope into the Spaces in scope: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.",
             "x-confighub-where": {
               "dataType": "string"
             },
@@ -48352,7 +50209,7 @@
           },
           "WhereSpace": {
             "type": "string",
-            "description": "Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component.",
+            "description": "Selects the stage's Spaces: a where expression over Spaces, intersected with the change order's InScopeSpaceIDs. Nothing else is implied, so a workflow can be shared across components. Empty selects every Space in the change order's scope.",
             "x-go-type-skip-optional-pointer": true
           }
         }
@@ -49352,6 +51209,29 @@
               "$ref": "#/components/schemas/ViewColumn"
             },
             "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ExtendedReviewComment": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "Organization": {
+            "$ref": "#/components/schemas/Organization"
+          },
+          "ReviewComment": {
+            "$ref": "#/components/schemas/ReviewComment"
+          },
+          "Revision": {
+            "$ref": "#/components/schemas/Revision"
+          },
+          "Space": {
+            "$ref": "#/components/schemas/Space"
+          },
+          "Unit": {
+            "$ref": "#/components/schemas/Unit"
           }
         }
       },
@@ -53113,6 +54993,19 @@
           }
         }
       },
+      "ReleasePublishResponse": {
+        "type": "object",
+        "properties": {
+          "Message": {
+            "type": "string",
+            "description": "Set when nothing changed since the latest published Release, so no Release was created.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Release": {
+            "$ref": "#/components/schemas/Release"
+          }
+        }
+      },
       "Resource": {
         "type": "object",
         "properties": {
@@ -53488,39 +55381,6 @@
           }
         }
       },
-      "ResourceStatus": {
-        "type": "object",
-        "properties": {
-          "Message": {
-            "type": "string",
-            "description": "Human-readable status details or error message",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "Readiness": {
-            "type": "string",
-            "description": "Health state from kstatus (Ready, InProgress, Failed, Unknown)",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "SyncStatus": {
-            "type": "string",
-            "description": "Whether config was pushed to the target (Synced or NotSynced)",
-            "x-go-type-skip-optional-pointer": true
-          },
-          "UpdatedAt": {
-            "type": "string",
-            "description": "Timestamp when this resource status was last updated",
-            "format": "date-time",
-            "example": "2006-01-02T15:04:05Z07:00",
-            "x-go-type-skip-optional-pointer": true
-          }
-        }
-      },
-      "ResourceStatusMap": {
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/components/schemas/ResourceStatus"
-        }
-      },
       "ResourceTypePathsEntry": {
         "type": "object",
         "properties": {
@@ -53615,6 +55475,202 @@
             "type": "string",
             "description": "The type of error (e.g., validation, not-found)",
             "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "ReviewComment": {
+        "required": [
+          "RevisionNum",
+          "Text"
+        ],
+        "type": "object",
+        "properties": {
+          "CreatedAt": {
+            "type": "string",
+            "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
+            "format": "date-time",
+            "readOnly": true,
+            "example": "2025-04-04T11:50:02.95102-07:00",
+            "x-confighub-where": {
+              "dataType": "time"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "EntityType": {
+            "type": "string",
+            "description": "The type of entity.",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "HiddenReason": {
+            "maxLength": 64,
+            "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$",
+            "type": "string",
+            "description": "The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.",
+            "x-confighub-where": {
+              "dataType": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "OrganizationID": {
+            "type": "string",
+            "description": "Unique identifier for an Organization.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Organization",
+              "expandable": true
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "Path to which the remark is attached; optional",
+            "x-confighub-where": {
+              "dataType": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ReplyToID": {
+            "type": "string",
+            "description": "Unique identifier of the ReviewComment, on the same Unit, this one replies to. Unset for a comment that starts a thread. Immutable.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "ReviewComment"
+            }
+          },
+          "Resource": {
+            "$ref": "#/components/schemas/ResourceInfoType2"
+          },
+          "ReviewCommentID": {
+            "type": "string",
+            "description": "Unique identifier for a ReviewComment.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevisionID": {
+            "type": "string",
+            "description": "Unique identifier of the Revision the comment is about. Set by the server from RevisionNum.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Revision",
+              "expandable": true
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevisionNum": {
+            "type": "integer",
+            "description": "Sequence number of the Revision the comment is about. Required on create, and immutable.",
+            "format": "int64",
+            "x-confighub-where": {
+              "dataType": "int",
+              "references": "Revision"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "Unique identifier for a space.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Space",
+              "expandable": true
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "Slug of the Space this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Text": {
+            "type": "string",
+            "description": "The text of the remark.",
+            "x-confighub-where": {
+              "dataType": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "Unique identifier for a Unit.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Unit",
+              "expandable": true
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitSlug": {
+            "type": "string",
+            "description": "Slug of the Unit this entity belongs to. (readonly)",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UpdatedAt": {
+            "type": "string",
+            "description": "The timestamp when the entity was last updated in \"2023-01-01T12:00:00Z\" format.",
+            "format": "date-time",
+            "readOnly": true,
+            "example": "2025-04-04T11:50:02.95102-07:00",
+            "x-confighub-where": {
+              "dataType": "time"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserAgent": {
+            "type": "string",
+            "description": "User-Agent string of the API call that created the comment.",
+            "readOnly": true,
+            "x-confighub-where": {
+              "dataType": "string"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "description": "Unique identifier of the user who made the comment.",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "User"
+            },
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Version": {
+            "type": "integer",
+            "description": "An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.",
+            "format": "int64",
+            "readOnly": false,
+            "x-go-type-skip-optional-pointer": true
+          }
+        },
+        "description": "ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it."
+      },
+      "ReviewCommentCreateOrUpdateResponse": {
+        "type": "object",
+        "properties": {
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "ReviewComment": {
+            "$ref": "#/components/schemas/ReviewComment"
           }
         }
       },
@@ -54617,6 +56673,16 @@
             },
             "x-go-type-skip-optional-pointer": true
           },
+          "BackingUnitID": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Unit"
+            }
+          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
@@ -54783,6 +56849,16 @@
               "dataType": "time"
             },
             "x-go-type-skip-optional-pointer": true
+          },
+          "UpstreamTargetID": {
+            "type": "string",
+            "format": "uuid",
+            "readOnly": true,
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "Target"
+            }
           },
           "Version": {
             "type": "integer",
@@ -56071,9 +58147,6 @@
               "references": "QueuedOperation"
             },
             "x-go-type-skip-optional-pointer": true
-          },
-          "ResourceStatuses": {
-            "$ref": "#/components/schemas/ResourceStatusMap"
           },
           "Result": {
             "$ref": "#/components/schemas/ActionResultType"

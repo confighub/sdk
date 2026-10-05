@@ -16133,6 +16133,702 @@ paths:
       summary: List of Resources across spaces
       tags:
       - Resource
+  /review_comment:
+    delete:
+      description: Delete multiple review comments selected by query parameters, among
+        those the caller made or whose space the caller manages
+      operationId: BulkDeleteReviewComments
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ReviewComments returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ReviewComment list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ReviewComment).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ReviewComment entities to act on, in ID order.
+          A request that names limit or continue also stops when it runs short of
+          time, and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the ReviewComment entities after the last one it acted
+          on. The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ReviewComment is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk delete multiple review comments
+      tags:
+      - ReviewComment
+    get:
+      description: Retrieves a list of ReviewComments across spaces in the Organization
+      operationId: ListAllReviewComments
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ReviewComments returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ReviewComment list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ReviewComment).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ReviewComment entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedReviewComment'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of ReviewComments across spaces
+      tags:
+      - ReviewComment
+    patch:
+      description: Apply JSON merge patch to multiple review comments selected by
+        query parameters. Only Text can change, and only on comments the caller made
+        or whose space the caller manages.
+      operationId: BulkPatchReviewComments
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ReviewComments returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ReviewComment list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ReviewComment).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ReviewComment entities to act on, in ID order.
+          A request that names limit or continue also stops when it runs short of
+          time, and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the ReviewComment entities after the last one it acted
+          on. The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ReviewComment. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Path:
+                  description: Path to which the remark is attached; optional
+                  nullable: true
+                  type: string
+                ReplyToID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                Resource:
+                  description: Resource to which the remark is attached; optional
+                  nullable: true
+                  type: object
+                RevisionID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                RevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
+                Text:
+                  description: ""
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ReviewCommentCreateOrUpdateResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ReviewCommentCreateOrUpdateResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk patch multiple review comments
+      tags:
+      - ReviewComment
   /revision:
     get:
       description: Retrieves a list of Revisions across spaces in the Organization.
@@ -26001,9 +26697,11 @@ paths:
       tags:
       - Release
     post:
-      description: Publish a Release for the consuming Target, bundling the Units/Revisions
+      description: 'Publish a Release for the consuming Target, bundling the Units/Revisions
         of the Space in the path. Optionally pins each Unit to a tagged Revision via
-        TagID.
+        TagID. When the bundle is identical to the Space''s latest published Release,
+        no Release is created: the response carries that latest Release and a Message
+        saying so.'
       operationId: PublishRelease
       parameters:
       - description: Unique identifier for a space_id
@@ -26023,13 +26721,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Release'
-          description: Release is a published bundle of the configuration of the Units
-            in a Space that are assigned to a Target. It is created by publishing,
-            taken out of service by withdrawing, and removed by deleting; its bundled
-            content is never updated, though its Labels, Annotations, DeleteGates,
-            and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz
-            layer plus manifest) so it can be served to and consumed by the Target.
+                $ref: '#/components/schemas/ReleasePublishResponse'
+          description: OK
         "400":
           content:
             application/json:
@@ -27422,7 +28115,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -27524,7 +28217,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+          Supported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -27615,6 +28308,14 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: 'Give each Target written a backing Unit if it has none: a ConfigHub/YAML
+          Unit holding the Target''s configuration, which is then kept in step with
+          it.'
+        in: query
+        name: with_backing_units
+        required: false
+        schema:
+          type: boolean
       - description: Allowed values are true and false. Default is false. When true,
           reports success when an entity already exists and returns the existing entity
         in: query
@@ -28134,6 +28835,165 @@ paths:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
       summary: Update Target
+      tags:
+      - Target
+  /space/{space_id}/target/{target_id}/document:
+    get:
+      description: 'Returns the Target as the document its backing Unit would hold:
+        the fields a write can set, with the entities it refers to named rather than
+        identified by ID, and its Version.'
+      operationId: GetTargetDocument
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a target_id
+        in: path
+        name: target_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityDocument'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Target.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get the document of a Target to edit
+      tags:
+      - Target
+    post:
+      description: 'Applies the change from Base, the document as read, to Document,
+        as edited, as a patch of the Target: a field the edit leaves alone keeps what
+        the Target holds, and a field it removes is cleared. A Version other than
+        the Target''s is a conflict.'
+      operationId: UpdateTargetDocument
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a target_id
+        in: path
+        name: target_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityDocumentEdit'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Target'
+          description: 'Target represents a deployment target in ConfigHub: where
+            configuration is destined. A Space''s Releases are published for its release
+            Target and pulled from ConfigHub''s OCI registry by a GitOps tool such
+            as Argo CD or Flux. Access to a Target, including a worker''s, is granted
+            through its Permissions.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Target not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The Target changed since the document was read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Target.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update a Target from an edit of its document
       tags:
       - Target
   /space/{space_id}/trigger:
@@ -32068,6 +32928,740 @@ paths:
       summary: Get ExtendedResource
       tags:
       - Resource
+  /space/{space_id}/unit/{unit_id}/review_comment:
+    get:
+      description: List ReviewComments
+      operationId: ListReviewComments
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ReviewComments returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ReviewComment list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ReviewComment).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ReviewComment entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedReviewComment'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ReviewComments
+      tags:
+      - ReviewComment
+    post:
+      description: Create ReviewComment
+      operationId: CreateReviewComment
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewComment'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewComment'
+          description: ReviewComment is a remark made in review of a Revision of a
+            Unit, optionally about one resource or path in it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create ReviewComment
+      tags:
+      - ReviewComment
+  /space/{space_id}/unit/{unit_id}/review_comment/{review_comment_id}:
+    delete:
+      description: Delete ReviewComment
+      operationId: DeleteReviewComment
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a review_comment_id
+        in: path
+        name: review_comment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ReviewComment is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete ReviewComment
+      tags:
+      - ReviewComment
+    get:
+      description: Get ReviewComment
+      operationId: GetReviewComment
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ReviewComment.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a review_comment_id
+        in: path
+        name: review_comment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedReviewComment'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ReviewComment
+      tags:
+      - ReviewComment
+    patch:
+      description: Patch ReviewComment
+      operationId: PatchReviewComment
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a review_comment_id
+        in: path
+        name: review_comment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ReviewComment. All fields are
+                optional and nullable. Readonly fields are ignored.
+              properties:
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Path:
+                  description: Path to which the remark is attached; optional
+                  nullable: true
+                  type: string
+                ReplyToID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                Resource:
+                  description: Resource to which the remark is attached; optional
+                  nullable: true
+                  type: object
+                RevisionID:
+                  description: ""
+                  format: uuid
+                  nullable: true
+                  type: string
+                RevisionNum:
+                  description: ""
+                  nullable: true
+                  type: integer
+                Text:
+                  description: ""
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewComment'
+          description: ReviewComment is a remark made in review of a Revision of a
+            Unit, optionally about one resource or path in it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch ReviewComment
+      tags:
+      - ReviewComment
+    put:
+      description: Update ReviewComment
+      operationId: UpdateReviewComment
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a unit_id
+        in: path
+        name: unit_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a review_comment_id
+        in: path
+        name: review_comment_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewComment'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReviewComment'
+          description: ReviewComment is a remark made in review of a Revision of a
+            Unit, optionally about one resource or path in it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ReviewComment data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ReviewComment.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update ReviewComment
+      tags:
+      - ReviewComment
   /space/{space_id}/unit/{unit_id}/revision:
     get:
       description: List ExtendedRevisions
@@ -35344,7 +36938,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -35563,7 +37157,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -35665,7 +37259,7 @@ paths:
 
           Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 
-          Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+          Supported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.
 
           Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 
@@ -35784,7 +37378,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -35881,6 +37475,23 @@ paths:
           even if these fields have not changed
         in: query
         name: refresh_triggers
+        required: false
+        schema:
+          type: boolean
+      - description: 'Give each Target written a backing Unit if it has none: a ConfigHub/YAML
+          Unit holding the Target''s configuration, which is then kept in step with
+          it.'
+        in: query
+        name: with_backing_units
+        required: false
+        schema:
+          type: boolean
+      - description: 'Patch each selected Target with what its backing Unit holds
+          that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum.
+          The request body is applied after it. Selecting one with no backing Unit
+          is an error, and so are outstanding ValidationErrors on a backing Unit.'
+        in: query
+        name: from_backing_units
         required: false
         schema:
           type: boolean
@@ -36028,6 +37639,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: A backing Unit has outstanding ValidationErrors
         "500":
           content:
             application/json:
@@ -36084,7 +37701,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -36267,6 +37884,87 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Give each Target written a backing Unit if it has none: a ConfigHub/YAML
+          Unit holding the Target''s configuration, which is then kept in step with
+          it.'
+        in: query
+        name: with_backing_units
+        required: false
+        schema:
+          type: boolean
+      - description: Create Targets from the ConfigHub/YAML Units where_unit and filter_unit
+          select, each in its Unit's Space, and each with its Unit as its backing
+          Unit. The request body is applied after the Unit's document. Units of other
+          toolchains or describing other entity types are passed over; outstanding
+          ValidationErrors on a Unit are an error. Takes none of the parameters that
+          select entities to clone, name the clones or choose their Spaces.
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Units returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+
+          The Units to create entities from, with from_backing_units.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where_unit
+        required: false
+        schema:
+          type: string
+      - description: A Filter, by ID, over the Units to create entities from, with
+          from_backing_units.
+        in: query
+        name: filter_unit
+        required: false
+        schema:
+          type: string
+      - description: With from_backing_units, patch a Target a selected Unit already
+          backs with what the Unit holds that it has not taken yet, as a bulk patch
+          with from_backing_units does, rather than report that the Unit backs it.
+          The request body is applied after it. Without it, such a Unit is an error,
+          or with allow_exists the Target is returned as it is.
+        in: query
+        name: patch_existing
+        required: false
+        schema:
+          type: boolean
       - description: 'If true, report what the write would do without doing it: the
           write runs, including every check it makes, and is then rolled back. The
           response is the one the write would return, with the entities as they would
@@ -36411,6 +38109,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Target data conflict. Data has changed since last read.
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: A backing Unit has outstanding ValidationErrors
         "500":
           content:
             application/json:
@@ -36470,7 +38174,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+          Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 
           The whole string must be query-encoded.
         in: query
@@ -43760,8 +45464,6 @@ components:
           format: uuid
           type: string
           x-go-type-skip-optional-pointer: true
-        ResourceStatuses:
-          $ref: '#/components/schemas/ResourceStatusMap'
         Result:
           $ref: '#/components/schemas/ActionResultType'
         RevisionNum:
@@ -45247,8 +46949,9 @@ components:
         ReleasedSpaceIDs:
           description: 'ReleasedSpaceIDs is where the ChangeOrder has been released:
             the Spaces in scope whose Units in the Space''s release are applied at
-            or past the Revision the end Tag marks. Derived when the ChangeOrder is
-            read.'
+            or past the Revision the end Tag marks. A Space with no ReleaseTargetID
+            is never here, since nothing releases it. Derived when the ChangeOrder
+            is read.'
           items:
             $ref: '#/components/schemas/UUID'
           readOnly: true
@@ -45378,11 +47081,11 @@ components:
           description: 'State is how far the ChangeOrder has got: New until a Space
             other than its own has taken it, InProgress while some have and some have
             not, Resolved once every Space in scope has, Released once every Space
-            in scope has released what it took, Aborted whenever AbortedReason is
-            set, Restored once every Space that had taken it has been restored to
-            the Revisions before it, and RestoreReleased once every Space that had
-            released it has released the restored Revisions. Derived when the ChangeOrder
-            is read.'
+            in scope that has a ReleaseTargetID has released what it took (a Space
+            with none has nothing to release), Aborted whenever AbortedReason is set,
+            Restored once every Space that had taken it has been restored to the Revisions
+            before it, and RestoreReleased once every Space that had released it has
+            released the restored Revisions. Derived when the ChangeOrder is read.'
           readOnly: true
           type: string
           x-confighub-where:
@@ -45406,9 +47109,9 @@ components:
             has. Invoke is the third: the change is one Invocation run in each Space
             in scope, and the ChangeOrder is created before any of it has happened.
             Insert, Upsert, and TransformPaths carry a change to Units outside the
-            ChangeOrder''s component into it: every Space in scope resolves its Links
-            of that type to those Units at the Revision each was at when the ChangeOrder
-            was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs,
+            ChangeOrder''s scope into the Spaces in scope: every Space in scope resolves
+            its Links of that type to those Units at the Revision each was at when
+            the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs,
             or a selection that fills it in, is required.'
           type: string
           x-confighub-where:
@@ -46176,10 +47879,10 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         WhereSpace:
-          description: 'Selects the stage''s Spaces: a where expression over Spaces.
-            Intersected with the change order''s component and its in-scope Space
-            list. It must not name Labels.Component. Empty selects every Space of
-            the change order''s component.'
+          description: 'Selects the stage''s Spaces: a where expression over Spaces,
+            intersected with the change order''s InScopeSpaceIDs. Nothing else is
+            implied, so a workflow can be shared across components. Empty selects
+            every Space in the change order''s scope.'
           type: string
           x-go-type-skip-optional-pointer: true
       required:
@@ -46946,6 +48649,21 @@ components:
             $ref: '#/components/schemas/ViewColumn'
           type: array
           x-go-type-skip-optional-pointer: true
+      type: object
+    ExtendedReviewComment:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        ReviewComment:
+          $ref: '#/components/schemas/ReviewComment'
+        Revision:
+          $ref: '#/components/schemas/Revision'
+        Space:
+          $ref: '#/components/schemas/Space'
+        Unit:
+          $ref: '#/components/schemas/Unit'
       type: object
     ExtendedRevision:
       properties:
@@ -50150,6 +51868,16 @@ components:
           format: uuid
           type: string
       type: object
+    ReleasePublishResponse:
+      properties:
+        Message:
+          description: Set when nothing changed since the latest published Release,
+            so no Release was created.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Release:
+          $ref: '#/components/schemas/Release'
+      type: object
     Resource:
       description: Resource is a configuration element extracted from a Unit's configuration
         data. Resources are maintained automatically as Units change and are read-only.
@@ -50478,31 +52206,6 @@ components:
         Resource:
           $ref: '#/components/schemas/ResourceInfo'
       type: object
-    ResourceStatus:
-      properties:
-        Message:
-          description: Human-readable status details or error message
-          type: string
-          x-go-type-skip-optional-pointer: true
-        Readiness:
-          description: Health state from kstatus (Ready, InProgress, Failed, Unknown)
-          type: string
-          x-go-type-skip-optional-pointer: true
-        SyncStatus:
-          description: Whether config was pushed to the target (Synced or NotSynced)
-          type: string
-          x-go-type-skip-optional-pointer: true
-        UpdatedAt:
-          description: Timestamp when this resource status was last updated
-          example: 2006-01-02T15:04:05Z07:00
-          format: date-time
-          type: string
-          x-go-type-skip-optional-pointer: true
-      type: object
-    ResourceStatusMap:
-      additionalProperties:
-        $ref: '#/components/schemas/ResourceStatus'
-      type: object
     ResourceTypePathsEntry:
       properties:
         BoundLinkID:
@@ -50579,6 +52282,173 @@ components:
           description: The type of error (e.g., validation, not-found)
           type: string
           x-go-type-skip-optional-pointer: true
+      type: object
+    ReviewComment:
+      description: ReviewComment is a remark made in review of a Revision of a Unit,
+        optionally about one resource or path in it.
+      properties:
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        HiddenReason:
+          description: The reason the entity is hidden, if it is. A hidden entity
+            is left out of List and Search results, and of what bulk operations act
+            on, unless the include_hidden parameter names its reason or is *, or the
+            where parameter names the entity by Slug or ID. ConfigHub/YAML Units are
+            created hidden with the reason BackingUnit unless given another.
+          maxLength: 64
+          pattern: ^([A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an Organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Organization
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: Path to which the remark is attached; optional
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        ReplyToID:
+          description: Unique identifier of the ReviewComment, on the same Unit, this
+            one replies to. Unset for a comment that starts a thread. Immutable.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: ReviewComment
+        Resource:
+          $ref: '#/components/schemas/ResourceInfoType2'
+        ReviewCommentID:
+          description: Unique identifier for a ReviewComment.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+          x-go-type-skip-optional-pointer: true
+        RevisionID:
+          description: Unique identifier of the Revision the comment is about. Set
+            by the server from RevisionNum.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Revision
+          x-go-type-skip-optional-pointer: true
+        RevisionNum:
+          description: Sequence number of the Revision the comment is about. Required
+            on create, and immutable.
+          format: int64
+          type: integer
+          x-confighub-where:
+            dataType: int
+            references: Revision
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier for a space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Space
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Text:
+          description: The text of the remark.
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: Unique identifier for a Unit.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Unit
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: Slug of the Unit this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        UserAgent:
+          description: User-Agent string of the API call that created the comment.
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: Unique identifier of the user who made the comment.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: User
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - RevisionNum
+      - Text
+      type: object
+    ReviewCommentCreateOrUpdateResponse:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        ReviewComment:
+          $ref: '#/components/schemas/ReviewComment'
       type: object
     Revision:
       description: Revision is a historial view of a Config Unit.
@@ -51506,6 +53376,14 @@ components:
           x-confighub-where:
             dataType: map[string]string
           x-go-type-skip-optional-pointer: true
+        BackingUnitID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Unit
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -51655,6 +53533,14 @@ components:
           x-confighub-where:
             dataType: time
           x-go-type-skip-optional-pointer: true
+        UpstreamTargetID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Target
         Version:
           description: An entity-specific sequence number used for optimistic concurrency
             control. The value read must be sent in calls to Update.
@@ -52859,8 +54745,6 @@ components:
             dataType: uuid
             references: QueuedOperation
           x-go-type-skip-optional-pointer: true
-        ResourceStatuses:
-          $ref: '#/components/schemas/ResourceStatusMap'
         Result:
           $ref: '#/components/schemas/ActionResultType'
         RevisionNum:

@@ -33,14 +33,14 @@ clean:
 
 # Sibling modules that contain tests
 CORE_MODULES = ./core 
-TEST_MODULES = ./function-impl ./worker-function-impl \
+LIB_MODULES = ./function-impl ./worker-function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit \
 	./cliutil ./k8sutil
 CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
 # All sibling modules that need prep (mod download/tidy)
-SIBLING_MODULES = $(TEST_MODULES) $(CMD_MODULES)
+SIBLING_MODULES = $(LIB_MODULES) $(CMD_MODULES)
 
 # Skip the public checksum DB / proxy for SDK sibling modules so that release
 # prep (which rewrites go.mod to freshly-tagged @vX.Y.Z sibling versions and
@@ -94,11 +94,11 @@ endif
 test: ## Run golang tests
 ifdef CI
 	@for mod in $(CORE_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -v ./...) || exit 1; done
-	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -v ./...) || exit 1; done
+	@for mod in $(SIBLING_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -v ./...) || exit 1; done
 else
 	mkdir -p ./test/results
 	@for mod in $(CORE_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && gotestsum --junitfile ../test/results/public-unit-tests.xml -- -race -coverprofile=../test/results/public-cover.out -v ./...) || exit 1; done
-	@for mod in $(TEST_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -race -v ./...) || exit 1; done
+	@for mod in $(SIBLING_MODULES); do echo "=== Testing $$mod ===" && (cd $$mod && go test -race -v ./...) || exit 1; done
 endif
 
 .PHONY: cover
@@ -114,7 +114,7 @@ build-worker: ## Build the worker
 
 .PHONY: build-modules
 build-modules: ## Build modules
-	@for mod in $(CORE_MODULES) $(TEST_MODULES); do echo "=== Building $$mod ===" && (cd $$mod && go build ./...) ; done
+	@for mod in $(CORE_MODULES) $(LIB_MODULES); do echo "=== Building $$mod ===" && (cd $$mod && go build ./...) ; done
 
 .PHONY: build-funcexec
 build-funcexec: ## Build standalone function execuctor and its CLI

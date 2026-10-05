@@ -210,6 +210,8 @@ var refArgKinds = map[string][]*refKind{
 	"group add-worker": {nil, kindWorker}, "group remove-worker": {nil, kindWorker},
 	"invocation get": {kindInvocation}, "invocation update": {kindInvocation}, "invocation delete": {kindInvocation},
 	"invocation invoke get": {kindInvocation}, "invocation invoke set": {kindInvocation}, "invocation invoke vet": {kindInvocation},
+	"review-comment get": {kindUnit}, "review-comment list": {kindUnit}, "review-comment create": {kindUnit},
+	"review-comment update": {kindUnit}, "review-comment delete": {kindUnit},
 	"k8s collect":     {kindTarget},
 	"link get":        {kindLink},
 	"link delete":     {kindLink},

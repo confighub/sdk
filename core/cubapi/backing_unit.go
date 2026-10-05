@@ -80,6 +80,13 @@ var backedEntityFinders = []backedEntityFinder{
 		}
 		return found[0].Space.Slug, true, nil
 	}},
+	{"Target", func(ctx context.Context, c *Client, where Where) (string, bool, error) {
+		found, err := ListTargets(ctx, c, where, bySpace)
+		if err != nil || len(found) == 0 || found[0].Target == nil {
+			return "", false, err
+		}
+		return qualifiedName(found[0].Space, found[0].Target.Slug), true, nil
+	}},
 	{"Trigger", func(ctx context.Context, c *Client, where Where) (string, bool, error) {
 		found, err := ListTriggers(ctx, c, where, bySpace)
 		if err != nil || len(found) == 0 || found[0].Trigger == nil {

@@ -410,6 +410,17 @@ type ClientInterface interface {
 	// ListAllResources request
 	ListAllResources(ctx context.Context, params *ListAllResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// BulkDeleteReviewComments request
+	BulkDeleteReviewComments(ctx context.Context, params *BulkDeleteReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAllReviewComments request
+	ListAllReviewComments(ctx context.Context, params *ListAllReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// BulkPatchReviewCommentsWithBody request with any body
+	BulkPatchReviewCommentsWithBody(ctx context.Context, params *BulkPatchReviewCommentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	BulkPatchReviewCommentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchReviewCommentsParams, body BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAllRevisions request
 	ListAllRevisions(ctx context.Context, params *ListAllRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -789,6 +800,14 @@ type ClientInterface interface {
 
 	UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetTargetDocument request
+	GetTargetDocument(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateTargetDocumentWithBody request with any body
+	UpdateTargetDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateTargetDocument(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListTriggers request
 	ListTriggers(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -883,6 +902,30 @@ type ClientInterface interface {
 
 	// GetExtendedResource request
 	GetExtendedResource(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, resourceId openapi_types.UUID, params *GetExtendedResourceParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListReviewComments request
+	ListReviewComments(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateReviewCommentWithBody request with any body
+	CreateReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, body CreateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteReviewComment request
+	DeleteReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetReviewComment request
+	GetReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *GetReviewCommentParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PatchReviewCommentWithBody request with any body
+	PatchReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PatchReviewCommentWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, body PatchReviewCommentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateReviewCommentWithBody request with any body
+	UpdateReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	UpdateReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, body UpdateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListExtendedRevisions request
 	ListExtendedRevisions(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedRevisionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -2497,6 +2540,54 @@ func (c *Client) ListAllReleases(ctx context.Context, params *ListAllReleasesPar
 
 func (c *Client) ListAllResources(ctx context.Context, params *ListAllResourcesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAllResourcesRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkDeleteReviewComments(ctx context.Context, params *BulkDeleteReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkDeleteReviewCommentsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListAllReviewComments(ctx context.Context, params *ListAllReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAllReviewCommentsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchReviewCommentsWithBody(ctx context.Context, params *BulkPatchReviewCommentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchReviewCommentsRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) BulkPatchReviewCommentsWithApplicationMergePatchPlusJSONBody(ctx context.Context, params *BulkPatchReviewCommentsParams, body BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewBulkPatchReviewCommentsRequestWithApplicationMergePatchPlusJSONBody(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -4199,6 +4290,42 @@ func (c *Client) UpdateTarget(ctx context.Context, spaceId openapi_types.UUID, t
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetTargetDocument(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTargetDocumentRequest(c.Server, spaceId, targetId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTargetDocumentWithBody(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTargetDocumentRequestWithBody(c.Server, spaceId, targetId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateTargetDocument(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateTargetDocumentRequest(c.Server, spaceId, targetId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) ListTriggers(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListTriggersRequest(c.Server, spaceId, params)
 	if err != nil {
@@ -4609,6 +4736,114 @@ func (c *Client) ListExtendedResources(ctx context.Context, spaceId openapi_type
 
 func (c *Client) GetExtendedResource(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, resourceId openapi_types.UUID, params *GetExtendedResourceParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetExtendedResourceRequest(c.Server, spaceId, unitId, resourceId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListReviewComments(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListReviewCommentsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListReviewCommentsRequest(c.Server, spaceId, unitId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateReviewCommentRequestWithBody(c.Server, spaceId, unitId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, body CreateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateReviewCommentRequest(c.Server, spaceId, unitId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteReviewCommentRequest(c.Server, spaceId, unitId, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *GetReviewCommentParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetReviewCommentRequest(c.Server, spaceId, unitId, reviewCommentId, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReviewCommentRequestWithBody(c.Server, spaceId, unitId, reviewCommentId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PatchReviewCommentWithApplicationMergePatchPlusJSONBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, body PatchReviewCommentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPatchReviewCommentRequestWithApplicationMergePatchPlusJSONBody(c.Server, spaceId, unitId, reviewCommentId, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateReviewCommentWithBody(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReviewCommentRequestWithBody(c.Server, spaceId, unitId, reviewCommentId, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) UpdateReviewComment(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, body UpdateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateReviewCommentRequest(c.Server, spaceId, unitId, reviewCommentId, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -17053,6 +17288,502 @@ func NewListAllResourcesRequest(server string, params *ListAllResourcesParams) (
 	return req, nil
 }
 
+// NewBulkDeleteReviewCommentsRequest generates requests for BulkDeleteReviewComments
+func NewBulkDeleteReviewCommentsRequest(server string, params *BulkDeleteReviewCommentsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/review_comment")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAllReviewCommentsRequest generates requests for ListAllReviewComments
+func NewListAllReviewCommentsRequest(server string, params *ListAllReviewCommentsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/review_comment")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OrderBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewBulkPatchReviewCommentsRequestWithApplicationMergePatchPlusJSONBody calls the generic BulkPatchReviewComments builder with application/merge-patch+json body
+func NewBulkPatchReviewCommentsRequestWithApplicationMergePatchPlusJSONBody(server string, params *BulkPatchReviewCommentsParams, body BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewBulkPatchReviewCommentsRequestWithBody(server, params, "application/merge-patch+json", bodyReader)
+}
+
+// NewBulkPatchReviewCommentsRequestWithBody generates requests for BulkPatchReviewComments with any type of body
+func NewBulkPatchReviewCommentsRequestWithBody(server string, params *BulkPatchReviewCommentsParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/review_comment")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListAllRevisionsRequest generates requests for ListAllRevisions
 func NewListAllRevisionsRequest(server string, params *ListAllRevisionsParams) (*http.Request, error) {
 	var err error
@@ -25904,6 +26635,22 @@ func NewCreateTargetRequestWithBody(server string, spaceId openapi_types.UUID, p
 	if params != nil {
 		queryValues := queryURL.Query()
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
@@ -26266,6 +27013,123 @@ func NewUpdateTargetRequestWithBody(server string, spaceId openapi_types.UUID, t
 	}
 
 	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetTargetDocumentRequest generates requests for GetTargetDocument
+func NewGetTargetDocumentRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "target_id", runtime.ParamLocationPath, targetId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/target/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateTargetDocumentRequest calls the generic UpdateTargetDocument builder with application/json body
+func NewUpdateTargetDocumentRequest(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateTargetDocumentRequestWithBody(server, spaceId, targetId, params, "application/json", bodyReader)
+}
+
+// NewUpdateTargetDocumentRequestWithBody generates requests for UpdateTargetDocument with any type of body
+func NewUpdateTargetDocumentRequestWithBody(server string, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "target_id", runtime.ParamLocationPath, targetId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/target/%s/document", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -29622,6 +30486,573 @@ func NewGetExtendedResourceRequest(server string, spaceId openapi_types.UUID, un
 	return req, nil
 }
 
+// NewListReviewCommentsRequest generates requests for ListReviewComments
+func NewListReviewCommentsRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListReviewCommentsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Where != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where", runtime.ParamLocationQuery, *params.Where); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Filter != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter", runtime.ParamLocationQuery, *params.Filter); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Contains != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "contains", runtime.ParamLocationQuery, *params.Contains); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.IncludeHidden != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include_hidden", runtime.ParamLocationQuery, *params.IncludeHidden); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "limit", runtime.ParamLocationQuery, *params.Limit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.OrderBy != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "order_by", runtime.ParamLocationQuery, *params.OrderBy); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Continue != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateReviewCommentRequest calls the generic CreateReviewComment builder with application/json body
+func NewCreateReviewCommentRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, body CreateReviewCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateReviewCommentRequestWithBody(server, spaceId, unitId, params, "application/json", bodyReader)
+}
+
+// NewCreateReviewCommentRequestWithBody generates requests for CreateReviewComment with any type of body
+func NewCreateReviewCommentRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteReviewCommentRequest generates requests for DeleteReviewComment
+func NewDeleteReviewCommentRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "review_comment_id", runtime.ParamLocationPath, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetReviewCommentRequest generates requests for GetReviewComment
+func NewGetReviewCommentRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *GetReviewCommentParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "review_comment_id", runtime.ParamLocationPath, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.Include != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "include", runtime.ParamLocationQuery, *params.Include); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.Select != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "select", runtime.ParamLocationQuery, *params.Select); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPatchReviewCommentRequestWithApplicationMergePatchPlusJSONBody calls the generic PatchReviewComment builder with application/merge-patch+json body
+func NewPatchReviewCommentRequestWithApplicationMergePatchPlusJSONBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, body PatchReviewCommentApplicationMergePatchPlusJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPatchReviewCommentRequestWithBody(server, spaceId, unitId, reviewCommentId, params, "application/merge-patch+json", bodyReader)
+}
+
+// NewPatchReviewCommentRequestWithBody generates requests for PatchReviewComment with any type of body
+func NewPatchReviewCommentRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "review_comment_id", runtime.ParamLocationPath, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("PATCH", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUpdateReviewCommentRequest calls the generic UpdateReviewComment builder with application/json body
+func NewUpdateReviewCommentRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, body UpdateReviewCommentJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateReviewCommentRequestWithBody(server, spaceId, unitId, reviewCommentId, params, "application/json", bodyReader)
+}
+
+// NewUpdateReviewCommentRequestWithBody generates requests for UpdateReviewComment with any type of body
+func NewUpdateReviewCommentRequestWithBody(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "space_id", runtime.ParamLocationPath, spaceId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithLocation("simple", false, "unit_id", runtime.ParamLocationPath, unitId)
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam2 string
+
+	pathParam2, err = runtime.StyleParamWithLocation("simple", false, "review_comment_id", runtime.ParamLocationPath, reviewCommentId)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/space/%s/unit/%s/review_comment/%s", pathParam0, pathParam1, pathParam2)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.DryRun != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListExtendedRevisionsRequest generates requests for ListExtendedRevisions
 func NewListExtendedRevisionsRequest(server string, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedRevisionsParams) (*http.Request, error) {
 	var err error
@@ -32522,6 +33953,38 @@ func NewBulkPatchTargetsRequestWithBody(server string, params *BulkPatchTargetsP
 
 		}
 
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		if params.DryRun != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "dry_run", runtime.ParamLocationQuery, *params.DryRun); err != nil {
@@ -32779,6 +34242,86 @@ func NewBulkCreateTargetsRequestWithBody(server string, params *BulkCreateTarget
 		if params.AllowExists != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "allow_exists", runtime.ParamLocationQuery, *params.AllowExists); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WithBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "with_backing_units", runtime.ParamLocationQuery, *params.WithBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.WhereUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "where_unit", runtime.ParamLocationQuery, *params.WhereUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FilterUnit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "filter_unit", runtime.ParamLocationQuery, *params.FilterUnit); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.PatchExisting != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "patch_existing", runtime.ParamLocationQuery, *params.PatchExisting); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -38602,6 +40145,17 @@ type ClientWithResponsesInterface interface {
 	// ListAllResourcesWithResponse request
 	ListAllResourcesWithResponse(ctx context.Context, params *ListAllResourcesParams, reqEditors ...RequestEditorFn) (*ListAllResourcesResponse, error)
 
+	// BulkDeleteReviewCommentsWithResponse request
+	BulkDeleteReviewCommentsWithResponse(ctx context.Context, params *BulkDeleteReviewCommentsParams, reqEditors ...RequestEditorFn) (*BulkDeleteReviewCommentsResponse, error)
+
+	// ListAllReviewCommentsWithResponse request
+	ListAllReviewCommentsWithResponse(ctx context.Context, params *ListAllReviewCommentsParams, reqEditors ...RequestEditorFn) (*ListAllReviewCommentsResponse, error)
+
+	// BulkPatchReviewCommentsWithBodyWithResponse request with any body
+	BulkPatchReviewCommentsWithBodyWithResponse(ctx context.Context, params *BulkPatchReviewCommentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchReviewCommentsResponse, error)
+
+	BulkPatchReviewCommentsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchReviewCommentsParams, body BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchReviewCommentsResponse, error)
+
 	// ListAllRevisionsWithResponse request
 	ListAllRevisionsWithResponse(ctx context.Context, params *ListAllRevisionsParams, reqEditors ...RequestEditorFn) (*ListAllRevisionsResponse, error)
 
@@ -38981,6 +40535,14 @@ type ClientWithResponsesInterface interface {
 
 	UpdateTargetWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetParams, body UpdateTargetJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetResponse, error)
 
+	// GetTargetDocumentWithResponse request
+	GetTargetDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTargetDocumentResponse, error)
+
+	// UpdateTargetDocumentWithBodyWithResponse request with any body
+	UpdateTargetDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetDocumentResponse, error)
+
+	UpdateTargetDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetDocumentResponse, error)
+
 	// ListTriggersWithResponse request
 	ListTriggersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*ListTriggersResponse, error)
 
@@ -39075,6 +40637,30 @@ type ClientWithResponsesInterface interface {
 
 	// GetExtendedResourceWithResponse request
 	GetExtendedResourceWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, resourceId openapi_types.UUID, params *GetExtendedResourceParams, reqEditors ...RequestEditorFn) (*GetExtendedResourceResponse, error)
+
+	// ListReviewCommentsWithResponse request
+	ListReviewCommentsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListReviewCommentsParams, reqEditors ...RequestEditorFn) (*ListReviewCommentsResponse, error)
+
+	// CreateReviewCommentWithBodyWithResponse request with any body
+	CreateReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateReviewCommentResponse, error)
+
+	CreateReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, body CreateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateReviewCommentResponse, error)
+
+	// DeleteReviewCommentWithResponse request
+	DeleteReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReviewCommentResponse, error)
+
+	// GetReviewCommentWithResponse request
+	GetReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *GetReviewCommentParams, reqEditors ...RequestEditorFn) (*GetReviewCommentResponse, error)
+
+	// PatchReviewCommentWithBodyWithResponse request with any body
+	PatchReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReviewCommentResponse, error)
+
+	PatchReviewCommentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, body PatchReviewCommentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReviewCommentResponse, error)
+
+	// UpdateReviewCommentWithBodyWithResponse request with any body
+	UpdateReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReviewCommentResponse, error)
+
+	UpdateReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, body UpdateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReviewCommentResponse, error)
 
 	// ListExtendedRevisionsWithResponse request
 	ListExtendedRevisionsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListExtendedRevisionsParams, reqEditors ...RequestEditorFn) (*ListExtendedRevisionsResponse, error)
@@ -41664,6 +43250,95 @@ func (r ListAllResourcesResponse) StatusCode() int {
 	return 0
 }
 
+type BulkDeleteReviewCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]DeleteResponse
+	JSON207      *[]DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkDeleteReviewCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkDeleteReviewCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type ListAllReviewCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAllReviewCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAllReviewCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type BulkPatchReviewCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ReviewCommentCreateOrUpdateResponse
+	JSON207      *[]ReviewCommentCreateOrUpdateResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r BulkPatchReviewCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r BulkPatchReviewCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListAllRevisionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -43903,7 +45578,7 @@ func (r ListExtendedReleasesResponse) StatusCode() int {
 type PublishReleaseResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
-	JSON200      *Release
+	JSON200      *ReleasePublishResponse
 	JSON400      *StandardErrorResponse
 	JSON401      *StandardErrorResponse
 	JSON403      *StandardErrorResponse
@@ -44443,6 +46118,63 @@ func (r UpdateTargetResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r UpdateTargetResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetTargetDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *EntityDocument
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTargetDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTargetDocumentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateTargetDocumentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *Target
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateTargetDocumentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateTargetDocumentResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -45167,6 +46899,179 @@ func (r GetExtendedResourceResponse) StatusCode() int {
 	return 0
 }
 
+type ListReviewCommentsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]ExtendedReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListReviewCommentsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListReviewCommentsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type CreateReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *DeleteResponse
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ExtendedReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PatchReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PatchReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PatchReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type UpdateReviewCommentResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ReviewComment
+	JSON400      *StandardErrorResponse
+	JSON401      *StandardErrorResponse
+	JSON403      *StandardErrorResponse
+	JSON404      *StandardErrorResponse
+	JSON409      *StandardErrorResponse
+	JSON500      *StandardErrorResponse
+	JSONDefault  *StandardErrorResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateReviewCommentResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateReviewCommentResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type ListExtendedRevisionsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -45838,6 +47743,7 @@ type BulkPatchTargetsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -45868,6 +47774,7 @@ type BulkCreateTargetsResponse struct {
 	JSON403      *StandardErrorResponse
 	JSON404      *StandardErrorResponse
 	JSON409      *StandardErrorResponse
+	JSON422      *StandardErrorResponse
 	JSON500      *StandardErrorResponse
 	JSONDefault  *StandardErrorResponse
 }
@@ -47773,6 +49680,41 @@ func (c *ClientWithResponses) ListAllResourcesWithResponse(ctx context.Context, 
 	return ParseListAllResourcesResponse(rsp)
 }
 
+// BulkDeleteReviewCommentsWithResponse request returning *BulkDeleteReviewCommentsResponse
+func (c *ClientWithResponses) BulkDeleteReviewCommentsWithResponse(ctx context.Context, params *BulkDeleteReviewCommentsParams, reqEditors ...RequestEditorFn) (*BulkDeleteReviewCommentsResponse, error) {
+	rsp, err := c.BulkDeleteReviewComments(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkDeleteReviewCommentsResponse(rsp)
+}
+
+// ListAllReviewCommentsWithResponse request returning *ListAllReviewCommentsResponse
+func (c *ClientWithResponses) ListAllReviewCommentsWithResponse(ctx context.Context, params *ListAllReviewCommentsParams, reqEditors ...RequestEditorFn) (*ListAllReviewCommentsResponse, error) {
+	rsp, err := c.ListAllReviewComments(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAllReviewCommentsResponse(rsp)
+}
+
+// BulkPatchReviewCommentsWithBodyWithResponse request with arbitrary body returning *BulkPatchReviewCommentsResponse
+func (c *ClientWithResponses) BulkPatchReviewCommentsWithBodyWithResponse(ctx context.Context, params *BulkPatchReviewCommentsParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*BulkPatchReviewCommentsResponse, error) {
+	rsp, err := c.BulkPatchReviewCommentsWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchReviewCommentsResponse(rsp)
+}
+
+func (c *ClientWithResponses) BulkPatchReviewCommentsWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, params *BulkPatchReviewCommentsParams, body BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*BulkPatchReviewCommentsResponse, error) {
+	rsp, err := c.BulkPatchReviewCommentsWithApplicationMergePatchPlusJSONBody(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseBulkPatchReviewCommentsResponse(rsp)
+}
+
 // ListAllRevisionsWithResponse request returning *ListAllRevisionsResponse
 func (c *ClientWithResponses) ListAllRevisionsWithResponse(ctx context.Context, params *ListAllRevisionsParams, reqEditors ...RequestEditorFn) (*ListAllRevisionsResponse, error) {
 	rsp, err := c.ListAllRevisions(ctx, params, reqEditors...)
@@ -48998,6 +50940,32 @@ func (c *ClientWithResponses) UpdateTargetWithResponse(ctx context.Context, spac
 	return ParseUpdateTargetResponse(rsp)
 }
 
+// GetTargetDocumentWithResponse request returning *GetTargetDocumentResponse
+func (c *ClientWithResponses) GetTargetDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, reqEditors ...RequestEditorFn) (*GetTargetDocumentResponse, error) {
+	rsp, err := c.GetTargetDocument(ctx, spaceId, targetId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTargetDocumentResponse(rsp)
+}
+
+// UpdateTargetDocumentWithBodyWithResponse request with arbitrary body returning *UpdateTargetDocumentResponse
+func (c *ClientWithResponses) UpdateTargetDocumentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateTargetDocumentResponse, error) {
+	rsp, err := c.UpdateTargetDocumentWithBody(ctx, spaceId, targetId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTargetDocumentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateTargetDocumentWithResponse(ctx context.Context, spaceId openapi_types.UUID, targetId openapi_types.UUID, params *UpdateTargetDocumentParams, body UpdateTargetDocumentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateTargetDocumentResponse, error) {
+	rsp, err := c.UpdateTargetDocument(ctx, spaceId, targetId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateTargetDocumentResponse(rsp)
+}
+
 // ListTriggersWithResponse request returning *ListTriggersResponse
 func (c *ClientWithResponses) ListTriggersWithResponse(ctx context.Context, spaceId openapi_types.UUID, params *ListTriggersParams, reqEditors ...RequestEditorFn) (*ListTriggersResponse, error) {
 	rsp, err := c.ListTriggers(ctx, spaceId, params, reqEditors...)
@@ -49301,6 +51269,84 @@ func (c *ClientWithResponses) GetExtendedResourceWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseGetExtendedResourceResponse(rsp)
+}
+
+// ListReviewCommentsWithResponse request returning *ListReviewCommentsResponse
+func (c *ClientWithResponses) ListReviewCommentsWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *ListReviewCommentsParams, reqEditors ...RequestEditorFn) (*ListReviewCommentsResponse, error) {
+	rsp, err := c.ListReviewComments(ctx, spaceId, unitId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListReviewCommentsResponse(rsp)
+}
+
+// CreateReviewCommentWithBodyWithResponse request with arbitrary body returning *CreateReviewCommentResponse
+func (c *ClientWithResponses) CreateReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateReviewCommentResponse, error) {
+	rsp, err := c.CreateReviewCommentWithBody(ctx, spaceId, unitId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateReviewCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, params *CreateReviewCommentParams, body CreateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateReviewCommentResponse, error) {
+	rsp, err := c.CreateReviewComment(ctx, spaceId, unitId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateReviewCommentResponse(rsp)
+}
+
+// DeleteReviewCommentWithResponse request returning *DeleteReviewCommentResponse
+func (c *ClientWithResponses) DeleteReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, reqEditors ...RequestEditorFn) (*DeleteReviewCommentResponse, error) {
+	rsp, err := c.DeleteReviewComment(ctx, spaceId, unitId, reviewCommentId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteReviewCommentResponse(rsp)
+}
+
+// GetReviewCommentWithResponse request returning *GetReviewCommentResponse
+func (c *ClientWithResponses) GetReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *GetReviewCommentParams, reqEditors ...RequestEditorFn) (*GetReviewCommentResponse, error) {
+	rsp, err := c.GetReviewComment(ctx, spaceId, unitId, reviewCommentId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetReviewCommentResponse(rsp)
+}
+
+// PatchReviewCommentWithBodyWithResponse request with arbitrary body returning *PatchReviewCommentResponse
+func (c *ClientWithResponses) PatchReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PatchReviewCommentResponse, error) {
+	rsp, err := c.PatchReviewCommentWithBody(ctx, spaceId, unitId, reviewCommentId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchReviewCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) PatchReviewCommentWithApplicationMergePatchPlusJSONBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *PatchReviewCommentParams, body PatchReviewCommentApplicationMergePatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PatchReviewCommentResponse, error) {
+	rsp, err := c.PatchReviewCommentWithApplicationMergePatchPlusJSONBody(ctx, spaceId, unitId, reviewCommentId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePatchReviewCommentResponse(rsp)
+}
+
+// UpdateReviewCommentWithBodyWithResponse request with arbitrary body returning *UpdateReviewCommentResponse
+func (c *ClientWithResponses) UpdateReviewCommentWithBodyWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateReviewCommentResponse, error) {
+	rsp, err := c.UpdateReviewCommentWithBody(ctx, spaceId, unitId, reviewCommentId, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateReviewCommentResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdateReviewCommentWithResponse(ctx context.Context, spaceId openapi_types.UUID, unitId openapi_types.UUID, reviewCommentId openapi_types.UUID, params *UpdateReviewCommentParams, body UpdateReviewCommentJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateReviewCommentResponse, error) {
+	rsp, err := c.UpdateReviewComment(ctx, spaceId, unitId, reviewCommentId, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateReviewCommentResponse(rsp)
 }
 
 // ListExtendedRevisionsWithResponse request returning *ListExtendedRevisionsResponse
@@ -56264,6 +58310,245 @@ func ParseListAllResourcesResponse(rsp *http.Response) (*ListAllResourcesRespons
 	return response, nil
 }
 
+// ParseBulkDeleteReviewCommentsResponse parses an HTTP response from a BulkDeleteReviewCommentsWithResponse call
+func ParseBulkDeleteReviewCommentsResponse(rsp *http.Response) (*BulkDeleteReviewCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkDeleteReviewCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListAllReviewCommentsResponse parses an HTTP response from a ListAllReviewCommentsWithResponse call
+func ParseListAllReviewCommentsResponse(rsp *http.Response) (*ListAllReviewCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAllReviewCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseBulkPatchReviewCommentsResponse parses an HTTP response from a BulkPatchReviewCommentsWithResponse call
+func ParseBulkPatchReviewCommentsResponse(rsp *http.Response) (*BulkPatchReviewCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &BulkPatchReviewCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ReviewCommentCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 207:
+		var dest []ReviewCommentCreateOrUpdateResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON207 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListAllRevisionsResponse parses an HTTP response from a ListAllRevisionsWithResponse call
 func ParseListAllRevisionsResponse(rsp *http.Response) (*ListAllRevisionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -61947,7 +64232,7 @@ func ParsePublishReleaseResponse(rsp *http.Response) (*PublishReleaseResponse, e
 
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest Release
+		var dest ReleasePublishResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}
@@ -63277,6 +65562,149 @@ func ParseUpdateTargetResponse(rsp *http.Response) (*UpdateTargetResponse, error
 	}
 
 	response := &UpdateTargetResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Target
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetTargetDocumentResponse parses an HTTP response from a GetTargetDocumentWithResponse call
+func ParseGetTargetDocumentResponse(rsp *http.Response) (*GetTargetDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTargetDocumentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EntityDocument
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateTargetDocumentResponse parses an HTTP response from a UpdateTargetDocumentWithResponse call
+func ParseUpdateTargetDocumentResponse(rsp *http.Response) (*UpdateTargetDocumentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateTargetDocumentResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -65169,6 +67597,449 @@ func ParseGetExtendedResourceResponse(rsp *http.Response) (*GetExtendedResourceR
 	return response, nil
 }
 
+// ParseListReviewCommentsResponse parses an HTTP response from a ListReviewCommentsWithResponse call
+func ParseListReviewCommentsResponse(rsp *http.Response) (*ListReviewCommentsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListReviewCommentsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []ExtendedReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateReviewCommentResponse parses an HTTP response from a CreateReviewCommentWithResponse call
+func ParseCreateReviewCommentResponse(rsp *http.Response) (*CreateReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteReviewCommentResponse parses an HTTP response from a DeleteReviewCommentWithResponse call
+func ParseDeleteReviewCommentResponse(rsp *http.Response) (*DeleteReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DeleteResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetReviewCommentResponse parses an HTTP response from a GetReviewCommentWithResponse call
+func ParseGetReviewCommentResponse(rsp *http.Response) (*GetReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ExtendedReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePatchReviewCommentResponse parses an HTTP response from a PatchReviewCommentWithResponse call
+func ParsePatchReviewCommentResponse(rsp *http.Response) (*PatchReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PatchReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseUpdateReviewCommentResponse parses an HTTP response from a UpdateReviewCommentWithResponse call
+func ParseUpdateReviewCommentResponse(rsp *http.Response) (*UpdateReviewCommentResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateReviewCommentResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ReviewComment
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON403 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 409:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSONDefault = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseListExtendedRevisionsResponse parses an HTTP response from a ListExtendedRevisionsWithResponse call
 func ParseListExtendedRevisionsResponse(rsp *http.Response) (*ListExtendedRevisionsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -66915,6 +69786,13 @@ func ParseBulkPatchTargetsResponse(rsp *http.Response) (*BulkPatchTargetsRespons
 		}
 		response.JSON409 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -66996,6 +69874,13 @@ func ParseBulkCreateTargetsResponse(rsp *http.Response) (*BulkCreateTargetsRespo
 			return nil, err
 		}
 		response.JSON409 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StandardErrorResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON422 = &dest
 
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
 		var dest StandardErrorResponse

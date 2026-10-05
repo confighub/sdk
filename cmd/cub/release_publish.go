@@ -49,6 +49,9 @@ time; `+"`cub release update`"+` can change it afterwards. The bundled content
 itself is fixed once published, and so is --bundle-base-name: the release's OCI
 manifest records the name, so it can only be set here.
 
+Publishing a Space that is unchanged since its latest published Release succeeds
+without creating a Release, and reports "No change".
+
 Examples:
 `+"```"+`
   cub release publish my-space
@@ -145,7 +148,16 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return cubapi.InterpretErrorGeneric(err, res)
 	}
 
-	release := res.JSON200
+	// A Space unchanged since its latest Release publishes nothing: the response
+	// carries that latest Release and a Message saying so.
+	release := res.JSON200.Release
+	if res.JSON200.Message != "" {
+		if !quiet && !isAlternativeOutput() {
+			tprint("No change: %s", res.JSON200.Message)
+		}
+		renderPayload(res.JSON200)
+		return nil
+	}
 	displayCreateResults(release, "release", release.ReleaseID.String(), release.ReleaseID.String(), displayReleaseDetails)
 	return nil
 }

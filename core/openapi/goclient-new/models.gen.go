@@ -157,7 +157,6 @@ type ActionResult struct {
 
 	// QueuedOperationID UUID of the operation corresponding to the action request
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
-	ResourceStatuses  *ResourceStatusMap `json:"ResourceStatuses,omitempty" yaml:"ResourceStatuses,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
@@ -770,7 +769,7 @@ type ChangeOrder struct {
 	// ReleasedRestoredSpaceIDs ReleasedRestoredSpaceIDs is where the undoing has been released: the Spaces in RestoredSpaceIDs whose Units are released at or past the Revision the restore Tag marks. Covering ReleasedSpaceIDs is what State reports as RestoreReleased. Derived when the ChangeOrder is read.
 	ReleasedRestoredSpaceIDs []UUID `json:"ReleasedRestoredSpaceIDs,omitempty" yaml:"ReleasedRestoredSpaceIDs,omitempty"`
 
-	// ReleasedSpaceIDs ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. Derived when the ChangeOrder is read.
+	// ReleasedSpaceIDs ReleasedSpaceIDs is where the ChangeOrder has been released: the Spaces in scope whose Units in the Space's release are applied at or past the Revision the end Tag marks. A Space with no ReleaseTargetID is never here, since nothing releases it. Derived when the ChangeOrder is read.
 	ReleasedSpaceIDs []UUID `json:"ReleasedSpaceIDs,omitempty" yaml:"ReleasedSpaceIDs,omitempty"`
 
 	// Releases Releases names, for each Space in ReleasedSpaceIDs, the earliest published Release of the Space that carries the change, which is the Release the gates read. A Space whose Releases no longer carry the change, such as one whose Release was withdrawn, has no entry. Derived when the ChangeOrder is read.
@@ -806,13 +805,13 @@ type ChangeOrder struct {
 	// StartTagID StartTagID is the identifier of the set of Revisions immediately before the ChangeOrder, making it the half-open interval (start, end].
 	StartTagID openapi_types.UUID `json:"StartTagID,omitempty" yaml:"StartTagID,omitempty"`
 
-	// State State is how far the ChangeOrder has got: New until a Space other than its own has taken it, InProgress while some have and some have not, Resolved once every Space in scope has, Released once every Space in scope has released what it took, Aborted whenever AbortedReason is set, Restored once every Space that had taken it has been restored to the Revisions before it, and RestoreReleased once every Space that had released it has released the restored Revisions. Derived when the ChangeOrder is read.
+	// State State is how far the ChangeOrder has got: New until a Space other than its own has taken it, InProgress while some have and some have not, Resolved once every Space in scope has, Released once every Space in scope that has a ReleaseTargetID has released what it took (a Space with none has nothing to release), Aborted whenever AbortedReason is set, Restored once every Space that had taken it has been restored to the Revisions before it, and RestoreReleased once every Space that had released it has released the restored Revisions. Derived when the ChangeOrder is read.
 	State string `json:"State,omitempty" yaml:"State,omitempty"`
 
 	// UnitFilterID UnitFilterID references a Filter (with From=Unit) narrowing the same selection as WhereUnit, conjoined with it. Refused on the other UpdateTypes. Immutable.
 	UnitFilterID *openapi_types.UUID `json:"UnitFilterID,omitempty" yaml:"UnitFilterID,omitempty"`
 
-	// UpdateType UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's component into it: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.
+	// UpdateType UpdateType is how this ChangeOrder propagates. UpgradeUnit, the clone lineage, is the default, and MergeUnits is the other Link type it follows; both take the change from Revisions the source Unit already has. Invoke is the third: the change is one Invocation run in each Space in scope, and the ChangeOrder is created before any of it has happened. Insert, Upsert, and TransformPaths carry a change to Units outside the ChangeOrder's scope into the Spaces in scope: every Space in scope resolves its Links of that type to those Units at the Revision each was at when the ChangeOrder was created. Those Links must not be AutoUpdate, and InScopeSpaceIDs, or a selection that fills it in, is required.
 	UpdateType string `json:"UpdateType,omitempty" yaml:"UpdateType,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
@@ -1143,7 +1142,7 @@ type ChangeWorkflowStage struct {
 	// ReleasePrerequisites Gates on publishing a Release for a change order in one of the stage's Spaces, each naming one declared in AttestationPrerequisites. Evaluated over the Revisions the Release bundles.
 	ReleasePrerequisites []string `json:"ReleasePrerequisites,omitempty" yaml:"ReleasePrerequisites,omitempty"`
 
-	// WhereSpace Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component.
+	// WhereSpace Selects the stage's Spaces: a where expression over Spaces, intersected with the change order's InScopeSpaceIDs. Nothing else is implied, so a workflow can be shared across components. Empty selects every Space in the change order's scope.
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
 }
 
@@ -1729,6 +1728,26 @@ type ExtendedResource struct {
 	// View Defines an entity view.
 	View        *View        `json:"View,omitempty" yaml:"View,omitempty"`
 	ViewColumns []ViewColumn `json:"ViewColumns,omitempty" yaml:"ViewColumns,omitempty"`
+}
+
+// ExtendedReviewComment defines model for ExtendedReviewComment.
+type ExtendedReviewComment struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// ReviewComment ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.
+	ReviewComment *ReviewComment `json:"ReviewComment,omitempty" yaml:"ReviewComment,omitempty"`
+
+	// Revision Revision is a historial view of a Config Unit.
+	Revision *Revision `json:"Revision,omitempty" yaml:"Revision,omitempty"`
+
+	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
+
+	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
+	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
 // ExtendedRevision defines model for ExtendedRevision.
@@ -3235,6 +3254,15 @@ type ReleasePublishRequest struct {
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 }
 
+// ReleasePublishResponse defines model for ReleasePublishResponse.
+type ReleasePublishResponse struct {
+	// Message Set when nothing changed since the latest published Release, so no Release was created.
+	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+
+	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
+}
+
 // Resource Resource is a configuration element extracted from a Unit's configuration data. Resources are maintained automatically as Units change and are read-only.
 type Resource struct {
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
@@ -3387,24 +3415,6 @@ type ResourceProtection struct {
 	Resource  *ResourceInfo   `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
-// ResourceStatus defines model for ResourceStatus.
-type ResourceStatus struct {
-	// Message Human-readable status details or error message
-	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
-
-	// Readiness Health state from kstatus (Ready, InProgress, Failed, Unknown)
-	Readiness string `json:"Readiness,omitempty" yaml:"Readiness,omitempty"`
-
-	// SyncStatus Whether config was pushed to the target (Synced or NotSynced)
-	SyncStatus string `json:"SyncStatus,omitempty" yaml:"SyncStatus,omitempty"`
-
-	// UpdatedAt Timestamp when this resource status was last updated
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
-}
-
-// ResourceStatusMap defines model for ResourceStatusMap.
-type ResourceStatusMap map[string]ResourceStatus
-
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
 type ResourceTypePathsEntry struct {
 	// BoundLinkID ID of the Link that bound this needed path to a provided value
@@ -3448,6 +3458,72 @@ type ResponseError struct {
 
 	// Type The type of error (e.g., validation, not-found)
 	Type string `json:"Type,omitempty" yaml:"Type,omitempty"`
+}
+
+// ReviewComment ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.
+type ReviewComment struct {
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
+	// OrganizationID Unique identifier for an Organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// Path Path to which the remark is attached; optional
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// ReplyToID Unique identifier of the ReviewComment, on the same Unit, this one replies to. Unset for a comment that starts a thread. Immutable.
+	ReplyToID *openapi_types.UUID `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
+	Resource  *ResourceInfoType2  `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// ReviewCommentID Unique identifier for a ReviewComment.
+	ReviewCommentID openapi_types.UUID `json:"ReviewCommentID,omitempty" yaml:"ReviewCommentID,omitempty"`
+
+	// RevisionID Unique identifier of the Revision the comment is about. Set by the server from RevisionNum.
+	RevisionID openapi_types.UUID `json:"RevisionID,omitempty" yaml:"RevisionID,omitempty"`
+
+	// RevisionNum Sequence number of the Revision the comment is about. Required on create, and immutable.
+	RevisionNum int64 `json:"RevisionNum" yaml:"RevisionNum"`
+
+	// SpaceID Unique identifier for a space.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug Slug of the Space this entity belongs to. (readonly)
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+
+	// Text The text of the remark.
+	Text string `json:"Text" yaml:"Text"`
+
+	// UnitID Unique identifier for a Unit.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UnitSlug Slug of the Unit this entity belongs to. (readonly)
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UserAgent User-Agent string of the API call that created the comment.
+	UserAgent string `json:"UserAgent,omitempty" yaml:"UserAgent,omitempty"`
+
+	// UserID Unique identifier of the user who made the comment.
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// ReviewCommentCreateOrUpdateResponse defines model for ReviewCommentCreateOrUpdateResponse.
+type ReviewCommentCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// ReviewComment ReviewComment is a remark made in review of a Revision of a Unit, optionally about one resource or path in it.
+	ReviewComment *ReviewComment `json:"ReviewComment,omitempty" yaml:"ReviewComment,omitempty"`
 }
 
 // Revision Revision is a historial view of a Config Unit.
@@ -3839,7 +3915,8 @@ type TagCreateOrUpdateResponse struct {
 // Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
 type Target struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	Annotations   map[string]string   `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+	BackingUnitID *openapi_types.UUID `json:"BackingUnitID,omitempty" yaml:"BackingUnitID,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
@@ -3886,7 +3963,8 @@ type Target struct {
 	TriggerIDs []UUID `json:"TriggerIDs,omitempty" yaml:"TriggerIDs,omitempty"`
 
 	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
-	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpdatedAt        time.Time           `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+	UpstreamTargetID *openapi_types.UUID `json:"UpstreamTargetID,omitempty" yaml:"UpstreamTargetID,omitempty"`
 
 	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
 	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
@@ -4407,7 +4485,6 @@ type UnitEvent struct {
 
 	// QueuedOperationID QueuedOperationID is the unique identifier for the corresponding queued operation.
 	QueuedOperationID openapi_types.UUID `json:"QueuedOperationID,omitempty" yaml:"QueuedOperationID,omitempty"`
-	ResourceStatuses  *ResourceStatusMap `json:"ResourceStatuses,omitempty" yaml:"ResourceStatuses,omitempty"`
 	Result            *ActionResultType  `json:"Result,omitempty" yaml:"Result,omitempty"`
 	RevisionNum       int64              `json:"RevisionNum,omitempty" yaml:"RevisionNum,omitempty"`
 
@@ -11784,6 +11861,343 @@ type ListAllResourcesParams struct {
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
 }
 
+// BulkDeleteReviewCommentsParams defines parameters for BulkDeleteReviewComments.
+type BulkDeleteReviewCommentsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ReviewComments returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ReviewComment list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ReviewComment).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ReviewComment entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ReviewComment entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// ListAllReviewCommentsParams defines parameters for ListAllReviewComments.
+type ListAllReviewCommentsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ReviewComments returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ReviewComment list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ReviewComment).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchReviewComments.
+type BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody struct {
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Path Path to which the remark is attached; optional
+	Path      *string             `json:"Path" yaml:"Path"`
+	ReplyToID *openapi_types.UUID `json:"ReplyToID" yaml:"ReplyToID"`
+
+	// Resource Resource to which the remark is attached; optional
+	Resource    *map[string]interface{} `json:"Resource" yaml:"Resource"`
+	RevisionID  *openapi_types.UUID     `json:"RevisionID" yaml:"RevisionID"`
+	RevisionNum *int                    `json:"RevisionNum" yaml:"RevisionNum"`
+	Text        *string                 `json:"Text" yaml:"Text"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// BulkPatchReviewCommentsParams defines parameters for BulkPatchReviewComments.
+type BulkPatchReviewCommentsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ReviewComments returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ReviewComment list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ReviewComment).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ReviewComment entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ReviewComment entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
 // ListAllRevisionsParams defines parameters for ListAllRevisions.
 type ListAllRevisionsParams struct {
 	// Where The specified string is an expression for the purpose of filtering
@@ -14845,7 +15259,7 @@ type ListTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -14915,7 +15329,7 @@ type ListTargetsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+	// Supported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -14934,6 +15348,9 @@ type ListTargetsParams struct {
 
 // CreateTargetParams defines parameters for CreateTarget.
 type CreateTargetParams struct {
+	// WithBackingUnits Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
@@ -15011,6 +15428,12 @@ type UpdateTargetParams struct {
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
 
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateTargetDocumentParams defines parameters for UpdateTargetDocument.
+type UpdateTargetDocumentParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -16079,6 +16502,188 @@ type GetExtendedResourceParams struct {
 
 	// RawData Return each resource's configuration in its original toolchain-native form, as RawData on the response envelope. Off by default: the bodies are bulk, and a table view needs only the queryable Data projection.
 	RawData *bool `form:"raw_data,omitempty" json:"raw_data,omitempty" yaml:"raw_data,omitempty"`
+}
+
+// ListReviewCommentsParams defines parameters for ListReviewComments.
+type ListReviewCommentsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ReviewComments returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, SpaceID, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ReviewComment list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ReviewComment).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ReviewComment include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ReviewComment entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ReviewComment entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ReviewComment results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ReviewComment: CreatedAt, HiddenReason, OrganizationID, Path, ReplyToID, ReviewCommentID, RevisionID, RevisionNum, Text, UnitID, UpdatedAt, UserAgent, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ReviewComment's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ReviewComment entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// CreateReviewCommentParams defines parameters for CreateReviewComment.
+type CreateReviewCommentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// GetReviewCommentParams defines parameters for GetReviewComment.
+type GetReviewCommentParams struct {
+	// Include Include clause for expanding related entities in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ReviewComment are OrganizationID, RevisionID, SpaceID, UnitID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ReviewComment.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ReviewCommentID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// PatchReviewCommentApplicationMergePatchPlusJSONBody defines parameters for PatchReviewComment.
+type PatchReviewCommentApplicationMergePatchPlusJSONBody struct {
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Path Path to which the remark is attached; optional
+	Path      *string             `json:"Path" yaml:"Path"`
+	ReplyToID *openapi_types.UUID `json:"ReplyToID" yaml:"ReplyToID"`
+
+	// Resource Resource to which the remark is attached; optional
+	Resource    *map[string]interface{} `json:"Resource" yaml:"Resource"`
+	RevisionID  *openapi_types.UUID     `json:"RevisionID" yaml:"RevisionID"`
+	RevisionNum *int                    `json:"RevisionNum" yaml:"RevisionNum"`
+	Text        *string                 `json:"Text" yaml:"Text"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchReviewCommentParams defines parameters for PatchReviewComment.
+type PatchReviewCommentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateReviewCommentParams defines parameters for UpdateReviewComment.
+type UpdateReviewCommentParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
 
 // ListExtendedRevisionsParams defines parameters for ListExtendedRevisions.
@@ -17304,7 +17909,7 @@ type BulkDeleteTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17403,7 +18008,7 @@ type ListAllTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17473,7 +18078,7 @@ type ListAllTargetsParams struct {
 	//
 	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
 	//
-	// Supported attributes for ordering Target: CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt.
+	// Supported attributes for ordering Target: BackingUnitID, CreatedAt, DisplayName, HiddenReason, OrganizationID, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, UpdatedAt, UpstreamTargetID.
 	//
 	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
 	//
@@ -17554,7 +18159,7 @@ type BulkPatchTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17615,6 +18220,12 @@ type BulkPatchTargetsParams struct {
 
 	// RefreshTriggers Re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed
 	RefreshTriggers *bool `form:"refresh_triggers,omitempty" json:"refresh_triggers,omitempty" yaml:"refresh_triggers,omitempty"`
+
+	// WithBackingUnits Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Patch each selected Target with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -17684,7 +18295,7 @@ type BulkCreateTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -17809,6 +18420,59 @@ type BulkCreateTargetsParams struct {
 	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
 	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
 
+	// WithBackingUnits Give each Target written a backing Unit if it has none: a ConfigHub/YAML Unit holding the Target's configuration, which is then kept in step with it.
+	WithBackingUnits *bool `form:"with_backing_units,omitempty" json:"with_backing_units,omitempty" yaml:"with_backing_units,omitempty"`
+
+	// FromBackingUnits Create Targets from the ConfigHub/YAML Units where_unit and filter_unit select, each in its Unit's Space, and each with its Unit as its backing Unit. The request body is applied after the Unit's document. Units of other toolchains or describing other entity types are passed over; outstanding ValidationErrors on a Unit are an error. Takes none of the parameters that select entities to clone, name the clones or choose their Spaces.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// WhereUnit The specified string is an expression for the purpose of filtering
+	// the list of Units returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+	//
+	// The Units to create entities from, with from_backing_units.
+	//
+	// The whole string must be query-encoded.
+	WhereUnit *string `form:"where_unit,omitempty" json:"where_unit,omitempty" yaml:"where_unit,omitempty"`
+
+	// FilterUnit A Filter, by ID, over the Units to create entities from, with from_backing_units.
+	FilterUnit *string `form:"filter_unit,omitempty" json:"filter_unit,omitempty" yaml:"filter_unit,omitempty"`
+
+	// PatchExisting With from_backing_units, patch a Target a selected Unit already backs with what the Unit holds that it has not taken yet, as a bulk patch with from_backing_units does, rather than report that the Unit backs it. The request body is applied after it. Without it, such a Unit is an error, or with allow_exists the Target is returned as it is.
+	PatchExisting *bool `form:"patch_existing,omitempty" json:"patch_existing,omitempty" yaml:"patch_existing,omitempty"`
+
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -17849,7 +18513,7 @@ type BulkMoveTargetsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Target: Annotations, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt.
+	// Supported attributes for filtering on Target: Annotations, BackingUnitID, CreatedAt, DeleteGates, DisplayName, Facts, HiddenReason, Labels, OrganizationID, Permissions, Slug, SpaceID, TargetID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamTargetID.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -21266,6 +21930,9 @@ type CreateOrganizationMemberJSONRequestBody = OrganizationMember
 // PromoteJSONRequestBody defines body for Promote for application/json ContentType.
 type PromoteJSONRequestBody = PromoteRequest
 
+// BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchReviewComments for application/merge-patch+json ContentType.
+type BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody
+
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space
 
@@ -21398,6 +22065,9 @@ type PatchTargetApplicationMergePatchPlusJSONRequestBody PatchTargetApplicationM
 // UpdateTargetJSONRequestBody defines body for UpdateTarget for application/json ContentType.
 type UpdateTargetJSONRequestBody = Target
 
+// UpdateTargetDocumentJSONRequestBody defines body for UpdateTargetDocument for application/json ContentType.
+type UpdateTargetDocumentJSONRequestBody = EntityDocumentEdit
+
 // CreateTriggerJSONRequestBody defines body for CreateTrigger for application/json ContentType.
 type CreateTriggerJSONRequestBody = Trigger
 
@@ -21427,6 +22097,15 @@ type SetUnitGuardJSONRequestBody = UnitGuardRequest
 
 // SetUnitProtectionJSONRequestBody defines body for SetUnitProtection for application/json ContentType.
 type SetUnitProtectionJSONRequestBody = UnitProtectionRequest
+
+// CreateReviewCommentJSONRequestBody defines body for CreateReviewComment for application/json ContentType.
+type CreateReviewCommentJSONRequestBody = ReviewComment
+
+// PatchReviewCommentApplicationMergePatchPlusJSONRequestBody defines body for PatchReviewComment for application/merge-patch+json ContentType.
+type PatchReviewCommentApplicationMergePatchPlusJSONRequestBody PatchReviewCommentApplicationMergePatchPlusJSONBody
+
+// UpdateReviewCommentJSONRequestBody defines body for UpdateReviewComment for application/json ContentType.
+type UpdateReviewCommentJSONRequestBody = ReviewComment
 
 // CreateViewJSONRequestBody defines body for CreateView for application/json ContentType.
 type CreateViewJSONRequestBody = View

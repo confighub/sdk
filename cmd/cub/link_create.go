@@ -77,6 +77,13 @@ Single Link Examples:
     --upstream-path 'replicas=apps/v1/Deployment:default/web:spec.replicas' \
     --downstream-path 'apps/v1/Deployment:default/web-canary:spec.replicas=int:cel:params.replicas / 10'
 
+  # Set an image tag from a value in the upstream unit by running a function on the downstream
+  # unit. An argument that uses an upstream value is prefixed template: or cel:; here the prefix
+  # is followed by an image reference, which begins with its own ':'
+  cub link create --space my-space app-image my-deployment registry/my-image --update-type TransformPaths \
+    --upstream-path 'tag=registrybot.confighub.com/v1alpha3:my-image:streams.stable.tag' \
+    --downstream-setter 'set-image-reference-by-uri ghcr.io/example/app template::{{.Params.tag}}'
+
   # State the binding of a NeedsProvides link: where the downstream unit needs a value, then
   # where the upstream unit provides it
   cub link create --space my-space subnet-to-rt subnet route-table --auto-update \

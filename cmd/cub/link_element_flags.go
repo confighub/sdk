@@ -39,10 +39,12 @@ func addLinkElementFlags(cmd *cobra.Command) {
 			"The data type is string by default. An Insert link's one binding gives only the needed place, optionally followed by =<data-type>")
 	cmd.Flags().StringArrayVar(&linkElementArgs.upstreamGetters, "upstream-getter", nil,
 		"function a TransformPaths link runs on the upstream unit for a value, as <name>=<function> [<argument>...] (repeatable), "+
-			"the function written as on the cub function do command line")
+			"the function written as on the cub function do command line. An argument prefixed template: or cel: is evaluated before the function runs; "+
+			"the getter runs before there are upstream values, so it cannot refer to them")
 	cmd.Flags().StringArrayVar(&linkElementArgs.downstreamSetters, "downstream-setter", nil,
 		"function a TransformPaths link runs on the downstream unit, as [<key>=]<function> [<argument>...] (repeatable), "+
-			"the function written as on the cub function do command line. The upstream values its arguments refer to are recorded as its parameters")
+			"the function written as on the cub function do command line. An argument prefixed template: or cel: is evaluated before the function runs, "+
+			"and may refer to the upstream values, as in template:{{.Params.tag}}; those it refers to are recorded as the setter's parameters")
 }
 
 // parseResourcePath reads <resource-type>:<resource-name>:<path>. The path is the rest of the
@@ -68,6 +70,9 @@ func leadingKey(value string) (key, rest string) {
 // upstreamParameterRegexp finds the upstream values an expression or an argument refers to:
 // .Params.<name> in a template and params.<name> in CEL.
 var upstreamParameterRegexp = regexp.MustCompile(`(?:\.Params\.|\bparams\.)([A-Za-z_][A-Za-z0-9_]*)`)
+
+// templateActionRegexp finds an action of a Go template.
+var templateActionRegexp = regexp.MustCompile(`\{\{.*\}\}`)
 
 // referencedParameters are the names of the upstream values the texts refer to, sorted.
 func referencedParameters(texts ...string) []string {
@@ -194,6 +199,16 @@ func parseNamedFunction(flag, value string, nameRequired bool) (string, *goclien
 	if invocation == nil {
 		return "", nil, errors.Newf("--%s %q names no function", flag, value)
 	}
+	// An argument is evaluated only when it has an evaluator; a template with none would be
+	// passed to the function as written.
+	for _, argument := range invocation.Arguments {
+		if argument.Value == nil || (argument.Evaluator != nil && *argument.Evaluator != "") {
+			continue
+		}
+		if text, err := argument.Value.AsFunctionArgumentValue0(); err == nil && templateActionRegexp.MatchString(text) {
+			return "", nil, errors.Newf("--%s %q: the argument %q is a template but would be passed as written; prefix it with template:", flag, value, text)
+		}
+	}
 	return name, invocation, nil
 }
 
@@ -242,6 +257,10 @@ func queueLinkElementEdits() error {
 		if err != nil {
 			return err
 		}
+		if parameters := referencedParameters(evaluatedArgumentTexts(invocation)...); len(parameters) > 0 {
+			return errors.Newf("--upstream-getter %q refers to upstream values (%s), which do not exist yet when a getter runs",
+				value, strings.Join(parameters, ", "))
+		}
 		upstreamGetters = append(upstreamGetters, goclientnew.NamedFunctionResult{Name: name, FunctionInvocation: invocation})
 	}
 	downstreamSetters := make([]goclientnew.ParameterizedFunction, 0, len(linkElementArgs.downstreamSetters))
@@ -251,7 +270,7 @@ func queueLinkElementEdits() error {
 			return err
 		}
 		downstreamSetters = append(downstreamSetters, goclientnew.ParameterizedFunction{
-			Key: key, FunctionInvocation: invocation, Parameters: referencedParameters(functionArgumentTexts(invocation)...)})
+			Key: key, FunctionInvocation: invocation, Parameters: referencedParameters(evaluatedArgumentTexts(invocation)...)})
 	}
 
 	for _, list := range []struct {
@@ -272,11 +291,12 @@ func queueLinkElementEdits() error {
 	return nil
 }
 
-// functionArgumentTexts are the argument values of a function invocation that are text.
-func functionArgumentTexts(invocation *goclientnew.FunctionInvocation) []string {
+// evaluatedArgumentTexts are the text arguments of a function invocation that have an evaluator,
+// which are the only ones that can refer to upstream values.
+func evaluatedArgumentTexts(invocation *goclientnew.FunctionInvocation) []string {
 	var texts []string
 	for _, argument := range invocation.Arguments {
-		if argument.Value == nil {
+		if argument.Value == nil || argument.Evaluator == nil || *argument.Evaluator == "" {
 			continue
 		}
 		if text, err := argument.Value.AsFunctionArgumentValue0(); err == nil {

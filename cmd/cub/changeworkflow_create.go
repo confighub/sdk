@@ -39,17 +39,18 @@ A ChangeWorkflow says how a change is promoted: the ordered stages it moves thro
 each stage selects, and the gates that have to pass before it enters one. Give the stages with
 --stage, or write the whole workflow in a file and pass it with --filename.
 
-A stage selects its Spaces with a "WhereSpace" expression over Space labels. It must not name
-Labels.Component: the component is the change order's own and is appended to every stage's
-selector, which is what lets one workflow be cloned to give another component the same shape of
-rollout. A stage named with --stage selects "Labels.` + changeWorkflowStageLabel + ` = '<name>'", which is what
+A stage selects its Spaces with a "WhereSpace" expression over Spaces, among the Spaces the change
+order being promoted is headed for: the change order says where a rollout goes, and the workflow
+says in what order. Nothing else is implied, so one workflow can govern the rollouts of many
+components; a stage can name a component, but that ties the workflow to it. A stage named with --stage selects "Labels.` + changeWorkflowStageLabel + ` = '<name>'", which is what
 "cub variant create --stage" labels a variant's Space with. A stage that selects its Spaces some
 other way is written in a file.
 
 The gates a stage can declare are:
   Validated  no Unit of any Space of the stage ahead has ValidationErrors on the Revision the change
              order's end tag marks
-  Released   every Space of the stage ahead has published a Release carrying the change
+  Released   every Space of the stage ahead has released the change; a Space with no release
+             target has nothing to release, so it passes
   Healthy    every Space of the stage ahead reports it Synced, Succeeded and Healthy
 
 --prerequisites is one set of gates, given to every stage and to the final stage alike. A stage's

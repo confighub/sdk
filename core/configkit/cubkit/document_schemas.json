@@ -210,7 +210,7 @@
           "type": "array"
         },
         "WhereSpace": {
-          "description": "Selects the stage's Spaces: a where expression over Spaces. Intersected with the change order's component and its in-scope Space list. It must not name Labels.Component. Empty selects every Space of the change order's component.",
+          "description": "Selects the stage's Spaces: a where expression over Spaces, intersected with the change order's InScopeSpaceIDs. Nothing else is implied, so a workflow can be shared across components. Empty selects every Space in the change order's scope.",
           "type": "string"
         }
       },
@@ -1251,6 +1251,76 @@
         },
         "WhereTrigger": {
           "description": "Filter expression to identify Triggers that should be invoked on Units within this Space. With neither it nor TriggerFilterID, the Triggers in the Space are invoked; a clone of such a Space selects the Triggers in the Space it was cloned from. The specified string is an expression for the purpose of filtering\nthe list of Triggers returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.\n\nThe whole string must be query-encoded.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "EntityType",
+        "Slug"
+      ],
+      "type": "object"
+    },
+    "Target": {
+      "additionalProperties": false,
+      "properties": {
+        "Annotations": {
+          "additionalProperties": {
+            "maxLength": 1024,
+            "pattern": "^(.|\\n)*$",
+            "type": "string"
+          },
+          "description": "An optional map of Annotation key/value pairs for tools to attach information to entities.",
+          "type": "object"
+        },
+        "DeleteGates": {
+          "additionalProperties": {
+            "type": "boolean"
+          },
+          "description": "An optional set of gates that, if any is present, will block deletion.",
+          "type": "object"
+        },
+        "DisplayName": {
+          "description": "Friendly name for the entity.",
+          "type": "string"
+        },
+        "EntityType": {
+          "description": "The type of entity the document describes.",
+          "enum": [
+            "Target"
+          ]
+        },
+        "Facts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Facts are properties of the infrastructure this Target represents (e.g. a Kubernetes cluster), as a flat string-to-string map. Collected facts use reserved key prefixes such as \"Cluster.\" and are (re)written by fact collection; all other keys are user-defined custom facts. Facts can be referenced in where queries, e.g. Facts.Cluster.KubernetesVersion = '1.31.2'.",
+          "type": "object"
+        },
+        "Labels": {
+          "additionalProperties": {
+            "maxLength": 128,
+            "pattern": "^[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9](([\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9]| )*[\\-_@/#$%\u0026~+=!?.,:;(){}\\[\\]\u003c\u003e|A-Za-z0-9])?$",
+            "type": "string"
+          },
+          "description": "An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.",
+          "type": "object"
+        },
+        "Permissions": {
+          "$ref": "#/definitions/Permissions"
+        },
+        "Slug": {
+          "description": "Unique URL-safe identifier for the entity.",
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "TriggerFilter": {
+          "description": "The Filter it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
+          "pattern": "^([A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?/)?[A-Za-z0-9]([\\-_.A-Za-z0-9]*[A-Za-z0-9])?$",
+          "type": "string"
+        },
+        "WhereTrigger": {
+          "description": "Filter expression to identify Triggers that should be invoked on Units this Target is attached to. The specified string is an expression for the purpose of filtering\nthe list of Triggers returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Trigger: Annotations, Arguments, BackingUnitID, BridgeWorkerID, Clearance, CreatedAt, DeleteGates, Description, Disabled, DisplayName, Event, FunctionName, Guards, Hash, HiddenReason, InvocationID, Labels, OrganizationID, OtherDataSource, Permissions, Protect, Slug, SpaceID, ToolchainType, TriggerID, UnitFilterID, UpdatedAt, UpstreamTriggerID, Validating, Warn, WhereResource, WhereUnit.\n\nThe whole string must be query-encoded.",
           "type": "string"
         }
       },

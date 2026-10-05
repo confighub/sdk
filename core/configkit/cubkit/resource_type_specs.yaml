@@ -223,6 +223,26 @@ resourceTypes:
   - Permissions.*.GroupIDs.*
   scope: Organization
   type: Space
+- applyPriority: 400
+  attributes:
+    resource-name:
+    - path: TriggerFilter
+      target: Filter
+    where-expression:
+    - dataType: string
+      path: WhereTrigger
+      prefixes: true
+      selects: Trigger
+  mapKeyPaths:
+  - DeleteGates.*
+  - Labels.*
+  - Annotations.*
+  - Permissions.*
+  - Permissions.*.UserIDs.*
+  - Permissions.*.GroupIDs.*
+  - Facts.*
+  scope: Space
+  type: Target
 - applyPriority: 300
   attributes:
     resource-name:

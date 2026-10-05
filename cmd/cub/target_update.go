@@ -65,6 +65,9 @@ func init() {
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	enableFactFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().BoolVar(&targetUpdateArgs.refreshTriggers, "refresh-triggers", false, "re-list the Triggers matching WhereTrigger and/or TriggerFilterID even if these fields have not changed")
+	addBackingUnitFlags(targetUpdateCmd, "Target", false, false)
+	addFromBackingUnitsFlags(targetUpdateCmd, "Target", false)
+	addFieldEditFlags(targetUpdateCmd, "Target")
 	targetCmd.AddCommand(targetUpdateCmd)
 }
 
@@ -197,6 +200,9 @@ func targetUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		updateParams.RefreshTriggers = &targetUpdateArgs.refreshTriggers
 	}
 	updateParams.DryRun = dryRunParam()
+	if err := applyFieldEdits("Target", currentTarget.Target); err != nil {
+		return err
+	}
 	targetRes, err := cubClientNew.UpdateTargetWithResponse(ctx, spaceID, currentTarget.Target.TargetID, updateParams, *currentTarget.Target)
 	if cubapi.IsAPIError(err, targetRes) {
 		return cubapi.InterpretErrorGeneric(err, targetRes)
@@ -322,6 +328,8 @@ func targetBulkPatchCmdRun(cmd *cobra.Command, args []string) error {
 
 	params := &goclientnew.BulkPatchTargetsParams{}
 	params.IncludeHidden = includeHiddenParam()
+	params.WithBackingUnits = withBackingUnitsParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if effectiveWhere != "" {
 		params.Where = &effectiveWhere
 	}

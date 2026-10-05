@@ -69,7 +69,7 @@ func ResourceTypeAndNameFromResourceInfo(resourceInfo ResourceInfo) ResourceType
 }
 
 // ResourceTypeAndFullNameFromResourceInfo returns ResourceType#ResourceName (including namespace/scope)
-// Use this for tracking individual resource instances across scopes (e.g., ResourceStatusMap)
+// Use this for tracking individual resource instances across scopes
 // For Kubernetes: returns "apiVersion/kind#namespace/name" (e.g., "apps/v1/Deployment#default/my-app")
 func ResourceTypeAndFullNameFromResourceInfo(resourceInfo ResourceInfo) ResourceTypeAndName {
 	return ResourceTypeAndName(string(resourceInfo.ResourceType) + "#" + string(resourceInfo.ResourceName))

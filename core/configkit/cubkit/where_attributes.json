@@ -1199,6 +1199,61 @@
         "dataType": "time"
       }
     },
+    "ReviewComment": {
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Path": {
+        "dataType": "string"
+      },
+      "ReplyToID": {
+        "dataType": "uuid",
+        "references": "ReviewComment"
+      },
+      "ReviewCommentID": {
+        "dataType": "uuid"
+      },
+      "RevisionID": {
+        "dataType": "uuid",
+        "references": "Revision",
+        "expandable": true
+      },
+      "RevisionNum": {
+        "dataType": "int",
+        "references": "Revision"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Text": {
+        "dataType": "string"
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit",
+        "expandable": true
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserAgent": {
+        "dataType": "string"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
     "Revision": {
       "ApplyGates": {
         "dataType": "map[string]bool"
@@ -1446,6 +1501,10 @@
       "Annotations": {
         "dataType": "map[string]string"
       },
+      "BackingUnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      },
       "CreatedAt": {
         "dataType": "time"
       },
@@ -1498,6 +1557,10 @@
       },
       "UpdatedAt": {
         "dataType": "time"
+      },
+      "UpstreamTargetID": {
+        "dataType": "uuid",
+        "references": "Target"
       }
     },
     "Trigger": {

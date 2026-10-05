@@ -127,6 +127,45 @@ func init() {
 		},
 	})
 	addEntityEditCommand(entityEdit{
+		parent: targetCmd,
+		entity: "target",
+		resolve: func(ref string) (*editedEntity, error) {
+			d, err := resolveTarget(ref, selectedSpaceID, "TargetID,Slug,SpaceID,BackingUnitID")
+			if err != nil {
+				return nil, err
+			}
+			return &editedEntity{spaceID: d.Target.SpaceID, id: d.Target.TargetID, slug: d.Target.Slug, backingUnitID: d.Target.BackingUnitID}, nil
+		},
+		getDocument: func(e *editedEntity) (*goclientnew.EntityDocument, error) {
+			res, err := cubClientNew.GetTargetDocumentWithResponse(ctx, e.spaceID, e.id)
+			return readDocument(res, err, func(r *goclientnew.GetTargetDocumentResponse) *goclientnew.EntityDocument { return r.JSON200 })
+		},
+		updateDocument: func(e *editedEntity, edit goclientnew.EntityDocumentEdit) (bool, error) {
+			res, err := cubClientNew.UpdateTargetDocumentWithResponse(ctx, e.spaceID, e.id, &goclientnew.UpdateTargetDocumentParams{}, edit)
+			return documentUpdated("target", res, err,
+				func(r *goclientnew.UpdateTargetDocumentResponse) *goclientnew.Target { return r.JSON200 },
+				func(x *goclientnew.Target) (string, string) { return x.Slug, x.TargetID.String() },
+				func(x *goclientnew.Target) { displayTargetDetails(&goclientnew.ExtendedTarget{Target: x}) })
+		},
+		applyFromBackingUnit: func(e *editedEntity) error {
+			where := fmt.Sprintf("TargetID = '%s'", e.id)
+			res, err := cubClientNew.BulkPatchTargetsWithBodyWithResponse(ctx,
+				&goclientnew.BulkPatchTargetsParams{Where: &where, FromBackingUnits: fromBackingUnitsTrue()},
+				"application/merge-patch+json", bytes.NewReader([]byte("{}")))
+			return appliedFromBackingUnit("target", where, res, err,
+				func(r *goclientnew.BulkPatchTargetsResponse) (*[]goclientnew.TargetCreateOrUpdateResponse, *[]goclientnew.TargetCreateOrUpdateResponse) {
+					return r.JSON200, r.JSON207
+				},
+				func(r *goclientnew.TargetCreateOrUpdateResponse) *goclientnew.ResponseError { return r.Error },
+				func(r *goclientnew.TargetCreateOrUpdateResponse) string {
+					if r.Target == nil {
+						return ""
+					}
+					return fmt.Sprintf("%s (ID: %s)", r.Target.Slug, r.Target.TargetID)
+				})
+		},
+	})
+	addEntityEditCommand(entityEdit{
 		parent: invocationCmd,
 		entity: "invocation",
 		resolve: func(ref string) (*editedEntity, error) {

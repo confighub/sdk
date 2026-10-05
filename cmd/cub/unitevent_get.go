@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -108,26 +107,4 @@ func displayUnitEvent(event *goclientnew.UnitEvent) {
 	}
 
 	table.Render()
-
-	if event.ResourceStatuses != nil && len(*event.ResourceStatuses) > 0 {
-		tprintRaw("")
-		tprintRaw("ResourceStatuses:")
-		tprintRaw("-----------------")
-		keys := make([]string, 0, len(*event.ResourceStatuses))
-		for k := range *event.ResourceStatuses {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		rsTable := tableView()
-		rsTable.SetHeader([]string{"Resource", "SyncStatus", "Readiness", "Updated-At", "Message"})
-		for _, k := range keys {
-			rs := (*event.ResourceStatuses)[k]
-			updatedAt := ""
-			if !rs.UpdatedAt.IsZero() {
-				updatedAt = rs.UpdatedAt.String()
-			}
-			rsTable.Append([]string{k, rs.SyncStatus, rs.Readiness, updatedAt, rs.Message})
-		}
-		rsTable.Render()
-	}
 }

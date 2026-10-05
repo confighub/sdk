@@ -40,6 +40,12 @@ Examples:
 
   # List spaces matching a specific criteria
   cub space list --where "Labels.Environment = 'prod'"
+
+  # List the spaces that are Variants of a Component
+  cub space list --component my-app
+
+  # List a Component's production spaces in one region
+  cub space list --component my-app --environment prod --region us-east1
  ` + "```" + `
 `
 
@@ -79,6 +85,8 @@ Important flags for agents:
 - -o jq=<expr>: Extract specific fields for further processing
 - -o json: Full JSON payload
 - --where: Filter spaces by display name or other attributes
+- --component: Only spaces that are Variants of the Component with this slug
+- --owner, --variant, --stage, --environment, --region, --layer: Only spaces with that value of the well-known label
 - --no-headers: Suppress table headers for clean output
 
 Next steps after listing spaces:
@@ -139,8 +147,15 @@ var spaceCustomColumns = func() map[string]func(any) string {
 	return cols
 }()
 
+var spaceListArgs struct {
+	component   string
+	spaceLabels spaceLabelFlagValues
+}
+
 func init() {
 	addStandardListFlags(spaceListCmd)
+	spaceListCmd.Flags().StringVar(&spaceListArgs.component, "component", "", "only list Spaces that are Variants of the Component with this slug; ANDed with --where")
+	spaceListArgs.spaceLabels = addStandardSpaceLabelFilterFlags(spaceListCmd)
 	enableListPagingFlags(spaceListCmd)
 	spaceCmd.AddCommand(spaceListCmd)
 }
@@ -150,12 +165,28 @@ func spaceListCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	extendedSpaces, err := apiListExtendedSpaces(where, selectFields, filterID, true)
+	effectiveWhere := addEqualityToWhereClause(where, "Component.Slug", spaceListArgs.component)
+	effectiveWhere = spaceListArgs.spaceLabels.addToWhereClause(effectiveWhere)
+	extendedSpaces, err := apiListExtendedSpaces(effectiveWhere, selectFields, filterID, true)
 	if err != nil {
 		return err
 	}
 	displayListResults(extendedSpaces, getExtendedSpaceSlug, displayExtendedSpaceList)
 	return nil
+}
+
+// addEqualityToWhereClause AND's an attribute = 'value' constraint into an
+// existing where clause. An empty value returns the clause unchanged so the flag
+// supplying it can be left unset.
+func addEqualityToWhereClause(whereClause, attribute, value string) string {
+	if value == "" {
+		return whereClause
+	}
+	constraint := fmt.Sprintf("%s = '%s'", attribute, value)
+	if whereClause == "" {
+		return constraint
+	}
+	return fmt.Sprintf("%s AND %s", whereClause, constraint)
 }
 
 func getExtendedSpaceSlug(extendedSpace *goclientnew.ExtendedSpace) string {
