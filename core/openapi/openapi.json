@@ -100,6 +100,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Components selected, delete those whose backing Unit is empty, which says the Component should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Component's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -628,6 +637,15 @@
             "name": "detach",
             "in": "query",
             "description": "If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Spaces selected, delete those whose backing Unit is empty, which says the Space should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Space's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
             "required": false,
             "schema": {
               "type": "boolean"
@@ -1858,6 +1876,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Attributes selected, delete those whose backing Unit is empty, which says the Attribute should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Attribute's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -6319,6 +6346,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the ChangeWorkflows selected, delete those whose backing Unit is empty, which says the ChangeWorkflow should not exist, and keep the Unit, empty and backing nothing, so that it keeps the ChangeWorkflow's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -8912,6 +8948,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Filters selected, delete those whose backing Unit is empty, which says the Filter should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Filter's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -11171,6 +11216,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Invocations selected, delete those whose backing Unit is empty, which says the Invocation should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Invocation's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -12427,6 +12481,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Links selected, delete those whose backing Unit is empty, which says the Link should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Link's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -39946,6 +40009,15 @@
             "schema": {
               "type": "boolean"
             }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Targets selected, delete those whose backing Unit is empty, which says the Target should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Target's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -41193,6 +41265,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Triggers selected, delete those whose backing Unit is empty, which says the Trigger should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Trigger's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -46236,6 +46317,15 @@
             "required": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "from_backing_units",
+            "in": "query",
+            "description": "Prune: of the Views selected, delete those whose backing Unit is empty, which says the View should not exist, and keep the Unit, empty and backing nothing, so that it keeps the View's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -58460,6 +58550,16 @@
       "UploadComponentRequest": {
         "type": "object",
         "properties": {
+          "Adopt": {
+            "type": "boolean",
+            "description": "Take over the backing Unit of an entity a document describes when another source owns it. Without it, that document is refused.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "BackingUnitSpace": {
+            "type": "string",
+            "description": "The Space, by slug, for the backing Units of the bundle's Space and Component documents; it may be the component's own Space. Required when the bundle has either.",
+            "x-go-type-skip-optional-pointer": true
+          },
           "CreateNamespace": {
             "type": "boolean",
             "description": "Synthesize the release Namespace if the bundle lacks it. Off by default.",
@@ -58475,7 +58575,7 @@
           },
           "Name": {
             "type": "string",
-            "description": "The component name.",
+            "description": "The component name. Without one, Space must name an existing Space, which is written into as it is, with no Component and no labels set, and SourceName is required.",
             "x-go-type-skip-optional-pointer": true
           },
           "Namespace": {
@@ -58630,6 +58730,33 @@
           }
         }
       },
+      "UploadEntityResult": {
+        "type": "object",
+        "properties": {
+          "Action": {
+            "type": "string",
+            "description": "Create, Update, Unchanged, Pending (its backing Unit's Triggers had not reached a verdict in time), Skipped (an entity it names failed or is pending), or Prune (its backing Unit is empty, and a bulk delete with from_backing_units deletes it).",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "EntityID": {
+            "type": "string",
+            "description": "Absent for an entity a dry run would create, or one not written.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
+          },
+          "EntityType": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Error": {
+            "$ref": "#/components/schemas/ResponseError"
+          },
+          "Slug": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "UploadLinkResult": {
         "type": "object",
         "properties": {
@@ -58719,6 +58846,11 @@
               "$ref": "#/components/schemas/UploadRequestFile"
             },
             "description": "The bundle's files. Paths must be relative and may not contain \"..\". Exactly one of Files and Source.Pull is given.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Partial": {
+            "type": "boolean",
+            "description": "The bundle is part of what its source owns: Units the source owns that it leaves out are left alone rather than emptied.",
             "x-go-type-skip-optional-pointer": true
           },
           "Source": {
@@ -58904,6 +59036,9 @@
           "Diff": {
             "$ref": "#/components/schemas/ConfigDiff"
           },
+          "Entity": {
+            "$ref": "#/components/schemas/UploadEntityResult"
+          },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
@@ -58917,7 +59052,7 @@
           },
           "Role": {
             "type": "string",
-            "description": "Resource, AppConfig, or AppConfigRendered.",
+            "description": "Resource, AppConfig, AppConfigRendered, or BackingUnit.",
             "x-go-type-skip-optional-pointer": true
           },
           "Slug": {

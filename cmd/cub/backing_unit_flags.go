@@ -90,6 +90,42 @@ func addFromBackingUnitsFlags(cmd *cobra.Command, entityName string, create bool
 	}
 }
 
+// addPruneFlag adds --from-backing-units to a command that deletes entities, which prunes: of the
+// entities selected, it deletes those whose backing Units are empty, and keeps the Units. A prune
+// is a bulk delete; one entity named alone is pruned as the bulk delete of it alone.
+func addPruneFlag(cmd *cobra.Command, entityName string) {
+	entity := strings.ToLower(entityName)
+	cmd.Flags().BoolVar(&backingUnitArgs.fromBackingUnits, "from-backing-units", false,
+		fmt.Sprintf("prune: delete only the %ss selected whose backing Units are empty, which says they should not exist, and keep the Units; the rest are left alone", entity))
+	run := cmd.RunE
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		if !backingUnitArgs.fromBackingUnits || len(args) == 0 {
+			return run(cmd, args)
+		}
+		if len(args) != 1 {
+			return fmt.Errorf("with --from-backing-units, name the %s by its slug or ID alone", entity)
+		}
+		if where != "" || filter != "" {
+			return fmt.Errorf("name one %s, or select them with --where or --filter, not both", entity)
+		}
+		if id, err := uuid.Parse(args[0]); err == nil {
+			where = fmt.Sprintf("%sID = '%s'", entityName, id)
+		} else {
+			where = fmt.Sprintf("Slug = '%s'", args[0])
+		}
+		return run(cmd, nil)
+	}
+}
+
+// deleteOperationName names what a bulk delete did, for its summary: a prune with
+// --from-backing-units.
+func deleteOperationName() string {
+	if backingUnitArgs.fromBackingUnits {
+		return "prune"
+	}
+	return "delete"
+}
+
 // runSingleUpdateInBulk runs an update of one entity, named by slug or ID, with the backing-unit
 // flags as the command's bulk patch of that entity alone: the server takes them on bulk patches,
 // where each entity is written in a transaction of its own, as a single update would write it.

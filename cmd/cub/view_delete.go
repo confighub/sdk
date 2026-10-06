@@ -54,6 +54,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(viewDeleteCmd)
+	addPruneFlag(viewDeleteCmd, "View")
 	enableWhereFlag(viewDeleteCmd)
 	enableFilterFlag(viewDeleteCmd)
 	viewDeleteCmd.Flags().StringSliceVar(&viewDeleteIdentifiers, "view", []string{}, "target specific views by slug or UUID for bulk delete (can be repeated or comma-separated)")
@@ -113,6 +114,7 @@ func runBulkViewDelete() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -124,7 +126,7 @@ func runBulkViewDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkViewDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	return handleBulkViewDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 func viewDeleteCmdRun(cmd *cobra.Command, args []string) error {

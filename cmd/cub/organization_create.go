@@ -10,10 +10,13 @@ import (
 )
 
 var organizationCreateCmd = &cobra.Command{
-	Use:   "create <organization name>",
-	Short: "Create a organization",
+	Use:   "create <organization name> --email-domain <domain>",
+	Short: "Create an organization",
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Create a new organization as a top-level division for your access management.
+
+The identity provider requires an email domain for each organization: give it with
+--email-domain, or as EmailDomain in the configuration read with --from-stdin or --filename.
 
 Examples:
 `+"```"+`
@@ -22,14 +25,18 @@ Examples:
   cub organization create --verbose --json --from-stdin my-organization
 
   # Create a new organization with minimal output
-  cub organization create my-organization
+  cub organization create my-organization --email-domain example.com
 `+"```"+`
 `, ""),
 	RunE: organizationCreateCmdRun,
 }
 
+var organizationCreateEmailDomain string
+
 func init() {
 	addCreateFlagsWithoutDryRun(organizationCreateCmd)
+	organizationCreateCmd.Flags().StringVar(&organizationCreateEmailDomain, "email-domain", "",
+		"email domain of the organization, which the identity provider requires; overrides EmailDomain read with --from-stdin or --filename")
 	organizationCmd.AddCommand(organizationCreateCmd)
 }
 
@@ -69,6 +76,9 @@ func organizationCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Even if DisplayName was set in stdin, we override it with the one from args
 	newBody.DisplayName = args[0]
+	if organizationCreateEmailDomain != "" {
+		newBody.EmailDomain = organizationCreateEmailDomain
+	}
 
 	// The slug cannot be set by the client. It is set from the ExternalID.
 

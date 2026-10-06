@@ -5900,6 +5900,22 @@ func NewBulkDeleteComponentsRequest(server string, params *BulkDeleteComponentsP
 
 		}
 
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -6302,6 +6318,22 @@ func NewBulkDeleteSpacesRequest(server string, params *BulkDeleteSpacesParams) (
 		if params.Detach != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "detach", runtime.ParamLocationQuery, *params.Detach); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -7258,6 +7290,22 @@ func NewBulkDeleteAttributesRequest(server string, params *BulkDeleteAttributesP
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -10733,6 +10781,22 @@ func NewBulkDeleteChangeWorkflowsRequest(server string, params *BulkDeleteChange
 
 		}
 
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -12530,6 +12594,22 @@ func NewBulkDeleteFiltersRequest(server string, params *BulkDeleteFiltersParams)
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -14352,6 +14432,22 @@ func NewBulkDeleteInvocationsRequest(server string, params *BulkDeleteInvocation
 
 		}
 
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -15359,6 +15455,22 @@ func NewBulkDeleteLinksRequest(server string, params *BulkDeleteLinksParams) (*h
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -33604,6 +33716,22 @@ func NewBulkDeleteTargetsRequest(server string, params *BulkDeleteTargetsParams)
 
 		}
 
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
 		queryURL.RawQuery = queryValues.Encode()
 	}
 
@@ -34627,6 +34755,22 @@ func NewBulkDeleteTriggersRequest(server string, params *BulkDeleteTriggersParam
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err
@@ -38886,6 +39030,22 @@ func NewBulkDeleteViewsRequest(server string, params *BulkDeleteViewsParams) (*h
 		if params.Continue != nil {
 
 			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "continue", runtime.ParamLocationQuery, *params.Continue); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		if params.FromBackingUnits != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "from_backing_units", runtime.ParamLocationQuery, *params.FromBackingUnits); err != nil {
 				return nil, err
 			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
 				return nil, err

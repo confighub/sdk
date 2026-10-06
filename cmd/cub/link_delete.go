@@ -52,6 +52,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(linkDeleteCmd)
+	addPruneFlag(linkDeleteCmd, "Link")
 	enableWaitFlag(linkDeleteCmd)
 	enableWhereFlag(linkDeleteCmd)
 	enableFilterFlag(linkDeleteCmd)
@@ -121,7 +122,7 @@ func runBulkLinkDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkLinkDeleteResponse(res.JSON200, res.JSON207, res.StatusCode(), "delete", effectiveWhere)
+	return handleBulkLinkDeleteResponse(res.JSON200, res.JSON207, res.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 // linkFromUnit identifies the from-unit of a link, used to await triggers
@@ -178,6 +179,7 @@ func callBulkDeleteLinks(effectiveWhere, filterID, containsClause string) (*gocl
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}

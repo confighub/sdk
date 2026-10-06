@@ -4,7 +4,10 @@
 package main
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -69,8 +72,7 @@ func init() {
 // its slug.
 type Component struct {
 	Name string
-	// Owner is the "Owner" label, taken from the component's spaces. Empty when
-	// they disagree or none set it.
+	// Owner is the Component's owner, as componentOwner reads it.
 	Owner string
 	// Variants are the "Variant" label values, sorted, one per space. A space
 	// with no Variant label contributes an empty string.
@@ -90,15 +92,17 @@ func apiListComponents(whereFilter string, filterParam string) ([]*Component, er
 		return nil, err
 	}
 	componentEntities, err := cubapi.ListComponents(ctx, cubClient, cubapi.NewWhere(""), cubapi.ListOpts{
-		Select: "ComponentID,Slug,OrganizationID",
+		Select: "ComponentID,Slug,Labels,OrganizationID",
 	})
 	if err != nil {
 		return nil, err
 	}
 	componentSlugs := make(map[goclientnew.UUID]string, len(componentEntities))
+	componentLabels := make(map[string]map[string]string, len(componentEntities))
 	for _, c := range componentEntities {
 		if c.Component != nil {
 			componentSlugs[c.Component.ComponentID] = c.Component.Slug
+			componentLabels[c.Component.Slug] = c.Component.Labels
 		}
 	}
 
@@ -127,20 +131,27 @@ func apiListComponents(whereFilter string, filterParam string) ([]*Component, er
 			return component.Spaces[i].Space.Slug < component.Spaces[j].Space.Slug
 		})
 		sort.Strings(component.Variants)
-		component.Owner = commonOwnerLabel(component.Spaces)
+		component.Owner = componentOwner(componentLabels[component.Name], component.Spaces)
 		components = append(components, component)
 	}
 	sort.Slice(components, func(i, j int) bool { return components[i].Name < components[j].Name })
 	return components, nil
 }
 
-// commonOwnerLabel returns the "Owner" label shared by every space, or "" if the
-// spaces disagree or none set it. A component's owner is a property of the
-// component, so a split answer is reported as no answer rather than picking one.
-func commonOwnerLabel(spaces []*goclientnew.ExtendedSpace) string {
+// componentOwner is a Component's owner: its own Owner label when set, otherwise the Owner
+// label every one of its Spaces carries with the same value. Spaces that disagree, a Space
+// with no Owner label, or no Spaces at all give "": an owner is a property of the Component,
+// so a split answer is reported as no answer rather than picking one.
+func componentOwner(componentLabels map[string]string, spaces []*goclientnew.ExtendedSpace) string {
+	if owner := componentLabels[labelOwner]; owner != "" {
+		return owner
+	}
 	owner := ""
 	for i, extendedSpace := range spaces {
-		value := extendedSpace.Space.Labels[labelOwner]
+		value := ""
+		if extendedSpace.Space != nil {
+			value = extendedSpace.Space.Labels[labelOwner]
+		}
 		if i == 0 {
 			owner = value
 			continue
@@ -150,6 +161,177 @@ func commonOwnerLabel(spaces []*goclientnew.ExtendedSpace) string {
 		}
 	}
 	return owner
+}
+
+// ownerWrite decides what --owner does to a Component that already exists. It refuses to
+// replace an owner the Component already has, since --owner on a variant command names the
+// owner of one variant's Component and is not the place to reassign it; it reports set when
+// the Component's own label has to be written, which it does not when the label already says
+// the same thing.
+func ownerWrite(componentSlug string, componentLabels map[string]string, spaces []*goclientnew.ExtendedSpace, requested string) (bool, error) {
+	if requested == "" {
+		return false, nil
+	}
+	current := componentOwner(componentLabels, spaces)
+	switch current {
+	case "":
+		return true, nil
+	case requested:
+		return componentLabels[labelOwner] == "", nil
+	default:
+		return false, &ownerConflictError{componentSlug: componentSlug, current: current, requested: requested}
+	}
+}
+
+// ownerConflictError is ownerWrite's refusal to replace an owner the Component already has. It
+// carries the command that changes the owner, so a caller does not add that hint again.
+type ownerConflictError struct {
+	componentSlug string
+	current       string
+	requested     string
+}
+
+func (e *ownerConflictError) Error() string {
+	return fmt.Sprintf("component %s already has owner %q, so --owner %q is refused; to change the owner, run: %s",
+		e.componentSlug, e.current, e.requested, componentOwnerCommand(e.componentSlug, e.requested))
+}
+
+// ownerValueRegexp is the server's rule for a label value: letters, digits, and the printable
+// ASCII punctuation other than quotes, backquote, backslash, "*" and "^", which would need
+// escaping in a where expression, with inner spaces but no leading or trailing ones. It is checked here so that an owner the
+// server would refuse stops a variant command before it writes anything.
+var ownerValueRegexp = regexp.MustCompile(`^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]| )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$`)
+
+// ownerValueMaxLength is the server's limit on the length of a label value.
+const ownerValueMaxLength = 128
+
+// validateOwnerValue refuses an --owner value that the server would refuse as a label value.
+func validateOwnerValue(owner string) error {
+	if len(owner) > ownerValueMaxLength {
+		return fmt.Errorf("--owner %q is not a valid label value: it is longer than %d characters", owner, ownerValueMaxLength)
+	}
+	if !ownerValueRegexp.MatchString(owner) {
+		return fmt.Errorf("--owner %q is not a valid label value: it may hold letters, digits, inner spaces and the characters %s, "+
+			"and must not start or end with a space", owner, "-_@/#$%&~+=!?.,:;(){}[]<>|")
+	}
+	return nil
+}
+
+// componentOwnerCommand is the command that sets a Component's owner by hand.
+func componentOwnerCommand(componentSlug, owner string) string {
+	return fmt.Sprintf("cub component update --patch %s --label %s", componentSlug, shellQuoteArg(labelOwner+"="+owner))
+}
+
+// shellQuoteArg quotes s for a POSIX shell when it holds anything but plain characters, so a
+// command printed for the user can be pasted as it is.
+func shellQuoteArg(s string) string {
+	plain := s != ""
+	for _, r := range s {
+		if !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("-_.=/:@+,", r)) {
+			plain = false
+			break
+		}
+	}
+	if plain {
+		return s
+	}
+	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
+}
+
+// componentSpaces lists the Spaces naming the Component, with the labels componentOwner reads.
+func componentSpaces(componentID goclientnew.UUID) ([]*goclientnew.ExtendedSpace, error) {
+	return cubapi.ListSpaces(ctx, cubClient, cubapi.NewWhere(fmt.Sprintf("ComponentID = '%s'", componentID)), cubapi.ListOpts{
+		Select: "SpaceID,Slug,ComponentID,Labels,OrganizationID",
+	})
+}
+
+// checkComponentOwner applies ownerWrite to the Component as it is now, and reports whether
+// --owner has to write its label.
+func checkComponentOwner(component *goclientnew.Component, requested string) (bool, error) {
+	spaces, err := componentSpaces(component.ComponentID)
+	if err != nil {
+		return false, err
+	}
+	return ownerWrite(component.Slug, component.Labels, spaces, requested)
+}
+
+// applyComponentOwner sets the Component's Owner label with the merge patch "cub component
+// update --patch --label" sends, so its other labels are left alone. With dryRun the server
+// checks the write, including the caller's permission, without making it.
+func applyComponentOwner(componentID goclientnew.UUID, owner string, dryRun bool) error {
+	patchData, err := EnhancePatchData([]byte("null"), nil, []string{labelOwner + "=" + owner}, nil, nil, nil)
+	if err != nil {
+		return err
+	}
+	var dryRunValue *bool
+	if dryRun {
+		dryRunValue = &dryRun
+	}
+	componentRes, err := cubClientNew.PatchComponentWithBodyWithResponse(
+		ctx,
+		componentID,
+		&goclientnew.PatchComponentParams{DryRun: dryRunValue},
+		"application/merge-patch+json",
+		bytes.NewReader(patchData),
+	)
+	if cubapi.IsAPIError(err, componentRes) {
+		return cubapi.InterpretErrorGeneric(err, componentRes)
+	}
+	return nil
+}
+
+// dryRunCreateComponentOwner asks the server to check the create of a Component with the Owner
+// label, the way a variant command creates a missing Component and then sets the label, without
+// making it. It catches a value or a permission the server refuses before the variant is written.
+func dryRunCreateComponentOwner(componentSlug, owner string) error {
+	dryRun := true
+	componentRes, err := cubClientNew.CreateComponentWithResponse(ctx, &goclientnew.CreateComponentParams{DryRun: &dryRun}, goclientnew.Component{
+		Slug:        componentSlug,
+		DisplayName: componentSlug,
+		Labels:      map[string]string{labelOwner: owner},
+	})
+	if cubapi.IsAPIError(err, componentRes) {
+		return cubapi.InterpretErrorGeneric(err, componentRes)
+	}
+	return nil
+}
+
+// writeComponentOwner writes --owner to the Component after the variant was written. It reads
+// the Component and its Spaces again and applies ownerWrite to them first: another writer can
+// set an owner after the check made before the variant was written, and that owner is kept and
+// reported as a conflict, not overwritten. It reports whether it wrote the label.
+func writeComponentOwner(componentRef, owner string) (bool, error) {
+	entity, err := resolveComponent(componentRef, "ComponentID,Slug,Labels")
+	if err != nil {
+		return false, err
+	}
+	set, err := checkComponentOwner(entity.Component, owner)
+	if err != nil || !set {
+		return false, err
+	}
+	if err := applyComponentOwner(entity.Component.ComponentID, owner, false); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// componentOwnerNotSet is the error for a Component write that failed after the variant it
+// belongs to was written, so the user knows the variant is there and how to finish the job.
+func componentOwnerNotSet(variant, componentSlug, owner string, err error) error {
+	var conflict *ownerConflictError
+	if errors.As(err, &conflict) {
+		return fmt.Errorf("%s exists, but the Owner label of component %s was not set: %w", variant, componentSlug, err)
+	}
+	return fmt.Errorf("%s exists, but the Owner label of component %s was not set: %w; set it with: %s",
+		variant, componentSlug, err, componentOwnerCommand(componentSlug, owner))
+}
+
+// componentOwnerSkipped adds to the error of a variant command that stopped after it wrote
+// something but before it set the Owner label, so the user knows the label is missing too and how
+// to set it.
+func componentOwnerSkipped(err error, componentSlug, owner string) error {
+	return fmt.Errorf("%w; the Owner label of component %s was not set either; set it with: %s",
+		err, componentSlug, componentOwnerCommand(componentSlug, owner))
 }
 
 // apiGetComponentFromName resolves a component by its Component's slug.

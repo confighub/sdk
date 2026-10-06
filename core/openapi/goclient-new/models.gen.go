@@ -4598,13 +4598,19 @@ type UploadBrokenEdge struct {
 
 // UploadComponentRequest defines model for UploadComponentRequest.
 type UploadComponentRequest struct {
+	// Adopt Take over the backing Unit of an entity a document describes when another source owns it. Without it, that document is refused.
+	Adopt bool `json:"Adopt,omitempty" yaml:"Adopt,omitempty"`
+
+	// BackingUnitSpace The Space, by slug, for the backing Units of the bundle's Space and Component documents; it may be the component's own Space. Required when the bundle has either.
+	BackingUnitSpace string `json:"BackingUnitSpace,omitempty" yaml:"BackingUnitSpace,omitempty"`
+
 	// CreateNamespace Synthesize the release Namespace if the bundle lacks it. Off by default.
 	CreateNamespace bool `json:"CreateNamespace,omitempty" yaml:"CreateNamespace,omitempty"`
 
 	// DependsOn Names of the components this one depends on, recorded by ComponentID in the Space's DependsOn annotation. Each Component must already exist. Requires a Variant Space label.
 	DependsOn []string `json:"DependsOn,omitempty" yaml:"DependsOn,omitempty"`
 
-	// Name The component name.
+	// Name The component name. Without one, Space must name an existing Space, which is written into as it is, with no Component and no labels set, and SourceName is required.
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
 
 	// Namespace The release namespace. Required when the bundle has namespaced resources that name no namespace.
@@ -4668,6 +4674,18 @@ type UploadDuplicate struct {
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 }
 
+// UploadEntityResult defines model for UploadEntityResult.
+type UploadEntityResult struct {
+	// Action Create, Update, Unchanged, Pending (its backing Unit's Triggers had not reached a verdict in time), Skipped (an entity it names failed or is pending), or Prune (its backing Unit is empty, and a bulk delete with from_backing_units deletes it).
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// EntityID Absent for an entity a dry run would create, or one not written.
+	EntityID   *openapi_types.UUID `json:"EntityID,omitempty" yaml:"EntityID,omitempty"`
+	EntityType string              `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	Error      *ResponseError      `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Slug       string              `json:"Slug,omitempty" yaml:"Slug,omitempty"`
+}
+
 // UploadLinkResult defines model for UploadLinkResult.
 type UploadLinkResult struct {
 	// Action Create or Unchanged.
@@ -4711,8 +4729,11 @@ type UploadRequest struct {
 	Components []UploadComponentRequest `json:"Components,omitempty" yaml:"Components,omitempty"`
 
 	// Files The bundle's files. Paths must be relative and may not contain "..". Exactly one of Files and Source.Pull is given.
-	Files  []UploadRequestFile `json:"Files,omitempty" yaml:"Files,omitempty"`
-	Source *UploadSourceInfo   `json:"Source,omitempty" yaml:"Source,omitempty"`
+	Files []UploadRequestFile `json:"Files,omitempty" yaml:"Files,omitempty"`
+
+	// Partial The bundle is part of what its source owns: Units the source owns that it leaves out are left alone rather than emptied.
+	Partial bool              `json:"Partial,omitempty" yaml:"Partial,omitempty"`
+	Source  *UploadSourceInfo `json:"Source,omitempty" yaml:"Source,omitempty"`
 
 	// SpaceLabels Labels applied to every Space, merge-patch: keys given are set, keys omitted are left alone.
 	SpaceLabels map[string]string `json:"SpaceLabels,omitempty" yaml:"SpaceLabels,omitempty"`
@@ -4794,13 +4815,14 @@ type UploadUnitResult struct {
 	Action    string                `json:"Action,omitempty" yaml:"Action,omitempty"`
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 	Diff      *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	Entity    *UploadEntityResult   `json:"Entity,omitempty" yaml:"Entity,omitempty"`
 	Error     *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
 	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
 	// Resource The resource identity this Unit is keyed by.
 	Resource string `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
-	// Role Resource, AppConfig, or AppConfigRendered.
+	// Role Resource, AppConfig, AppConfigRendered, or BackingUnit.
 	Role string `json:"Role,omitempty" yaml:"Role,omitempty"`
 	Slug string `json:"Slug,omitempty" yaml:"Slug,omitempty"`
 
@@ -5085,6 +5107,9 @@ type BulkDeleteComponentsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Component entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Components selected, delete those whose backing Unit is empty, which says the Component should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Component's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // BulkPatchComponentsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchComponents.
@@ -5326,6 +5351,9 @@ type BulkDeleteSpacesParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// FromBackingUnits Prune: of the Spaces selected, delete those whose backing Unit is empty, which says the Space should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Space's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // BulkPatchSpacesApplicationMergePatchPlusJSONBody defines parameters for BulkPatchSpaces.
@@ -5891,6 +5919,9 @@ type BulkDeleteAttributesParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Attributes selected, delete those whose backing Unit is empty, which says the Attribute should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Attribute's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllAttributesParams defines parameters for ListAllAttributes.
@@ -8222,6 +8253,9 @@ type BulkDeleteChangeWorkflowsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ChangeWorkflow entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the ChangeWorkflows selected, delete those whose backing Unit is empty, which says the ChangeWorkflow should not exist, and keep the Unit, empty and backing nothing, so that it keeps the ChangeWorkflow's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllChangeWorkflowsParams defines parameters for ListAllChangeWorkflows.
@@ -9155,6 +9189,9 @@ type BulkDeleteFiltersParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Filter entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Filters selected, delete those whose backing Unit is empty, which says the Filter should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Filter's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllFiltersParams defines parameters for ListAllFilters.
@@ -10149,6 +10186,9 @@ type BulkDeleteInvocationsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Invocation entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Invocations selected, delete those whose backing Unit is empty, which says the Invocation should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Invocation's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllInvocationsParams defines parameters for ListAllInvocations.
@@ -10850,6 +10890,9 @@ type BulkDeleteLinksParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Link entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Links selected, delete those whose backing Unit is empty, which says the Link should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Link's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // SearchListLinksParams defines parameters for SearchListLinks.
@@ -17970,6 +18013,9 @@ type BulkDeleteTargetsParams struct {
 
 	// Detach If true, remove the references to the deleted entities from entities the request does not delete, instead of refusing the delete while any remain. References that cannot be removed still refuse it. For a Space, applies to everything the recursive delete removes.
 	Detach *bool `form:"detach,omitempty" json:"detach,omitempty" yaml:"detach,omitempty"`
+
+	// FromBackingUnits Prune: of the Targets selected, delete those whose backing Unit is empty, which says the Target should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Target's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllTargetsParams defines parameters for ListAllTargets.
@@ -18666,6 +18712,9 @@ type BulkDeleteTriggersParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Trigger entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Triggers selected, delete those whose backing Unit is empty, which says the Trigger should not exist, and keep the Unit, empty and backing nothing, so that it keeps the Trigger's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllTriggersParams defines parameters for ListAllTriggers.
@@ -21216,6 +21265,9 @@ type BulkDeleteViewsParams struct {
 
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the View entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+
+	// FromBackingUnits Prune: of the Views selected, delete those whose backing Unit is empty, which says the View should not exist, and keep the Unit, empty and backing nothing, so that it keeps the View's history and a document that comes back revives it. The others are left alone and are not in the response, so a broad selection deletes only what was emptied.
+	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
 }
 
 // ListAllViewsParams defines parameters for ListAllViews.

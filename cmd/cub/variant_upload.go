@@ -21,26 +21,28 @@ import (
 )
 
 type variantUploadOptions struct {
-	component       string
-	variant         string
-	stage           string
-	environment     string
-	region          string
-	layer           string
-	owner           string
-	spacePattern    string
-	space           string
-	sourceName      string
-	namespace       string
-	createNamespace bool
-	target          string
-	labels          []string
-	annotations     []string
-	spaceLabels     []string
-	changeDesc      string
-	dryRun          bool
-	yes             bool
-	clientPull      bool
+	component    string
+	variant      string
+	stage        string
+	environment  string
+	region       string
+	layer        string
+	owner        string
+	spacePattern string
+	space        string
+	sourceName   string
+	// backingUnitSpace is where the backing Units of the bundle's Space and Component documents go.
+	backingUnitSpace string
+	namespace        string
+	createNamespace  bool
+	target           string
+	labels           []string
+	annotations      []string
+	spaceLabels      []string
+	changeDesc       string
+	dryRun           bool
+	yes              bool
+	clientPull       bool
 
 	// The old names of --unit-label and --unit-annotation, kept as deprecated aliases.
 	deprecatedLabels      []string
@@ -112,12 +114,23 @@ Links between Units are inferred from references, label selectors, and custom-re
 the inferred links is broken — the weakest edge is dropped (a selector before a
 reference; a cross-scope reference before a same-namespace one) — and reported.
 
-The Space is created if missing and stamped with the well-known labels from --component,
---variant, --stage, --environment, --region, --layer, and --owner, and any other labels
-given with --space-label. --component is required; --variant defaults to "base", since
-an upload normally seeds the base that variants are created from. The Space slug comes
-from --space-pattern (a Go template over .Labels), or from --space to set it explicitly.
---unit-label and --unit-annotation set labels and annotations on every written Unit.
+The Space is created if missing, in the Component --component names, and stamped with
+the well-known labels from --variant, --stage, --environment, --region, and --layer, and
+any other labels given with --space-label. --component is required; --variant defaults
+to "base", since an upload normally seeds the base that variants are created from. The
+Space slug comes from --space-pattern (a Go template over .Labels), or from --space to
+set it explicitly. --unit-label and --unit-annotation set labels and annotations on
+every written Unit.
+
+--owner sets the Owner label of the Component, not of the Space, once the upload has
+succeeded. A Component's owner is its own Owner label, or else the Owner label all of
+its Spaces share. When the Component already has a different owner, the upload is
+refused before anything is written, and the error gives the
+"cub component update --patch <component> --label Owner=<owner>" command that changes
+it. When it has the same owner, the Component's label is written only if it is missing.
+An owner the server would refuse, for its value or for your permissions, is also refused
+before anything is written. With --dry-run, --owner is checked and the label it would set
+is printed.
 
 --namespace is the release namespace, as in "helm template -n": where namespaced
 resources that name no namespace, and cluster-scoped resources, belong. It has no
@@ -176,9 +189,10 @@ func init() {
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.environment, "environment", "", "value for the well-known \"Environment\" Space label (e.g. Prod)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.region, "region", "", "value for the well-known \"Region\" Space label (e.g. us-east1)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.layer, "layer", "", "value for the well-known \"Layer\" Space label (e.g. App)")
-	variantUploadCmd.Flags().StringVar(&variantUploadArgs.owner, "owner", "", "value for the well-known \"Owner\" Space label (e.g. Engineering)")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.owner, "owner", "", "set the \"Owner\" label on the Component, not on the Space; refused when the Component already has a different owner (e.g. Engineering)")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.spacePattern, "space-pattern", "template:{{.Component.Slug}}-{{.Labels.Variant}}", "Go template (prefix 'template:') for the Space slug, evaluated over .Component and .Labels")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.space, "space", "", "explicit Space slug; overrides --space-pattern")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.backingUnitSpace, "backing-unit-space", "", "space, by slug, for the backing Units of the bundle's Space and Component documents, which are in no space of their own; required with either")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.sourceName, "source-name", "", "ownership name for the Units, Links, and Invocations this upload writes; defaults to --component")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.namespace, "namespace", "", "the release namespace: where namespaced resources that name no namespace, and cluster-scoped resources, belong")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.createNamespace, "create-namespace", false, "synthesize the release Namespace resource if the bundle does not contain it")
@@ -206,7 +220,7 @@ var variantUploadReservedLabels = map[string]string{
 	"Environment": "--environment",
 	"Region":      "--region",
 	"Layer":       "--layer",
-	"Owner":       "--owner",
+	"Owner":       "--owner, which sets it on the Component",
 }
 
 func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
@@ -224,33 +238,23 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	labels := map[string]string{
-		"Variant": a.variant,
+	labels, err := uploadSpaceLabels(a)
+	if err != nil {
+		return err
 	}
-	for _, kv := range a.spaceLabels {
-		key, value, ok := strings.Cut(kv, "=")
-		if !ok {
-			return fmt.Errorf("--space-label must be key=value: %s", kv)
-		}
-		labels[key] = value
-	}
-	for flag, value := range map[string]string{
-		"Stage": a.stage, "Environment": a.environment, "Region": a.region,
-		"Layer": a.layer, "Owner": a.owner,
-	} {
-		if value != "" {
-			labels[flag] = value
-		}
+	owner, err := checkUploadOwner(a.component, a.owner)
+	if err != nil {
+		return err
 	}
 
 	component := goclientnew.UploadComponentRequest{
-		Name:            a.component,
-		SourceName:      a.sourceName,
-		Namespace:       a.namespace,
-		CreateNamespace: a.createNamespace,
-		Space:           a.space,
+		Name:             a.component,
+		SourceName:       a.sourceName,
+		Namespace:        a.namespace,
+		CreateNamespace:  a.createNamespace,
+		Space:            a.space,
+		BackingUnitSpace: a.backingUnitSpace,
 	}
-	var err error
 	if component.UnitLabels, err = keyValueMap(a.labels, "--unit-label"); err != nil {
 		return err
 	}
@@ -340,8 +344,104 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		tprint("Pulled %s (%s)", req.Source.Ref, result.SourceDigest)
 	}
 	reportUploadResult(result)
-	if !a.dryRun {
-		reportUploadRevert(result)
+	if a.dryRun {
+		owner.reportDryRun()
+		return nil
+	}
+	reportUploadRevert(result)
+	return owner.apply()
+}
+
+// uploadSpaceLabels are the labels the upload stamps on its Space: the Variant label, the
+// well-known labels with flags of their own, and --space-label. The owner is not one of them,
+// since --owner belongs to the Component.
+func uploadSpaceLabels(a *variantUploadOptions) (map[string]string, error) {
+	labels := map[string]string{
+		"Variant": a.variant,
+	}
+	for _, kv := range a.spaceLabels {
+		key, value, ok := strings.Cut(kv, "=")
+		if !ok {
+			return nil, fmt.Errorf("--space-label must be key=value: %s", kv)
+		}
+		labels[key] = value
+	}
+	for flag, value := range map[string]string{
+		"Stage": a.stage, "Environment": a.environment, "Region": a.region, "Layer": a.layer,
+	} {
+		if value != "" {
+			labels[flag] = value
+		}
+	}
+	return labels, nil
+}
+
+// uploadOwner is what --owner does to the upload's Component, decided before the upload.
+type uploadOwner struct {
+	componentSlug string
+	owner         string
+	// set is whether the Component's Owner label is written.
+	set bool
+}
+
+// checkUploadOwner checks --owner against the Component before anything is written. A
+// Component the upload has yet to create has no owner, so --owner passes and is set on it
+// afterwards. The write --owner needs is tried as a dry run too, a create with the label for a
+// missing Component and a patch for an existing one, so a value or a permission the server
+// refuses stops the upload before it starts.
+func checkUploadOwner(componentSlug, owner string) (*uploadOwner, error) {
+	result := &uploadOwner{componentSlug: componentSlug, owner: owner}
+	if owner == "" {
+		return result, nil
+	}
+	if err := validateOwnerValue(owner); err != nil {
+		return nil, err
+	}
+	entity, err := resolveComponent(componentSlug, "*")
+	if err != nil {
+		if !cubapi.IsNotFoundError(err) {
+			return nil, err
+		}
+		if err := dryRunCreateComponentOwner(componentSlug, owner); err != nil {
+			return nil, fmt.Errorf("--owner cannot create component %s with the Owner label: %w", componentSlug, err)
+		}
+		result.set = true
+		return result, nil
+	}
+	if result.set, err = checkComponentOwner(entity.Component, owner); err != nil {
+		return nil, err
+	}
+	if result.set {
+		if err := applyComponentOwner(entity.Component.ComponentID, owner, true); err != nil {
+			return nil, fmt.Errorf("--owner cannot set the Owner label of component %s: %w", componentSlug, err)
+		}
+	}
+	return result, nil
+}
+
+// reportDryRun prints what --owner would do.
+func (o *uploadOwner) reportDryRun() {
+	switch {
+	case o.owner == "":
+	case o.set:
+		tprint("Would set the Owner label of component %s to %q.", o.componentSlug, o.owner)
+	default:
+		tprint("Component %s already has owner %q.", o.componentSlug, o.owner)
+	}
+}
+
+// apply writes the Component's Owner label after a successful upload, which has created the
+// Component if it was missing.
+func (o *uploadOwner) apply() error {
+	if !o.set {
+		return nil
+	}
+	wrote, err := writeComponentOwner(o.componentSlug, o.owner)
+	if err != nil {
+		return componentOwnerNotSet("the uploaded variant", o.componentSlug, o.owner, err)
+	}
+	if wrote {
+		tprint("Set the Owner label of component %s to %q", o.componentSlug, o.owner)
 	}
 	return nil
 }

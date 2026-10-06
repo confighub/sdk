@@ -55,15 +55,23 @@ This is a convenience command that combines two bulk operations:
 
 The first argument is the variant name, which becomes the value of the "Variant" label on the new
 space. The second argument is the slug (or UUID) of the upstream space to clone from. The upstream
-space is expected to have labels such as Component, Layer, Owner, Stage, Environment, Region, and
-Variant, and may have a "TargetID" annotation referencing the default target for the space, but
-none of these are required.
+space is expected to have labels such as Layer, Owner, Stage, Environment, Region, and Variant,
+and may have a "TargetID" annotation referencing the default target for the space, but none of
+these are required.
 
 The new space's labels are inherited from the upstream space, with "Variant" overridden to
-<variant-name>. Use --stage, --environment, --region, --layer, and --owner to add or change the
-well-known "Stage", "Environment", "Region", "Layer", and "Owner" labels, since some values (like
-Region) commonly differ between variants, and --space-label to add or change any other label. The
-Component label is inherited and can be overridden with --variant-labels.
+<variant-name>. Use --stage, --environment, --region, and --layer to add or change the well-known
+"Stage", "Environment", "Region", and "Layer" labels, since some values (like Region) commonly
+differ between variants, and --space-label to add or change any other label. The new space is in
+the upstream space's Component.
+
+--owner sets the Owner label of that Component, not of the new space; an Owner label the upstream
+space has is still inherited like its other labels. A Component's owner is its own Owner label, or
+else the Owner label all of its spaces share. When the Component already has a different owner,
+--owner is refused before anything is created, and the error gives the
+"cub component update --patch <component> --label Owner=<owner>" command that changes it. When it
+has the same owner, the Component's label is written only if it is missing. --owner needs an
+upstream space that is in a Component.
 
 The new space's slug defaults to <component>-<variant>, derived from the slug of the cloned space's
 Component and its Variant label — the same convention as "cub variant upload" and "cub helm install".
@@ -178,7 +186,7 @@ func init() {
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.environment, "environment", "", "set the \"Environment\" label on the new space (example: \"Prod\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.region, "region", "", "set the \"Region\" label on the new space (example: \"us-east2\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.layer, "layer", "", "set the \"Layer\" label on the new space (example: \"App\")")
-	variantCreateCmd.Flags().StringVar(&variantCreateArgs.owner, "owner", "", "set the \"Owner\" label on the new space (example: \"Engineering\")")
+	variantCreateCmd.Flags().StringVar(&variantCreateArgs.owner, "owner", "", "set the \"Owner\" label on the Component the new space is in, not on the space; refused when the Component already has a different owner (example: \"Engineering\")")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.namespace, "namespace", "", "run set-namespace with this value on the cloned Kubernetes/YAML units, replacing the placeholder namespace from the upstream (e.g. a base uploaded with --namespace confighubplaceholder), and record it as the new space's Namespace label, which cub variant promote applies to units it adds later")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.variantLabels, "variant-labels", []string{}, "additional variant labels for the new space in the format key1=value1,key2=value2 (the Variant label is always set from <variant-name>)")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.spaceLabels, "space-label", []string{}, "label key=value to set on the new space (repeatable); merged onto the labels copied from the upstream space. It may not name a label another flag sets, such as Region")
@@ -197,7 +205,7 @@ func init() {
 	variantCmd.AddCommand(variantCreateCmd)
 }
 
-func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
+func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	variantName := args[0]
 	upstreamSpaceSlug := args[1]
 
@@ -210,6 +218,10 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 
 	// Checked before anything is created, so a bad flag leaves nothing behind.
 	if err := checkSpaceLabelFlags(variantCreateArgs.spaceLabels, variantCreateReservedLabels); err != nil {
+		return err
+	}
+	ownerComponent, setOwner, err := checkVariantCreateOwner(upstreamSpace.Space, variantCreateArgs.owner)
+	if err != nil {
 		return err
 	}
 	var changesetID *uuid.UUID
@@ -230,6 +242,14 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 	if !jsonOutput {
 		tprint("Created variant space %s (ID: %s)", newSpace.Slug, newSpace.SpaceID)
 	}
+	// From here on a failure leaves a variant space behind without the owner --owner names, so
+	// the error says so and gives the command that sets it.
+	ownerPending := setOwner
+	defer func() {
+		if retErr != nil && ownerPending {
+			retErr = componentOwnerSkipped(retErr, ownerComponent.Slug, variantCreateArgs.owner)
+		}
+	}()
 
 	// Step 2: resolve the target (if specified) and set it as the new space's ReleaseTargetID:
 	// releases are published per space ("cub release publish <space>"), and publish requires it.
@@ -302,7 +322,51 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 	}
 
+	// Step 6: --owner names the owner of the Component, which is written last so that a failure
+	// here leaves a complete variant behind and the error can say so.
+	if setOwner {
+		ownerPending = false
+		wrote, err := writeComponentOwner(ownerComponent.ComponentID.String(), variantCreateArgs.owner)
+		if err != nil {
+			return componentOwnerNotSet("variant space "+newSpace.Slug, ownerComponent.Slug, variantCreateArgs.owner, err)
+		}
+		if wrote && !jsonOutput {
+			tprint("Set the Owner label of component %s to %q", ownerComponent.Slug, variantCreateArgs.owner)
+		}
+	}
+
 	return handleBulkCreateOrUpdateResponse(responses, statusCode, "create", "")
+}
+
+// checkVariantCreateOwner checks --owner against the Component the upstream space is in, before
+// anything is created, and reports whether its Owner label has to be written. A write that is
+// needed is tried as a dry run too, so a missing permission stops the command here rather than
+// after the variant exists.
+func checkVariantCreateOwner(upstreamSpace *goclientnew.Space, owner string) (*goclientnew.Component, bool, error) {
+	if owner == "" {
+		return nil, false, nil
+	}
+	if err := validateOwnerValue(owner); err != nil {
+		return nil, false, err
+	}
+	if upstreamSpace.ComponentID == nil {
+		return nil, false, fmt.Errorf("--owner sets the Owner label of the Component the new space is in, and space %s is in no Component", upstreamSpace.Slug)
+	}
+	entity, err := resolveComponent(upstreamSpace.ComponentID.String(), "*")
+	if err != nil {
+		return nil, false, err
+	}
+	component := entity.Component
+	setOwner, err := checkComponentOwner(component, owner)
+	if err != nil {
+		return nil, false, err
+	}
+	if setOwner {
+		if err := applyComponentOwner(component.ComponentID, owner, true); err != nil {
+			return nil, false, fmt.Errorf("--owner cannot set the Owner label of component %s: %w", component.Slug, err)
+		}
+	}
+	return component, setOwner, nil
 }
 
 // variantCreateReservedLabels are the space labels variant create sets through a flag of its
@@ -315,7 +379,7 @@ var variantCreateReservedLabels = map[string]string{
 	"Environment": "--environment",
 	"Region":      "--region",
 	"Layer":       "--layer",
-	"Owner":       "--owner",
+	"Owner":       "--owner, which sets it on the Component",
 	"Namespace":   "--namespace",
 }
 
@@ -341,7 +405,7 @@ const componentVariantPattern = "template:{{.Component.Slug}}-{{.Labels.Variant}
 func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*goclientnew.Space, error) {
 	upstreamSpaceID := upstreamSpace.SpaceID
 	// The Variant label is always set from the variant name. --stage, --environment, --region,
-	// --layer, and --owner set those well-known labels, and --namespace sets the Namespace label,
+	// and --layer set those well-known labels, and --namespace sets the Namespace label,
 	// which promote reads to place the units it clones later. Any --variant-labels are applied
 	// last so they win. --space-label goes on the space patch below instead, and may name none of
 	// these.
@@ -357,9 +421,6 @@ func cloneVariantSpace(variantName string, upstreamSpace *goclientnew.Space) (*g
 	}
 	if variantCreateArgs.layer != "" {
 		variantLabels = append(variantLabels, "Layer="+variantCreateArgs.layer)
-	}
-	if variantCreateArgs.owner != "" {
-		variantLabels = append(variantLabels, "Owner="+variantCreateArgs.owner)
 	}
 	if variantCreateArgs.namespace != "" {
 		variantLabels = append(variantLabels, labelNamespace+"="+variantCreateArgs.namespace)

@@ -50,6 +50,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(changeworkflowDeleteCmd)
+	addPruneFlag(changeworkflowDeleteCmd, "ChangeWorkflow")
 	enableWhereFlag(changeworkflowDeleteCmd)
 	enableFilterFlag(changeworkflowDeleteCmd)
 	changeworkflowDeleteCmd.Flags().StringSliceVar(&changeworkflowDeleteIdentifiers, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk delete (can be repeated or comma-separated)")
@@ -108,6 +109,7 @@ func runBulkChangeWorkflowDelete() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -119,7 +121,7 @@ func runBulkChangeWorkflowDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkChangeWorkflowDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	return handleBulkChangeWorkflowDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 func changeworkflowDeleteCmdRun(cmd *cobra.Command, args []string) error {

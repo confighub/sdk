@@ -54,6 +54,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(targetDeleteCmd)
+	addPruneFlag(targetDeleteCmd, "Target")
 	enableWhereFlag(targetDeleteCmd)
 	enableFilterFlag(targetDeleteCmd)
 	targetDeleteCmd.Flags().StringSliceVar(&targetDeleteIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk delete (can be repeated or comma-separated)")
@@ -118,6 +119,7 @@ func runBulkTargetDelete() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -130,7 +132,7 @@ func runBulkTargetDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkTargetDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	return handleBulkTargetDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 func targetDeleteCmdRun(cmd *cobra.Command, args []string) error {

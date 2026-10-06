@@ -140,6 +140,10 @@ type AttributePath struct {
 	// targets in different scopes apart.
 	TargetScope string `json:"targetScope,omitempty"`
 
+	// Optional says a reference may be left unset, so a resource can be created without it and
+	// given it afterwards: how an applier breaks a cycle of references.
+	Optional bool `json:"optional,omitempty"`
+
 	// Selects is the resource type an expression at this path selects, for a path that holds a
 	// selector rather than a value: a ConfigHub Space's WhereTrigger selects Triggers, as a
 	// Kubernetes label selector selects pods. It is "@<field>" for a path whose type is named
@@ -678,6 +682,8 @@ type DeclaredReference struct {
 	// reference, the reference names its target's scope. Empty for a reference within the
 	// referring resource's own scope.
 	TargetScope string
+	// Optional is AttributePath.Optional.
+	Optional bool
 }
 
 // ReferencePaths returns every declared attribute path carrying a Target, sorted by resource
@@ -702,6 +708,7 @@ func (c *CompiledSpecs) ReferencePaths(toolchainType workerapi.ToolchainType) []
 					Path:          declared.Path,
 					Target:        declared.Target,
 					TargetScope:   declared.TargetScope,
+					Optional:      declared.Optional,
 				})
 			}
 		}

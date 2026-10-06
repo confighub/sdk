@@ -57,6 +57,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(spaceDeleteCmd)
+	addPruneFlag(spaceDeleteCmd, "Space")
 	enableWhereFlag(spaceDeleteCmd)
 	enableFilterFlag(spaceDeleteCmd)
 	spaceDeleteCmd.Flags().StringSliceVar(&spaceDeleteIdentifiers, "space", []string{}, "target specific spaces by slug or UUID for bulk delete (can be repeated or comma-separated)")
@@ -117,6 +118,7 @@ func runBulkSpaceDelete() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -137,7 +139,7 @@ func runBulkSpaceDelete() error {
 	}
 
 	// Handle the response
-	return handleBulkSpaceDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	return handleBulkSpaceDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 func spaceDeleteCmdRun(cmd *cobra.Command, args []string) error {

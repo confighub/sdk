@@ -69,7 +69,8 @@ resourceTypes:
 - applyPriority: 100
   attributes:
     resource-name:
-    - path: AllowedChangeWorkflows.*
+    - optional: true
+      path: AllowedChangeWorkflows.*
       target: ChangeWorkflow
   listTypes:
   - path: AllowedChangeWorkflows
@@ -86,7 +87,8 @@ resourceTypes:
 - applyPriority: 200
   attributes:
     resource-name:
-    - path: FromSpace
+    - optional: true
+      path: FromSpace
       target: Space
     where-expression:
     - dataType: string
@@ -107,7 +109,8 @@ resourceTypes:
     immutable:
     - path: ToolchainType
     resource-name:
-    - path: BridgeWorker
+    - optional: true
+      path: BridgeWorker
       target: BridgeWorker
   listTypes:
   - path: FunctionInvocations
@@ -137,7 +140,8 @@ resourceTypes:
       target: Unit
     - path: ToUnit
       target: Unit
-    - path: TransformInvocation
+    - optional: true
+      path: TransformInvocation
       target: Invocation
     where-expression:
     - dataType: string
@@ -197,13 +201,17 @@ resourceTypes:
 - applyPriority: 100
   attributes:
     resource-name:
-    - path: TriggerFilter
+    - optional: true
+      path: TriggerFilter
       target: Filter
-    - path: AttributeFilter
+    - optional: true
+      path: AttributeFilter
       target: Filter
-    - path: ReleaseTarget
+    - optional: true
+      path: ReleaseTarget
       target: Target
-    - path: Component
+    - optional: true
+      path: Component
       target: Component
     where-expression:
     - dataType: string
@@ -226,7 +234,8 @@ resourceTypes:
 - applyPriority: 400
   attributes:
     resource-name:
-    - path: TriggerFilter
+    - optional: true
+      path: TriggerFilter
       target: Filter
     where-expression:
     - dataType: string
@@ -246,11 +255,14 @@ resourceTypes:
 - applyPriority: 300
   attributes:
     resource-name:
-    - path: Invocation
+    - optional: true
+      path: Invocation
       target: Invocation
-    - path: BridgeWorker
+    - optional: true
+      path: BridgeWorker
       target: BridgeWorker
-    - path: UnitFilter
+    - optional: true
+      path: UnitFilter
       target: Filter
     where-expression:
     - dataType: string
@@ -280,7 +292,8 @@ resourceTypes:
 - applyPriority: 300
   attributes:
     resource-name:
-    - path: Filter
+    - optional: true
+      path: Filter
       target: Filter
   mapKeyPaths:
   - DeleteGates.*

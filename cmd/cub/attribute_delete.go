@@ -48,6 +48,7 @@ var (
 
 func init() {
 	addStandardDeleteFlags(attributeDeleteCmd)
+	addPruneFlag(attributeDeleteCmd, "Attribute")
 	enableWhereFlag(attributeDeleteCmd)
 	enableFilterFlag(attributeDeleteCmd)
 	attributeDeleteCmd.Flags().StringSliceVar(&attributeDeleteIdentifiers, "attribute", []string{}, "target specific attributes by slug or UUID for bulk delete (can be repeated or comma-separated)")
@@ -99,6 +100,7 @@ func runBulkAttributeDelete() error {
 		Include: &include,
 	}
 	params.IncludeHidden = includeHiddenParam()
+	params.FromBackingUnits = fromBackingUnitsParam()
 	if filterID != "" {
 		params.Filter = &filterID
 	}
@@ -108,7 +110,7 @@ func runBulkAttributeDelete() error {
 		return cubapi.InterpretErrorGeneric(err, bulkRes)
 	}
 
-	return handleBulkAttributeDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), "delete", effectiveWhere)
+	return handleBulkAttributeDeleteResponse(bulkRes.JSON200, bulkRes.JSON207, bulkRes.StatusCode(), deleteOperationName(), effectiveWhere)
 }
 
 func attributeDeleteCmdRun(cmd *cobra.Command, args []string) error {

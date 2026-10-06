@@ -150,6 +150,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Components selected, delete those whose backing
+          Unit is empty, which says the Component should not exist, and keep the Unit,
+          empty and backing nothing, so that it keeps the Component''s history and
+          a document that comes back revives it. The others are left alone and are
+          not in the response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -702,6 +712,16 @@ paths:
           to everything the recursive delete removes.
         in: query
         name: detach
+        required: false
+        schema:
+          type: boolean
+      - description: 'Prune: of the Spaces selected, delete those whose backing Unit
+          is empty, which says the Space should not exist, and keep the Unit, empty
+          and backing nothing, so that it keeps the Space''s history and a document
+          that comes back revives it. The others are left alone and are not in the
+          response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
         required: false
         schema:
           type: boolean
@@ -1985,6 +2005,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Attributes selected, delete those whose backing
+          Unit is empty, which says the Attribute should not exist, and keep the Unit,
+          empty and backing nothing, so that it keeps the Attribute''s history and
+          a document that comes back revives it. The others are left alone and are
+          not in the response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -6913,6 +6943,17 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the ChangeWorkflows selected, delete those whose backing
+          Unit is empty, which says the ChangeWorkflow should not exist, and keep
+          the Unit, empty and backing nothing, so that it keeps the ChangeWorkflow''s
+          history and a document that comes back revives it. The others are left alone
+          and are not in the response, so a broad selection deletes only what was
+          emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -9378,6 +9419,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Filters selected, delete those whose backing Unit
+          is empty, which says the Filter should not exist, and keep the Unit, empty
+          and backing nothing, so that it keeps the Filter''s history and a document
+          that comes back revives it. The others are left alone and are not in the
+          response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -11722,6 +11773,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Invocations selected, delete those whose backing
+          Unit is empty, which says the Invocation should not exist, and keep the
+          Unit, empty and backing nothing, so that it keeps the Invocation''s history
+          and a document that comes back revives it. The others are left alone and
+          are not in the response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -13153,6 +13214,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Links selected, delete those whose backing Unit
+          is empty, which says the Link should not exist, and keep the Unit, empty
+          and backing nothing, so that it keeps the Link''s history and a document
+          that comes back revives it. The others are left alone and are not in the
+          response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -37040,6 +37111,16 @@ paths:
         required: false
         schema:
           type: boolean
+      - description: 'Prune: of the Targets selected, delete those whose backing Unit
+          is empty, which says the Target should not exist, and keep the Unit, empty
+          and backing nothing, so that it keeps the Target''s history and a document
+          that comes back revives it. The others are left alone and are not in the
+          response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -38456,6 +38537,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Triggers selected, delete those whose backing
+          Unit is empty, which says the Trigger should not exist, and keep the Unit,
+          empty and backing nothing, so that it keeps the Trigger''s history and a
+          document that comes back revives it. The others are left alone and are not
+          in the response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -44143,6 +44234,16 @@ paths:
         required: false
         schema:
           type: string
+      - description: 'Prune: of the Views selected, delete those whose backing Unit
+          is empty, which says the View should not exist, and keep the Unit, empty
+          and backing nothing, so that it keeps the View''s history and a document
+          that comes back revives it. The others are left alone and are not in the
+          response, so a broad selection deletes only what was emptied.'
+        in: query
+        name: from_backing_units
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -54981,6 +55082,17 @@ components:
       type: object
     UploadComponentRequest:
       properties:
+        Adopt:
+          description: Take over the backing Unit of an entity a document describes
+            when another source owns it. Without it, that document is refused.
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        BackingUnitSpace:
+          description: The Space, by slug, for the backing Units of the bundle's Space
+            and Component documents; it may be the component's own Space. Required
+            when the bundle has either.
+          type: string
+          x-go-type-skip-optional-pointer: true
         CreateNamespace:
           description: Synthesize the release Namespace if the bundle lacks it. Off
             by default.
@@ -54995,7 +55107,9 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Name:
-          description: The component name.
+          description: The component name. Without one, Space must name an existing
+            Space, which is written into as it is, with no Component and no labels
+            set, and SourceName is required.
           type: string
           x-go-type-skip-optional-pointer: true
         Namespace:
@@ -55115,6 +55229,29 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    UploadEntityResult:
+      properties:
+        Action:
+          description: Create, Update, Unchanged, Pending (its backing Unit's Triggers
+            had not reached a verdict in time), Skipped (an entity it names failed
+            or is pending), or Prune (its backing Unit is empty, and a bulk delete
+            with from_backing_units deletes it).
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EntityID:
+          description: Absent for an entity a dry run would create, or one not written.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        EntityType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Slug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     UploadLinkResult:
       properties:
         Action:
@@ -55185,6 +55322,11 @@ components:
           items:
             $ref: '#/components/schemas/UploadRequestFile'
           type: array
+          x-go-type-skip-optional-pointer: true
+        Partial:
+          description: 'The bundle is part of what its source owns: Units the source
+            owns that it leaves out are left alone rather than emptied.'
+          type: boolean
           x-go-type-skip-optional-pointer: true
         Source:
           $ref: '#/components/schemas/UploadSourceInfo'
@@ -55332,6 +55474,8 @@ components:
           $ref: '#/components/schemas/MutationConflictList'
         Diff:
           $ref: '#/components/schemas/ConfigDiff'
+        Entity:
+          $ref: '#/components/schemas/UploadEntityResult'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Mutations:
@@ -55341,7 +55485,7 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Role:
-          description: Resource, AppConfig, or AppConfigRendered.
+          description: Resource, AppConfig, AppConfigRendered, or BackingUnit.
           type: string
           x-go-type-skip-optional-pointer: true
         Slug:
