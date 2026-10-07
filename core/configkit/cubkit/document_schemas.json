@@ -84,14 +84,24 @@
           "type": "string"
         },
         "NeededResource": {
-          "$ref": "#/definitions/ResourceInfo"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ResourceInfo"
+            }
+          ],
+          "description": "Resource in the downstream unit that needs the value"
         },
         "ProvidedPath": {
           "description": "Resolved path within the provided resource",
           "type": "string"
         },
         "ProvidedResource": {
-          "$ref": "#/definitions/ResourceInfo"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ResourceInfo"
+            }
+          ],
+          "description": "Resource in the upstream unit that provides the value"
         }
       },
       "type": "object"
@@ -248,7 +258,12 @@
     "Column": {
       "properties": {
         "ColumnSource": {
-          "$ref": "#/definitions/ColumnSource"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ColumnSource"
+            }
+          ],
+          "description": "Where the column value comes from. Exactly one field should be set, matching ColumnType."
         },
         "ColumnType": {
           "description": "The kind of value: MetadataAttribute, MetadataExpression, DataPath or DataExpression.",
@@ -331,14 +346,24 @@
           ]
         },
         "Clearance": {
-          "$ref": "#/definitions/Clearance"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Clearance"
+            }
+          ],
+          "description": "Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"
         },
         "FunctionName": {
           "description": "Function name",
           "type": "string"
         },
         "Guards": {
-          "$ref": "#/definitions/GuardStamp"
+          "allOf": [
+            {
+              "$ref": "#/definitions/GuardStamp"
+            }
+          ],
+          "description": "Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key"
         },
         "Params": {
           "additionalProperties": {},
@@ -409,7 +434,12 @@
           "type": "boolean"
         },
         "Schema": {
-          "$ref": "#/definitions/Schema"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Schema"
+            }
+          ],
+          "description": "JSON schema (for embedded JSON values)"
         }
       },
       "type": "object"
@@ -423,7 +453,12 @@
     "NamedFunctionResult": {
       "properties": {
         "FunctionInvocation": {
-          "$ref": "#/definitions/FunctionInvocation"
+          "allOf": [
+            {
+              "$ref": "#/definitions/FunctionInvocation"
+            }
+          ],
+          "description": "Non-mutating function invocation that produces OutputTypeAttributeValueList. The Value of the first returned AttributeValue is bound to Name. Worker functions are not supported."
         },
         "Name": {
           "description": "Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters",
@@ -443,7 +478,12 @@
           "type": "string"
         },
         "Resource": {
-          "$ref": "#/definitions/ResourceInfo"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ResourceInfo"
+            }
+          ],
+          "description": "Resource in the upstream Unit that contains Path"
         }
       },
       "type": "object"
@@ -451,7 +491,12 @@
     "ParameterizedFunction": {
       "properties": {
         "FunctionInvocation": {
-          "$ref": "#/definitions/FunctionInvocation"
+          "allOf": [
+            {
+              "$ref": "#/definitions/FunctionInvocation"
+            }
+          ],
+          "description": "Mutating function invocation to run on the downstream Unit. Worker functions are not supported."
         },
         "Key": {
           "description": "Identifies the entry within DownstreamSetters, so that a merge of two versions of the Link matches entries by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.",
@@ -497,7 +542,12 @@
           "type": "string"
         },
         "Resource": {
-          "$ref": "#/definitions/ResourceInfo"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ResourceInfo"
+            }
+          ],
+          "description": "Resource in the downstream Unit that contains Path. Reserved as a pointer for a future optional/WhereResource form; required for now."
         }
       },
       "type": "object"
@@ -519,7 +569,12 @@
           "type": "string"
         },
         "Details": {
-          "$ref": "#/definitions/AttributeDetails"
+          "allOf": [
+            {
+              "$ref": "#/definitions/AttributeDetails"
+            }
+          ],
+          "description": "Additional attribute details"
         },
         "EmbeddedAccessorConfig": {
           "description": "Configuration of the embedded accessor, if any",
@@ -711,7 +766,12 @@
           ]
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this attribute."
         },
         "ResourceTypePaths": {
           "description": "ResourceTypePaths maps resource types to their path-to-visitor-info mappings.",
@@ -786,7 +846,12 @@
           ]
         },
         "Final": {
-          "$ref": "#/definitions/ChangeWorkflowFinalStage"
+          "allOf": [
+            {
+              "$ref": "#/definitions/ChangeWorkflowFinalStage"
+            }
+          ],
+          "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing."
         },
         "Labels": {
           "additionalProperties": {
@@ -798,7 +863,12 @@
           "type": "object"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this change workflow."
         },
         "Slug": {
           "description": "Unique URL-safe identifier for the entity.",
@@ -872,7 +942,12 @@
           "type": "object"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this component."
         },
         "Slug": {
           "description": "Unique URL-safe identifier for the entity.",
@@ -938,7 +1013,12 @@
           "type": "object"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this filter."
         },
         "ResourceType": {
           "description": "Resource type to match for the desired ToolchainType, for example apps/v1/Deployment. Valid only for Units. (optional)",
@@ -1019,7 +1099,12 @@
           "type": "array"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this invocation."
         },
         "Slug": {
           "description": "Unique URL-safe identifier for the entity.",
@@ -1098,7 +1183,12 @@
           "type": "string"
         },
         "Guards": {
-          "$ref": "#/definitions/GuardStamp"
+          "allOf": [
+            {
+              "$ref": "#/definitions/GuardStamp"
+            }
+          ],
+          "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream."
         },
         "Labels": {
           "additionalProperties": {
@@ -1110,14 +1200,24 @@
           "type": "object"
         },
         "ManualBindings": {
-          "$ref": "#/definitions/BindingList"
+          "allOf": [
+            {
+              "$ref": "#/definitions/BindingList"
+            }
+          ],
+          "description": "The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data."
         },
         "MergeEnableSubtraction": {
           "description": "Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch and the stored values are not consulted. Only meaningful for UpgradeUnit and MergeUnits Links.",
           "type": "boolean"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this link."
         },
         "Protect": {
           "description": "Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.",
@@ -1227,7 +1327,12 @@
           "type": "object"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this space."
         },
         "ReleaseTarget": {
           "description": "The Target it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
@@ -1306,7 +1411,12 @@
           "type": "object"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this target."
         },
         "Slug": {
           "description": "Unique URL-safe identifier for the entity.",
@@ -1401,7 +1511,12 @@
           "type": "string"
         },
         "Guards": {
-          "$ref": "#/definitions/GuardStamp"
+          "allOf": [
+            {
+              "$ref": "#/definitions/GuardStamp"
+            }
+          ],
+          "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect."
         },
         "Invocation": {
           "description": "The Invocation it refers to, by its slug, or as \u003cspace\u003e/\u003cslug\u003e in another Space than the document's.",
@@ -1422,7 +1537,12 @@
           "type": "string"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this trigger."
         },
         "Protect": {
           "description": "Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.",
@@ -1534,7 +1654,12 @@
           "type": "string"
         },
         "Permissions": {
-          "$ref": "#/definitions/Permissions"
+          "allOf": [
+            {
+              "$ref": "#/definitions/Permissions"
+            }
+          ],
+          "description": "Permissions to access this view."
         },
         "Slug": {
           "description": "Unique URL-safe identifier for the entity.",

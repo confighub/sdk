@@ -5,7 +5,6 @@ package main
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/cockroachdb/errors"
 	"github.com/confighub/sdk/core/cubapi"
@@ -38,7 +37,8 @@ For complex attributes with ResourceTypePaths, use --filename to provide a YAML/
 BULK ATTRIBUTE CREATION:
 
 When no positional arguments are provided, bulk create mode is activated. This mode clones existing
-attributes based on filters and creates multiple new attributes with optional modifications.
+attributes based on filters into other spaces. A clone keeps the name of the attribute it clones,
+since its paths and parameters are named for it.
 
 Single Attribute Examples:
 `+"```"+`
@@ -54,8 +54,8 @@ Single Attribute Examples:
 
 Bulk Create Examples:
 `+"```"+`
-  # Clone all attributes matching a pattern with name prefixes
-  cub attribute create --where "Slug LIKE 'app-%'" --name-prefix dev-,staging- --dest-space dev-space
+  # Clone all attributes matching a pattern to another space
+  cub attribute create --where "Slug LIKE 'app-%'" --dest-space dev-space
 
   # Clone specific attributes to multiple spaces
   cub attribute create --attribute my-attr --dest-space dev-space,staging-space
@@ -69,7 +69,6 @@ Bulk Create Examples:
 var attributeCreateArgs struct {
 	destSpaces     []string
 	whereSpace     string
-	namePrefixes   []string
 	attributeSlugs []string
 	filterSpace    string
 }
@@ -86,7 +85,6 @@ func init() {
 	// Bulk create specific flags
 	attributeCreateCmd.Flags().StringSliceVar(&attributeCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	attributeCreateCmd.Flags().StringVar(&attributeCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
-	attributeCreateCmd.Flags().StringSliceVar(&attributeCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
 	attributeCreateCmd.Flags().StringSliceVar(&attributeCreateArgs.attributeSlugs, "attribute", []string{}, "target specific attributes by slug or UUID for bulk create (can be repeated or comma-separated)")
 	attributeCreateCmd.Flags().StringVar(&attributeCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 
@@ -107,8 +105,8 @@ func checkAttributeCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if !backingUnitArgs.fromBackingUnits && len(attributeCreateArgs.destSpaces) == 0 && attributeCreateArgs.whereSpace == "" && len(attributeCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if !backingUnitArgs.fromBackingUnits && len(attributeCreateArgs.destSpaces) == 0 && attributeCreateArgs.whereSpace == "" && attributeCreateArgs.filterSpace == "" {
+			return false, errors.New("bulk create mode requires one of --dest-space, --where-space, or --filter-space")
 		}
 	} else if len(args) > 0 && len(args) < 3 && flagFilename == "" && !flagPopulateModelFromStdin {
 		return false, errors.New("single attribute creation requires: <slug> <toolchain-type> <data-type> or --filename")
@@ -254,11 +252,6 @@ func runBulkAttributeCreate() error {
 	if allowExists {
 		allowExistsStr := "true"
 		params.AllowExists = &allowExistsStr
-	}
-
-	if len(attributeCreateArgs.namePrefixes) > 0 {
-		namePrefixesStr := strings.Join(attributeCreateArgs.namePrefixes, ",")
-		params.NamePrefixes = &namePrefixesStr
 	}
 
 	var whereSpaceExpr string

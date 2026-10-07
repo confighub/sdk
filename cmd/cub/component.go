@@ -66,6 +66,7 @@ and unit commands for automation. Use 'component open --print-url' when you only
 
 func init() {
 	rootCmd.AddCommand(componentCmd)
+	addExplainCmd(componentCmd, "Component")
 }
 
 // Component aggregates the spaces that are Variants of one Component, named by

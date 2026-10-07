@@ -1418,7 +1418,7 @@
             }
           },
           "207": {
-            "description": "Multi-Status: Mixed success and failure results",
+            "description": "Multi-Status (partial success)",
             "content": {
               "application/json": {
                 "schema": {
@@ -2508,7 +2508,7 @@
           "Attribute"
         ],
         "summary": "Bulk create (clone) multiple attributes",
-        "description": "Clone multiple attributes selected by query parameters with optional name prefixes and destination spaces",
+        "description": "Clone multiple attributes selected by query parameters to destination spaces. A clone keeps the name of the Attribute it clones",
         "operationId": "BulkCreateAttributes",
         "parameters": [
           {
@@ -2571,15 +2571,6 @@
             "name": "continue",
             "in": "query",
             "description": "The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "name_prefixes",
-            "in": "query",
-            "description": "Comma-separated list of prefixes to apply to cloned Attribute names",
             "required": false,
             "schema": {
               "type": "string"
@@ -3241,7 +3232,7 @@
             }
           },
           "422": {
-            "description": "BridgeWorker could not be deleted.",
+            "description": "Unable to delete entity",
             "content": {
               "application/json": {
                 "schema": {
@@ -3266,8 +3257,8 @@
         "tags": [
           "BridgeWorker"
         ],
-        "summary": "List all BridgeWorker across spaces",
-        "description": "List all BridgeWorker across spaces",
+        "summary": "List of BridgeWorkers across spaces",
+        "description": "Retrieves a list of BridgeWorkers across spaces in the Organization",
         "operationId": "ListAllBridgeWorkers",
         "parameters": [
           {
@@ -3364,6 +3355,16 @@
           }
         ],
         "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
           "200": {
             "description": "OK",
             "headers": {
@@ -3382,6 +3383,56 @@
                   "items": {
                     "$ref": "#/components/schemas/ExtendedBridgeWorker"
                   }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "BridgeWorker request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "BridgeWorker not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing BridgeWorker.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
                 }
               }
             }
@@ -4042,8 +4093,8 @@
         "tags": [
           "ChangeOrder"
         ],
-        "summary": "Bulk delete multiple changeorders",
-        "description": "Delete multiple changeorders selected by query parameters",
+        "summary": "Bulk delete multiple change orders",
+        "description": "Delete multiple change orders selected by query parameters",
         "operationId": "BulkDeleteChangeOrders",
         "parameters": [
           {
@@ -4420,8 +4471,8 @@
         "tags": [
           "ChangeOrder"
         ],
-        "summary": "Bulk patch multiple changeorders",
-        "description": "Apply JSON merge patch to multiple changeorders selected by query parameters",
+        "summary": "Bulk patch multiple change orders",
+        "description": "Apply JSON merge patch to multiple change orders selected by query parameters",
         "operationId": "BulkPatchChangeOrders",
         "parameters": [
           {
@@ -4758,8 +4809,8 @@
         "tags": [
           "ChangeOrder"
         ],
-        "summary": "Bulk create (clone) multiple changeorders",
-        "description": "Clone multiple changeorders selected by query parameters with optional name prefixes and destination spaces",
+        "summary": "Bulk create (clone) multiple change orders",
+        "description": "Clone multiple change orders selected by query parameters with optional name prefixes and destination spaces",
         "operationId": "BulkCreateChangeOrders",
         "parameters": [
           {
@@ -4857,7 +4908,7 @@
           {
             "name": "where_space",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.\n\nWhere expression to select destination spaces for cloning changeorders\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.\n\nWhere expression to select destination spaces for cloning change orders\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -5143,8 +5194,8 @@
         "tags": [
           "ChangeSet"
         ],
-        "summary": "Bulk delete multiple changesets",
-        "description": "Delete multiple changesets selected by query parameters",
+        "summary": "Bulk delete multiple change sets",
+        "description": "Delete multiple change sets selected by query parameters",
         "operationId": "BulkDeleteChangeSets",
         "parameters": [
           {
@@ -5521,8 +5572,8 @@
         "tags": [
           "ChangeSet"
         ],
-        "summary": "Bulk patch multiple changesets",
-        "description": "Apply JSON merge patch to multiple changesets selected by query parameters",
+        "summary": "Bulk patch multiple change sets",
+        "description": "Apply JSON merge patch to multiple change sets selected by query parameters",
         "operationId": "BulkPatchChangeSets",
         "parameters": [
           {
@@ -5785,8 +5836,8 @@
         "tags": [
           "ChangeSet"
         ],
-        "summary": "Bulk create (clone) multiple changesets",
-        "description": "Clone multiple changesets selected by query parameters with optional name prefixes and destination spaces",
+        "summary": "Bulk create (clone) multiple change sets",
+        "description": "Clone multiple change sets selected by query parameters with optional name prefixes and destination spaces",
         "operationId": "BulkCreateChangeSets",
         "parameters": [
           {
@@ -5884,7 +5935,7 @@
           {
             "name": "where_space",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.\n\nWhere expression to select destination spaces for cloning changesets\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.\n\nWhere expression to select destination spaces for cloning change sets\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -9684,7 +9735,7 @@
           {
             "name": "name_pattern",
             "in": "query",
-            "description": "A Go-template string for clone name, use .SourceEntity to access the original entity and .Labels to access variant labels",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
             "required": false,
             "schema": {
               "type": "string"
@@ -12414,14 +12465,14 @@
         "tags": [
           "Link"
         ],
-        "summary": "Delete multiple Links",
-        "description": "Deletes multiple Links based on search criteria",
+        "summary": "Bulk delete multiple links",
+        "description": "Delete multiple links selected by query parameters",
         "operationId": "BulkDeleteLinks",
         "parameters": [
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.\n\nfilter\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -12792,14 +12843,14 @@
         "tags": [
           "Link"
         ],
-        "summary": "Update multiple Links",
-        "description": "Updates multiple Links based on search criteria",
+        "summary": "Bulk patch multiple links",
+        "description": "Apply JSON merge patch to multiple links selected by query parameters",
         "operationId": "BulkPatchLinks",
         "parameters": [
           {
             "name": "where",
             "in": "query",
-            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.\n\nfilter\n\nThe whole string must be query-encoded.",
+            "description": "The specified string is an expression for the purpose of filtering\nthe list of Links returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.\n\nThe whole string must be query-encoded.",
             "required": false,
             "schema": {
               "type": "string"
@@ -21213,6 +21264,15 @@
             "schema": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          {
+            "name": "container_images",
+            "in": "query",
+            "description": "If true, fill in ContainerImages: for each Space the ChangeOrder has landed in, the container images get-container-image finds at the Revisions its end Tag marks that differ from those at the Revisions its start Tag marks.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
             }
           }
         ],
@@ -42042,6 +42102,24 @@
             }
           },
           {
+            "name": "variant_labels",
+            "in": "query",
+            "description": "Comma-separated list of labels with multiple values for cloned Trigger labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "name_pattern",
+            "in": "query",
+            "description": "A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "where_space",
             "in": "query",
             "description": "The specified string is an expression for the purpose of filtering\nthe list of Spaces returned. The expression syntax was inspired by SQL.\nIt supports conjunctions using `AND` of relational expressions of the form *attribute*\n*operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,\nas in the JSON encoding.\nStrings support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.\nString pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,\n`ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.\nString regex operators: `~` for regex matching, `~*` for case-insensitive regex,\n`!~` and `!~*` for regex not matching (case-sensitive and insensitive).\nIntegers support the following operators: `\u003c`, `\u003e`, `\u003c=`, `\u003e=`, `=`, `!=`, `IN`, `NOT IN`.\nUUIDs and boolean attributes support equality and inequality only.\nUUID and time literals must be quoted as string literals.\nString literals are quoted with single quotes, such as `'string'`.\nTime literals use the same form as when serialized as JSON,\nsuch as: `CreatedAt \u003e '2025-02-18T23:16:34'`.\nInteger and boolean literals are also supported for attributes of those types.\nArrays support the `?` operator to to match any element of the array,\nas in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.\nArrays can perform LEN() to check for length, as in `LEN(FromLinkID) \u003e 0`.\nAn attribute naming a list of other entities can be filtered on their attributes with a `*` segment,\nas in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.\nWithout the `*` such a reference is an error, since it names no single value to compare.\nMap support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.\nMaps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,\nas in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).\nComparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.\nThese are useful for nullable columns: `MergeSourceID = '\u003cuuid\u003e' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.\nThe `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,\nsuch as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.\nConjunctions are supported using the `AND` operator.\nAn example conjunction is:\n`CreatedAt \u003e= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.\n\nSupported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.\n\nWhere expression to select destination spaces for cloning triggers\n\nThe whole string must be query-encoded.",
@@ -42764,7 +42842,7 @@
             }
           },
           "422": {
-            "description": "Unable to delete entities",
+            "description": "Unable to delete entity",
             "content": {
               "application/json": {
                 "schema": {
@@ -47031,7 +47109,7 @@
           {
             "name": "variant_labels",
             "in": "query",
-            "description": "Comma-separated list of labels with multiple values fro cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3",
+            "description": "Comma-separated list of labels with multiple values for cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3",
             "required": false,
             "schema": {
               "type": "string"
@@ -47949,7 +48027,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this attestation.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ReleaseID": {
             "type": "string",
@@ -48037,12 +48123,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID."
       },
       "AttestationCreateRequest": {
         "type": "object",
@@ -48321,7 +48402,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this attribute.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ResourceTypePaths": {
             "type": "array",
@@ -48401,12 +48490,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines a dynamic configuration attribute that registers getter and setter functions\nand their associated paths in a Space's FunctionExecutor. Attributes enable per-Space\ncustomization of the function registry by specifying a set of paths within a resource\ntype that can be read and written using generated get-\u003cslug\u003e and set-\u003cslug\u003e functions.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Defines a dynamic configuration attribute that registers getter and setter functions\nand their associated paths in a Space's FunctionExecutor. Attributes enable per-Space\ncustomization of the function registry by specifying a set of paths within a resource\ntype that can be read and written using generated get-\u003cslug\u003e and set-\u003cslug\u003e functions."
       },
       "AttributeCreateOrUpdateResponse": {
         "type": "object",
@@ -48496,7 +48580,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Details": {
-            "$ref": "#/components/schemas/AttributeDetails"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeDetails"
+              }
+            ],
+            "description": "Additional attribute details"
           },
           "Path": {
             "type": "string",
@@ -48562,7 +48651,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Details": {
-            "$ref": "#/components/schemas/AttributeDetails"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeDetails"
+              }
+            ],
+            "description": "Additional attribute details"
           },
           "FunctionName": {
             "type": "string",
@@ -48653,7 +48747,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "NeededResource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Resource in the downstream unit that needs the value"
           },
           "ProvidedPath": {
             "type": "string",
@@ -48661,7 +48760,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ProvidedResource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Resource in the upstream unit that provides the value"
           }
         }
       },
@@ -48826,10 +48930,26 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this bridge worker.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ProvidedInfo": {
-            "$ref": "#/components/schemas/WorkerInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkerInfo"
+              }
+            ],
+            "description": "ProvidedInfo contains information about the bridge worker in JSON format.\nIt is sent by the bridge worker program to the ConfigHub server when it first connects.\nIt can also be set before the bridge worker connects, but it is not recommended to change\nit while a worker is connected.\nThis can include details about the capabilities, and targets supported by the bridge worker.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
           },
           "Secret": {
             "type": "string",
@@ -48895,15 +49015,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          },
-          "ProvidedInfo": {
-            "dataType": "JSON"
-          }
-        }
+        "description": "BridgeWorker represents a bridge worker in ConfigHub.\nA bridge worker is a worker program that connects ConfigHub to external systems and targets.\nIt acts as a bridge between ConfigHub and the infrastructure where configurations need\nto be applied. Bridge workers are responsible for executing configuration changes on\nremote targets and reporting status back to ConfigHub.\nWhen starting a bridge worker program, both the BridgeWorkerID and Secret are\nrequired for authentication with the ConfigHub server. These credentials allow the\nbridge worker to establish a secure connection and receive configuration actions."
       },
       "BridgeWorkerCreateOrUpdateResponse": {
         "type": "object",
@@ -49095,6 +49207,15 @@
               "references": "ChangeWorkflow"
             }
           },
+          "ContainerImages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderSpaceContainerImages"
+            },
+            "description": "ContainerImages lists, for each Space the ChangeOrder has landed in, the container images it changed there: in each Unit the end Tag marks, the images get-container-image finds that differ from those at the Revision the start Tag marks. Derived only when a single ChangeOrder is read with container_images=true, never in a list. Spaces and Units the reader cannot view are left out.",
+            "readOnly": true,
+            "x-go-type-skip-optional-pointer": true
+          },
           "CreatedAt": {
             "type": "string",
             "description": "The timestamp when the entity was created in \"2023-01-01T12:00:00Z\" format.",
@@ -49219,7 +49340,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this change order.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "PromotionFailures": {
             "type": "array",
@@ -49467,10 +49596,59 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines a change's identity as it moves between Spaces.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
+        "description": "Defines a change's identity as it moves between Spaces."
+      },
+      "ChangeOrderContainerImageChange": {
+        "type": "object",
+        "properties": {
+          "FromImage": {
+            "type": "string",
+            "description": "The image before the change; absent for a container the change added.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "FromRevisionNum": {
+            "type": "integer",
+            "description": "The Revision the start Tag marks; absent for a Unit the change added.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Path": {
+            "type": "string",
+            "description": "The path of the image within the resource.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceName": {
+            "type": "string",
+            "description": "The name of the resource the container is in, as it is at the end Tag's Revision.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ResourceType": {
+            "type": "string",
+            "description": "The type of the resource the container is in.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToImage": {
+            "type": "string",
+            "description": "The image after the change; absent for a container the change removed.",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ToRevisionNum": {
+            "type": "integer",
+            "description": "The Revision the end Tag marks.",
+            "format": "int64",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitID": {
+            "type": "string",
+            "description": "The Unit the image is in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UnitSlug": {
+            "type": "string",
+            "description": "The Unit's slug.",
+            "x-go-type-skip-optional-pointer": true
           }
         }
       },
@@ -49686,6 +49864,32 @@
           }
         }
       },
+      "ChangeOrderSpaceContainerImages": {
+        "type": "object",
+        "properties": {
+          "Images": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChangeOrderContainerImageChange"
+            },
+            "description": "The images that changed, by Unit, resource, and path.",
+            "nullable": true,
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceID": {
+            "type": "string",
+            "description": "The Space the images changed in.",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "SpaceSlug": {
+            "type": "string",
+            "description": "The Space's slug.",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "ChangeSet": {
         "required": [
           "Slug"
@@ -49808,7 +50012,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this change set.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -49888,12 +50100,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines an entity changeset.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Defines an entity changeset."
       },
       "ChangeSetCreateOrUpdateResponse": {
         "type": "object",
@@ -50005,7 +50212,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Final": {
-            "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
+              }
+            ],
+            "description": "Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
           },
           "HiddenReason": {
             "maxLength": 64,
@@ -50043,7 +50258,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this change workflow.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -50113,15 +50336,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Declares how a change is promoted: the ordered stages it moves through, which Spaces each stage selects, and the gates that have to pass before it enters one.",
-        "x-confighub-where": {
-          "Final": {
-            "dataType": "JSON"
-          },
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Declares how a change is promoted: the ordered stages it moves through, which Spaces each stage selects, and the gates that have to pass before it enters one."
       },
       "ChangeWorkflowAttestationPrerequisite": {
         "required": [
@@ -50258,7 +50473,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Final": {
-            "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ChangeWorkflowFinalStage"
+              }
+            ],
+            "description": "What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing."
           },
           "Stages": {
             "type": "array",
@@ -50340,7 +50560,12 @@
         "type": "object",
         "properties": {
           "ColumnSource": {
-            "$ref": "#/components/schemas/ColumnSource"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ColumnSource"
+              }
+            ],
+            "description": "Where the column value comes from. Exactly one field should be set, matching ColumnType."
           },
           "ColumnType": {
             "type": "string",
@@ -50520,7 +50745,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this component.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -50561,12 +50794,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "The Component a set of Variants make up. Each Variant is a Space naming the Component with ComponentID. The Component decides which ChangeWorkflows promotions and releases of its Variants may use, and whether one is required."
       },
       "ComponentCreateOrUpdateResponse": {
         "type": "object",
@@ -50609,7 +50837,12 @@
         "type": "object",
         "properties": {
           "Error": {
-            "$ref": "#/components/schemas/ResponseError"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "Error information if the delete operation failed."
           },
           "Message": {
             "type": "string",
@@ -50744,7 +50977,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "The same change path by path, with the values on both sides. Returned when include names Diff."
           },
           "DropsFromRevisionNum": {
             "type": "integer",
@@ -50768,7 +51006,12 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "Mutations": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "What the restore changed, or on a dry run would change. Returned when include names Mutations."
           },
           "PreviousHeadMutationNum": {
             "type": "integer",
@@ -50807,10 +51050,20 @@
         "type": "object",
         "properties": {
           "From": {
-            "$ref": "#/components/schemas/DiffSide"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiffSide"
+              }
+            ],
+            "description": "The configuration the diff runs from"
           },
           "To": {
-            "$ref": "#/components/schemas/DiffSide"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiffSide"
+              }
+            ],
+            "description": "The configuration the diff runs to"
           }
         }
       },
@@ -50818,13 +51071,28 @@
         "type": "object",
         "properties": {
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "What changed from the From configuration to the To configuration"
           },
           "From": {
-            "$ref": "#/components/schemas/DiffSideResult"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiffSideResult"
+              }
+            ],
+            "description": "What the From side resolved to"
           },
           "To": {
-            "$ref": "#/components/schemas/DiffSideResult"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiffSideResult"
+              }
+            ],
+            "description": "What the To side resolved to"
           }
         }
       },
@@ -50973,13 +51241,23 @@
         "type": "object",
         "properties": {
           "Attestation": {
-            "$ref": "#/components/schemas/Attestation"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Attestation"
+              }
+            ],
+            "description": "The Attestation."
           },
           "Organization": {
             "$ref": "#/components/schemas/Organization"
           },
           "Space": {
-            "$ref": "#/components/schemas/Space"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Space"
+              }
+            ],
+            "description": "The Space the Attestation belongs to."
           }
         },
         "description": "Attestation with additional related entities expanded based on the request's include parameter."
@@ -51134,7 +51412,12 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "Group": {
-            "$ref": "#/components/schemas/Group"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Group"
+              }
+            ],
+            "description": "The Group."
           }
         },
         "description": "Group with additional related entities expanded based on the request's include parameter."
@@ -51252,13 +51535,28 @@
             "$ref": "#/components/schemas/Organization"
           },
           "Release": {
-            "$ref": "#/components/schemas/Release"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Release"
+              }
+            ],
+            "description": "The Release."
           },
           "Space": {
-            "$ref": "#/components/schemas/Space"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Space"
+              }
+            ],
+            "description": "The Space the Release belongs to."
           },
           "Tag": {
-            "$ref": "#/components/schemas/Tag"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Tag"
+              }
+            ],
+            "description": "The Tag the bundled Units were pinned to, if any. Expanded when requested via the include parameter."
           }
         },
         "description": "Release with additional related entities expanded based on the request's include parameter."
@@ -51607,34 +51905,84 @@
             "x-go-type-skip-optional-pointer": true
           },
           "HeadMutation": {
-            "$ref": "#/components/schemas/Mutation"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Mutation"
+              }
+            ],
+            "description": "The Unit's current HeadMutation"
           },
           "HeadRevision": {
-            "$ref": "#/components/schemas/Revision"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Unit's current HeadRevision"
           },
           "LastReleasedRevision": {
-            "$ref": "#/components/schemas/Revision"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Revision"
+              }
+            ],
+            "description": "The Unit's current LastReleasedRevision"
           },
           "LatestUnitEvent": {
-            "$ref": "#/components/schemas/UnitEvent"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UnitEvent"
+              }
+            ],
+            "description": "The latest event that took place on the Unit."
           },
           "Organization": {
-            "$ref": "#/components/schemas/Organization"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Organization"
+              }
+            ],
+            "description": "The Organization the Unit belongs to."
           },
           "Space": {
-            "$ref": "#/components/schemas/Space"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Space"
+              }
+            ],
+            "description": "The Space the Unit belongs to."
           },
           "Target": {
-            "$ref": "#/components/schemas/Target"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Target"
+              }
+            ],
+            "description": "The Target the Unit has been configured to operate with."
           },
           "Unit": {
-            "$ref": "#/components/schemas/Unit"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              }
+            ],
+            "description": "The requested Unit of the operation."
           },
           "UpstreamSpace": {
-            "$ref": "#/components/schemas/Space"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Space"
+              }
+            ],
+            "description": "If this Unit is a clone, the Upstream Space the UpstreamUnit belongs to. Optional."
           },
           "UpstreamUnit": {
-            "$ref": "#/components/schemas/Unit"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              }
+            ],
+            "description": "If this Unit is a clone, the Upstream Unit it was cloned from. Optional."
           },
           "View": {
             "$ref": "#/components/schemas/View"
@@ -51827,7 +52175,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this filter.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ResourceType": {
             "type": "string",
@@ -51910,12 +52266,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines an entity filter.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Defines an entity filter."
       },
       "FilterCreateOrUpdateResponse": {
         "type": "object",
@@ -51966,7 +52317,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Clearance": {
-            "$ref": "#/components/schemas/Clearance"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Clearance"
+              }
+            ],
+            "description": "Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution"
           },
           "FunctionName": {
             "type": "string",
@@ -51974,7 +52330,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
-            "$ref": "#/components/schemas/GuardStamp"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuardStamp"
+              }
+            ],
+            "description": "Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key"
           },
           "Params": {
             "type": "object",
@@ -52084,7 +52445,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
-            "$ref": "#/components/schemas/MutationConflictList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationConflictList"
+              }
+            ],
+            "description": "Mutation conflicts produced by writing the invocation's result, such as a path a guard withheld. Empty when nothing was withheld."
           },
           "DataHash": {
             "type": "string",
@@ -52092,10 +52458,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "What the invocation changed, or on a dry run would change, path by path with the values on both sides; returned when include names Diff."
           },
           "Error": {
-            "$ref": "#/components/schemas/ResponseError"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResponseError"
+              }
+            ],
+            "description": "Error information if the function invocation failed"
           },
           "HasNewMutations": {
             "type": "boolean",
@@ -52103,7 +52479,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Mutations": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "List of mutations in the same order as the resources in ConfigData"
           },
           "Mutators": {
             "type": "array",
@@ -52204,7 +52585,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Schema": {
-            "$ref": "#/components/schemas/Schema"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Schema"
+              }
+            ],
+            "description": "JSON schema of the output type"
           }
         }
       },
@@ -52262,7 +52648,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Schema": {
-            "$ref": "#/components/schemas/Schema"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Schema"
+              }
+            ],
+            "description": "JSON schema (for embedded JSON values)"
           }
         }
       },
@@ -52342,7 +52733,16 @@
             "x-go-type-skip-optional-pointer": true
           },
           "OutputInfo": {
-            "$ref": "#/components/schemas/FunctionOutput"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionOutput"
+              }
+            ],
+            "description": "Output description",
+            "x-confighub-where": {
+              "dataType": "uuid",
+              "references": "FunctionOutput"
+            }
           },
           "Parameters": {
             "type": "array",
@@ -52392,12 +52792,6 @@
               "dataType": "bool"
             },
             "x-go-type-skip-optional-pointer": true
-          }
-        },
-        "x-confighub-where": {
-          "OutputInfo": {
-            "dataType": "uuid",
-            "references": "FunctionOutput"
           }
         }
       },
@@ -52693,7 +53087,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this invocation.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -52768,9 +53170,6 @@
         "x-confighub-where": {
           "FunctionInvocations": {
             "dataType": "JSON"
-          },
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
           }
         }
       },
@@ -52934,7 +53333,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
-            "$ref": "#/components/schemas/GuardStamp"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuardStamp"
+              }
+            ],
+            "description": "Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.",
+            "x-confighub-where": {
+              "dataType": "map[string]string"
+            }
           },
           "Hash": {
             "type": "string",
@@ -52979,7 +53386,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ManualBindings": {
-            "$ref": "#/components/schemas/BindingList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BindingList"
+              }
+            ],
+            "description": "The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
           },
           "MergeEnableSubtraction": {
             "type": "boolean",
@@ -53002,7 +53417,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this link.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Protect": {
             "type": "boolean",
@@ -53186,15 +53609,6 @@
         "x-confighub-where": {
           "Clearance": {
             "dataType": "JSON"
-          },
-          "Guards": {
-            "dataType": "map[string]string"
-          },
-          "ManualBindings": {
-            "dataType": "JSON"
-          },
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
           }
         }
       },
@@ -53299,7 +53713,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "FunctionInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionInvocation"
+              }
+            ],
+            "description": "The function invoked if the change was made by a function."
           },
           "HiddenReason": {
             "maxLength": 64,
@@ -53409,7 +53828,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ProvidedResource": {
-            "$ref": "#/components/schemas/ResourceInfoType2"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfoType2"
+              }
+            ],
+            "description": "ProvidedResource contains the type and name of the resource which provided a value used to satisfy a needed value if the change was made due to resolving a link."
           },
           "ReplayOutcome": {
             "type": "string",
@@ -53572,10 +53996,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Guard": {
-            "$ref": "#/components/schemas/WithheldGuard"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WithheldGuard"
+              }
+            ],
+            "description": "For Guarded: the guard the operation's clearance did not cover"
           },
           "GuardChange": {
-            "$ref": "#/components/schemas/GuardDelta"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuardDelta"
+              }
+            ],
+            "description": "For GuardWithheld: the guard change that did not propagate"
           },
           "Path": {
             "type": "string",
@@ -53588,13 +54022,28 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Resource the mutation applied to"
           },
           "Source": {
-            "$ref": "#/components/schemas/MutationInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationInfo"
+              }
+            ],
+            "description": "The dropped source-side mutation"
           },
           "Target": {
-            "$ref": "#/components/schemas/MutationInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationInfo"
+              }
+            ],
+            "description": "The target-side mutation that caused the drop, when applicable (Subtracted, DeleteShadowed)"
           },
           "UnitID": {
             "type": "string",
@@ -53621,7 +54070,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "MutationType": {
-            "$ref": "#/components/schemas/MutationType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationType"
+              }
+            ],
+            "description": "Type of mutation performed on the associated configuration element: Add, Update, Replace, Delete, or None, if no change"
           },
           "Patch": {
             "type": "string",
@@ -53650,7 +54104,12 @@
         "type": "object",
         "properties": {
           "MutationSources": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "Sources of mutations affecting the configuration data, by resource and path."
           }
         }
       },
@@ -53668,7 +54127,12 @@
         "type": "object",
         "properties": {
           "FunctionInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionInvocation"
+              }
+            ],
+            "description": "Non-mutating function invocation that produces OutputTypeAttributeValueList. The Value of the first returned AttributeValue is bound to Name. Worker functions are not supported."
           },
           "Name": {
             "type": "string",
@@ -53691,7 +54155,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Resource in the upstream Unit that contains Path"
           }
         }
       },
@@ -53937,7 +54406,12 @@
         "type": "object",
         "properties": {
           "FunctionInvocation": {
-            "$ref": "#/components/schemas/FunctionInvocation"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionInvocation"
+              }
+            ],
+            "description": "Mutating function invocation to run on the downstream Unit. Worker functions are not supported."
           },
           "Key": {
             "type": "string",
@@ -53989,7 +54463,12 @@
         "type": "object",
         "properties": {
           "Attribution": {
-            "$ref": "#/components/schemas/MutationInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationInfo"
+              }
+            ],
+            "description": "The To side's MutationSources entry for this path, which says what set the new value; returned when include names Attribution"
           },
           "ChangeType": {
             "type": "string",
@@ -54069,7 +54548,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Resource in the downstream Unit that contains Path. Reserved as a pointer for a future optional/WhereResource form; required for now."
           }
         }
       },
@@ -54121,7 +54605,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Details": {
-            "$ref": "#/components/schemas/AttributeDetails"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeDetails"
+              }
+            ],
+            "description": "Additional attribute details"
           },
           "EmbeddedAccessorConfig": {
             "type": "string",
@@ -54253,7 +54742,12 @@
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d"
           },
           "Clearance": {
-            "$ref": "#/components/schemas/Clearance"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Clearance"
+              }
+            ],
+            "description": "The guarded reasons the writes are cleared for. A path whose guards this does not cover is not written, and the withheld change is reported in the Unit's Conflicts."
           },
           "DryRun": {
             "type": "boolean",
@@ -54276,7 +54770,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
-            "$ref": "#/components/schemas/GuardStamp"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuardStamp"
+              }
+            ],
+            "description": "Reasons to record on the paths each Unit write changes. A later operation must be cleared for them before overwriting those paths. Clearance must cover them, since a write is withheld by guards it is not cleared for, its own included."
           },
           "PriorRevisions": {
             "enum": [
@@ -54468,10 +54967,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
-            "$ref": "#/components/schemas/MutationConflictList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationConflictList"
+              }
+            ],
+            "description": "Paths withheld because they were overridden locally or guarded."
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "The same change path by path, with the values on both sides. Returned when include names Diff."
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
@@ -54490,7 +54999,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Mutations": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations."
           },
           "PreviousHeadMutationNum": {
             "type": "integer",
@@ -54529,7 +55043,15 @@
         "type": "object",
         "properties": {
           "Action": {
-            "$ref": "#/components/schemas/ActionType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActionType"
+              }
+            ],
+            "description": "Action is the type of action to be performed by the bridge worker.",
+            "x-confighub-where": {
+              "dataType": "string"
+            }
           },
           "BridgeWorkerID": {
             "type": "string",
@@ -54709,12 +55231,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.",
-        "x-confighub-where": {
-          "Action": {
-            "dataType": "string"
-          }
-        }
+        "description": "UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction."
       },
       "Release": {
         "type": "object",
@@ -54816,7 +55333,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "LiveStatus": {
-            "$ref": "#/components/schemas/ReleaseLiveStatus"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ReleaseLiveStatus"
+              }
+            ],
+            "description": "What the tool deploying the Release, such as argobot for Argo CD, reports about it running. Absent until a tool reports. Written by that tool: EditChildren on the Release's Target grants Edit on the Release.",
+            "x-confighub-where": {
+              "dataType": "JSON"
+            }
           },
           "ManifestDigest": {
             "type": "string",
@@ -54839,7 +55364,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this release.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Published": {
             "type": "boolean",
@@ -54949,15 +55482,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.",
-        "x-confighub-where": {
-          "LiveStatus": {
-            "dataType": "JSON"
-          },
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target."
       },
       "ReleaseLiveStatus": {
         "type": "object",
@@ -55073,7 +55598,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Optional Permissions to access the Release. Its publisher is granted Manage in addition."
           },
           "TagID": {
             "type": "string",
@@ -55092,7 +55622,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Release": {
-            "$ref": "#/components/schemas/Release"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Release"
+              }
+            ],
+            "description": "The published Release, or the latest published Release when no Release was created."
           }
         }
       },
@@ -55261,10 +55796,20 @@
         "type": "object",
         "properties": {
           "Attribution": {
-            "$ref": "#/components/schemas/MutationInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationInfo"
+              }
+            ],
+            "description": "For an Add, the To side's MutationSources entry for the resource, which says what added it; returned when include names Attribution"
           },
           "ChangeType": {
-            "$ref": "#/components/schemas/MutationType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationType"
+              }
+            ],
+            "description": "Add, Delete, Update, or None when the resource is unchanged"
           },
           "Changes": {
             "type": "array",
@@ -55280,10 +55825,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "PreviousResource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "The resource on the From side, when it was matched across a rename"
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Identifies the resource on the To side, or on the From side if it was deleted"
           },
           "ToValue": {
             "type": "string",
@@ -55307,7 +55862,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Identifies the resource within the Unit whose guards are being edited"
           },
           "Set": {
             "type": "object",
@@ -55397,19 +55957,44 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ArrayElementAliases": {
-            "$ref": "#/components/schemas/ArrayElementAliasMap"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ArrayElementAliasMap"
+              }
+            ],
+            "description": "For merge-keyed arrays in which an element was renamed (its merge-key value changed): the array parent path mapped to a previous-merge-key -\u003e new-merge-key map. PatchMutations rewrites the matched element's merge-key field accordingly so child paths and ArrayOrders entries resolve under the new key."
           },
           "ArrayOrders": {
-            "$ref": "#/components/schemas/ArrayOrderMap"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ArrayOrderMap"
+              }
+            ],
+            "description": "For merge-keyed arrays whose element set or order changed in this mutation: the desired sequence of merge-key values in source order, keyed by the array's parent path. PatchMutations applies this as a reorder pass after path mutations so positional associative arrays (e.g., Kubernetes initContainers, env, ports) preserve source-side ordering rather than landing append-on-clash."
           },
           "PathMutationMap": {
-            "$ref": "#/components/schemas/MutationMap"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationMap"
+              }
+            ],
+            "description": "Path-level mutation information; more deeply nested paths override values represented at higher levels"
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Identifiers of the resource to which the mutations correspond"
           },
           "ResourceMutationInfo": {
-            "$ref": "#/components/schemas/MutationInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationInfo"
+              }
+            ],
+            "description": "Resource-level mutation information, such as for Add, Delete, or Replace"
           }
         }
       },
@@ -55447,10 +56032,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Identifiers of the resource whose paths are annotated"
           },
           "ResourceAnnotations": {
-            "$ref": "#/components/schemas/PathAnnotations"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PathAnnotations"
+              }
+            ],
+            "description": "Annotations on the resource as a whole, inherited by paths with no more specific entry"
           }
         }
       },
@@ -55467,7 +56062,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfo"
+              }
+            ],
+            "description": "Identifies the resource within the unit whose path protection is being set"
           }
         }
       },
@@ -55549,7 +56149,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "ErrorMetadata": {
-            "$ref": "#/components/schemas/ErrorMetadata"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ErrorMetadata"
+              }
+            ],
+            "description": "Structured error details like field violations"
           },
           "Message": {
             "type": "string",
@@ -55633,7 +56238,12 @@
             }
           },
           "Resource": {
-            "$ref": "#/components/schemas/ResourceInfoType2"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceInfoType2"
+              }
+            ],
+            "description": "Resource to which the remark is attached; optional"
           },
           "ReviewCommentID": {
             "type": "string",
@@ -55908,7 +56518,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "PathAnnotations": {
-            "$ref": "#/components/schemas/PathAnnotationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PathAnnotationList"
+              }
+            ],
+            "description": "Annotations on locations within the Unit's configuration data as of this Revision."
           },
           "ProvidedPaths": {
             "type": "array",
@@ -56182,7 +56797,12 @@
         "type": "object",
         "properties": {
           "MutationSources": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "Sources of mutations affecting the configuration data, by resource and path."
           },
           "RevisionID": {
             "type": "string",
@@ -56384,7 +57004,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this space.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ReleaseTargetID": {
             "type": "string",
@@ -56489,12 +57117,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities."
       },
       "SpaceCreateOrUpdateResponse": {
         "type": "object",
@@ -56656,7 +57279,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this tag.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ReleaseID": {
             "type": "string",
@@ -56726,12 +57357,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines a Tag that can be used to identify a set of Revisions across Units.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Defines a Tag that can be used to identify a set of Revisions across Units."
       },
       "TagCreateOrUpdateResponse": {
         "type": "object",
@@ -56856,7 +57482,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this target.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -56963,12 +57597,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions."
       },
       "TargetCreateOrUpdateResponse": {
         "type": "object",
@@ -57114,7 +57743,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Guards": {
-            "$ref": "#/components/schemas/GuardStamp"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/GuardStamp"
+              }
+            ],
+            "description": "Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.",
+            "x-confighub-where": {
+              "dataType": "map[string]string"
+            }
           },
           "Hash": {
             "type": "string",
@@ -57180,7 +57817,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this trigger.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Protect": {
             "type": "boolean",
@@ -57320,12 +57965,6 @@
         "x-confighub-where": {
           "Clearance": {
             "dataType": "JSON"
-          },
-          "Guards": {
-            "dataType": "map[string]string"
-          },
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
           }
         }
       },
@@ -57617,7 +58256,15 @@
             "readOnly": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this unit.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "ProvidedPaths": {
             "type": "array",
@@ -57819,18 +58466,18 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration."
       },
       "UnitAction": {
         "type": "object",
         "properties": {
           "Action": {
-            "$ref": "#/components/schemas/ActionType"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ActionType"
+              }
+            ],
+            "description": "Action is the type of action to be performed by the bridge worker."
           },
           "BridgeWorkerID": {
             "type": "string",
@@ -58037,10 +58684,20 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
-            "$ref": "#/components/schemas/MutationConflictList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationConflictList"
+              }
+            ],
+            "description": "The Unit's outstanding conflicts after the request"
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "What applying the withheld changes changed in the configuration, or would change for a dry run, path by path with the values on both sides"
           },
           "Dismissed": {
             "type": "integer",
@@ -58051,7 +58708,12 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "Unit": {
-            "$ref": "#/components/schemas/Unit"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Unit"
+              }
+            ],
+            "description": "The Unit as the request left it, or would have left it for a dry run"
           }
         }
       },
@@ -58067,7 +58729,12 @@
             "$ref": "#/components/schemas/MutationConflictList"
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "What the operation changed, or on a dry run would change, path by path with the values on both sides; returned when include names Diff."
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
@@ -58080,7 +58747,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "MutationSources": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "What set each value in the configuration the operation produced; returned when include names MutationSources."
           },
           "Unit": {
             "$ref": "#/components/schemas/Unit"
@@ -58136,7 +58808,12 @@
         "type": "object",
         "properties": {
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "What changed from the From Revision to the To Revision"
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
@@ -58359,7 +59036,12 @@
         "type": "object",
         "properties": {
           "Clearance": {
-            "$ref": "#/components/schemas/Clearance"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Clearance"
+              }
+            ],
+            "description": "The classes of reason this edit is cleared for; required to edit a path that already carries guards"
           },
           "ResourceGuards": {
             "type": "array",
@@ -58376,7 +59058,12 @@
         "type": "object",
         "properties": {
           "PathAnnotations": {
-            "$ref": "#/components/schemas/PathAnnotationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PathAnnotationList"
+              }
+            ],
+            "description": "The Unit's PathAnnotations after applying the guard edits"
           }
         }
       },
@@ -58438,7 +59125,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "MutationSources": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "Sources of mutations affecting the configuration data, by resource and path."
           },
           "Slug": {
             "type": "string",
@@ -58487,7 +59179,12 @@
             "$ref": "#/components/schemas/ResponseError"
           },
           "MutationSources": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "The Unit's MutationSources after applying the protection edits"
           }
         }
       },
@@ -58676,7 +59373,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "NamespaceCollision": {
-            "$ref": "#/components/schemas/UploadNamespaceCollision"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UploadNamespaceCollision"
+              }
+            ],
+            "description": "Set when CreateNamespace was asked for but the bundle already carried the release Namespace."
           },
           "SkippedSecrets": {
             "type": "array",
@@ -58926,7 +59628,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Credentials": {
-            "$ref": "#/components/schemas/UploadRegistryCredentials"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UploadRegistryCredentials"
+              }
+            ],
+            "description": "Registry credentials for the pull. Used for this request only; never stored, logged, or returned."
           },
           "Digest": {
             "type": "string",
@@ -59031,19 +59738,39 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Conflicts": {
-            "$ref": "#/components/schemas/MutationConflictList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MutationConflictList"
+              }
+            ],
+            "description": "Paths withheld because they were overridden locally or guarded."
           },
           "Diff": {
-            "$ref": "#/components/schemas/ConfigDiff"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDiff"
+              }
+            ],
+            "description": "The same change path by path, with the values on both sides. Returned when include names Diff."
           },
           "Entity": {
-            "$ref": "#/components/schemas/UploadEntityResult"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/UploadEntityResult"
+              }
+            ],
+            "description": "For a BackingUnit, what became of the entity its document describes."
           },
           "Error": {
             "$ref": "#/components/schemas/ResponseError"
           },
           "Mutations": {
-            "$ref": "#/components/schemas/ResourceMutationList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ResourceMutationList"
+              }
+            ],
+            "description": "What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations."
           },
           "Resource": {
             "type": "string",
@@ -59257,7 +59984,12 @@
             "x-go-type-skip-optional-pointer": true
           },
           "FailedAttributes": {
-            "$ref": "#/components/schemas/AttributeValueList"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AttributeValueList"
+              }
+            ],
+            "description": "optional list of failed attributes/paths and issues found for them. Preferred over Issues and Details."
           },
           "FunctionName": {
             "type": "string",
@@ -59447,7 +60179,15 @@
             "x-go-type-skip-optional-pointer": true
           },
           "Permissions": {
-            "$ref": "#/components/schemas/Permissions"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Permissions"
+              }
+            ],
+            "description": "Permissions to access this view.",
+            "x-confighub-where": {
+              "dataType": "map[string]map[string]map[uuid]bool"
+            }
           },
           "Slug": {
             "maxLength": 128,
@@ -59516,12 +60256,7 @@
             "x-go-type-skip-optional-pointer": true
           }
         },
-        "description": "Defines an entity view.",
-        "x-confighub-where": {
-          "Permissions": {
-            "dataType": "map[string]map[string]map[uuid]bool"
-          }
-        }
+        "description": "Defines an entity view."
       },
       "ViewColumn": {
         "type": "object",
@@ -59571,7 +60306,12 @@
         "type": "object",
         "properties": {
           "FunctionWorkerInfo": {
-            "$ref": "#/components/schemas/FunctionWorkerInfo"
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FunctionWorkerInfo"
+              }
+            ],
+            "description": "FunctionWorker capabilities"
           },
           "IsServerWorker": {
             "type": "boolean",

@@ -245,7 +245,7 @@ func setGatesFromSlice(gateStrings []string, gateMap *map[string]bool) error {
 }
 
 func enableFromStdinFlag(cmd *cobra.Command) {
-	cmd.Flags().BoolVar(&flagPopulateModelFromStdin, "from-stdin", false, "Read the ConfigHub entity JSON (e.g., retrieved with cub <entity> get --quiet --json) from stdin; merged with command arguments on create, and merged with command arguments and existing entity on update")
+	cmd.Flags().BoolVar(&flagPopulateModelFromStdin, "from-stdin", false, "Read the ConfigHub entity's fields, as YAML or JSON, from stdin; merged with command arguments on create, and merged with command arguments and existing entity on update. A field the entity does not have, or one only the server sets, is refused; cub <entity> explain lists the fields")
 }
 
 func enableReplaceFlag(cmd *cobra.Command) {
@@ -253,7 +253,7 @@ func enableReplaceFlag(cmd *cobra.Command) {
 }
 
 func enableFilenameFlag(cmd *cobra.Command) {
-	cmd.Flags().StringVar(&flagFilename, "filename", "", "Read the ConfigHub entity JSON from file, URL (https://), or stdin (-); mutually exclusive with --from-stdin")
+	cmd.Flags().StringVar(&flagFilename, "filename", "", "Read the ConfigHub entity's fields, as YAML or JSON, from file, URL (https://), or stdin (-), as --from-stdin does; mutually exclusive with --from-stdin")
 }
 
 func enableVerboseFlag(cmd *cobra.Command) {

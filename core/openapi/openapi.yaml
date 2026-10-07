@@ -1518,7 +1518,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/SpaceCreateOrUpdateResponse'
                 type: array
-          description: 'Multi-Status: Mixed success and failure results'
+          description: Multi-Status (partial success)
         "400":
           content:
             application/json:
@@ -2640,8 +2640,8 @@ paths:
       tags:
       - Attribute
     post:
-      description: Clone multiple attributes selected by query parameters with optional
-        name prefixes and destination spaces
+      description: Clone multiple attributes selected by query parameters to destination
+        spaces. A clone keeps the name of the Attribute it clones
       operationId: BulkCreateAttributes
       parameters:
       - description: |-
@@ -2769,13 +2769,6 @@ paths:
           of the request that returned the token.
         in: query
         name: continue
-        required: false
-        schema:
-          type: string
-      - description: Comma-separated list of prefixes to apply to cloned Attribute
-          names
-        in: query
-        name: name_prefixes
         required: false
         schema:
           type: string
@@ -3500,7 +3493,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
-          description: BridgeWorker could not be deleted.
+          description: Unable to delete entity
         "500":
           content:
             application/json:
@@ -3517,7 +3510,7 @@ paths:
       tags:
       - BridgeWorker
     get:
-      description: List all BridgeWorker across spaces
+      description: Retrieves a list of BridgeWorkers across spaces in the Organization
       operationId: ListAllBridgeWorkers
       parameters:
       - description: |-
@@ -3704,7 +3697,43 @@ paths:
               schema:
                 type: string
               style: simple
-      summary: List all BridgeWorker across spaces
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: BridgeWorker not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing BridgeWorker.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of BridgeWorkers across spaces
       tags:
       - BridgeWorker
     patch:
@@ -4322,7 +4351,7 @@ paths:
       - BridgeWorker
   /change_order:
     delete:
-      description: Delete multiple changeorders selected by query parameters
+      description: Delete multiple change orders selected by query parameters
       operationId: BulkDeleteChangeOrders
       parameters:
       - description: |-
@@ -4537,7 +4566,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk delete multiple changeorders
+      summary: Bulk delete multiple change orders
       tags:
       - ChangeOrder
     get:
@@ -4762,7 +4791,7 @@ paths:
       tags:
       - ChangeOrder
     patch:
-      description: Apply JSON merge patch to multiple changeorders selected by query
+      description: Apply JSON merge patch to multiple change orders selected by query
         parameters
       operationId: BulkPatchChangeOrders
       parameters:
@@ -5100,12 +5129,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk patch multiple changeorders
+      summary: Bulk patch multiple change orders
       tags:
       - ChangeOrder
     post:
-      description: Clone multiple changeorders selected by query parameters with optional
-        name prefixes and destination spaces
+      description: Clone multiple change orders selected by query parameters with
+        optional name prefixes and destination spaces
       operationId: BulkCreateChangeOrders
       parameters:
       - description: |-
@@ -5295,7 +5324,7 @@ paths:
 
           Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 
-          Where expression to select destination spaces for cloning changeorders
+          Where expression to select destination spaces for cloning change orders
 
           The whole string must be query-encoded.
         in: query
@@ -5524,12 +5553,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk create (clone) multiple changeorders
+      summary: Bulk create (clone) multiple change orders
       tags:
       - ChangeOrder
   /change_set:
     delete:
-      description: Delete multiple changesets selected by query parameters
+      description: Delete multiple change sets selected by query parameters
       operationId: BulkDeleteChangeSets
       parameters:
       - description: |-
@@ -5744,7 +5773,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk delete multiple changesets
+      summary: Bulk delete multiple change sets
       tags:
       - ChangeSet
     get:
@@ -5969,7 +5998,7 @@ paths:
       tags:
       - ChangeSet
     patch:
-      description: Apply JSON merge patch to multiple changesets selected by query
+      description: Apply JSON merge patch to multiple change sets selected by query
         parameters
       operationId: BulkPatchChangeSets
       parameters:
@@ -6245,11 +6274,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk patch multiple changesets
+      summary: Bulk patch multiple change sets
       tags:
       - ChangeSet
     post:
-      description: Clone multiple changesets selected by query parameters with optional
+      description: Clone multiple change sets selected by query parameters with optional
         name prefixes and destination spaces
       operationId: BulkCreateChangeSets
       parameters:
@@ -6440,7 +6469,7 @@ paths:
 
           Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 
-          Where expression to select destination spaces for cloning changesets
+          Where expression to select destination spaces for cloning change sets
 
           The whole string must be query-encoded.
         in: query
@@ -6616,7 +6645,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Bulk create (clone) multiple changesets
+      summary: Bulk create (clone) multiple change sets
       tags:
       - ChangeSet
   /change_set/move:
@@ -10211,8 +10240,9 @@ paths:
         required: false
         schema:
           type: string
-      - description: A Go-template string for clone name, use .SourceEntity to access
-          the original entity and .Labels to access variant labels
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
         in: query
         name: name_pattern
         required: false
@@ -13082,7 +13112,7 @@ paths:
       - Invocation
   /link:
     delete:
-      description: Deletes multiple Links based on search criteria
+      description: Delete multiple links selected by query parameters
       operationId: BulkDeleteLinks
       parameters:
       - description: |-
@@ -13121,8 +13151,6 @@ paths:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
           Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
-
-          filter
 
           The whole string must be query-encoded.
         in: query
@@ -13300,7 +13328,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Delete multiple Links
+      summary: Bulk delete multiple links
       tags:
       - Link
     get:
@@ -13525,7 +13553,7 @@ paths:
       tags:
       - Link
     patch:
-      description: Updates multiple Links based on search criteria
+      description: Apply JSON merge patch to multiple links selected by query parameters
       operationId: BulkPatchLinks
       parameters:
       - description: |-
@@ -13564,8 +13592,6 @@ paths:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
           Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
-
-          filter
 
           The whole string must be query-encoded.
         in: query
@@ -13938,7 +13964,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
           description: Unexpected error.
-      summary: Update multiple Links
+      summary: Bulk patch multiple links
       tags:
       - Link
     post:
@@ -21111,6 +21137,15 @@ paths:
         schema:
           format: uuid
           type: string
+      - description: 'If true, fill in ContainerImages: for each Space the ChangeOrder
+          has landed in, the container images get-container-image finds at the Revisions
+          its end Tag marks that differ from those at the Revisions its start Tag
+          marks.'
+        in: query
+        name: container_images
+        required: false
+        schema:
+          type: boolean
       responses:
         "200":
           content:
@@ -39379,6 +39414,21 @@ paths:
         required: false
         schema:
           type: string
+      - description: Comma-separated list of labels with multiple values for cloned
+          Trigger labels, in the format of key1=value1|value2,key2=value1|value2|value3
+        in: query
+        name: variant_labels
+        required: false
+        schema:
+          type: string
+      - description: 'A string for clone names, use the prefix ''template:'' for a
+          Go-template with .SourceEntitySlug to access the original entity''s slug
+          and .Labels to access variant labels, example: ''template:{{.SourceEntitySlug}}-{{.Labels.env}}'''
+        in: query
+        name: name_pattern
+        required: false
+        schema:
+          type: string
       - description: |-
           The specified string is an expression for the purpose of filtering
           the list of Spaces returned. The expression syntax was inspired by SQL.
@@ -40167,7 +40217,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StandardErrorResponse'
-          description: Unable to delete entities
+          description: Unable to delete entity
         "423":
           content:
             application/json:
@@ -45010,7 +45060,7 @@ paths:
         required: false
         schema:
           type: string
-      - description: Comma-separated list of labels with multiple values fro cloned
+      - description: Comma-separated list of labels with multiple values for cloned
           View labels, in the format of key1=value1|value2,key2=value1|value2|value3
         in: query
         name: variant_labels
@@ -45886,7 +45936,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this attestation.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ReleaseID:
           description: A published Release the claim is about.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -45963,9 +46017,6 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     AttestationCreateRequest:
       properties:
         ChangeOrderID:
@@ -46190,7 +46241,11 @@ components:
             dataType: JSON
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this attribute.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ResourceTypePaths:
           description: ResourceTypePaths maps resource types to their path-to-visitor-info
             mappings.
@@ -46262,9 +46317,6 @@ components:
       - ToolchainType
       - DataType
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     AttributeCreateOrUpdateResponse:
       properties:
         Attribute:
@@ -46335,7 +46387,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Details:
-          $ref: '#/components/schemas/AttributeDetails'
+          allOf:
+          - $ref: '#/components/schemas/AttributeDetails'
+          description: Additional attribute details
         Path:
           description: Path of the attribute
           type: string
@@ -46398,7 +46452,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Details:
-          $ref: '#/components/schemas/AttributeDetails'
+          allOf:
+          - $ref: '#/components/schemas/AttributeDetails'
+          description: Additional attribute details
         FunctionName:
           description: Name of the function invocation corresponding to the output
           type: string
@@ -46486,13 +46542,17 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         NeededResource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Resource in the downstream unit that needs the value
         ProvidedPath:
           description: Resolved path within the provided resource
           type: string
           x-go-type-skip-optional-pointer: true
         ProvidedResource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Resource in the upstream unit that provides the value
       type: object
     BindingList:
       items:
@@ -46640,9 +46700,22 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this bridge worker.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ProvidedInfo:
-          $ref: '#/components/schemas/WorkerInfo'
+          allOf:
+          - $ref: '#/components/schemas/WorkerInfo'
+          description: |-
+            ProvidedInfo contains information about the bridge worker in JSON format.
+            It is sent by the bridge worker program to the ConfigHub server when it first connects.
+            It can also be set before the bridge worker connects, but it is not recommended to change
+            it while a worker is connected.
+            This can include details about the capabilities, and targets supported by the bridge worker.
+          x-confighub-where:
+            dataType: JSON
         Secret:
           description: |-
             Secret is a unique secret token for the bridge worker.
@@ -46708,11 +46781,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
-        ProvidedInfo:
-          dataType: JSON
     BridgeWorkerCreateOrUpdateResponse:
       properties:
         BridgeWorker:
@@ -46875,6 +46943,18 @@ components:
           x-confighub-where:
             dataType: uuid
             references: ChangeWorkflow
+        ContainerImages:
+          description: 'ContainerImages lists, for each Space the ChangeOrder has
+            landed in, the container images it changed there: in each Unit the end
+            Tag marks, the images get-container-image finds that differ from those
+            at the Revision the start Tag marks. Derived only when a single ChangeOrder
+            is read with container_images=true, never in a list. Spaces and Units
+            the reader cannot view are left out.'
+          items:
+            $ref: '#/components/schemas/ChangeOrderSpaceContainerImages'
+          readOnly: true
+          type: array
+          x-go-type-skip-optional-pointer: true
         CreatedAt:
           description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
             format.
@@ -46999,7 +47079,11 @@ components:
             dataType: JSON
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this change order.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         PromotionFailures:
           description: 'PromotionFailures records each promotion that did not complete:
             who ran it, when, into which Stage, and each Space it failed or was blocked
@@ -47294,9 +47378,53 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
+    ChangeOrderContainerImageChange:
+      properties:
+        FromImage:
+          description: The image before the change; absent for a container the change
+            added.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        FromRevisionNum:
+          description: The Revision the start Tag marks; absent for a Unit the change
+            added.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: The path of the image within the resource.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceName:
+          description: The name of the resource the container is in, as it is at the
+            end Tag's Revision.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ResourceType:
+          description: The type of the resource the container is in.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToImage:
+          description: The image after the change; absent for a container the change
+            removed.
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ToRevisionNum:
+          description: The Revision the end Tag marks.
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: The Unit the image is in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UnitSlug:
+          description: The Unit's slug.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     ChangeOrderCreateOrUpdateResponse:
       properties:
         ChangeOrder:
@@ -47455,6 +47583,26 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
+    ChangeOrderSpaceContainerImages:
+      properties:
+        Images:
+          description: The images that changed, by Unit, resource, and path.
+          items:
+            $ref: '#/components/schemas/ChangeOrderContainerImageChange'
+          nullable: true
+          type: array
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: The Space the images changed in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: The Space's slug.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     ChangeSet:
       description: Defines an entity changeset.
       properties:
@@ -47560,7 +47708,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this change set.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -47633,9 +47785,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     ChangeSetCreateOrUpdateResponse:
       properties:
         ChangeSet:
@@ -47727,7 +47876,13 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Final:
-          $ref: '#/components/schemas/ChangeWorkflowFinalStage'
+          allOf:
+          - $ref: '#/components/schemas/ChangeWorkflowFinalStage'
+          description: 'Final is what the last stage must satisfy for the rollout
+            to read as completed. Nothing is promoted into it: a stage''s prerequisites
+            gate entry to the stage after it, so the last stage''s gate nothing.'
+          x-confighub-where:
+            dataType: JSON
         HiddenReason:
           description: The reason the entity is hidden, if it is. A hidden entity
             is left out of List and Search results, and of what bulk operations act
@@ -47763,7 +47918,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this change workflow.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -47825,11 +47984,6 @@ components:
       - Slug
       - Stages
       type: object
-      x-confighub-where:
-        Final:
-          dataType: JSON
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     ChangeWorkflowAttestationPrerequisite:
       properties:
         AllowAuthors:
@@ -47947,7 +48101,11 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Final:
-          $ref: '#/components/schemas/ChangeWorkflowFinalStage'
+          allOf:
+          - $ref: '#/components/schemas/ChangeWorkflowFinalStage'
+          description: 'What the last stage must satisfy for the rollout to read as
+            completed. Nothing is promoted into it: a stage''s prerequisites gate
+            entry to the stage after it, so the last stage''s gate nothing.'
         Stages:
           description: The stages a change is promoted through, in order. Ordered
             between stages and unordered within one. At least one is required.
@@ -48016,7 +48174,10 @@ components:
     Column:
       properties:
         ColumnSource:
-          $ref: '#/components/schemas/ColumnSource'
+          allOf:
+          - $ref: '#/components/schemas/ColumnSource'
+          description: Where the column value comes from. Exactly one field should
+            be set, matching ColumnType.
         ColumnType:
           description: 'The kind of value: MetadataAttribute, MetadataExpression,
             DataPath or DataExpression.'
@@ -48174,7 +48335,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this component.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -48211,9 +48376,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     ComponentCreateOrUpdateResponse:
       properties:
         Component:
@@ -48244,7 +48406,9 @@ components:
       description: Response for successful delete operation
       properties:
         Error:
-          $ref: '#/components/schemas/ResponseError'
+          allOf:
+          - $ref: '#/components/schemas/ResponseError'
+          description: Error information if the delete operation failed.
         Message:
           description: Response message.
           type: string
@@ -48352,7 +48516,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: The same change path by path, with the values on both sides.
+            Returned when include names Diff.
         DropsFromRevisionNum:
           description: The first Revision after the change that restoring drops, when
             the head had moved past where the change arrived.
@@ -48372,7 +48539,10 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         Mutations:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: What the restore changed, or on a dry run would change. Returned
+            when include names Mutations.
         PreviousHeadMutationNum:
           format: int64
           type: integer
@@ -48403,18 +48573,28 @@ components:
     DiffRequest:
       properties:
         From:
-          $ref: '#/components/schemas/DiffSide'
+          allOf:
+          - $ref: '#/components/schemas/DiffSide'
+          description: The configuration the diff runs from
         To:
-          $ref: '#/components/schemas/DiffSide'
+          allOf:
+          - $ref: '#/components/schemas/DiffSide'
+          description: The configuration the diff runs to
       type: object
     DiffResult:
       properties:
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: What changed from the From configuration to the To configuration
         From:
-          $ref: '#/components/schemas/DiffSideResult'
+          allOf:
+          - $ref: '#/components/schemas/DiffSideResult'
+          description: What the From side resolved to
         To:
-          $ref: '#/components/schemas/DiffSideResult'
+          allOf:
+          - $ref: '#/components/schemas/DiffSideResult'
+          description: What the To side resolved to
       type: object
     DiffSide:
       properties:
@@ -48535,11 +48715,15 @@ components:
         the request's include parameter.
       properties:
         Attestation:
-          $ref: '#/components/schemas/Attestation'
+          allOf:
+          - $ref: '#/components/schemas/Attestation'
+          description: The Attestation.
         Organization:
           $ref: '#/components/schemas/Organization'
         Space:
-          $ref: '#/components/schemas/Space'
+          allOf:
+          - $ref: '#/components/schemas/Space'
+          description: The Space the Attestation belongs to.
       type: object
     ExtendedAttribute:
       properties:
@@ -48641,7 +48825,9 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         Group:
-          $ref: '#/components/schemas/Group'
+          allOf:
+          - $ref: '#/components/schemas/Group'
+          description: The Group.
       type: object
     ExtendedInvocation:
       properties:
@@ -48719,11 +48905,18 @@ components:
         Organization:
           $ref: '#/components/schemas/Organization'
         Release:
-          $ref: '#/components/schemas/Release'
+          allOf:
+          - $ref: '#/components/schemas/Release'
+          description: The Release.
         Space:
-          $ref: '#/components/schemas/Space'
+          allOf:
+          - $ref: '#/components/schemas/Space'
+          description: The Space the Release belongs to.
         Tag:
-          $ref: '#/components/schemas/Tag'
+          allOf:
+          - $ref: '#/components/schemas/Tag'
+          description: The Tag the bundled Units were pinned to, if any. Expanded
+            when requested via the include parameter.
       type: object
     ExtendedResource:
       properties:
@@ -48971,25 +49164,47 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         HeadMutation:
-          $ref: '#/components/schemas/Mutation'
+          allOf:
+          - $ref: '#/components/schemas/Mutation'
+          description: The Unit's current HeadMutation
         HeadRevision:
-          $ref: '#/components/schemas/Revision'
+          allOf:
+          - $ref: '#/components/schemas/Revision'
+          description: The Unit's current HeadRevision
         LastReleasedRevision:
-          $ref: '#/components/schemas/Revision'
+          allOf:
+          - $ref: '#/components/schemas/Revision'
+          description: The Unit's current LastReleasedRevision
         LatestUnitEvent:
-          $ref: '#/components/schemas/UnitEvent'
+          allOf:
+          - $ref: '#/components/schemas/UnitEvent'
+          description: The latest event that took place on the Unit.
         Organization:
-          $ref: '#/components/schemas/Organization'
+          allOf:
+          - $ref: '#/components/schemas/Organization'
+          description: The Organization the Unit belongs to.
         Space:
-          $ref: '#/components/schemas/Space'
+          allOf:
+          - $ref: '#/components/schemas/Space'
+          description: The Space the Unit belongs to.
         Target:
-          $ref: '#/components/schemas/Target'
+          allOf:
+          - $ref: '#/components/schemas/Target'
+          description: The Target the Unit has been configured to operate with.
         Unit:
-          $ref: '#/components/schemas/Unit'
+          allOf:
+          - $ref: '#/components/schemas/Unit'
+          description: The requested Unit of the operation.
         UpstreamSpace:
-          $ref: '#/components/schemas/Space'
+          allOf:
+          - $ref: '#/components/schemas/Space'
+          description: If this Unit is a clone, the Upstream Space the UpstreamUnit
+            belongs to. Optional.
         UpstreamUnit:
-          $ref: '#/components/schemas/Unit'
+          allOf:
+          - $ref: '#/components/schemas/Unit'
+          description: If this Unit is a clone, the Upstream Unit it was cloned from.
+            Optional.
         View:
           $ref: '#/components/schemas/View'
         ViewColumns:
@@ -49143,7 +49358,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this filter.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ResourceType:
           description: Resource type to match for the desired ToolchainType, for example
             apps/v1/Deployment. Valid only for Units. (optional)
@@ -49217,9 +49436,6 @@ components:
       - Slug
       - From
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     FilterCreateOrUpdateResponse:
       properties:
         Error:
@@ -49250,13 +49466,20 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Clearance:
-          $ref: '#/components/schemas/Clearance'
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: Classes of guarded reason this invocation is cleared for; combined
+            by union with the clearance of whatever drove the execution
         FunctionName:
           description: Function name
           type: string
           x-go-type-skip-optional-pointer: true
         Guards:
-          $ref: '#/components/schemas/GuardStamp'
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: Guards to record on the paths this invocation writes, so a
+            later operation must be cleared for them; combined with the guards of
+            whatever drove the execution, later winning per key
         Params:
           additionalProperties: {}
           description: Caller-supplied parameter values for expanding templated argument
@@ -49371,22 +49594,33 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Conflicts:
-          $ref: '#/components/schemas/MutationConflictList'
+          allOf:
+          - $ref: '#/components/schemas/MutationConflictList'
+          description: Mutation conflicts produced by writing the invocation's result,
+            such as a path a guard withheld. Empty when nothing was withheld.
         DataHash:
           description: SHA256 of the resulting configuration data, whether or not
             ConfigData is present
           type: string
           x-go-type-skip-optional-pointer: true
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: What the invocation changed, or on a dry run would change,
+            path by path with the values on both sides; returned when include names
+            Diff.
         Error:
-          $ref: '#/components/schemas/ResponseError'
+          allOf:
+          - $ref: '#/components/schemas/ResponseError'
+          description: Error information if the function invocation failed
         HasNewMutations:
           description: Functions produced new mutations (of type other than None)
           type: boolean
           x-go-type-skip-optional-pointer: true
         Mutations:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: List of mutations in the same order as the resources in ConfigData
         Mutators:
           description: List of function invocation indices that resulted in mutations
           items:
@@ -49467,7 +49701,9 @@ components:
             dataType: string
           x-go-type-skip-optional-pointer: true
         Schema:
-          $ref: '#/components/schemas/Schema'
+          allOf:
+          - $ref: '#/components/schemas/Schema'
+          description: JSON schema of the output type
       type: object
     FunctionParameter:
       properties:
@@ -49513,7 +49749,9 @@ components:
           type: boolean
           x-go-type-skip-optional-pointer: true
         Schema:
-          $ref: '#/components/schemas/Schema'
+          allOf:
+          - $ref: '#/components/schemas/Schema'
+          description: JSON schema (for embedded JSON values)
       type: object
     FunctionSignature:
       properties:
@@ -49574,7 +49812,12 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         OutputInfo:
-          $ref: '#/components/schemas/FunctionOutput'
+          allOf:
+          - $ref: '#/components/schemas/FunctionOutput'
+          description: Output description
+          x-confighub-where:
+            dataType: uuid
+            references: FunctionOutput
         Parameters:
           description: Function parameters, in order
           items:
@@ -49614,10 +49857,6 @@ components:
             dataType: bool
           x-go-type-skip-optional-pointer: true
       type: object
-      x-confighub-where:
-        OutputInfo:
-          dataType: uuid
-          references: FunctionOutput
     FunctionWorkerInfo:
       properties:
         SupportedFunctions:
@@ -49867,7 +50106,11 @@ components:
             dataType: JSON
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this invocation.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -49935,8 +50178,6 @@ components:
       x-confighub-where:
         FunctionInvocations:
           dataType: JSON
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     InvocationCreateOrUpdateResponse:
       properties:
         Error:
@@ -50078,7 +50319,17 @@ components:
             references: Unit
           x-go-type-skip-optional-pointer: true
         Guards:
-          $ref: '#/components/schemas/GuardStamp'
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: 'Guards to record on the paths this link''s resolve writes,
+            naming the reasons those paths hold what they hold, so a later operation
+            must be cleared for them before overwriting. Sibling to Protect: Protect
+            claims the paths, Guards say why. Add and overwrite only -- retiring a
+            guard is the /guard API (cub unit set-guard --remove-guard). Refused on
+            UpgradeUnit and MergeUnits links, whose guards arrive by propagation from
+            upstream.'
+          x-confighub-where:
+            dataType: map[string]string
         Hash:
           description: SHA256 hash of the resolution-relevant Link fields, used to
             detect changes that require re-resolution.
@@ -50120,7 +50371,18 @@ components:
             dataType: uuid
           x-go-type-skip-optional-pointer: true
         ManualBindings:
-          $ref: '#/components/schemas/BindingList'
+          allOf:
+          - $ref: '#/components/schemas/BindingList'
+          description: 'The needs/provides attribute bindings stated for this Link,
+            which resolution uses as they are. Each Binding maps one needed attribute
+            in the downstream Unit to one provided attribute in the upstream Unit.
+            An Insert Link has exactly one, which identifies only the needed attribute
+            (NeededResource and NeededPath) and whose DataType selects how the upstream
+            Unit is inserted: string, the default, inserts it verbatim as text; the
+            downstream Unit''s own configuration format inserts it as configuration
+            data.'
+          x-confighub-where:
+            dataType: JSON
         MergeEnableSubtraction:
           description: Enables the subtraction (override-preservation) step of the
             merge performed when resolving this Link. When false (the default), the
@@ -50145,7 +50407,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this link.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Protect:
           description: Records the paths this Link's resolve writes as protected local
             overrides, so a later merge from upstream does not overwrite them. Without
@@ -50336,12 +50602,6 @@ components:
       x-confighub-where:
         Clearance:
           dataType: JSON
-        Guards:
-          dataType: map[string]string
-        ManualBindings:
-          dataType: JSON
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     LinkCreateOrUpdateResponse:
       properties:
         Error:
@@ -50418,7 +50678,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         FunctionInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
+          allOf:
+          - $ref: '#/components/schemas/FunctionInvocation'
+          description: The function invoked if the change was made by a function.
         HiddenReason:
           description: The reason the entity is hidden, if it is. A hidden entity
             is left out of List and Search results, and of what bulk operations act
@@ -50516,7 +50778,11 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ProvidedResource:
-          $ref: '#/components/schemas/ResourceInfoType2'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfoType2'
+          description: ProvidedResource contains the type and name of the resource
+            which provided a value used to satisfy a needed value if the change was
+            made due to resolving a link.
         ReplayOutcome:
           type: string
           x-confighub-where:
@@ -50649,9 +50915,14 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Guard:
-          $ref: '#/components/schemas/WithheldGuard'
+          allOf:
+          - $ref: '#/components/schemas/WithheldGuard'
+          description: 'For Guarded: the guard the operation''s clearance did not
+            cover'
         GuardChange:
-          $ref: '#/components/schemas/GuardDelta'
+          allOf:
+          - $ref: '#/components/schemas/GuardDelta'
+          description: 'For GuardWithheld: the guard change that did not propagate'
         Path:
           description: Path of the mutation; empty for resource-level conflicts
           type: string
@@ -50661,11 +50932,18 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Resource the mutation applied to
         Source:
-          $ref: '#/components/schemas/MutationInfo'
+          allOf:
+          - $ref: '#/components/schemas/MutationInfo'
+          description: The dropped source-side mutation
         Target:
-          $ref: '#/components/schemas/MutationInfo'
+          allOf:
+          - $ref: '#/components/schemas/MutationInfo'
+          description: The target-side mutation that caused the drop, when applicable
+            (Subtracted, DeleteShadowed)
         UnitID:
           description: ID of the other unit involved in the conflict (upstream for
             upgrade/merge, link target for resolve)
@@ -50686,7 +50964,10 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         MutationType:
-          $ref: '#/components/schemas/MutationType'
+          allOf:
+          - $ref: '#/components/schemas/MutationType'
+          description: 'Type of mutation performed on the associated configuration
+            element: Add, Update, Replace, Delete, or None, if no change'
         Patch:
           description: Line-level patch for multi-line string updates, in unified
             diff format. When present on an Update, PatchMutations applies this to
@@ -50712,7 +50993,10 @@ components:
     MutationSourcesResponse:
       properties:
         MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: Sources of mutations affecting the configuration data, by resource
+            and path.
       type: object
     MutationType:
       enum:
@@ -50725,7 +51009,11 @@ components:
     NamedFunctionResult:
       properties:
         FunctionInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
+          allOf:
+          - $ref: '#/components/schemas/FunctionInvocation'
+          description: Non-mutating function invocation that produces OutputTypeAttributeValueList.
+            The Value of the first returned AttributeValue is bound to Name. Worker
+            functions are not supported.
         Name:
           description: Identifier used to reference the value; must be a legal Go
             and CEL identifier and unique across UpstreamPaths and UpstreamGetters
@@ -50744,7 +51032,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Resource in the upstream Unit that contains Path
       type: object
     OAuthClient:
       description: A per-app OAuth public client used by a browser app to authenticate
@@ -50953,7 +51243,10 @@ components:
     ParameterizedFunction:
       properties:
         FunctionInvocation:
-          $ref: '#/components/schemas/FunctionInvocation'
+          allOf:
+          - $ref: '#/components/schemas/FunctionInvocation'
+          description: Mutating function invocation to run on the downstream Unit.
+            Worker functions are not supported.
         Key:
           description: Identifies the entry within DownstreamSetters, so that a merge
             of two versions of the Link matches entries by Key rather than by position.
@@ -50994,7 +51287,10 @@ components:
     PathChange:
       properties:
         Attribution:
-          $ref: '#/components/schemas/MutationInfo'
+          allOf:
+          - $ref: '#/components/schemas/MutationInfo'
+          description: The To side's MutationSources entry for this path, which says
+            what set the new value; returned when include names Attribution
         ChangeType:
           description: Add, Delete, Update, Replace, Reorder, or Rename
           type: string
@@ -51068,7 +51364,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Resource in the downstream Unit that contains Path. Reserved
+            as a pointer for a future optional/WhereResource form; required for now.
       type: object
     PathSegment:
       properties:
@@ -51109,7 +51408,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Details:
-          $ref: '#/components/schemas/AttributeDetails'
+          allOf:
+          - $ref: '#/components/schemas/AttributeDetails'
+          description: Additional attribute details
         EmbeddedAccessorConfig:
           description: Configuration of the embedded accessor, if any
           type: string
@@ -51212,7 +51513,11 @@ components:
           format: uuid
           type: string
         Clearance:
-          $ref: '#/components/schemas/Clearance'
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: The guarded reasons the writes are cleared for. A path whose
+            guards this does not cover is not written, and the withheld change is
+            reported in the Unit's Conflicts.
         DryRun:
           description: Plan the promotion, evaluate its gates, and return the same
             response without writing anything.
@@ -51234,7 +51539,12 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Guards:
-          $ref: '#/components/schemas/GuardStamp'
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: Reasons to record on the paths each Unit write changes. A later
+            operation must be cleared for them before overwriting those paths. Clearance
+            must cover them, since a write is withheld by guards it is not cleared
+            for, its own included.
         PriorRevisions:
           description: With a ChangeOrder, what to do for a Unit whose last merged
             upstream Revision is before the ChangeOrder's start there -- typically
@@ -51415,9 +51725,14 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Conflicts:
-          $ref: '#/components/schemas/MutationConflictList'
+          allOf:
+          - $ref: '#/components/schemas/MutationConflictList'
+          description: Paths withheld because they were overridden locally or guarded.
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: The same change path by path, with the values on both sides.
+            Returned when include names Diff.
         Error:
           $ref: '#/components/schemas/ResponseError'
         HeadRevisionNum:
@@ -51431,7 +51746,11 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         Mutations:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: 'What the write changed, or on a dry run would change: the
+            entries of the Unit''s MutationSources it produced. Returned when include
+            names Mutations.'
         PreviousHeadMutationNum:
           format: int64
           type: integer
@@ -51471,7 +51790,12 @@ components:
         when it reconnects. One or more UnitEvents will correspond to each UnitAction.
       properties:
         Action:
-          $ref: '#/components/schemas/ActionType'
+          allOf:
+          - $ref: '#/components/schemas/ActionType'
+          description: Action is the type of action to be performed by the bridge
+            worker.
+          x-confighub-where:
+            dataType: string
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -51633,9 +51957,6 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
-      x-confighub-where:
-        Action:
-          dataType: string
     Release:
       description: Release is a published bundle of the configuration of the Units
         in a Space that are assigned to a Target. It is created by publishing, taken
@@ -51734,7 +52055,13 @@ components:
             dataType: map[string]string
           x-go-type-skip-optional-pointer: true
         LiveStatus:
-          $ref: '#/components/schemas/ReleaseLiveStatus'
+          allOf:
+          - $ref: '#/components/schemas/ReleaseLiveStatus'
+          description: 'What the tool deploying the Release, such as argobot for Argo
+            CD, reports about it running. Absent until a tool reports. Written by
+            that tool: EditChildren on the Release''s Target grants Edit on the Release.'
+          x-confighub-where:
+            dataType: JSON
         ManifestDigest:
           description: OCI digest (sha256:...) of the Release's OCI image manifest.
           readOnly: true
@@ -51752,7 +52079,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this release.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Published:
           description: Whether the Release is currently served to its consuming Target.
             Set when the Release is published and cleared when it is withdrawn; a
@@ -51852,11 +52183,6 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
       type: object
-      x-confighub-where:
-        LiveStatus:
-          dataType: JSON
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     ReleaseLiveStatus:
       properties:
         DataSource:
@@ -51958,7 +52284,10 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Optional Permissions to access the Release. Its publisher is
+            granted Manage in addition.
         TagID:
           description: Optional Tag ID identifying the tagged Revision to bundle.
             For each Unit assigned to the Space's ReleaseTarget, the highest-numbered
@@ -51979,7 +52308,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Release:
-          $ref: '#/components/schemas/Release'
+          allOf:
+          - $ref: '#/components/schemas/Release'
+          description: The published Release, or the latest published Release when
+            no Release was created.
       type: object
     Resource:
       description: Resource is a configuration element extracted from a Unit's configuration
@@ -52127,9 +52459,14 @@ components:
     ResourceDiff:
       properties:
         Attribution:
-          $ref: '#/components/schemas/MutationInfo'
+          allOf:
+          - $ref: '#/components/schemas/MutationInfo'
+          description: For an Add, the To side's MutationSources entry for the resource,
+            which says what added it; returned when include names Attribution
         ChangeType:
-          $ref: '#/components/schemas/MutationType'
+          allOf:
+          - $ref: '#/components/schemas/MutationType'
+          description: Add, Delete, Update, or None when the resource is unchanged
         Changes:
           description: Changes within the resource, for an Update, in document order
           items:
@@ -52141,9 +52478,15 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         PreviousResource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: The resource on the From side, when it was matched across a
+            rename
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Identifies the resource on the To side, or on the From side
+            if it was deleted
         ToValue:
           description: The whole resource, for an Add
           type: string
@@ -52161,7 +52504,10 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Identifies the resource within the Unit whose guards are being
+            edited
         Set:
           additionalProperties:
             additionalProperties:
@@ -52254,15 +52600,36 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         ArrayElementAliases:
-          $ref: '#/components/schemas/ArrayElementAliasMap'
+          allOf:
+          - $ref: '#/components/schemas/ArrayElementAliasMap'
+          description: 'For merge-keyed arrays in which an element was renamed (its
+            merge-key value changed): the array parent path mapped to a previous-merge-key
+            -> new-merge-key map. PatchMutations rewrites the matched element''s merge-key
+            field accordingly so child paths and ArrayOrders entries resolve under
+            the new key.'
         ArrayOrders:
-          $ref: '#/components/schemas/ArrayOrderMap'
+          allOf:
+          - $ref: '#/components/schemas/ArrayOrderMap'
+          description: 'For merge-keyed arrays whose element set or order changed
+            in this mutation: the desired sequence of merge-key values in source order,
+            keyed by the array''s parent path. PatchMutations applies this as a reorder
+            pass after path mutations so positional associative arrays (e.g., Kubernetes
+            initContainers, env, ports) preserve source-side ordering rather than
+            landing append-on-clash.'
         PathMutationMap:
-          $ref: '#/components/schemas/MutationMap'
+          allOf:
+          - $ref: '#/components/schemas/MutationMap'
+          description: Path-level mutation information; more deeply nested paths override
+            values represented at higher levels
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Identifiers of the resource to which the mutations correspond
         ResourceMutationInfo:
-          $ref: '#/components/schemas/MutationInfo'
+          allOf:
+          - $ref: '#/components/schemas/MutationInfo'
+          description: Resource-level mutation information, such as for Add, Delete,
+            or Replace
       type: object
     ResourceMutationList:
       items:
@@ -52292,9 +52659,14 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Identifiers of the resource whose paths are annotated
         ResourceAnnotations:
-          $ref: '#/components/schemas/PathAnnotations'
+          allOf:
+          - $ref: '#/components/schemas/PathAnnotations'
+          description: Annotations on the resource as a whole, inherited by paths
+            with no more specific entry
       type: object
     ResourceProtection:
       properties:
@@ -52307,7 +52679,10 @@ components:
           type: object
           x-go-type-skip-optional-pointer: true
         Resource:
-          $ref: '#/components/schemas/ResourceInfo'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: Identifies the resource within the unit whose path protection
+            is being set
       type: object
     ResourceTypePathsEntry:
       properties:
@@ -52372,7 +52747,9 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         ErrorMetadata:
-          $ref: '#/components/schemas/ErrorMetadata'
+          allOf:
+          - $ref: '#/components/schemas/ErrorMetadata'
+          description: Structured error details like field violations
         Message:
           description: The primary error message
           type: string
@@ -52443,7 +52820,9 @@ components:
             dataType: uuid
             references: ReviewComment
         Resource:
-          $ref: '#/components/schemas/ResourceInfoType2'
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfoType2'
+          description: Resource to which the remark is attached; optional
         ReviewCommentID:
           description: Unique identifier for a ReviewComment.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -52683,7 +53062,10 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         PathAnnotations:
-          $ref: '#/components/schemas/PathAnnotationList'
+          allOf:
+          - $ref: '#/components/schemas/PathAnnotationList'
+          description: Annotations on locations within the Unit's configuration data
+            as of this Revision.
         ProvidedPaths:
           description: Attribute paths this Revision's configuration provides to downstream
             Units via NeedsProvides Links.
@@ -52917,7 +53299,10 @@ components:
     RevisionMutationSources:
       properties:
         MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: Sources of mutations affecting the configuration data, by resource
+            and path.
         RevisionID:
           description: Unique identifier of the Revision.
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
@@ -53088,7 +53473,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this space.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ReleaseTargetID:
           description: Reference to a Target used as the default Target for all Units
             in this Space.
@@ -53254,9 +53643,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     SpaceCreateOrUpdateResponse:
       properties:
         Error:
@@ -53390,7 +53776,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this tag.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ReleaseID:
           description: ReleaseID is the optional ID of the Release that made this
             Tag.
@@ -53452,9 +53842,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     TagCreateOrUpdateResponse:
       properties:
         Error:
@@ -53565,7 +53952,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this target.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -53695,9 +54086,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     TargetCreateOrUpdateResponse:
       properties:
         Error:
@@ -53823,7 +54211,16 @@ components:
             dataType: string
           x-go-type-skip-optional-pointer: true
         Guards:
-          $ref: '#/components/schemas/GuardStamp'
+          allOf:
+          - $ref: '#/components/schemas/GuardStamp'
+          description: 'Guards to record on the paths this trigger''s function writes,
+            naming the reasons those paths hold what they hold, so a later operation
+            must be cleared for them before overwriting. Sibling to Protect: Protect
+            claims the paths, Guards say why. Add and overwrite only -- retiring a
+            guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful
+            for a mutating trigger, and part of the trigger''s Hash, unlike Protect.'
+          x-confighub-where:
+            dataType: map[string]string
         Hash:
           description: SHA256 hash of the trigger's specification fields, used to
             detect changes.
@@ -53887,7 +54284,11 @@ components:
             dataType: string
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this trigger.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Protect:
           description: Protect indicates whether the paths this trigger's function
             writes are recorded as protected local overrides, so a later merge from
@@ -54023,10 +54424,6 @@ components:
       x-confighub-where:
         Clearance:
           dataType: JSON
-        Guards:
-          dataType: map[string]string
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     TriggerCreateOrUpdateResponse:
       properties:
         Error:
@@ -54284,7 +54681,11 @@ components:
             by resource and path.
           readOnly: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this unit.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         ProvidedPaths:
           description: Attribute paths that this Unit provides to downstream Units
             via NeedsProvides Links. Computed from get-provided and stored on data
@@ -54479,9 +54880,6 @@ components:
       - Slug
       - ToolchainType
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     UnitAction:
       description: UnitAction is a record of an operation queued for a Worker, such
         as a function invocation on a unit. Operations are delivered to the worker
@@ -54489,7 +54887,10 @@ components:
         when it reconnects. One or more UnitEvents will correspond to each UnitAction.
       properties:
         Action:
-          $ref: '#/components/schemas/ActionType'
+          allOf:
+          - $ref: '#/components/schemas/ActionType'
+          description: Action is the type of action to be performed by the bridge
+            worker.
         BridgeWorkerID:
           description: BridgeWorkerID is the unique identifier of the bridge worker
             that will process this operation.
@@ -54675,9 +55076,14 @@ components:
           type: integer
           x-go-type-skip-optional-pointer: true
         Conflicts:
-          $ref: '#/components/schemas/MutationConflictList'
+          allOf:
+          - $ref: '#/components/schemas/MutationConflictList'
+          description: The Unit's outstanding conflicts after the request
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: What applying the withheld changes changed in the configuration,
+            or would change for a dry run, path by path with the values on both sides
         Dismissed:
           description: Number of conflicts dropped without changing the configuration
             data
@@ -54686,7 +55092,10 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         Unit:
-          $ref: '#/components/schemas/Unit'
+          allOf:
+          - $ref: '#/components/schemas/Unit'
+          description: The Unit as the request left it, or would have left it for
+            a dry run
       type: object
     UnitCreateOrUpdateResponse:
       properties:
@@ -54698,7 +55107,10 @@ components:
         Conflicts:
           $ref: '#/components/schemas/MutationConflictList'
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: What the operation changed, or on a dry run would change, path
+            by path with the values on both sides; returned when include names Diff.
         Error:
           $ref: '#/components/schemas/ResponseError'
         Links:
@@ -54707,7 +55119,10 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: What set each value in the configuration the operation produced;
+            returned when include names MutationSources.
         Unit:
           $ref: '#/components/schemas/Unit'
       type: object
@@ -54751,7 +55166,9 @@ components:
     UnitDiff:
       properties:
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: What changed from the From Revision to the To Revision
         Error:
           $ref: '#/components/schemas/ResponseError'
         FromRevisionNum:
@@ -54944,7 +55361,10 @@ components:
     UnitGuardRequest:
       properties:
         Clearance:
-          $ref: '#/components/schemas/Clearance'
+          allOf:
+          - $ref: '#/components/schemas/Clearance'
+          description: The classes of reason this edit is cleared for; required to
+            edit a path that already carries guards
         ResourceGuards:
           description: Per-resource guard edits to apply to the Unit's PathAnnotations
           items:
@@ -54956,7 +55376,9 @@ components:
     UnitGuardResponse:
       properties:
         PathAnnotations:
-          $ref: '#/components/schemas/PathAnnotationList'
+          allOf:
+          - $ref: '#/components/schemas/PathAnnotationList'
+          description: The Unit's PathAnnotations after applying the guard edits
       type: object
     UnitMoveRequest:
       properties:
@@ -55001,7 +55423,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: Sources of mutations affecting the configuration data, by resource
+            and path.
         Slug:
           description: Slug of the Unit.
           type: string
@@ -55038,7 +55463,9 @@ components:
         Error:
           $ref: '#/components/schemas/ResponseError'
         MutationSources:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: The Unit's MutationSources after applying the protection edits
       type: object
     UnitTagRequest:
       properties:
@@ -55192,7 +55619,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         NamespaceCollision:
-          $ref: '#/components/schemas/UploadNamespaceCollision'
+          allOf:
+          - $ref: '#/components/schemas/UploadNamespaceCollision'
+          description: Set when CreateNamespace was asked for but the bundle already
+            carried the release Namespace.
         SkippedSecrets:
           description: Secret resources dropped from the bundle, as Kind/namespace/name.
             Secrets are never uploaded.
@@ -55389,7 +55819,10 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Credentials:
-          $ref: '#/components/schemas/UploadRegistryCredentials'
+          allOf:
+          - $ref: '#/components/schemas/UploadRegistryCredentials'
+          description: Registry credentials for the pull. Used for this request only;
+            never stored, logged, or returned.
         Digest:
           description: The resolved digest, when the transport has one.
           type: string
@@ -55474,15 +55907,26 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         Conflicts:
-          $ref: '#/components/schemas/MutationConflictList'
+          allOf:
+          - $ref: '#/components/schemas/MutationConflictList'
+          description: Paths withheld because they were overridden locally or guarded.
         Diff:
-          $ref: '#/components/schemas/ConfigDiff'
+          allOf:
+          - $ref: '#/components/schemas/ConfigDiff'
+          description: The same change path by path, with the values on both sides.
+            Returned when include names Diff.
         Entity:
-          $ref: '#/components/schemas/UploadEntityResult'
+          allOf:
+          - $ref: '#/components/schemas/UploadEntityResult'
+          description: For a BackingUnit, what became of the entity its document describes.
         Error:
           $ref: '#/components/schemas/ResponseError'
         Mutations:
-          $ref: '#/components/schemas/ResourceMutationList'
+          allOf:
+          - $ref: '#/components/schemas/ResourceMutationList'
+          description: 'What the write changed, or on a dry run would change: the
+            entries of the Unit''s MutationSources it produced. Returned when include
+            names Mutations.'
         Resource:
           description: The resource identity this Unit is keyed by.
           type: string
@@ -55658,7 +56102,10 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
         FailedAttributes:
-          $ref: '#/components/schemas/AttributeValueList'
+          allOf:
+          - $ref: '#/components/schemas/AttributeValueList'
+          description: optional list of failed attributes/paths and issues found for
+            them. Preferred over Issues and Details.
         FunctionName:
           description: Name of the function invocation corresponding to the result
           type: string
@@ -55819,7 +56266,11 @@ components:
             references: Organization
           x-go-type-skip-optional-pointer: true
         Permissions:
-          $ref: '#/components/schemas/Permissions'
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this view.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
         Slug:
           description: Unique URL-safe identifier for the entity.
           maxLength: 128
@@ -55879,9 +56330,6 @@ components:
       required:
       - Slug
       type: object
-      x-confighub-where:
-        Permissions:
-          dataType: map[string]map[string]map[uuid]bool
     ViewColumn:
       properties:
         Name:
@@ -55917,7 +56365,9 @@ components:
     WorkerInfo:
       properties:
         FunctionWorkerInfo:
-          $ref: '#/components/schemas/FunctionWorkerInfo'
+          allOf:
+          - $ref: '#/components/schemas/FunctionWorkerInfo'
+          description: FunctionWorker capabilities
         IsServerWorker:
           description: 'If true, this is a server-hosted worker: an identity that
             no worker process connects as, and that runs no functions. It cannot be

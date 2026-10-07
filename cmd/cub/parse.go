@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -233,6 +234,10 @@ func mergeEntityWithData(v any, data []byte) error {
 	if err := yaml.Unmarshal(data, &generic); err != nil {
 		return err
 	}
+	// The generated entity types are named for their schemas.
+	if err := checkEntityInput(reflect.Indirect(reflect.ValueOf(v)).Type().Name(), generic); err != nil {
+		return err
+	}
 	jsonData, err := json.Marshal(convertYAMLToJSON(generic))
 	if err != nil {
 		return err
@@ -263,14 +268,6 @@ func convertYAMLToJSON(v interface{}) interface{} {
 	default:
 		return v
 	}
-}
-
-func populateModelFromFile(v any, filename string) error {
-	data, err := fetchContent(filename)
-	if err != nil {
-		return err
-	}
-	return mergeEntityWithData(v, data)
 }
 
 // getBytesFromFlags returns raw bytes from --from-stdin or --filename flags

@@ -29,6 +29,9 @@ type Schema struct {
 	Items                *Schema            `yaml:"items"`
 	AdditionalProperties *Schema            `yaml:"additionalProperties"`
 	Ref                  string             `yaml:"$ref"`
+	AllOf                []*Schema          `yaml:"allOf"`
+	AnyOf                []*Schema          `yaml:"anyOf"`
+	OneOf                []*Schema          `yaml:"oneOf"`
 	ReadOnly             bool               `yaml:"readOnly"`
 	Nullable             bool               `yaml:"nullable"`
 	Required             []string           `yaml:"required"`
@@ -89,13 +92,43 @@ func (s *Schema) PropertyNames() []string {
 
 // RefName returns the last segment of a $ref pointer (e.g.,
 // "#/components/schemas/UpdateType" -> "UpdateType"), or "" if the schema is
-// not a reference.
+// not a reference. A property that references a schema and also has a
+// description or readOnly of its own is written as an allOf of that one $ref,
+// since siblings of a $ref are ignored, so that form names the schema too.
 func (s *Schema) RefName() string {
-	if s == nil || s.Ref == "" {
+	if s == nil {
+		return ""
+	}
+	if s.Ref == "" {
+		if len(s.AllOf) == 1 {
+			return s.AllOf[0].RefName()
+		}
 		return ""
 	}
 	if i := strings.LastIndex(s.Ref, "/"); i >= 0 {
 		return s.Ref[i+1:]
 	}
 	return s.Ref
+}
+
+// Resolve returns the schema s stands for: the one its $ref names, or its
+// allOf's one member names, followed until it is neither. A reference to a
+// schema the spec does not have resolves to nil. The result is shared, and must
+// not be modified.
+func Resolve(s *Schema) *Schema {
+	for depth := 0; s != nil && depth < 32; depth++ {
+		switch {
+		case s.Ref != "":
+			next, err := LookupSchema(s.RefName())
+			if err != nil {
+				return nil
+			}
+			s = next
+		case len(s.AllOf) == 1:
+			s = s.AllOf[0]
+		default:
+			return s
+		}
+	}
+	return s
 }

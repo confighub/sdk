@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -28,14 +29,21 @@ Examples:
 
   # Get details about a changeorder in JSON format
   cub changeorder get --space my-space -o json hotfix-changeorder
+
+  # Also list the container images the changeorder changed in each space it reached
+  cub changeorder get --space my-space --container-images release-changeorder
 `+"```"+`
 `, ""),
 	RunE: changeorderGetCmdRun,
 }
 
+var changeorderGetContainerImages bool
+
 func init() {
 	addStandardGetFlags(changeorderGetCmd)
 	enableOptionalSpace(changeorderGetCmd)
+	changeorderGetCmd.Flags().BoolVar(&changeorderGetContainerImages, "container-images", false,
+		"Also list the container images the changeorder changed in each space it has reached: those at the revisions its end tag marks that differ from those at the revisions its start tag marks")
 	changeorderCmd.AddCommand(changeorderGetCmd)
 }
 
@@ -43,6 +51,13 @@ func changeorderGetCmdRun(cmd *cobra.Command, args []string) error {
 	changeorderDetails, err := resolveChangeOrder(args[0], selectedSpaceID, selectFields)
 	if err != nil {
 		return err
+	}
+	if changeorderGetContainerImages {
+		changeOrder := changeorderDetails.ChangeOrder
+		changeOrder.ContainerImages, err = cubapi.GetChangeOrderContainerImages(ctx, cubClient, changeOrder.SpaceID, changeOrder.ChangeOrderID)
+		if err != nil {
+			return err
+		}
 	}
 
 	displayGetResults(changeorderDetails, displayExtendedChangeOrderDetails)
@@ -172,6 +187,10 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if n := len(changeorderDetails.PromotionFailures); n > 0 {
 		view.Append([]string{"Last Promotion Failure", changeorderPromotionFailure(changeorderDetails.PromotionFailures[n-1], n)})
 	}
+	// Only there when asked for with --container-images.
+	if len(changeorderDetails.ContainerImages) > 0 {
+		view.Append([]string{"Container Images", changeorderContainerImages(changeorderDetails.ContainerImages)})
+	}
 	// The selection, when there is one, is how the server worked out the in-scope spaces.
 	if changeorderDetails.WhereSpace != "" {
 		view.Append([]string{"Where Space", changeorderDetails.WhereSpace})
@@ -229,6 +248,25 @@ func changeorderPromotionFailure(failure goclientnew.ChangeOrderPromotionFailure
 		}
 		for _, link := range space.Links {
 			lines = append(lines, fmt.Sprintf("%s: link %s: %s", space.SpaceSlug, link.Slug, link.Error))
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// changeorderContainerImages renders the images a change order changed, one per line: the space
+// and unit, the resource and path, and the image before and after. The server sorts them.
+func changeorderContainerImages(spaces []goclientnew.ChangeOrderSpaceContainerImages) string {
+	orNone := func(image string) string {
+		if image == "" {
+			return "(none)"
+		}
+		return image
+	}
+	var lines []string
+	for _, space := range spaces {
+		for _, image := range space.Images {
+			lines = append(lines, fmt.Sprintf("%s/%s %s %s %s: %s -> %s", space.SpaceSlug, image.UnitSlug,
+				image.ResourceType, image.ResourceName, image.Path, orNone(image.FromImage), orNone(image.ToImage)))
 		}
 	}
 	return strings.Join(lines, "\n")

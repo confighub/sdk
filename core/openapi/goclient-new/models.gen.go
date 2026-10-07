@@ -282,7 +282,9 @@ type Attestation struct {
 
 	// OrganizationID The Organization the Attestation belongs to.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this attestation.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseID A published Release the claim is about.
 	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -397,8 +399,10 @@ type Attribute struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters specifies the function parameters for the getter and setter functions.
-	Parameters  []FunctionParameter `json:"Parameters" yaml:"Parameters"`
-	Permissions *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
+
+	// Permissions Permissions to access this attribute.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ResourceTypePaths ResourceTypePaths maps resource types to their path-to-visitor-info mappings.
 	ResourceTypePaths []ResourceTypePathsEntry `json:"ResourceTypePaths" yaml:"ResourceTypePaths"`
@@ -469,8 +473,10 @@ type AttributeInfo struct {
 	AttributeName string `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
 
 	// DataType Data type if the attribute value.
-	DataType string            `json:"DataType,omitempty" yaml:"DataType,omitempty"`
-	Details  *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Details Additional attribute details
+	Details *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
 
 	// Path Path of the attribute
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
@@ -506,8 +512,10 @@ type AttributeValue struct {
 	Comment string `json:"Comment,omitempty" yaml:"Comment,omitempty"`
 
 	// DataType Data type if the attribute value.
-	DataType string            `json:"DataType,omitempty" yaml:"DataType,omitempty"`
-	Details  *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Details Additional attribute details
+	Details *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
 
 	// FunctionName Name of the function invocation corresponding to the output
 	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
@@ -558,11 +566,15 @@ type Binding struct {
 	Key string `json:"Key,omitempty" yaml:"Key,omitempty"`
 
 	// NeededPath Resolved path within the needed resource
-	NeededPath     string        `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
+	NeededPath string `json:"NeededPath,omitempty" yaml:"NeededPath,omitempty"`
+
+	// NeededResource Resource in the downstream unit that needs the value
 	NeededResource *ResourceInfo `json:"NeededResource,omitempty" yaml:"NeededResource,omitempty"`
 
 	// ProvidedPath Resolved path within the provided resource
-	ProvidedPath     string        `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
+	ProvidedPath string `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
+
+	// ProvidedResource Resource in the upstream unit that provides the value
 	ProvidedResource *ResourceInfo `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
 }
 
@@ -621,8 +633,16 @@ type BridgeWorker struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
-	ProvidedInfo   *WorkerInfo        `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
+
+	// Permissions Permissions to access this bridge worker.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// ProvidedInfo ProvidedInfo contains information about the bridge worker in JSON format.
+	// It is sent by the bridge worker program to the ConfigHub server when it first connects.
+	// It can also be set before the bridge worker connects, but it is not recommended to change
+	// it while a worker is connected.
+	// This can include details about the capabilities, and targets supported by the bridge worker.
+	ProvidedInfo *WorkerInfo `json:"ProvidedInfo,omitempty" yaml:"ProvidedInfo,omitempty"`
 
 	// Secret Secret is a unique secret token for the bridge worker.
 	// It's auto-generated when the BridgeWorker entity is created and cannot be modified.
@@ -720,6 +740,9 @@ type ChangeOrder struct {
 	// ChangeWorkflowID ChangeWorkflowID is the ChangeWorkflow this ChangeOrder is promoted under. It says which workflow the stored copy was taken from, and keeps saying so after that workflow has been edited or deleted, which is why it is not a foreign key.
 	ChangeWorkflowID *openapi_types.UUID `json:"ChangeWorkflowID,omitempty" yaml:"ChangeWorkflowID,omitempty"`
 
+	// ContainerImages ContainerImages lists, for each Space the ChangeOrder has landed in, the container images it changed there: in each Unit the end Tag marks, the images get-container-image finds that differ from those at the Revision the start Tag marks. Derived only when a single ChangeOrder is read with container_images=true, never in a list. Spaces and Units the reader cannot view are left out.
+	ContainerImages []ChangeOrderSpaceContainerImages `json:"ContainerImages,omitempty" yaml:"ContainerImages,omitempty"`
+
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
@@ -754,8 +777,10 @@ type ChangeOrder struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// Parameters Parameters supplies values for the declared Parameters of a parameterized Invocation, keyed by parameter name, validated against the declaration the way ParameterizedInvocations are on a direct call. One set for the whole ChangeOrder, not one per Space. Immutable.
-	Parameters  map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions *Permissions           `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Parameters map[string]interface{} `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
+
+	// Permissions Permissions to access this change order.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// PromotionFailures PromotionFailures records each promotion that did not complete: who ran it, when, into which Stage, and each Space it failed or was blocked in, with the Space's error or reason and the error of each Unit and Link whose write failed. The most recent entries are kept. Set by the server. (readonly)
 	PromotionFailures []ChangeOrderPromotionFailure `json:"PromotionFailures,omitempty" yaml:"PromotionFailures,omitempty"`
@@ -863,6 +888,36 @@ type ChangeOrder struct {
 	WhereUnit string `json:"WhereUnit,omitempty" yaml:"WhereUnit,omitempty"`
 }
 
+// ChangeOrderContainerImageChange defines model for ChangeOrderContainerImageChange.
+type ChangeOrderContainerImageChange struct {
+	// FromImage The image before the change; absent for a container the change added.
+	FromImage string `json:"FromImage,omitempty" yaml:"FromImage,omitempty"`
+
+	// FromRevisionNum The Revision the start Tag marks; absent for a Unit the change added.
+	FromRevisionNum int64 `json:"FromRevisionNum,omitempty" yaml:"FromRevisionNum,omitempty"`
+
+	// Path The path of the image within the resource.
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// ResourceName The name of the resource the container is in, as it is at the end Tag's Revision.
+	ResourceName string `json:"ResourceName,omitempty" yaml:"ResourceName,omitempty"`
+
+	// ResourceType The type of the resource the container is in.
+	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
+
+	// ToImage The image after the change; absent for a container the change removed.
+	ToImage string `json:"ToImage,omitempty" yaml:"ToImage,omitempty"`
+
+	// ToRevisionNum The Revision the end Tag marks.
+	ToRevisionNum int64 `json:"ToRevisionNum,omitempty" yaml:"ToRevisionNum,omitempty"`
+
+	// UnitID The Unit the image is in.
+	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
+
+	// UnitSlug The Unit's slug.
+	UnitSlug string `json:"UnitSlug,omitempty" yaml:"UnitSlug,omitempty"`
+}
+
 // ChangeOrderCreateOrUpdateResponse defines model for ChangeOrderCreateOrUpdateResponse.
 type ChangeOrderCreateOrUpdateResponse struct {
 	// ChangeOrder Defines a change's identity as it moves between Spaces.
@@ -934,6 +989,18 @@ type ChangeOrderRelease struct {
 	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
 }
 
+// ChangeOrderSpaceContainerImages defines model for ChangeOrderSpaceContainerImages.
+type ChangeOrderSpaceContainerImages struct {
+	// Images The images that changed, by Unit, resource, and path.
+	Images []ChangeOrderContainerImageChange `json:"Images" yaml:"Images"`
+
+	// SpaceID The Space the images changed in.
+	SpaceID openapi_types.UUID `json:"SpaceID,omitempty" yaml:"SpaceID,omitempty"`
+
+	// SpaceSlug The Space's slug.
+	SpaceSlug string `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
+}
+
 // ChangeSet Defines an entity changeset.
 type ChangeSet struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -968,7 +1035,9 @@ type ChangeSet struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this change set.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1027,8 +1096,10 @@ type ChangeWorkflow struct {
 	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
 
 	// EntityType The type of entity.
-	EntityType string                    `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
-	Final      *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// Final Final is what the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	Final *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
@@ -1038,7 +1109,9 @@ type ChangeWorkflow struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this change workflow.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1125,7 +1198,9 @@ type ChangeWorkflowSpec struct {
 
 	// CustomPrerequisites The checks a stage or Final may gate on beyond the built-in ones. Declared once and named wherever they apply.
 	CustomPrerequisites []ChangeWorkflowPrerequisite `json:"CustomPrerequisites,omitempty" yaml:"CustomPrerequisites,omitempty"`
-	Final               *ChangeWorkflowFinalStage    `json:"Final,omitempty" yaml:"Final,omitempty"`
+
+	// Final What the last stage must satisfy for the rollout to read as completed. Nothing is promoted into it: a stage's prerequisites gate entry to the stage after it, so the last stage's gate nothing.
+	Final *ChangeWorkflowFinalStage `json:"Final,omitempty" yaml:"Final,omitempty"`
 
 	// Stages The stages a change is promoted through, in order. Ordered between stages and unordered within one. At least one is required.
 	Stages []ChangeWorkflowStage `json:"Stages" yaml:"Stages"`
@@ -1163,6 +1238,7 @@ type ClearanceRequirement struct {
 
 // Column defines model for Column.
 type Column struct {
+	// ColumnSource Where the column value comes from. Exactly one field should be set, matching ColumnType.
 	ColumnSource *ColumnSource `json:"ColumnSource,omitempty" yaml:"ColumnSource,omitempty"`
 
 	// ColumnType The kind of value: MetadataAttribute, MetadataExpression, DataPath or DataExpression.
@@ -1224,7 +1300,9 @@ type Component struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this component.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -1258,6 +1336,7 @@ type CreateUserKeyRequest struct {
 
 // DeleteResponse Response for successful delete operation
 type DeleteResponse struct {
+	// Error Error information if the delete operation failed.
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// Message Response message.
@@ -1321,8 +1400,10 @@ type DemoteSpaceResult struct {
 // DemoteUnitResult defines model for DemoteUnitResult.
 type DemoteUnitResult struct {
 	// Action Restore, Mark, or Unchanged.
-	Action string      `json:"Action,omitempty" yaml:"Action,omitempty"`
-	Diff   *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// Diff The same change path by path, with the values on both sides. Returned when include names Diff.
+	Diff *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 
 	// DropsFromRevisionNum The first Revision after the change that restoring drops, when the head had moved past where the change arrived.
 	DropsFromRevisionNum int64 `json:"DropsFromRevisionNum,omitempty" yaml:"DropsFromRevisionNum,omitempty"`
@@ -1331,8 +1412,10 @@ type DemoteUnitResult struct {
 	DropsToRevisionNum int64 `json:"DropsToRevisionNum,omitempty" yaml:"DropsToRevisionNum,omitempty"`
 
 	// EndRevisionNum The Revision the change arrived at.
-	EndRevisionNum          int64                 `json:"EndRevisionNum,omitempty" yaml:"EndRevisionNum,omitempty"`
-	Error                   *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	EndRevisionNum int64          `json:"EndRevisionNum,omitempty" yaml:"EndRevisionNum,omitempty"`
+	Error          *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Mutations What the restore changed, or on a dry run would change. Returned when include names Mutations.
 	Mutations               *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
 	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
@@ -1348,15 +1431,23 @@ type DemoteUnitResult struct {
 
 // DiffRequest defines model for DiffRequest.
 type DiffRequest struct {
+	// From The configuration the diff runs from
 	From *DiffSide `json:"From,omitempty" yaml:"From,omitempty"`
-	To   *DiffSide `json:"To,omitempty" yaml:"To,omitempty"`
+
+	// To The configuration the diff runs to
+	To *DiffSide `json:"To,omitempty" yaml:"To,omitempty"`
 }
 
 // DiffResult defines model for DiffResult.
 type DiffResult struct {
-	Diff *ConfigDiff     `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	// Diff What changed from the From configuration to the To configuration
+	Diff *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+
+	// From What the From side resolved to
 	From *DiffSideResult `json:"From,omitempty" yaml:"From,omitempty"`
-	To   *DiffSideResult `json:"To,omitempty" yaml:"To,omitempty"`
+
+	// To What the To side resolved to
+	To *DiffSideResult `json:"To,omitempty" yaml:"To,omitempty"`
 }
 
 // DiffSide defines model for DiffSide.
@@ -1433,13 +1524,13 @@ type ErrorMetadata struct {
 
 // ExtendedAttestation Attestation with additional related entities expanded based on the request's include parameter.
 type ExtendedAttestation struct {
-	// Attestation An Attestation records that a principal made a claim about specific Revisions, all in its Space: that they approve them, that a review or check passed or failed, or anything else its Type names. It is never updated; withdrawing one is a new Attestation naming it in RevokedAttestationID.
+	// Attestation The Attestation.
 	Attestation *Attestation `json:"Attestation,omitempty" yaml:"Attestation,omitempty"`
 
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The Space the Attestation belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 }
 
@@ -1573,7 +1664,7 @@ type ExtendedFilter struct {
 type ExtendedGroup struct {
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Group A Group of Users, a subject in an entity's Permissions. Groups and their membership are managed in the identity provider, and like Users are not scoped to an Organization; a Group is provisioned when a User in it logs in. Bot Users are the exception: they are added to a Group through the API.
+	// Group The Group.
 	Group *Group `json:"Group,omitempty" yaml:"Group,omitempty"`
 }
 
@@ -1693,13 +1784,13 @@ type ExtendedRelease struct {
 	// Organization The top-level container for an organization using ConfigHub.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	// Release The Release.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The Space the Release belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Tag Defines a Tag that can be used to identify a set of Revisions across Units.
+	// Tag The Tag the bundled Units were pinned to, if any. Expanded when requested via the include parameter.
 	Tag *Tag `json:"Tag,omitempty" yaml:"Tag,omitempty"`
 }
 
@@ -1898,40 +1989,34 @@ type ExtendedUnit struct {
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 	FromLink  []Link         `json:"FromLink,omitempty" yaml:"FromLink,omitempty"`
 
-	// HeadMutation Mutation is a single source of mutation for a Revision.
+	// HeadMutation The Unit's current HeadMutation
 	HeadMutation *Mutation `json:"HeadMutation,omitempty" yaml:"HeadMutation,omitempty"`
 
-	// HeadRevision Revision is a historial view of a Config Unit.
+	// HeadRevision The Unit's current HeadRevision
 	HeadRevision *Revision `json:"HeadRevision,omitempty" yaml:"HeadRevision,omitempty"`
 
-	// LastReleasedRevision Revision is a historial view of a Config Unit.
+	// LastReleasedRevision The Unit's current LastReleasedRevision
 	LastReleasedRevision *Revision `json:"LastReleasedRevision,omitempty" yaml:"LastReleasedRevision,omitempty"`
 
-	// LatestUnitEvent UnitEvent represents an event of action performed on a Unit's configuration. Each action tracks
-	// the lifecycle of applying, destroying, or refreshing a Unit's configuration in the target
-	// live system. The event captures the current status of the operation, any configuration
-	// drift detected, and timing information about when the action started and completed.
-	// Actions are atomic from ConfigHub's perspective but may involve multiple steps
-	// in the connected Bridge. The status and drift detection help track the health
-	// and consistency of the provisioned configuration compared to what is defined in the Unit.
+	// LatestUnitEvent The latest event that took place on the Unit.
 	LatestUnitEvent *UnitEvent `json:"LatestUnitEvent,omitempty" yaml:"LatestUnitEvent,omitempty"`
 
-	// Organization The top-level container for an organization using ConfigHub.
+	// Organization The Organization the Unit belongs to.
 	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
 
-	// Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// Space The Space the Unit belongs to.
 	Space *Space `json:"Space,omitempty" yaml:"Space,omitempty"`
 
-	// Target Target represents a deployment target in ConfigHub: where configuration is destined. A Space's Releases are published for its release Target and pulled from ConfigHub's OCI registry by a GitOps tool such as Argo CD or Flux. Access to a Target, including a worker's, is granted through its Permissions.
+	// Target The Target the Unit has been configured to operate with.
 	Target *Target `json:"Target,omitempty" yaml:"Target,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
+	// Unit The requested Unit of the operation.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 
-	// UpstreamSpace The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
+	// UpstreamSpace If this Unit is a clone, the Upstream Space the UpstreamUnit belongs to. Optional.
 	UpstreamSpace *Space `json:"UpstreamSpace,omitempty" yaml:"UpstreamSpace,omitempty"`
 
-	// UpstreamUnit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
+	// UpstreamUnit If this Unit is a clone, the Upstream Unit it was cloned from. Optional.
 	UpstreamUnit *Unit `json:"UpstreamUnit,omitempty" yaml:"UpstreamUnit,omitempty"`
 
 	// View Defines an entity view.
@@ -2003,7 +2088,9 @@ type Filter struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this filter.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ResourceType Resource type to match for the desired ToolchainType, for example apps/v1/Deployment. Valid only for Units. (optional)
 	ResourceType string `json:"ResourceType,omitempty" yaml:"ResourceType,omitempty"`
@@ -2064,11 +2151,15 @@ type FunctionArgument_Value struct {
 type FunctionInvocation struct {
 	// Arguments Function arguments
 	Arguments []FunctionArgument `json:"Arguments" yaml:"Arguments"`
-	Clearance *Clearance         `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// Clearance Classes of guarded reason this invocation is cleared for; combined by union with the clearance of whatever drove the execution
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// FunctionName Function name
-	FunctionName string      `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-	Guards       *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// Guards Guards to record on the paths this invocation writes, so a later operation must be cleared for them; combined with the guards of whatever drove the execution, later winning per key
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Params Caller-supplied parameter values for expanding templated argument Values; transient, not persisted
 	Params map[string]interface{} `json:"Params,omitempty" yaml:"Params,omitempty"`
@@ -2122,17 +2213,25 @@ type FunctionInvocationsRequest struct {
 // FunctionInvocationsResponse defines model for FunctionInvocationsResponse.
 type FunctionInvocationsResponse struct {
 	// ConfigData The resulting configuration data; present only when the invocation changed it
-	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
-	Conflicts  *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+	ConfigData string `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+
+	// Conflicts Mutation conflicts produced by writing the invocation's result, such as a path a guard withheld. Empty when nothing was withheld.
+	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
 	// DataHash SHA256 of the resulting configuration data, whether or not ConfigData is present
-	DataHash string         `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
-	Diff     *ConfigDiff    `json:"Diff,omitempty" yaml:"Diff,omitempty"`
-	Error    *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// Diff What the invocation changed, or on a dry run would change, path by path with the values on both sides; returned when include names Diff.
+	Diff *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+
+	// Error Error information if the function invocation failed
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
 	// HasNewMutations Functions produced new mutations (of type other than None)
-	HasNewMutations bool                  `json:"HasNewMutations,omitempty" yaml:"HasNewMutations,omitempty"`
-	Mutations       *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
+	HasNewMutations bool `json:"HasNewMutations,omitempty" yaml:"HasNewMutations,omitempty"`
+
+	// Mutations List of mutations in the same order as the resources in ConfigData
+	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
 	// Mutators List of function invocation indices that resulted in mutations
 	Mutators []int `json:"Mutators" yaml:"Mutators"`
@@ -2174,8 +2273,10 @@ type FunctionOutput struct {
 	OutputType string `json:"OutputType,omitempty" yaml:"OutputType,omitempty"`
 
 	// ResultName Name of the result in kabob-case
-	ResultName string  `json:"ResultName,omitempty" yaml:"ResultName,omitempty"`
-	Schema     *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
+	ResultName string `json:"ResultName,omitempty" yaml:"ResultName,omitempty"`
+
+	// Schema JSON schema of the output type
+	Schema *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
 }
 
 // FunctionParameter defines model for FunctionParameter.
@@ -2205,8 +2306,10 @@ type FunctionParameter struct {
 	Regexp string `json:"Regexp,omitempty" yaml:"Regexp,omitempty"`
 
 	// Required Whether the parameter is required
-	Required bool    `json:"Required,omitempty" yaml:"Required,omitempty"`
-	Schema   *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
+	Required bool `json:"Required,omitempty" yaml:"Required,omitempty"`
+
+	// Schema JSON schema (for embedded JSON values)
+	Schema *Schema `json:"Schema,omitempty" yaml:"Schema,omitempty"`
 }
 
 // FunctionSignature defines model for FunctionSignature.
@@ -2236,8 +2339,10 @@ type FunctionSignature struct {
 	Mutating bool `json:"Mutating,omitempty" yaml:"Mutating,omitempty"`
 
 	// OtherDataExpected If non-empty, specification of what source(s) are expected in OtherData; if empty, OtherData is not used
-	OtherDataExpected []string        `json:"OtherDataExpected,omitempty" yaml:"OtherDataExpected,omitempty"`
-	OutputInfo        *FunctionOutput `json:"OutputInfo,omitempty" yaml:"OutputInfo,omitempty"`
+	OtherDataExpected []string `json:"OtherDataExpected,omitempty" yaml:"OtherDataExpected,omitempty"`
+
+	// OutputInfo Output description
+	OutputInfo *FunctionOutput `json:"OutputInfo,omitempty" yaml:"OutputInfo,omitempty"`
 
 	// Parameters Function parameters, in order
 	Parameters []FunctionParameter `json:"Parameters" yaml:"Parameters"`
@@ -2349,7 +2454,9 @@ type Invocation struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 	Parameters     []FunctionParameter `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
-	Permissions    *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this invocation.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -2428,7 +2535,9 @@ type Link struct {
 
 	// FromUnitID Unique identifier of the downstream (consumer) Unit. Links must be in the same space as the source unit.
 	FromUnitID openapi_types.UUID `json:"FromUnitID" yaml:"FromUnitID"`
-	Guards     *GuardStamp        `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+
+	// Guards Guards to record on the paths this link's resolve writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Refused on UpgradeUnit and MergeUnits links, whose guards arrive by propagation from upstream.
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the resolution-relevant Link fields, used to detect changes that require re-resolution.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -2440,15 +2549,19 @@ type Link struct {
 	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
 
 	// LinkID Unique identifier for a Link.
-	LinkID         openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
-	ManualBindings *BindingList       `json:"ManualBindings,omitempty" yaml:"ManualBindings,omitempty"`
+	LinkID openapi_types.UUID `json:"LinkID,omitempty" yaml:"LinkID,omitempty"`
+
+	// ManualBindings The needs/provides attribute bindings stated for this Link, which resolution uses as they are. Each Binding maps one needed attribute in the downstream Unit to one provided attribute in the upstream Unit. An Insert Link has exactly one, which identifies only the needed attribute (NeededResource and NeededPath) and whose DataType selects how the upstream Unit is inserted: string, the default, inserts it verbatim as text; the downstream Unit's own configuration format inserts it as configuration data.
+	ManualBindings *BindingList `json:"ManualBindings,omitempty" yaml:"ManualBindings,omitempty"`
 
 	// MergeEnableSubtraction Enables the subtraction (override-preservation) step of the merge performed when resolving this Link. When false (the default), the source patch is applied without subtraction and the downstream Unit's local differences are preserved by the stored Mutation Protected values alone, widened by WhereMutation if it is set. When true, the merge additionally subtracts the downstream Unit's local differences from the source patch and the stored values are not consulted. Only meaningful for UpgradeUnit and MergeUnits Links.
 	MergeEnableSubtraction bool `json:"MergeEnableSubtraction,omitempty" yaml:"MergeEnableSubtraction,omitempty"`
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this link.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Protect Records the paths this Link's resolve writes as protected local overrides, so a later merge from upstream does not overwrite them. Without it the resolve claims nothing, as any other change does. Refused on UpgradeUnit and MergeUnits Links, where the upstream keeps updating what it delivered and protecting that content would freeze the downstream one merge in.
 	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
@@ -2548,7 +2661,9 @@ type Mutation struct {
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
 
 	// EntityType The type of entity.
-	EntityType         string              `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// FunctionInvocation The function invoked if the change was made by a function.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
@@ -2580,7 +2695,9 @@ type Mutation struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// ProvidedPath ProvidedPath is the path of the provided value used to satisfy a needed value if the change was made due to resolving a link.
-	ProvidedPath     string             `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
+	ProvidedPath string `json:"ProvidedPath,omitempty" yaml:"ProvidedPath,omitempty"`
+
+	// ProvidedResource ProvidedResource contains the type and name of the resource which provided a value used to satisfy a needed value if the change was made due to resolving a link.
 	ProvidedResource *ResourceInfoType2 `json:"ProvidedResource,omitempty" yaml:"ProvidedResource,omitempty"`
 	ReplayOutcome    string             `json:"ReplayOutcome,omitempty" yaml:"ReplayOutcome,omitempty"`
 	ReplayReason     string             `json:"ReplayReason,omitempty" yaml:"ReplayReason,omitempty"`
@@ -2625,18 +2742,28 @@ type Mutation struct {
 // MutationConflict defines model for MutationConflict.
 type MutationConflict struct {
 	// Details Explanation the Reason alone cannot carry, such as the error text of a failed replay
-	Details     string         `json:"Details,omitempty" yaml:"Details,omitempty"`
-	Guard       *WithheldGuard `json:"Guard,omitempty" yaml:"Guard,omitempty"`
-	GuardChange *GuardDelta    `json:"GuardChange,omitempty" yaml:"GuardChange,omitempty"`
+	Details string `json:"Details,omitempty" yaml:"Details,omitempty"`
+
+	// Guard For Guarded: the guard the operation's clearance did not cover
+	Guard *WithheldGuard `json:"Guard,omitempty" yaml:"Guard,omitempty"`
+
+	// GuardChange For GuardWithheld: the guard change that did not propagate
+	GuardChange *GuardDelta `json:"GuardChange,omitempty" yaml:"GuardChange,omitempty"`
 
 	// Path Path of the mutation; empty for resource-level conflicts
 	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
 
 	// Reason Why the mutation was dropped
-	Reason   string        `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+	Reason string `json:"Reason,omitempty" yaml:"Reason,omitempty"`
+
+	// Resource Resource the mutation applied to
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
-	Source   *MutationInfo `json:"Source,omitempty" yaml:"Source,omitempty"`
-	Target   *MutationInfo `json:"Target,omitempty" yaml:"Target,omitempty"`
+
+	// Source The dropped source-side mutation
+	Source *MutationInfo `json:"Source,omitempty" yaml:"Source,omitempty"`
+
+	// Target The target-side mutation that caused the drop, when applicable (Subtracted, DeleteShadowed)
+	Target *MutationInfo `json:"Target,omitempty" yaml:"Target,omitempty"`
 
 	// UnitID ID of the other unit involved in the conflict (upstream for upgrade/merge, link target for resolve)
 	UnitID openapi_types.UUID `json:"UnitID,omitempty" yaml:"UnitID,omitempty"`
@@ -2648,7 +2775,9 @@ type MutationConflictList = []MutationConflict
 // MutationInfo defines model for MutationInfo.
 type MutationInfo struct {
 	// Index Function index or sequence number corresponding to the change
-	Index        int64         `json:"Index,omitempty" yaml:"Index,omitempty"`
+	Index int64 `json:"Index,omitempty" yaml:"Index,omitempty"`
+
+	// MutationType Type of mutation performed on the associated configuration element: Add, Update, Replace, Delete, or None, if no change
 	MutationType *MutationType `json:"MutationType,omitempty" yaml:"MutationType,omitempty"`
 
 	// Patch Line-level patch for multi-line string updates, in unified diff format. When present on an Update, PatchMutations applies this to the target value instead of replacing with Value. Falls back to Value if the patch cannot be applied cleanly.
@@ -2666,6 +2795,7 @@ type MutationMap map[string]MutationInfo
 
 // MutationSourcesResponse defines model for MutationSourcesResponse.
 type MutationSourcesResponse struct {
+	// MutationSources Sources of mutations affecting the configuration data, by resource and path.
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 }
 
@@ -2674,6 +2804,7 @@ type MutationType string
 
 // NamedFunctionResult defines model for NamedFunctionResult.
 type NamedFunctionResult struct {
+	// FunctionInvocation Non-mutating function invocation that produces OutputTypeAttributeValueList. The Value of the first returned AttributeValue is bound to Name. Worker functions are not supported.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// Name Identifier used to reference the value; must be a legal Go and CEL identifier and unique across UpstreamPaths and UpstreamGetters
@@ -2686,7 +2817,9 @@ type NamedPath struct {
 	Name string `json:"Name,omitempty" yaml:"Name,omitempty"`
 
 	// Path Resolved path within Resource to read via get-paths
-	Path     string        `json:"Path,omitempty" yaml:"Path,omitempty"`
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Resource Resource in the upstream Unit that contains Path
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
@@ -2779,6 +2912,7 @@ type OrganizationMember struct {
 
 // ParameterizedFunction defines model for ParameterizedFunction.
 type ParameterizedFunction struct {
+	// FunctionInvocation Mutating function invocation to run on the downstream Unit. Worker functions are not supported.
 	FunctionInvocation *FunctionInvocation `json:"FunctionInvocation,omitempty" yaml:"FunctionInvocation,omitempty"`
 
 	// Key Identifies the entry within DownstreamSetters, so that a merge of two versions of the Link matches entries by Key rather than by position. Optional, and unique within the list when present. Letters, digits, '-' and '_', starting with a letter or digit; at most 128 characters.
@@ -2802,6 +2936,7 @@ type PathAnnotations map[string]map[string]string
 
 // PathChange defines model for PathChange.
 type PathChange struct {
+	// Attribution The To side's MutationSources entry for this path, which says what set the new value; returned when include names Attribution
 	Attribution *MutationInfo `json:"Attribution,omitempty" yaml:"Attribution,omitempty"`
 
 	// ChangeType Add, Delete, Update, Replace, Reorder, or Rename
@@ -2844,7 +2979,9 @@ type PathExpression struct {
 	Parameters []string `json:"Parameters,omitempty" yaml:"Parameters,omitempty"`
 
 	// Path Unresolved path within Resource to write via set-attributes
-	Path     string        `json:"Path,omitempty" yaml:"Path,omitempty"`
+	Path string `json:"Path,omitempty" yaml:"Path,omitempty"`
+
+	// Resource Resource in the downstream Unit that contains Path. Reserved as a pointer for a future optional/WhereResource form; required for now.
 	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
@@ -2872,8 +3009,10 @@ type PathVisitorInfo struct {
 	AttributeName string `json:"AttributeName,omitempty" yaml:"AttributeName,omitempty"`
 
 	// DataType DataType of the attribute at the path
-	DataType string            `json:"DataType,omitempty" yaml:"DataType,omitempty"`
-	Details  *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
+	DataType string `json:"DataType,omitempty" yaml:"DataType,omitempty"`
+
+	// Details Additional attribute details
+	Details *AttributeDetails `json:"Details,omitempty" yaml:"Details,omitempty"`
 
 	// EmbeddedAccessorConfig Configuration of the embedded accessor, if any
 	EmbeddedAccessorConfig string `json:"EmbeddedAccessorConfig,omitempty" yaml:"EmbeddedAccessorConfig,omitempty"`
@@ -2932,7 +3071,9 @@ type PromoteRequest struct {
 
 	// ChangeSetID An existing open ChangeSet to record every write in.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
-	Clearance   *Clearance          `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
+	// Clearance The guarded reasons the writes are cleared for. A path whose guards this does not cover is not written, and the withheld change is reported in the Unit's Conflicts.
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// DryRun Plan the promotion, evaluate its gates, and return the same response without writing anything.
 	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
@@ -2944,8 +3085,10 @@ type PromoteRequest struct {
 	Force bool `json:"Force,omitempty" yaml:"Force,omitempty"`
 
 	// ForceReason Why the gates were overridden. Required with Force.
-	ForceReason string      `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
-	Guards      *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	ForceReason string `json:"ForceReason,omitempty" yaml:"ForceReason,omitempty"`
+
+	// Guards Reasons to record on the paths each Unit write changes. A later operation must be cleared for them before overwriting those paths. Clearance must cover them, since a write is withheld by guards it is not cleared for, its own included.
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// PriorRevisions With a ChangeOrder, what to do for a Unit whose last merged upstream Revision is before the ChangeOrder's start there -- typically because a Link in the upstream Space, such as a TransformPaths Link, wrote Revisions after the Unit last merged. Include (the default) merges those Revisions first, as Revisions of their own that do not carry the ChangeOrder, and then the ChangeOrder's range; Skip merges only the ChangeOrder's range, as though the Unit had already merged as far as its start; Error refuses, naming the Revisions. A Unit that has merged past the ChangeOrder's start is an error whatever this says. Refused with an Insert, Upsert, or TransformPaths ChangeOrder, whose Links read their sources as they are at its end rather than merging a range.
 	PriorRevisions PromoteRequestPriorRevisions `json:"PriorRevisions,omitempty" yaml:"PriorRevisions,omitempty"`
@@ -3032,14 +3175,20 @@ type PromoteStageResult struct {
 // PromoteUnitResult defines model for PromoteUnitResult.
 type PromoteUnitResult struct {
 	// Action Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
-	Action          string                `json:"Action,omitempty" yaml:"Action,omitempty"`
-	Conflicts       *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Diff            *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
-	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
-	HeadRevisionNum int64                 `json:"HeadRevisionNum,omitempty" yaml:"HeadRevisionNum,omitempty"`
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// Conflicts Paths withheld because they were overridden locally or guarded.
+	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+
+	// Diff The same change path by path, with the values on both sides. Returned when include names Diff.
+	Diff            *ConfigDiff    `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	Error           *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+	HeadRevisionNum int64          `json:"HeadRevisionNum,omitempty" yaml:"HeadRevisionNum,omitempty"`
 
 	// LinkIDs For a Resolve, and a Mark made by one, the Links resolved.
-	LinkIDs                 []UUID                `json:"LinkIDs,omitempty" yaml:"LinkIDs,omitempty"`
+	LinkIDs []UUID `json:"LinkIDs,omitempty" yaml:"LinkIDs,omitempty"`
+
+	// Mutations What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations.
 	Mutations               *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 	PreviousHeadMutationNum int64                 `json:"PreviousHeadMutationNum,omitempty" yaml:"PreviousHeadMutationNum,omitempty"`
 	PreviousHeadRevisionNum int64                 `json:"PreviousHeadRevisionNum,omitempty" yaml:"PreviousHeadRevisionNum,omitempty"`
@@ -3057,6 +3206,7 @@ type PromoteUnitResult struct {
 
 // QueuedOperation UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type QueuedOperation struct {
+	// Action Action is the type of action to be performed by the bridge worker.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
@@ -3152,13 +3302,17 @@ type Release struct {
 	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels     map[string]string  `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// LiveStatus What the tool deploying the Release, such as argobot for Argo CD, reports about it running. Absent until a tool reports. Written by that tool: EditChildren on the Release's Target grants Edit on the Release.
 	LiveStatus *ReleaseLiveStatus `json:"LiveStatus,omitempty" yaml:"LiveStatus,omitempty"`
 
 	// ManifestDigest OCI digest (sha256:...) of the Release's OCI image manifest.
 	ManifestDigest string             `json:"ManifestDigest,omitempty" yaml:"ManifestDigest,omitempty"`
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this release.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Published Whether the Release is currently served to its consuming Target. Set when the Release is published and cleared when it is withdrawn; a withdrawn Release is retained until deleted.
 	Published bool `json:"Published,omitempty" yaml:"Published,omitempty"`
@@ -3247,8 +3401,10 @@ type ReleasePublishRequest struct {
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
 
 	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
-	Labels      map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
-	Permissions *Permissions      `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// Permissions Optional Permissions to access the Release. Its publisher is granted Manage in addition.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// TagID Optional Tag ID identifying the tagged Revision to bundle. For each Unit assigned to the Space's ReleaseTarget, the highest-numbered Revision carrying this Tag is bundled at that Revision instead of the Unit's head Revision. A Unit with no matching tagged Revision falls back to its head Revision. When omitted, each Unit is bundled at its head Revision and publishing creates a Tag named release-<ReleaseNum>, applies it to each bundled Revision, and sets it as the Release's TagID.
 	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
@@ -3259,7 +3415,7 @@ type ReleasePublishResponse struct {
 	// Message Set when nothing changed since the latest published Release, so no Release was created.
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
 
-	// Release Release is a published bundle of the configuration of the Units in a Space that are assigned to a Target. It is created by publishing, taken out of service by withdrawing, and removed by deleting; its bundled content is never updated, though its Labels, Annotations, DeleteGates, and LiveStatus can be. The bundle is stored as an OCI image (a tar.gz layer plus manifest) so it can be served to and consumed by the Target.
+	// Release The published Release, or the latest published Release when no Release was created.
 	Release *Release `json:"Release,omitempty" yaml:"Release,omitempty"`
 }
 
@@ -3319,16 +3475,23 @@ type Resource struct {
 
 // ResourceDiff defines model for ResourceDiff.
 type ResourceDiff struct {
+	// Attribution For an Add, the To side's MutationSources entry for the resource, which says what added it; returned when include names Attribution
 	Attribution *MutationInfo `json:"Attribution,omitempty" yaml:"Attribution,omitempty"`
-	ChangeType  *MutationType `json:"ChangeType,omitempty" yaml:"ChangeType,omitempty"`
+
+	// ChangeType Add, Delete, Update, or None when the resource is unchanged
+	ChangeType *MutationType `json:"ChangeType,omitempty" yaml:"ChangeType,omitempty"`
 
 	// Changes Changes within the resource, for an Update, in document order
 	Changes []PathChange `json:"Changes,omitempty" yaml:"Changes,omitempty"`
 
 	// FromValue The whole resource, for a Delete
-	FromValue        string        `json:"FromValue,omitempty" yaml:"FromValue,omitempty"`
+	FromValue string `json:"FromValue,omitempty" yaml:"FromValue,omitempty"`
+
+	// PreviousResource The resource on the From side, when it was matched across a rename
 	PreviousResource *ResourceInfo `json:"PreviousResource,omitempty" yaml:"PreviousResource,omitempty"`
-	Resource         *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Resource Identifies the resource on the To side, or on the From side if it was deleted
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
 	// ToValue The whole resource, for an Add
 	ToValue string `json:"ToValue,omitempty" yaml:"ToValue,omitempty"`
@@ -3337,8 +3500,10 @@ type ResourceDiff struct {
 // ResourceGuards defines model for ResourceGuards.
 type ResourceGuards struct {
 	// Remove Guard keys to remove, by path. Removing a key that is not there is not an error
-	Remove   map[string][]string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
-	Resource *ResourceInfo       `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+	Remove map[string][]string `json:"Remove,omitempty" yaml:"Remove,omitempty"`
+
+	// Resource Identifies the resource within the Unit whose guards are being edited
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
 	// Set Guard key/value pairs to add or overwrite, by path. The empty path addresses the resource as a whole
 	Set map[string]map[string]string `json:"Set,omitempty" yaml:"Set,omitempty"`
@@ -3384,11 +3549,21 @@ type ResourceMutation struct {
 
 	// AliasesWithoutScopes Names without scopes used in current and prior revisions of this resource
 	AliasesWithoutScopes map[string]map[string]interface{} `json:"AliasesWithoutScopes,omitempty" yaml:"AliasesWithoutScopes,omitempty"`
-	ArrayElementAliases  *ArrayElementAliasMap             `json:"ArrayElementAliases,omitempty" yaml:"ArrayElementAliases,omitempty"`
-	ArrayOrders          *ArrayOrderMap                    `json:"ArrayOrders,omitempty" yaml:"ArrayOrders,omitempty"`
-	PathMutationMap      *MutationMap                      `json:"PathMutationMap,omitempty" yaml:"PathMutationMap,omitempty"`
-	Resource             *ResourceInfo                     `json:"Resource,omitempty" yaml:"Resource,omitempty"`
-	ResourceMutationInfo *MutationInfo                     `json:"ResourceMutationInfo,omitempty" yaml:"ResourceMutationInfo,omitempty"`
+
+	// ArrayElementAliases For merge-keyed arrays in which an element was renamed (its merge-key value changed): the array parent path mapped to a previous-merge-key -> new-merge-key map. PatchMutations rewrites the matched element's merge-key field accordingly so child paths and ArrayOrders entries resolve under the new key.
+	ArrayElementAliases *ArrayElementAliasMap `json:"ArrayElementAliases,omitempty" yaml:"ArrayElementAliases,omitempty"`
+
+	// ArrayOrders For merge-keyed arrays whose element set or order changed in this mutation: the desired sequence of merge-key values in source order, keyed by the array's parent path. PatchMutations applies this as a reorder pass after path mutations so positional associative arrays (e.g., Kubernetes initContainers, env, ports) preserve source-side ordering rather than landing append-on-clash.
+	ArrayOrders *ArrayOrderMap `json:"ArrayOrders,omitempty" yaml:"ArrayOrders,omitempty"`
+
+	// PathMutationMap Path-level mutation information; more deeply nested paths override values represented at higher levels
+	PathMutationMap *MutationMap `json:"PathMutationMap,omitempty" yaml:"PathMutationMap,omitempty"`
+
+	// Resource Identifiers of the resource to which the mutations correspond
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// ResourceMutationInfo Resource-level mutation information, such as for Add, Delete, or Replace
+	ResourceMutationInfo *MutationInfo `json:"ResourceMutationInfo,omitempty" yaml:"ResourceMutationInfo,omitempty"`
 }
 
 // ResourceMutationList defines model for ResourceMutationList.
@@ -3403,16 +3578,22 @@ type ResourcePathAnnotations struct {
 	AliasesWithoutScopes map[string]map[string]interface{} `json:"AliasesWithoutScopes,omitempty" yaml:"AliasesWithoutScopes,omitempty"`
 
 	// PathAnnotationMap Annotations by path. Paths are canonical: an associative segment names its element by merge key, with no positional fallback
-	PathAnnotationMap   map[string]PathAnnotations `json:"PathAnnotationMap,omitempty" yaml:"PathAnnotationMap,omitempty"`
-	Resource            *ResourceInfo              `json:"Resource,omitempty" yaml:"Resource,omitempty"`
-	ResourceAnnotations *PathAnnotations           `json:"ResourceAnnotations,omitempty" yaml:"ResourceAnnotations,omitempty"`
+	PathAnnotationMap map[string]PathAnnotations `json:"PathAnnotationMap,omitempty" yaml:"PathAnnotationMap,omitempty"`
+
+	// Resource Identifiers of the resource whose paths are annotated
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// ResourceAnnotations Annotations on the resource as a whole, inherited by paths with no more specific entry
+	ResourceAnnotations *PathAnnotations `json:"ResourceAnnotations,omitempty" yaml:"ResourceAnnotations,omitempty"`
 }
 
 // ResourceProtection defines model for ResourceProtection.
 type ResourceProtection struct {
 	// Protected Map of resolved path to its new Protected value: true = a local override a merge must not overwrite, false = the merge's to update
 	Protected map[string]bool `json:"Protected" yaml:"Protected"`
-	Resource  *ResourceInfo   `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Resource Identifies the resource within the unit whose path protection is being set
+	Resource *ResourceInfo `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 }
 
 // ResourceTypePathsEntry defines model for ResourceTypePathsEntry.
@@ -3447,7 +3628,9 @@ type ResponseError struct {
 	Details []string `json:"Details,omitempty" yaml:"Details,omitempty"`
 
 	// ErrorCategory The type of error (e.g., validation, not-found)
-	ErrorCategory string         `json:"ErrorCategory,omitempty" yaml:"ErrorCategory,omitempty"`
+	ErrorCategory string `json:"ErrorCategory,omitempty" yaml:"ErrorCategory,omitempty"`
+
+	// ErrorMetadata Structured error details like field violations
 	ErrorMetadata *ErrorMetadata `json:"ErrorMetadata,omitempty" yaml:"ErrorMetadata,omitempty"`
 
 	// Message The primary error message
@@ -3479,7 +3662,9 @@ type ReviewComment struct {
 
 	// ReplyToID Unique identifier of the ReviewComment, on the same Unit, this one replies to. Unset for a comment that starts a thread. Immutable.
 	ReplyToID *openapi_types.UUID `json:"ReplyToID,omitempty" yaml:"ReplyToID,omitempty"`
-	Resource  *ResourceInfoType2  `json:"Resource,omitempty" yaml:"Resource,omitempty"`
+
+	// Resource Resource to which the remark is attached; optional
+	Resource *ResourceInfoType2 `json:"Resource,omitempty" yaml:"Resource,omitempty"`
 
 	// ReviewCommentID Unique identifier for a ReviewComment.
 	ReviewCommentID openapi_types.UUID `json:"ReviewCommentID,omitempty" yaml:"ReviewCommentID,omitempty"`
@@ -3566,7 +3751,9 @@ type Revision struct {
 	NeededPaths []AttributeValue `json:"NeededPaths,omitempty" yaml:"NeededPaths,omitempty"`
 
 	// OrganizationID Unique identifier for an Organization.
-	OrganizationID  openapi_types.UUID  `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// PathAnnotations Annotations on locations within the Unit's configuration data as of this Revision.
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
 
 	// ProvidedPaths Attribute paths this Revision's configuration provides to downstream Units via NeedsProvides Links.
@@ -3659,6 +3846,7 @@ type RevisionData struct {
 
 // RevisionMutationSources defines model for RevisionMutationSources.
 type RevisionMutationSources struct {
+	// MutationSources Sources of mutations affecting the configuration data, by resource and path.
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// RevisionID Unique identifier of the Revision.
@@ -3722,7 +3910,9 @@ type Space struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this space.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseTargetID Reference to a Target used as the default Target for all Units in this Space.
 	ReleaseTargetID *openapi_types.UUID `json:"ReleaseTargetID,omitempty" yaml:"ReleaseTargetID,omitempty"`
@@ -3880,7 +4070,9 @@ type Tag struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this tag.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ReleaseID ReleaseID is the optional ID of the Release that made this Tag.
 	ReleaseID *openapi_types.UUID `json:"ReleaseID,omitempty" yaml:"ReleaseID,omitempty"`
@@ -3941,7 +4133,9 @@ type Target struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this target.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -4064,8 +4258,10 @@ type Trigger struct {
 	FailOpenAfter int `json:"FailOpenAfter" yaml:"FailOpenAfter"`
 
 	// FunctionName Function name
-	FunctionName string      `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
-	Guards       *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
+	FunctionName string `json:"FunctionName,omitempty" yaml:"FunctionName,omitempty"`
+
+	// Guards Guards to record on the paths this trigger's function writes, naming the reasons those paths hold what they hold, so a later operation must be cleared for them before overwriting. Sibling to Protect: Protect claims the paths, Guards say why. Add and overwrite only -- retiring a guard is the /guard API (cub unit set-guard --remove-guard). Only meaningful for a mutating trigger, and part of the trigger's Hash, unlike Protect.
+	Guards *GuardStamp `json:"Guards,omitempty" yaml:"Guards,omitempty"`
 
 	// Hash SHA256 hash of the trigger's specification fields, used to detect changes.
 	Hash string `json:"Hash,omitempty" yaml:"Hash,omitempty"`
@@ -4083,8 +4279,10 @@ type Trigger struct {
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
 	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.
-	OtherDataSource string       `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
-	Permissions     *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+	OtherDataSource string `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
+
+	// Permissions Permissions to access this trigger.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Protect Protect indicates whether the paths this trigger's function writes are recorded as protected local overrides, so a later merge from upstream does not overwrite them. A change claims nothing by default and so does a trigger; set this for a trigger that decides a value on the Unit's behalf and will not be back to decide it again, such as a PostClone trigger customizing a variant. Only meaningful for a mutating trigger.
 	Protect bool `json:"Protect,omitempty" yaml:"Protect,omitempty"`
@@ -4226,7 +4424,9 @@ type Unit struct {
 
 	// PathAnnotations Annotations on locations within the Unit's configuration data, by resource and path.
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
-	Permissions     *Permissions        `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this unit.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// ProvidedPaths Attribute paths that this Unit provides to downstream Units via NeedsProvides Links. Computed from get-provided and stored on data updates.
 	ProvidedPaths []AttributeInfo `json:"ProvidedPaths,omitempty" yaml:"ProvidedPaths,omitempty"`
@@ -4288,6 +4488,7 @@ type Unit struct {
 
 // UnitAction UnitAction is a record of an operation queued for a Worker, such as a function invocation on a unit. Operations are delivered to the worker in creation order; if the worker is disconnected, pending operations are delivered when it reconnects. One or more UnitEvents will correspond to each UnitAction.
 type UnitAction struct {
+	// Action Action is the type of action to be performed by the bridge worker.
 	Action *ActionType `json:"Action,omitempty" yaml:"Action,omitempty"`
 
 	// BridgeWorkerID BridgeWorkerID is the unique identifier of the bridge worker that will process this operation.
@@ -4389,27 +4590,35 @@ type UnitConflictsRequest struct {
 // UnitConflictsResponse defines model for UnitConflictsResponse.
 type UnitConflictsResponse struct {
 	// Applied Number of conflicts whose withheld change was applied
-	Applied   int                   `json:"Applied,omitempty" yaml:"Applied,omitempty"`
+	Applied int `json:"Applied,omitempty" yaml:"Applied,omitempty"`
+
+	// Conflicts The Unit's outstanding conflicts after the request
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Diff      *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+
+	// Diff What applying the withheld changes changed in the configuration, or would change for a dry run, path by path with the values on both sides
+	Diff *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 
 	// Dismissed Number of conflicts dropped without changing the configuration data
 	Dismissed int            `json:"Dismissed,omitempty" yaml:"Dismissed,omitempty"`
 	Error     *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
-	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
+	// Unit The Unit as the request left it, or would have left it for a dry run
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
 }
 
 // UnitCreateOrUpdateResponse defines model for UnitCreateOrUpdateResponse.
 type UnitCreateOrUpdateResponse struct {
 	// ConfigData The configuration the operation produced; returned when include names ConfigData.
-	ConfigData      string                       `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
-	Conflicts       *MutationConflictList        `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Diff            *ConfigDiff                  `json:"Diff,omitempty" yaml:"Diff,omitempty"`
-	Error           *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
-	Links           []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
-	MutationSources *ResourceMutationList        `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
+	ConfigData string                `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+	Conflicts  *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
+
+	// Diff What the operation changed, or on a dry run would change, path by path with the values on both sides; returned when include names Diff.
+	Diff  *ConfigDiff                  `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+	Error *ResponseError               `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Links []LinkCreateOrUpdateResponse `json:"Links,omitempty" yaml:"Links,omitempty"`
+
+	// MutationSources What set each value in the configuration the operation produced; returned when include names MutationSources.
+	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// Unit Unit is the core unit of operation in ConfigHub. It contains a blob of configuration Data of a single supported Config Type (configuration format). This blob is typically a text document that contains a collection of Kubernetes or infrastructure resources, or an application configuration file. Applying / deploying or destroying the configuration happens as a single *transaction* from ConfigHub's perspective. In reality, it is most often a multi-step workflow performed by the underlying configuration / deployment tool. The resources must belong to a single infrastructure provider and the actuation mechanism must be able to resolve references and ordering dependencies among the resources within the document. For example, if one resource needs to be fully provisioned to provide input to another resource, then the actuation code is responsible for handling this. Revisions store historical copies of the configuration data. Configuration data can be restored from prior Revisions. Units can also be cloned to create new variants of a configuration.
 	Unit *Unit `json:"Unit,omitempty" yaml:"Unit,omitempty"`
@@ -4441,6 +4650,7 @@ type UnitData struct {
 
 // UnitDiff defines model for UnitDiff.
 type UnitDiff struct {
+	// Diff What changed from the From Revision to the To Revision
 	Diff  *ConfigDiff    `json:"Diff,omitempty" yaml:"Diff,omitempty"`
 	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -4516,6 +4726,7 @@ type UnitEvent struct {
 
 // UnitGuardRequest defines model for UnitGuardRequest.
 type UnitGuardRequest struct {
+	// Clearance The classes of reason this edit is cleared for; required to edit a path that already carries guards
 	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
 
 	// ResourceGuards Per-resource guard edits to apply to the Unit's PathAnnotations
@@ -4524,6 +4735,7 @@ type UnitGuardRequest struct {
 
 // UnitGuardResponse defines model for UnitGuardResponse.
 type UnitGuardResponse struct {
+	// PathAnnotations The Unit's PathAnnotations after applying the guard edits
 	PathAnnotations *PathAnnotationList `json:"PathAnnotations,omitempty" yaml:"PathAnnotations,omitempty"`
 }
 
@@ -4546,7 +4758,9 @@ type UnitMoveResponse struct {
 // UnitMutationSources defines model for UnitMutationSources.
 type UnitMutationSources struct {
 	// DataHash SHA256 of the configuration data the MutationSources describe.
-	DataHash        string                `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+	DataHash string `json:"DataHash,omitempty" yaml:"DataHash,omitempty"`
+
+	// MutationSources Sources of mutations affecting the configuration data, by resource and path.
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 
 	// Slug Slug of the Unit.
@@ -4570,7 +4784,9 @@ type UnitProtectionRequest struct {
 
 // UnitProtectionResponse defines model for UnitProtectionResponse.
 type UnitProtectionResponse struct {
-	Error           *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// MutationSources The Unit's MutationSources after applying the protection edits
 	MutationSources *ResourceMutationList `json:"MutationSources,omitempty" yaml:"MutationSources,omitempty"`
 }
 
@@ -4649,8 +4865,10 @@ type UploadComponentRequest struct {
 // UploadComponentResult defines model for UploadComponentResult.
 type UploadComponentResult struct {
 	// BrokenLinks Inferred links dropped to keep the link graph acyclic.
-	BrokenLinks        []UploadBrokenEdge        `json:"BrokenLinks,omitempty" yaml:"BrokenLinks,omitempty"`
-	Name               string                    `json:"Name,omitempty" yaml:"Name,omitempty"`
+	BrokenLinks []UploadBrokenEdge `json:"BrokenLinks,omitempty" yaml:"BrokenLinks,omitempty"`
+	Name        string             `json:"Name,omitempty" yaml:"Name,omitempty"`
+
+	// NamespaceCollision Set when CreateNamespace was asked for but the bundle already carried the release Namespace.
 	NamespaceCollision *UploadNamespaceCollision `json:"NamespaceCollision,omitempty" yaml:"NamespaceCollision,omitempty"`
 
 	// SkippedSecrets Secret resources dropped from the bundle, as Kind/namespace/name. Secrets are never uploaded.
@@ -4768,9 +4986,11 @@ type UploadResult struct {
 // UploadSourceInfo defines model for UploadSourceInfo.
 type UploadSourceInfo struct {
 	// Client The client that uploaded: cub, installer, ui.
-	Client        string                     `json:"Client,omitempty" yaml:"Client,omitempty"`
-	ClientVersion string                     `json:"ClientVersion,omitempty" yaml:"ClientVersion,omitempty"`
-	Credentials   *UploadRegistryCredentials `json:"Credentials,omitempty" yaml:"Credentials,omitempty"`
+	Client        string `json:"Client,omitempty" yaml:"Client,omitempty"`
+	ClientVersion string `json:"ClientVersion,omitempty" yaml:"ClientVersion,omitempty"`
+
+	// Credentials Registry credentials for the pull. Used for this request only; never stored, logged, or returned.
+	Credentials *UploadRegistryCredentials `json:"Credentials,omitempty" yaml:"Credentials,omitempty"`
 
 	// Digest The resolved digest, when the transport has one.
 	Digest string `json:"Digest,omitempty" yaml:"Digest,omitempty"`
@@ -4812,11 +5032,19 @@ type UploadUnitRef struct {
 // UploadUnitResult defines model for UploadUnitResult.
 type UploadUnitResult struct {
 	// Action Create, Update, Unchanged, Empty, Revive, or Adopt.
-	Action    string                `json:"Action,omitempty" yaml:"Action,omitempty"`
+	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
+
+	// Conflicts Paths withheld because they were overridden locally or guarded.
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
-	Diff      *ConfigDiff           `json:"Diff,omitempty" yaml:"Diff,omitempty"`
-	Entity    *UploadEntityResult   `json:"Entity,omitempty" yaml:"Entity,omitempty"`
-	Error     *ResponseError        `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Diff The same change path by path, with the values on both sides. Returned when include names Diff.
+	Diff *ConfigDiff `json:"Diff,omitempty" yaml:"Diff,omitempty"`
+
+	// Entity For a BackingUnit, what became of the entity its document describes.
+	Entity *UploadEntityResult `json:"Entity,omitempty" yaml:"Entity,omitempty"`
+	Error  *ResponseError      `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Mutations What the write changed, or on a dry run would change: the entries of the Unit's MutationSources it produced. Returned when include names Mutations.
 	Mutations *ResourceMutationList `json:"Mutations,omitempty" yaml:"Mutations,omitempty"`
 
 	// Resource The resource identity this Unit is keyed by.
@@ -4891,7 +5119,9 @@ type UserKey struct {
 // ValidationResult defines model for ValidationResult.
 type ValidationResult struct {
 	// Details Deprecated. Use Issues or FailedAttributes instead. Optional list of failure details when not associated with specific attributes/paths.
-	Details          []string            `json:"Details,omitempty" yaml:"Details,omitempty"`
+	Details []string `json:"Details,omitempty" yaml:"Details,omitempty"`
+
+	// FailedAttributes optional list of failed attributes/paths and issues found for them. Preferred over Issues and Details.
 	FailedAttributes *AttributeValueList `json:"FailedAttributes,omitempty" yaml:"FailedAttributes,omitempty"`
 
 	// FunctionName Name of the function invocation corresponding to the result
@@ -4957,7 +5187,9 @@ type View struct {
 
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
-	Permissions    *Permissions       `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// Permissions Permissions to access this view.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
 	// Slug Unique URL-safe identifier for the entity.
 	Slug string `json:"Slug" yaml:"Slug"`
@@ -5007,6 +5239,7 @@ type WithheldGuard struct {
 
 // WorkerInfo defines model for WorkerInfo.
 type WorkerInfo struct {
+	// FunctionWorkerInfo FunctionWorker capabilities
 	FunctionWorkerInfo *FunctionWorkerInfo `json:"FunctionWorkerInfo,omitempty" yaml:"FunctionWorkerInfo,omitempty"`
 
 	// IsServerWorker If true, this is a server-hosted worker: an identity that no worker process connects as, and that runs no functions. It cannot be changed after the worker is created.
@@ -6307,9 +6540,6 @@ type BulkCreateAttributesParams struct {
 	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the Attribute entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
 	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
-	// NamePrefixes Comma-separated list of prefixes to apply to cloned Attribute names
-	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
-
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -7503,7 +7733,7 @@ type BulkCreateChangeOrdersParams struct {
 	//
 	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
-	// Where expression to select destination spaces for cloning changeorders
+	// Where expression to select destination spaces for cloning change orders
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty" yaml:"where_space,omitempty"`
@@ -8041,7 +8271,7 @@ type BulkCreateChangeSetsParams struct {
 	//
 	// Supported attributes for filtering on Space: Annotations, AttributeFilterID, AttributeHash, AttributeIDs, BackingUnitID, ComponentID, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrganizationID, Permissions, ReleaseTargetID, Slug, SpaceID, TriggerFilterID, TriggerHash, TriggerIDs, UpdatedAt, UpstreamSpaceID.
 	//
-	// Where expression to select destination spaces for cloning changesets
+	// Where expression to select destination spaces for cloning change sets
 	//
 	// The whole string must be query-encoded.
 	WhereSpace *string `form:"where_space,omitempty" json:"where_space,omitempty" yaml:"where_space,omitempty"`
@@ -9591,7 +9821,7 @@ type BulkCreateFiltersParams struct {
 	// VariantLabels Comma-separated list of labels with multiple values for cloned Filter labels, in the format of key1=value1|value2,key2=value1|value2|value3
 	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
 
-	// NamePattern A Go-template string for clone name, use .SourceEntity to access the original entity and .Labels to access variant labels
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
 	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
 
 	// WhereSpace The specified string is an expression for the purpose of filtering
@@ -10832,8 +11062,6 @@ type BulkDeleteLinksParams struct {
 	//
 	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
 	//
-	// filter
-	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
 
@@ -11102,8 +11330,6 @@ type BulkPatchLinksParams struct {
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
 	// Supported attributes for filtering on Link: Annotations, AutoUpdate, BackingUnitID, Bindings, Clearance, CreatedAt, DeleteGates, DisplayName, DownstreamLastMergedRevisionNum, DownstreamPaths, DownstreamSetters, FromUnitID, Guards, Hash, HiddenReason, Labels, LinkID, ManualBindings, MergeEnableSubtraction, OrganizationID, Permissions, Protect, Slug, SpaceID, Squash, Stale, ToSpaceID, ToUnitID, TransformInvocationID, UpdateType, UpdatedAt, UpstreamGetters, UpstreamLastMergedRevisionNum, UpstreamLinkID, UpstreamPaths, UpstreamSpaceID.
-	//
-	// filter
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -13601,6 +13827,9 @@ type GetChangeOrderParams struct {
 	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
 	// The whole string must be query-encoded.
 	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// ContainerImages If true, fill in ContainerImages: for each Space the ChangeOrder has landed in, the container images get-container-image finds at the Revisions its end Tag marks that differ from those at the Revisions its start Tag marks.
+	ContainerImages *bool `form:"container_images,omitempty" json:"container_images,omitempty" yaml:"container_images,omitempty"`
 }
 
 // PatchChangeOrderApplicationMergePatchPlusJSONBody defines parameters for PatchChangeOrder.
@@ -19149,6 +19378,12 @@ type BulkCreateTriggersParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned Trigger names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
+	// VariantLabels Comma-separated list of labels with multiple values for cloned Trigger labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
+
+	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'
+	NamePattern *string `form:"name_pattern,omitempty" json:"name_pattern,omitempty" yaml:"name_pattern,omitempty"`
+
 	// WhereSpace The specified string is an expression for the purpose of filtering
 	// the list of Spaces returned. The expression syntax was inspired by SQL.
 	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
@@ -21658,7 +21893,7 @@ type BulkCreateViewsParams struct {
 	// NamePrefixes Comma-separated list of prefixes to apply to cloned View names
 	NamePrefixes *string `form:"name_prefixes,omitempty" json:"name_prefixes,omitempty" yaml:"name_prefixes,omitempty"`
 
-	// VariantLabels Comma-separated list of labels with multiple values fro cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3
+	// VariantLabels Comma-separated list of labels with multiple values for cloned View labels, in the format of key1=value1|value2,key2=value1|value2|value3
 	VariantLabels *string `form:"variant_labels,omitempty" json:"variant_labels,omitempty" yaml:"variant_labels,omitempty"`
 
 	// NamePattern A string for clone names, use the prefix 'template:' for a Go-template with .SourceEntitySlug to access the original entity's slug and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'

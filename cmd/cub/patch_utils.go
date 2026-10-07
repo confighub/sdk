@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"sigs.k8s.io/yaml"
 )
 
 // BuildPatchData builds patch JSON bytes from stdin/file input, labels, and entity-specific fields.
@@ -28,6 +30,10 @@ func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string)
 		if err != nil {
 			return nil, err
 		}
+		patchData, err = checkPatchInput(patchData)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if patchData == nil {
 		patchData = []byte("null")
@@ -39,6 +45,45 @@ func BuildPatchDataWithPermissions(enhancer PatchEnhancer, permissions []string)
 		return nil, err
 	}
 	return EnhancePatchData(patchData, annotation, label, deleteGate, permissions, enhancer)
+}
+
+// checkPatchInput checks a patch read from --from-stdin or --filename against the schema of the
+// entity the running command writes, since the server applies a merge patch without refusing a
+// field the entity does not have. A patch written in YAML is returned as JSON, which is what the
+// server takes, as an entity written whole is.
+func checkPatchInput(patchData []byte) ([]byte, error) {
+	patchJSON, err := yaml.YAMLToJSON(patchData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse patch data: %w", err)
+	}
+	var generic any
+	if err := json.Unmarshal(patchJSON, &generic); err != nil {
+		return nil, fmt.Errorf("failed to parse patch data: %w", err)
+	}
+	if schemaName, ok := runningEntitySchema(); ok {
+		if err := checkEntityInput(schemaName, generic); err != nil {
+			return nil, err
+		}
+	}
+	if json.Valid(patchData) {
+		return patchData, nil
+	}
+	return patchJSON, nil
+}
+
+// runningEntitySchema returns the OpenAPI schema of the entity whose command is running, as its
+// explain subcommand names it.
+func runningEntitySchema() (string, bool) {
+	i := strings.LastIndex(runningCommandPath, " ")
+	if i < 0 {
+		return "", false
+	}
+	for parent, schemaName := range explainSchemas {
+		if parent.CommandPath() == runningCommandPath[:i] {
+			return schemaName, true
+		}
+	}
+	return "", false
 }
 
 // PatchEnhancer is a function that adds entity-specific fields to patch data.

@@ -117,6 +117,8 @@ var triggerCreateArgs struct {
 	destSpaces     []string
 	whereSpace     string
 	namePrefixes   []string
+	variantLabels  []string
+	namePattern    string
 	triggerSlugs   []string
 	filterSpace    string
 	invocationSlug string
@@ -139,6 +141,8 @@ func init() {
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.destSpaces, "dest-space", []string{}, "destination spaces for bulk create (can be repeated or comma-separated)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.whereSpace, "where-space", "", "where expression to select destination spaces for bulk create")
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.namePrefixes, "name-prefix", []string{}, "name prefixes for bulk create (can be repeated or comma-separated)")
+	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
+	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Trigger and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")
 	triggerCreateCmd.Flags().StringSliceVar(&triggerCreateArgs.triggerSlugs, "trigger", []string{}, "target specific triggers by slug or UUID for bulk create (can be repeated or comma-separated)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.filterSpace, "filter-space", "", "filter entity containing WHERE expression to select destination spaces for bulk create (slug or UUID)")
 	triggerCreateCmd.Flags().StringVar(&triggerCreateArgs.invocationSlug, "invocation", "", "invocation to execute (alternative to specifying function and arguments)")
@@ -168,8 +172,20 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 			return false, errors.New("--dest-space and --where-space flags are mutually exclusive")
 		}
 
-		if !backingUnitArgs.fromBackingUnits && len(triggerCreateArgs.destSpaces) == 0 && triggerCreateArgs.whereSpace == "" && len(triggerCreateArgs.namePrefixes) == 0 {
-			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, or --name-prefix")
+		if !backingUnitArgs.fromBackingUnits && len(triggerCreateArgs.destSpaces) == 0 && triggerCreateArgs.whereSpace == "" && len(triggerCreateArgs.namePrefixes) == 0 && len(triggerCreateArgs.variantLabels) == 0 {
+			return false, errors.New("bulk create mode requires at least one of --dest-space, --where-space, --name-prefix, or --variant-labels")
+		}
+
+		if len(triggerCreateArgs.namePrefixes) > 0 && len(triggerCreateArgs.variantLabels) > 0 {
+			return false, errors.New("--name-prefix and --variant-labels cannot be used together")
+		}
+
+		if triggerCreateArgs.namePattern != "" && len(triggerCreateArgs.namePrefixes) > 0 {
+			return false, errors.New("--name-pattern and --name-prefix cannot be used together")
+		}
+
+		if triggerCreateArgs.namePattern != "" && len(triggerCreateArgs.variantLabels) == 0 {
+			return false, errors.New("--variant-labels needs to be set if using --name-pattern")
 		}
 	} else {
 		// Single create mode validation
@@ -185,8 +201,9 @@ func checkTriggerCreateConflictingArgs(args []string) (bool, error) {
 			}
 		}
 
-		if filter != "" || where != "" || len(triggerCreateArgs.triggerSlugs) > 0 || len(triggerCreateArgs.destSpaces) > 0 || triggerCreateArgs.whereSpace != "" || len(triggerCreateArgs.namePrefixes) > 0 {
-			return false, errors.New("bulk create flags (--filter, --where, --trigger, --dest-space, --where-space, --name-prefix) can only be used without positional arguments")
+		if filter != "" || where != "" || len(triggerCreateArgs.triggerSlugs) > 0 || len(triggerCreateArgs.destSpaces) > 0 || triggerCreateArgs.whereSpace != "" ||
+			len(triggerCreateArgs.namePrefixes) > 0 || len(triggerCreateArgs.variantLabels) > 0 || triggerCreateArgs.namePattern != "" {
+			return false, errors.New("bulk create flags (--filter, --where, --trigger, --dest-space, --where-space, --name-prefix, --variant-labels, --name-pattern) can only be used without positional arguments")
 		}
 	}
 
@@ -413,6 +430,15 @@ func runBulkTriggerCreate() error {
 	if len(triggerCreateArgs.namePrefixes) > 0 {
 		namePrefixesStr := strings.Join(triggerCreateArgs.namePrefixes, ",")
 		params.NamePrefixes = &namePrefixesStr
+	}
+
+	if len(triggerCreateArgs.variantLabels) > 0 {
+		variantLabelsStr := strings.Join(triggerCreateArgs.variantLabels, ",")
+		params.VariantLabels = &variantLabelsStr
+	}
+
+	if triggerCreateArgs.namePattern != "" {
+		params.NamePattern = &triggerCreateArgs.namePattern
 	}
 
 	// Set where_space parameter - either from direct where-space flag or converted from dest-space
