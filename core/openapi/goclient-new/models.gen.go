@@ -4082,7 +4082,7 @@ type Trigger struct {
 	// OrganizationID Unique identifier for an organization.
 	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
 
-	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum.
+	// OtherDataSource Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.
 	OtherDataSource string       `json:"OtherDataSource,omitempty" yaml:"OtherDataSource,omitempty"`
 	Permissions     *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
 
@@ -9872,7 +9872,7 @@ type InvokeFunctionsOnOrgParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.
+	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.
 	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering
@@ -14364,7 +14364,7 @@ type InvokeFunctionsParams struct {
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
 
-	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.
+	// OtherDataSource Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.
 	OtherDataSource *string `form:"other_data_source,omitempty" json:"other_data_source,omitempty" yaml:"other_data_source,omitempty"`
 
 	// Where The specified string is an expression for the purpose of filtering

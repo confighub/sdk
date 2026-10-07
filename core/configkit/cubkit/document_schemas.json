@@ -1418,7 +1418,7 @@
           "type": "object"
         },
         "OtherDataSource": {
-          "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum.",
+          "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.",
           "type": "string"
         },
         "Permissions": {

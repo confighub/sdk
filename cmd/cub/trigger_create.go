@@ -147,7 +147,7 @@ func init() {
 	triggerCreateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerCreateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerCreateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
-	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum)")
+	triggerCreateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 
 	addBackingUnitFlags(triggerCreateCmd, "Trigger", false, true)
 	addFromBackingUnitsFlags(triggerCreateCmd, "Trigger", true)

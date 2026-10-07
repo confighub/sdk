@@ -78,7 +78,7 @@ func computeMutations(converter configkit.ConfigConverter, resourceProvider yaml
 		} else if args[2].ParameterName == "reverse" {
 			reverse = args[2].Value.(bool)
 		} else {
-			return modifiedParsedData, nil, errors.Errorf("invalid parameter " + args[2].ParameterName)
+			return modifiedParsedData, nil, errors.Errorf("invalid parameter %s", args[2].ParameterName)
 		}
 		if len(args) > 3 {
 			if args[3].ParameterName == "reverse" || args[3].ParameterName == "" {
@@ -86,7 +86,7 @@ func computeMutations(converter configkit.ConfigConverter, resourceProvider yaml
 			} else if args[3].ParameterName == "already-converted" {
 				alreadyConverted = args[3].Value.(bool)
 			} else {
-				return modifiedParsedData, nil, errors.Errorf("invalid parameter " + args[2].ParameterName)
+				return modifiedParsedData, nil, errors.Errorf("invalid parameter %s", args[3].ParameterName)
 			}
 		}
 	}

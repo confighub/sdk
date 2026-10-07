@@ -10357,7 +10357,7 @@
           {
             "name": "other_data_source",
             "in": "query",
-            "description": "Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.",
+            "description": "Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.",
             "required": false,
             "schema": {
               "type": "string"
@@ -25369,7 +25369,7 @@
           {
             "name": "other_data_source",
             "in": "query",
-            "description": "Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.",
+            "description": "Source of additional configuration data to pass to functions that need it (e.g., vet-immutable). Supports named revision specifiers: LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with 'Before:' (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without it, each function is passed the sources its signature lists in OtherDataExpected.",
             "required": false,
             "schema": {
               "type": "string"
@@ -57173,7 +57173,7 @@
           },
           "OtherDataSource": {
             "type": "string",
-            "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum.",
+            "description": "Specifies the source of additional configuration data to pass to functions that need it (e.g., vet-immutable needs a baseline revision to compare against). Uses revision specifier format such as LastReleasedRevisionNum or Before:HeadRevisionNum. When empty, the function is passed the sources its signature lists in OtherDataExpected.",
             "x-confighub-where": {
               "dataType": "string"
             },

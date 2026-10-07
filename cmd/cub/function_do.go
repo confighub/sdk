@@ -211,7 +211,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
 	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
-	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum)")
+	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
 	functionCmd.AddCommand(functionDoCmd)
 }
 

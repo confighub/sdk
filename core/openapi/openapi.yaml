@@ -10920,7 +10920,8 @@ paths:
       - description: 'Source of additional configuration data to pass to functions
           that need it (e.g., vet-immutable). Supports named revision specifiers:
           LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
-          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.'
+          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without
+          it, each function is passed the sources its signature lists in OtherDataExpected.'
         in: query
         name: other_data_source
         required: false
@@ -24363,7 +24364,8 @@ paths:
       - description: 'Source of additional configuration data to pass to functions
           that need it (e.g., vet-immutable). Supports named revision specifiers:
           LastReleasedRevisionNum, HeadRevisionNum. Can be prefixed with ''Before:''
-          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources.'
+          (e.g., Before:HeadRevisionNum). May be repeated for multiple sources. Without
+          it, each function is passed the sources its signature lists in OtherDataExpected.'
         in: query
         name: other_data_source
         required: false
@@ -53878,7 +53880,8 @@ components:
           description: Specifies the source of additional configuration data to pass
             to functions that need it (e.g., vet-immutable needs a baseline revision
             to compare against). Uses revision specifier format such as LastReleasedRevisionNum
-            or Before:HeadRevisionNum.
+            or Before:HeadRevisionNum. When empty, the function is passed the sources
+            its signature lists in OtherDataExpected.
           type: string
           x-confighub-where:
             dataType: string

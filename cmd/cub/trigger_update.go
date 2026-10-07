@@ -16,11 +16,17 @@ import (
 )
 
 var triggerUpdateCmd = &cobra.Command{
-	Use:   "update [<slug or id>] [<event> <config type> <function> [<arg1> ...]]",
+	Use:   "update [<slug or id> [<event> <config type> <function> [<arg1> ...]]]",
 	Short: "Update a trigger or multiple triggers",
 	Long: getCommandHelp(`Update a trigger or multiple triggers using bulk operations.
 
 Single trigger update:
+
+A whole update names the trigger's event, config type and function, as create does. With --patch, the slug alone
+patches only the fields the flags set:
+`+"```"+`
+  cub trigger update --space my-space --patch my-trigger --label owner=platform --warn
+`+"```"+`
 
 Function arguments can be provided as positional arguments or as named arguments using --argumentname=value syntax.
 Once a named argument is used, all subsequent arguments must be named. Use "--" to separate command flags from function arguments when using named function arguments.
@@ -99,7 +105,7 @@ func init() {
 	triggerUpdateCmd.Flags().StringVar(&triggerUnitFilter, "unit-filter", "", "filter entity (slug or UUID) to restrict which Units this trigger applies to")
 	triggerUpdateCmd.Flags().StringVar(&triggerWhereResource, "where-resource", "", "metadata path expression to restrict which resources the trigger operates on")
 	triggerUpdateCmd.Flags().StringVar(&triggerFailOpenAfter, "fail-open-after", "", "duration after which disconnected worker triggers fail open (e.g., 6h, 30m)")
-	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum)")
+	triggerUpdateCmd.Flags().StringVar(&triggerOtherDataSource, "other-data-source", "", "source of additional data to pass to the function (e.g., LastReleasedRevisionNum); defaults to the sources the function expects")
 	addBackingUnitFlags(triggerUpdateCmd, "Trigger", false, false)
 	addFromBackingUnitsFlags(triggerUpdateCmd, "Trigger", false)
 	triggerCmd.AddCommand(triggerUpdateCmd)
@@ -120,17 +126,8 @@ func checkTriggerConflictingArgs(args []string) bool {
 		}
 
 	} else {
-		// Single update mode validation
-		if invocationSlug != "" {
-			// When using invocation, we need 4 args: slug, event, config type (no function needed)
-			if len(args) != 3 {
-				failOnError(errors.New("single trigger update with --invocation requires: <slug> <event> <config type>"))
-			}
-		} else {
-			// Traditional mode requires function and arguments
-			if len(args) < 4 {
-				failOnError(errors.New("single trigger update requires: <slug> <event> <config type> <function> [arguments...]"))
-			}
+		if err := checkSingleTriggerUpdateArgs(args); err != nil {
+			failOnError(err)
 		}
 
 		if filter != "" || where != "" || len(triggerIdentifiers) > 0 {
@@ -191,91 +188,9 @@ func runBulkTriggerUpdate() error {
 	// Add space constraint to the where clause only if not org level
 	effectiveWhere = addSpaceIDToWhereClause(effectiveWhere, selectedSpaceID)
 
-	// Validate and resolve entity references early
-	var workerUUID *uuid.UUID
-	if workerSlug != "" {
-		workerID, err := resolveWorkerID(workerSlug)
-		if err != nil {
-			return err
-		}
-		workerUUID = &workerID
-	}
-
-	var invocationIDStr string
-	if invocationSlug != "" {
-		invocationID, err := resolveInvocationID(invocationSlug)
-		if err != nil {
-			return err
-		}
-		invocationIDStr = invocationID.String()
-	}
-
-	parsedClearance, parsedGuards, err := parseTriggerPolicyFlags()
+	enhancer, err := triggerPatchEnhancer()
 	if err != nil {
 		return err
-	}
-
-	// Create enhancer function for trigger-specific fields
-	enhancer := func(patchMap map[string]interface{}) {
-		// Add enable/disable flags
-		if disableTrigger {
-			patchMap["Disabled"] = true
-		} else if enableTrigger {
-			patchMap["Disabled"] = false
-		}
-
-		// Add warn/unwarn flags
-		if warnTrigger {
-			patchMap["Warn"] = true
-		} else if unwarnTrigger {
-			patchMap["Warn"] = false
-		}
-
-		// Add protect/unprotect flags
-		if parsedClearance != nil {
-			patchMap["Clearance"] = parsedClearance
-		}
-		if parsedGuards != nil {
-			patchMap["Guards"] = parsedGuards
-		}
-		if protectTrigger {
-			patchMap["Protect"] = true
-		} else if unprotectTrigger {
-			patchMap["Protect"] = false
-		}
-
-		// Add worker if specified
-		if workerUUID != nil {
-			patchMap["BridgeWorkerID"] = workerUUID.String()
-		}
-
-		// Add invocation if specified
-		if invocationIDStr != "" {
-			patchMap["InvocationID"] = invocationIDStr
-			// Clear function-related fields when using invocation
-			patchMap["FunctionName"] = ""
-			patchMap["Arguments"] = nil
-		}
-
-		// Add new trigger fields if specified
-		if triggerDescription != "" {
-			patchMap["Description"] = triggerDescription
-		}
-		if triggerWhereUnit != "" {
-			patchMap["WhereUnit"] = triggerWhereUnit
-		}
-		if triggerWhereResource != "" {
-			patchMap["WhereResource"] = triggerWhereResource
-		}
-		if triggerOtherDataSource != "" {
-			patchMap["OtherDataSource"] = triggerOtherDataSource
-		}
-		if triggerFailOpenAfter != "" {
-			duration, err := time.ParseDuration(triggerFailOpenAfter)
-			if err == nil {
-				patchMap["FailOpenAfter"] = int(duration)
-			}
-		}
 	}
 
 	// Build patch data using consolidated function
@@ -320,19 +235,6 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		return runBulkTriggerUpdate()
 	}
 
-	// Single trigger update logic
-	if invocationSlug != "" {
-		// When using invocation, we need 3 args: slug, event, config type
-		if len(args) != 3 {
-			return errors.New("single trigger update with --invocation requires: <slug or id> <event> <config type>")
-		}
-	} else {
-		// Traditional mode requires function and arguments
-		if len(args) < 4 {
-			return errors.New("single trigger update requires: <slug or id> <event> <config type> <function> [arguments...]")
-		}
-	}
-
 	currentTrigger, err := resolveTrigger(args[0], selectedSpaceID, "*") // get all fields for RMW
 	if err != nil {
 		return err
@@ -341,105 +243,21 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	spaceID := currentTrigger.Trigger.SpaceID
 
 	if triggerPatch {
-		// Single trigger patch mode
-		// Handle error-prone operations before enhancer
-		var workerID *goclientnew.UUID
-		if workerSlug != "" {
-			workerUUID, err := resolveWorkerID(workerSlug)
-			if err != nil {
-				return err
-			}
-			workerUUIDConverted := goclientnew.UUID(workerUUID)
-			workerID = &workerUUIDConverted
+		flagFields, err := triggerPatchEnhancer()
+		if err != nil {
+			return err
 		}
-
-		var invocationID *uuid.UUID
-		if invocationSlug != "" {
-			id, err := resolveInvocationID(invocationSlug)
-			if err != nil {
-				return err
-			}
-			invocationID = &id
-		}
-
-		// Parse function arguments if needed
-		var newArgs []goclientnew.FunctionArgument
-		if invocationSlug == "" && len(args) > 4 {
-			invokeArgs := args[4:]
-			newArgs = parseFunctionArguments(invokeArgs)
-		}
-
-		parsedClearance, parsedGuards, perr := parseTriggerPolicyFlags()
-		if perr != nil {
-			return perr
-		}
-
-		// Build patch data using BuildPatchData with trigger enhancer
 		triggerEnhancer := func(patchData map[string]interface{}) {
-			// Add trigger-specific fields
-			if warnTrigger {
-				patchData["Warn"] = true
-			} else if unwarnTrigger {
-				patchData["Warn"] = false
+			flagFields(patchData)
+			if len(args) == 1 {
+				return
 			}
-
-			if parsedClearance != nil {
-				patchData["Clearance"] = parsedClearance
-			}
-			if parsedGuards != nil {
-				patchData["Guards"] = parsedGuards
-			}
-			if protectTrigger {
-				patchData["Protect"] = true
-			} else if unprotectTrigger {
-				patchData["Protect"] = false
-			}
-
-			if disableTrigger {
-				patchData["Disabled"] = true
-			} else if enableTrigger {
-				patchData["Disabled"] = false
-			}
-
-			if workerID != nil {
-				patchData["BridgeWorkerID"] = *workerID
-			}
-
-			// Add function details from args
 			patchData["Event"] = args[1]
 			patchData["ToolchainType"] = args[2]
-
-			if invocationID != nil {
-				// Use invocation instead of function and arguments
-				patchData["InvocationID"] = *invocationID
-				// Clear function-related fields when using invocation
-				patchData["FunctionName"] = ""
-				patchData["Arguments"] = nil
-			} else {
-				// Traditional function and arguments approach
+			if invocationSlug == "" {
 				patchData["FunctionName"] = args[3]
-				if newArgs != nil {
-					patchData["Arguments"] = newArgs
-				}
-			}
-
-			// Add new trigger fields if specified
-			if triggerDescription != "" {
-				patchData["Description"] = triggerDescription
-			}
-			if triggerWhereUnit != "" {
-				patchData["WhereUnit"] = triggerWhereUnit
-			}
-			if triggerWhereResource != "" {
-				patchData["WhereResource"] = triggerWhereResource
-			}
-			if triggerOtherDataSource != "" {
-				patchData["OtherDataSource"] = triggerOtherDataSource
-			}
-			if triggerFailOpenAfter != "" {
-				duration, err := time.ParseDuration(triggerFailOpenAfter)
-				if err == nil {
-					patchData["FailOpenAfter"] = int(duration)
+				if len(args) > 4 {
+					patchData["Arguments"] = parseFunctionArguments(args[4:])
 				}
 			}
 		}
@@ -593,6 +411,118 @@ func triggerUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	triggerDetails := triggerRes.JSON200
 	displayUpdateResults(triggerDetails, "trigger", args[0], triggerDetails.TriggerID.String(), displayTriggerDetails)
 	return nil
+}
+
+// checkSingleTriggerUpdateArgs checks the positional arguments of an update of one trigger. A whole
+// update names the event, config type and function (or, with --invocation, the event and config
+// type), since it replaces them; a patch may name the trigger alone and leave them as they are.
+func checkSingleTriggerUpdateArgs(args []string) error {
+	if triggerPatch && len(args) == 1 {
+		return nil
+	}
+	if invocationSlug != "" {
+		if len(args) != 3 {
+			return errors.New("single trigger update with --invocation requires: <slug> <event> <config type>, or with --patch <slug> alone")
+		}
+		return nil
+	}
+	if len(args) < 4 {
+		return errors.New("single trigger update requires: <slug> <event> <config type> <function> [arguments...], or with --patch <slug> alone")
+	}
+	return nil
+}
+
+// triggerPatchEnhancer returns the enhancer that adds the fields the trigger flags set to a patch,
+// for a patch of one trigger and a bulk patch alike. It resolves and parses the flags first, so
+// that a flag naming nothing, or a malformed one, is refused rather than left out of the patch.
+func triggerPatchEnhancer() (PatchEnhancer, error) {
+	var workerID *uuid.UUID
+	if workerSlug != "" {
+		id, err := resolveWorkerID(workerSlug)
+		if err != nil {
+			return nil, err
+		}
+		workerID = &id
+	}
+	var invocationID *uuid.UUID
+	if invocationSlug != "" {
+		id, err := resolveInvocationID(invocationSlug)
+		if err != nil {
+			return nil, err
+		}
+		invocationID = &id
+	}
+	var unitFilterID *uuid.UUID
+	if triggerUnitFilter != "" {
+		id, err := resolveFilterID(triggerUnitFilter)
+		if err != nil {
+			return nil, err
+		}
+		unitFilterID = &id
+	}
+	var failOpenAfter *time.Duration
+	if triggerFailOpenAfter != "" {
+		duration, err := time.ParseDuration(triggerFailOpenAfter)
+		if err != nil {
+			return nil, fmt.Errorf("invalid --fail-open-after duration: %w", err)
+		}
+		failOpenAfter = &duration
+	}
+	parsedClearance, parsedGuards, err := parseTriggerPolicyFlags()
+	if err != nil {
+		return nil, err
+	}
+
+	return func(patchMap map[string]interface{}) {
+		if disableTrigger {
+			patchMap["Disabled"] = true
+		} else if enableTrigger {
+			patchMap["Disabled"] = false
+		}
+		if warnTrigger {
+			patchMap["Warn"] = true
+		} else if unwarnTrigger {
+			patchMap["Warn"] = false
+		}
+		if parsedClearance != nil {
+			patchMap["Clearance"] = parsedClearance
+		}
+		if parsedGuards != nil {
+			patchMap["Guards"] = parsedGuards
+		}
+		if protectTrigger {
+			patchMap["Protect"] = true
+		} else if unprotectTrigger {
+			patchMap["Protect"] = false
+		}
+		if workerID != nil {
+			patchMap["BridgeWorkerID"] = workerID.String()
+		}
+		if invocationID != nil {
+			patchMap["InvocationID"] = invocationID.String()
+			// An invocation takes the place of the function and its arguments.
+			patchMap["FunctionName"] = ""
+			patchMap["Arguments"] = nil
+		}
+		if triggerDescription != "" {
+			patchMap["Description"] = triggerDescription
+		}
+		if triggerWhereUnit != "" {
+			patchMap["WhereUnit"] = triggerWhereUnit
+		}
+		if unitFilterID != nil {
+			patchMap["UnitFilterID"] = unitFilterID.String()
+		}
+		if triggerWhereResource != "" {
+			patchMap["WhereResource"] = triggerWhereResource
+		}
+		if triggerOtherDataSource != "" {
+			patchMap["OtherDataSource"] = triggerOtherDataSource
+		}
+		if failOpenAfter != nil {
+			patchMap["FailOpenAfter"] = int(*failOpenAfter)
+		}
+	}, nil
 }
 
 func handleBulkTriggerCreateOrUpdateResponse(responses200 *[]goclientnew.TriggerCreateOrUpdateResponse, responses207 *[]goclientnew.TriggerCreateOrUpdateResponse, statusCode int, operationName, contextInfo string) error {
