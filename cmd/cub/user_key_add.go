@@ -76,6 +76,15 @@ func init() {
 }
 
 func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
+	return addKey(resolveKeyTargetUser, func(target *goclientnew.User, publicJWK json.RawMessage, description string) (*goclientnew.UserKey, error) {
+		return apiCreateUserKey(target.UserID, publicJWK, description)
+	})
+}
+
+// addKey registers the key --public-key or --generate names for the identity resolve finds,
+// with register, which calls whichever API the identity's keys are managed through.
+func addKey(resolve func() (*goclientnew.User, error),
+	register func(target *goclientnew.User, publicJWK json.RawMessage, description string) (*goclientnew.UserKey, error)) error {
 	if (userKeyPublicKey == "") == (userKeyGenerate == "") {
 		return fmt.Errorf("give either --public-key to register a key you have, or --generate to make one")
 	}
@@ -94,7 +103,7 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		publicJWK = supplied
 	}
 
-	targetUser, err := resolveKeyTargetUser()
+	targetUser, err := resolve()
 	if err != nil {
 		return err
 	}
@@ -133,7 +142,7 @@ func userKeyAddCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	key, err := apiCreateUserKey(targetUser.UserID, publicJWK, userKeyDescription)
+	key, err := register(targetUser, publicJWK, userKeyDescription)
 	if err != nil {
 		// Registration failed, so the key we just wrote authenticates nothing.
 		// Leaving it behind would poison the alias: writePrivateKey refuses to

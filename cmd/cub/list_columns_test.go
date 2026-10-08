@@ -48,7 +48,8 @@ func TestListColumnsForNamesItsOwnCommand(t *testing.T) {
 // columnsHandledElsewhere names the file that renders a list whose display function is
 // shared with other commands and so lives outside the list file.
 var columnsHandledElsewhere = map[string]string{
-	"user_key_list.go": "user_key.go",
+	"user_key_list.go":      "user_key.go",
+	"serviceaccount_key.go": "user_key.go",
 }
 
 // TestColumnsFlagIsNeverIgnored checks that every command file registering --columns

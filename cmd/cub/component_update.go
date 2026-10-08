@@ -55,7 +55,7 @@ func init() {
 	addStandardUpdateFlags(componentUpdateCmd)
 	addFieldEditFlags(componentUpdateCmd, "Component")
 	componentUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
-	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	componentUpdateCmd.Flags().StringSliceVar(&componentUpdateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, to allow, or -<ChangeWorkflow> to stop allowing (can be repeated or comma-separated)")
 	componentUpdateCmd.Flags().BoolVar(&componentUpdateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
 	enableWhereFlag(componentUpdateCmd)

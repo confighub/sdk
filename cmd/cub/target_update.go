@@ -60,7 +60,7 @@ func init() {
 	enableWhereFlag(targetUpdateCmd)
 	enableFilterFlag(targetUpdateCmd)
 	targetUpdateCmd.Flags().StringSliceVar(&targetIdentifiers, "target", []string{}, "target specific targets by slug or UUID for bulk patch (can be repeated or comma-separated)")
-	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	targetUpdateCmd.Flags().StringSliceVar(&targetUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.whereTrigger, "where-trigger", "", "filter expression to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	targetUpdateCmd.Flags().StringVar(&targetUpdateArgs.triggerFilter, "trigger-filter", "", "Filter slug or UUID to identify Triggers that should be invoked on Units associated with this Target (use '-' to clear)")
 	enableFactFlag(targetUpdateCmd)

@@ -557,6 +557,497 @@ paths:
       summary: Bulk patch multiple components
       tags:
       - Component
+  /_service_account:
+    delete:
+      description: Delete multiple service accounts selected by query parameters
+      operationId: BulkDeleteServiceAccounts
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ServiceAccount list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ServiceAccount).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ServiceAccount are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ServiceAccount entities to act on, in ID order.
+          A request that names limit or continue also stops when it runs short of
+          time, and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the ServiceAccount entities after the last one it acted
+          on. The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ServiceAccount is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk delete multiple service accounts
+      tags:
+      - ServiceAccount
+    patch:
+      description: Apply JSON merge patch to multiple service accounts selected by
+        query parameters
+      operationId: BulkPatchServiceAccounts
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ServiceAccount list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ServiceAccount).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ServiceAccount are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ServiceAccount entities to act on, in ID order.
+          A request that names limit or continue also stops when it runs short of
+          time, and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the ServiceAccount entities after the last one it acted
+          on. The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ServiceAccount. All fields
+                are optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                OrgRole:
+                  description: ""
+                  nullable: true
+                  type: string
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ServiceAccountCreateOrUpdateResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ServiceAccountCreateOrUpdateResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk patch multiple service accounts
+      tags:
+      - ServiceAccount
   /_space:
     delete:
       description: Delete multiple spaces selected by query parameters
@@ -11502,10 +11993,11 @@ paths:
       - Group
   /group/{group_id}/user/{user_id}:
     delete:
-      description: Remove the bot User of a BridgeWorker in the caller's Organization
-        from the Group. An organization admin or manager may. So may a member of the
-        Group who has Manage permission on the bot User's BridgeWorker. Removing a
-        bot that is not a member does nothing. Returns the bot User with its GroupIDs.
+      description: Remove the User of a ServiceAccount, or the bot User of a BridgeWorker,
+        in the caller's Organization from the Group. An organization admin or manager
+        may. So may a member of the Group who has Manage permission on the bot User's
+        ServiceAccount or BridgeWorker. Removing a bot that is not a member does nothing.
+        Returns the bot User with its GroupIDs.
       operationId: RemoveGroupBotUser
       parameters:
       - description: Unique identifier for a group_id
@@ -11582,11 +12074,12 @@ paths:
       tags:
       - Group
     post:
-      description: Add the bot User of a BridgeWorker in the caller's Organization
-        to the Group. Other Users' Group memberships are managed in the identity provider.
-        An organization admin or manager may. So may a member of the Group who has
-        Manage permission on the bot User's BridgeWorker. Adding a bot that is already
-        a member does nothing. Returns the bot User with its GroupIDs.
+      description: Add the User of a ServiceAccount, or the bot User of a BridgeWorker,
+        in the caller's Organization to the Group. Other Users' Group memberships
+        are managed in the identity provider. An organization admin or manager may.
+        So may a member of the Group who has Manage permission on the bot User's ServiceAccount
+        or BridgeWorker. Adding a bot that is already a member does nothing. Returns
+        the bot User with its GroupIDs.
       operationId: AddGroupBotUser
       parameters:
       - description: Unique identifier for a group_id
@@ -17686,6 +18179,913 @@ paths:
       summary: Get the mutation sources of many Revisions across spaces
       tags:
       - Revision
+  /service_account:
+    get:
+      description: List ServiceAccounts
+      operationId: ListServiceAccounts
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the ServiceAccount list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (ServiceAccount).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ServiceAccount are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of ServiceAccount entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort ServiceAccount results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering ServiceAccount: CreatedAt, DisplayName, HiddenReason, OrgRole, OrganizationID, ServiceAccountID, Slug, UpdatedAt, UserID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the ServiceAccount's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the ServiceAccount entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedServiceAccount'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List ServiceAccounts
+      tags:
+      - ServiceAccount
+    post:
+      description: Create ServiceAccount
+      operationId: CreateServiceAccount
+      parameters:
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceAccount'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAccount'
+          description: An identity of the organization that is not a person and does
+            not log in through the identity provider, such as an automation or an
+            agent. Each ServiceAccount is backed by a User, which is what other entities'
+            Permissions and Groups name to grant it access. The ServiceAccount's own
+            Permissions say who may manage it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create ServiceAccount
+      tags:
+      - ServiceAccount
+  /service_account/{service_account_id}:
+    delete:
+      description: Delete ServiceAccount
+      operationId: DeleteServiceAccount
+      parameters:
+      - description: Unique identifier for a service_account_id
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ServiceAccount is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete ServiceAccount
+      tags:
+      - ServiceAccount
+    get:
+      description: Get ServiceAccount
+      operationId: GetServiceAccount
+      parameters:
+      - description: |-
+          Include clause for expanding related entities in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for ServiceAccount are OrganizationID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for ServiceAccount.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a service_account_id
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedServiceAccount'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get ServiceAccount
+      tags:
+      - ServiceAccount
+    patch:
+      description: Patch ServiceAccount
+      operationId: PatchServiceAccount
+      parameters:
+      - description: Unique identifier for a service_account_id
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for ServiceAccount. All fields
+                are optional and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                OrgRole:
+                  description: ""
+                  nullable: true
+                  type: string
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAccount'
+          description: An identity of the organization that is not a person and does
+            not log in through the identity provider, such as an automation or an
+            agent. Each ServiceAccount is backed by a User, which is what other entities'
+            Permissions and Groups name to grant it access. The ServiceAccount's own
+            Permissions say who may manage it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch ServiceAccount
+      tags:
+      - ServiceAccount
+    put:
+      description: Update ServiceAccount
+      operationId: UpdateServiceAccount
+      parameters:
+      - description: Unique identifier for a service_account_id
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceAccount'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceAccount'
+          description: An identity of the organization that is not a person and does
+            not log in through the identity provider, such as an automation or an
+            agent. Each ServiceAccount is backed by a User, which is what other entities'
+            Permissions and Groups name to grant it access. The ServiceAccount's own
+            Permissions say who may manage it.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update ServiceAccount
+      tags:
+      - ServiceAccount
+  /service_account/{service_account_id}/key:
+    get:
+      description: 'List the public keys registered for a service account. Keys are
+        returned unredacted, deliberately: they are public material, and an operator
+        noticing a key nobody registered is how an injected one is caught. Requires
+        View permission on the service account.'
+      operationId: ListServiceAccountKeys
+      parameters:
+      - description: UUID of the service account whose keys are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserKey'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List a service account's public keys
+      tags:
+      - ServiceAccount
+    post:
+      description: Register a public key for a service account. The holder of the
+        matching private key then authenticates as the service account by signing
+        a short-lived assertion (RFC 7523 private_key_jwt), so no secret is exchanged
+        and none is stored. Requires Impersonate permission on the service account,
+        which Manage does not include; a service account cannot register a key for
+        itself.
+      operationId: CreateServiceAccountKey
+      parameters:
+      - description: UUID of the service account whose keys are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserKeyRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserKey'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Register a public key for a service account
+      tags:
+      - ServiceAccount
+  /service_account/{service_account_id}/key/{kid}:
+    delete:
+      description: Remove one of a service account's public keys by its thumbprint.
+        This is the second half of rotation, and the response to a compromised private
+        key. Requires Impersonate permission on the service account.
+      operationId: DeleteServiceAccountKey
+      parameters:
+      - description: UUID of the service account whose keys are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      - description: RFC 7638 thumbprint of the key to remove. The key names itself,
+          so a holder can address it without asking what it was called.
+        in: path
+        name: kid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ServiceAccount is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Remove a public key from a service account
+      tags:
+      - ServiceAccount
   /space:
     get:
       description: List Spaces
@@ -49002,6 +50402,15 @@ components:
         User:
           $ref: '#/components/schemas/User'
       type: object
+    ExtendedServiceAccount:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        ServiceAccount:
+          $ref: '#/components/schemas/ServiceAccount'
+      type: object
     ExtendedSpace:
       properties:
         AttributeFilter:
@@ -53354,6 +54763,158 @@ components:
         SpaceSlug:
           type: string
           x-go-type-skip-optional-pointer: true
+      type: object
+    ServiceAccount:
+      description: An identity of the organization that is not a person and does not
+        log in through the identity provider, such as an automation or an agent. Each
+        ServiceAccount is backed by a User, which is what other entities' Permissions
+        and Groups name to grant it access. The ServiceAccount's own Permissions say
+        who may manage it.
+      properties:
+        Annotations:
+          additionalProperties:
+            maxLength: 1024
+            pattern: ^(.|\n)*$
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-confighub-where:
+            dataType: map[string]string
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion.
+          type: object
+          x-confighub-where:
+            dataType: map[string]bool
+          x-go-type-skip-optional-pointer: true
+        DisplayName:
+          description: Friendly name for the entity.
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        HiddenReason:
+          description: The reason the entity is hidden, if it is. A hidden entity
+            is left out of List and Search results, and of what bulk operations act
+            on, unless the include_hidden parameter names its reason or is *, or the
+            where parameter names the entity by Slug or ID. ConfigHub/YAML Units are
+            created hidden with the reason BackingUnit unless given another.
+          maxLength: 64
+          pattern: ^([A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
+          x-confighub-where:
+            dataType: map[string]string
+          x-go-type-skip-optional-pointer: true
+        OrgRole:
+          description: Organization-level role of the ServiceAccount's User. Defaults
+            to none, which leaves the User with only the permissions granted to it.
+            It cannot be set above the role of the caller setting it, and changing
+            it requires Manage permission on the service account.
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Organization
+          x-go-type-skip-optional-pointer: true
+        Permissions:
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: Permissions to access this service account.
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
+        ServiceAccountID:
+          description: Unique identifier for a service account.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+          x-go-type-skip-optional-pointer: true
+        Slug:
+          description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          description: The User the service account acts as. Grant the service account
+            access to other entities by naming this User in their Permissions, or
+            by adding it to a Group.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: User
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Slug
+      type: object
+    ServiceAccountCreateOrUpdateResponse:
+      properties:
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        ServiceAccount:
+          $ref: '#/components/schemas/ServiceAccount'
       type: object
     Space:
       description: The logical container for most entities in ConfigHub. Namespaces

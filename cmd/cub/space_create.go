@@ -76,7 +76,7 @@ func init() {
 	spaceCreateArgs.attributes = addSpaceAttributeFlags(spaceCreateCmd)
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.releaseTarget, "release-target", "", "Target to use as the default release Target for Units in this Space, addressed as <target-space>/<target-slug> (a bare <target-slug> resolves in --space; a Target ID is also accepted)")
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.component, "component", "", "slug or ID of the Component the Space is a Variant of")
-	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
 	spaceCreateCmd.Flags().StringSliceVar(&spaceCreateArgs.variantLabels, "variant-labels", []string{}, "labels for bulk create in the format of key1=value1|value2,key2=value1|value2|value3")
 	spaceCreateArgs.spaceLabels = addStandardSpaceLabelFlags(spaceCreateCmd)
 	spaceCreateCmd.Flags().StringVar(&spaceCreateArgs.namePattern, "name-pattern", "", "a pattern string for name generation of clones, prefix 'template:' to use a Go template with .SourceEntitySlug to access the original Space and .Labels to access variant labels, example: 'template:{{.SourceEntitySlug}}-{{.Labels.env}}'")

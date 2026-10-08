@@ -48,7 +48,7 @@ Examples:
 func init() {
 	addStandardCreateFlags(componentCreateCmd)
 	addFieldEditFlags(componentCreateCmd, "Component")
-	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
 	componentCreateCmd.Flags().StringSliceVar(&componentCreateArgs.allowedChangeWorkflows, "allowed-change-workflow", []string{}, "ChangeWorkflow, as <space>/<slug> or UUID, that promotions and releases may use (can be repeated or comma-separated)")
 	componentCreateCmd.Flags().BoolVar(&componentCreateArgs.changeWorkflowRequired, "change-workflow-required", false, "require a ChangeWorkflow to promote and release")
 	addBackingUnitFlags(componentCreateCmd, "Component", true, true)

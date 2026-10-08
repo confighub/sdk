@@ -30,8 +30,91 @@ func applyPermissions(permissionStrs []string, permissions **goclientnew.Permiss
 	return parsePermissions(permissionStrs, *permissions)
 }
 
-// parsePermissions parses permission strings in the format "Action:UserIDOrUsername" and populates a Permissions object.
-// Use "-Action:UserIDOrUsername" to remove a user from a permission (the user is removed from the UserIDs map).
+// permissionGroupPrefix marks the subject of a permission string as a Group: Action:group:<slug>.
+const permissionGroupPrefix = "group:"
+
+// permissionServiceAccountPrefix marks the subject of a permission string as a ServiceAccount:
+// Action:serviceaccount:<slug>. The grant is to the ServiceAccount's User, which is what
+// Permissions name.
+const permissionServiceAccountPrefix = "serviceaccount:"
+
+// permissionFormat describes a permission string, for errors.
+const permissionFormat = "Action:UserIDOrUsername, Action:group:GroupSlugOrID or Action:serviceaccount:ServiceAccountSlugOrID, prefixed with - to remove"
+
+// The help of every --permission flag: permissionCreateHelp where the flag sets an entity's
+// permissions, permissionUpdateHelp where it adds to or removes from them. A group is resolved
+// among the groups the caller belongs to.
+const (
+	permissionCreateHelp = "permission in format Action:UserIDOrUsername, Action:group:GroupSlugOrID for a group you belong to, or Action:serviceaccount:ServiceAccountSlugOrID (e.g., Manage:user@example.com, View:group:platform, View:serviceaccount:deploy-bot, can be repeated)"
+	permissionUpdateHelp = "permission in format Action:UserIDOrUsername, Action:group:GroupSlugOrID or Action:serviceaccount:ServiceAccountSlugOrID to add, or the same prefixed with - to remove (e.g., Manage:user@example.com, View:group:platform, View:serviceaccount:deploy-bot, -View:user@example.com, can be repeated)"
+)
+
+// permissionGrant is one parsed permission string: the action, the subject it names, and whether
+// the subject is added or removed.
+type permissionGrant struct {
+	action    string
+	field     string // "UserIDs" or "GroupIDs", the Subjects field the subject belongs in
+	subjectID string
+	remove    bool
+}
+
+// parsePermissionGrant parses one permission string. The subject is a user, by UUID or username,
+// or with the group: prefix a Group, by slug or UUID. A UUID is never taken to be a Group without
+// the prefix: it would otherwise be granted as a user that does not exist, which grants nothing.
+func parsePermissionGrant(permStr string) (permissionGrant, error) {
+	var grant permissionGrant
+	if strings.HasPrefix(permStr, "-") {
+		grant.remove = true
+		permStr = permStr[1:]
+	}
+
+	action, subject, ok := strings.Cut(permStr, ":")
+	if !ok || action == "" || subject == "" {
+		return grant, fmt.Errorf("invalid permission format %q, expected %s", permStr, permissionFormat)
+	}
+	grant.action = action
+
+	if groupRef, isGroup := strings.CutPrefix(subject, permissionGroupPrefix); isGroup {
+		if groupRef == "" {
+			return grant, fmt.Errorf("invalid permission format %q: no group after %q", permStr, permissionGroupPrefix)
+		}
+		group, err := resolveGroup(groupRef, "GroupID,Slug")
+		if err != nil {
+			return grant, fmt.Errorf("failed to find group %q: %w", groupRef, err)
+		}
+		grant.field = "GroupIDs"
+		grant.subjectID = group.Group.GroupID.String()
+		return grant, nil
+	}
+
+	if serviceAccountRef, isServiceAccount := strings.CutPrefix(subject, permissionServiceAccountPrefix); isServiceAccount {
+		if serviceAccountRef == "" {
+			return grant, fmt.Errorf("invalid permission format %q: no service account after %q", permStr, permissionServiceAccountPrefix)
+		}
+		serviceAccount, err := resolveServiceAccount(serviceAccountRef, "ServiceAccountID,Slug,UserID")
+		if err != nil {
+			return grant, fmt.Errorf("failed to find service account %q: %w", serviceAccountRef, err)
+		}
+		grant.field = "UserIDs"
+		grant.subjectID = serviceAccount.ServiceAccount.UserID.String()
+		return grant, nil
+	}
+
+	userID, err := uuid.Parse(subject)
+	if err != nil {
+		user, err := resolveUserCore(subject)
+		if err != nil {
+			return grant, fmt.Errorf("failed to find user %q: %w", subject, err)
+		}
+		userID = user.UserID
+	}
+	grant.field = "UserIDs"
+	grant.subjectID = userID.String()
+	return grant, nil
+}
+
+// parsePermissions parses permission strings (see parsePermissionGrant) and populates a Permissions
+// object. A string prefixed with - removes its user or Group from the action's subjects.
 func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissions) error {
 	if len(permissionStrs) == 0 {
 		return nil
@@ -42,59 +125,33 @@ func parsePermissions(permissionStrs []string, permissions *goclientnew.Permissi
 	}
 
 	for _, permStr := range permissionStrs {
-		// Check for removal prefix
-		isRemoval := strings.HasPrefix(permStr, "-")
-		if isRemoval {
-			permStr = permStr[1:] // Strip the "-" prefix
-		}
-
-		parts := strings.SplitN(permStr, ":", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid permission format %q, expected Action:UserIDOrUsername or -Action:UserIDOrUsername", permStr)
-		}
-
-		action := parts[0]
-		userIdentifier := parts[1]
-
-		// Try to parse as UUID first
-		userID, err := uuid.Parse(userIdentifier)
+		grant, err := parsePermissionGrant(permStr)
 		if err != nil {
-			// Not a UUID, try to look up by username
-			user, err := resolveUserCore(userIdentifier)
-			if err != nil {
-				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
-			}
-			userID = user.UserID
+			return err
 		}
 
-		// Get or create the subjects for this action
-		subjects, ok := (*permissions)[action]
-		if !ok {
-			subjects = goclientnew.Subjects{}
+		subjects := (*permissions)[grant.action]
+		ids := &subjects.UserIDs
+		if grant.field == "GroupIDs" {
+			ids = &subjects.GroupIDs
 		}
-
-		// Initialize the UserIDs map if needed
-		if subjects.UserIDs == nil {
-			subjects.UserIDs = make(map[string]bool)
+		if *ids == nil {
+			*ids = make(map[string]bool)
 		}
-
-		if isRemoval {
-			// Remove the user ID from the map
-			delete(subjects.UserIDs, userID.String())
+		if grant.remove {
+			delete(*ids, grant.subjectID)
 		} else {
-			// Add the user ID to the map
-			subjects.UserIDs[userID.String()] = true
+			(*ids)[grant.subjectID] = true
 		}
-
-		(*permissions)[action] = subjects
+		(*permissions)[grant.action] = subjects
 	}
 
 	return nil
 }
 
-// parsePermissionsIntoPatchMap parses permission strings in the format "Action:UserIDOrUsername"
-// and adds them to a generic map structure for use in JSON patches.
-// Use "-Action:UserIDOrUsername" to remove a user from a permission (sets null in the patch for JSON Merge Patch).
+// parsePermissionsIntoPatchMap parses permission strings (see parsePermissionGrant) and adds them
+// to a generic map structure for use in JSON patches. A string prefixed with - removes its user or
+// Group by setting it to null, as a JSON Merge Patch removes a key.
 // This is used by the patch operations where we're building a generic map[string]interface{}.
 func parsePermissionsIntoPatchMap(permissionStrs []string, permissionsMap map[string]interface{}) error {
 	if len(permissionStrs) == 0 {
@@ -102,66 +159,28 @@ func parsePermissionsIntoPatchMap(permissionStrs []string, permissionsMap map[st
 	}
 
 	for _, permStr := range permissionStrs {
-		// Check for removal prefix
-		isRemoval := strings.HasPrefix(permStr, "-")
-		if isRemoval {
-			permStr = permStr[1:] // Strip the "-" prefix
-		}
-
-		parts := strings.SplitN(permStr, ":", 2)
-		if len(parts) != 2 {
-			return fmt.Errorf("invalid permission format %q, expected Action:UserIDOrUsername or -Action:UserIDOrUsername", permStr)
-		}
-
-		action := parts[0]
-		userIdentifier := parts[1]
-
-		// Try to parse as UUID first
-		userID, err := uuid.Parse(userIdentifier)
+		grant, err := parsePermissionGrant(permStr)
 		if err != nil {
-			// Not a UUID, try to look up by username
-			user, err := resolveUserCore(userIdentifier)
-			if err != nil {
-				return fmt.Errorf("failed to find user %q: %w", userIdentifier, err)
-			}
-			userID = user.UserID
+			return err
 		}
 
-		// Get or create the subjects for this action
-		var subjects map[string]interface{}
-		if existingSubjects, ok := permissionsMap[action]; ok {
-			if subjectsMap, ok := existingSubjects.(map[string]interface{}); ok {
-				subjects = subjectsMap
-			} else {
-				subjects = make(map[string]interface{})
-			}
-		} else {
+		subjects, ok := permissionsMap[grant.action].(map[string]interface{})
+		if !ok {
 			subjects = make(map[string]interface{})
 		}
-
-		// Get or create the UserIDs map
-		var userIDs map[string]interface{}
-		if existingUserIDs, ok := subjects["UserIDs"]; ok {
-			if userIDsMap, ok := existingUserIDs.(map[string]interface{}); ok {
-				userIDs = userIDsMap
-			} else {
-				userIDs = make(map[string]interface{})
-			}
-		} else {
-			userIDs = make(map[string]interface{})
+		ids, ok := subjects[grant.field].(map[string]interface{})
+		if !ok {
+			ids = make(map[string]interface{})
 		}
 
-		userIDStr := userID.String()
-		if isRemoval {
-			// Mark for removal by setting to null in JSON Merge Patch
-			userIDs[userIDStr] = nil
+		if grant.remove {
+			ids[grant.subjectID] = nil
 		} else {
-			// Add the user ID to the map
-			userIDs[userIDStr] = true
+			ids[grant.subjectID] = true
 		}
 
-		subjects["UserIDs"] = userIDs
-		permissionsMap[action] = subjects
+		subjects[grant.field] = ids
+		permissionsMap[grant.action] = subjects
 	}
 
 	return nil

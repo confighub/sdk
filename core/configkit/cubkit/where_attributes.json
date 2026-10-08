@@ -1361,6 +1361,50 @@
         "dataType": "map[string]string"
       }
     },
+    "ServiceAccount": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "OrgRole": {
+        "dataType": "string"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "ServiceAccountID": {
+        "dataType": "uuid"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
+      }
+    },
     "Space": {
       "Annotations": {
         "dataType": "map[string]string"

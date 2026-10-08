@@ -1868,6 +1868,17 @@ type ExtendedRevision struct {
 	User *User `json:"User,omitempty" yaml:"User,omitempty"`
 }
 
+// ExtendedServiceAccount defines model for ExtendedServiceAccount.
+type ExtendedServiceAccount struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// Organization The top-level container for an organization using ConfigHub.
+	Organization *Organization `json:"Organization,omitempty" yaml:"Organization,omitempty"`
+
+	// ServiceAccount An identity of the organization that is not a person and does not log in through the identity provider, such as an automation or an agent. Each ServiceAccount is backed by a User, which is what other entities' Permissions and Groups name to grant it access. The ServiceAccount's own Permissions say who may manage it.
+	ServiceAccount *ServiceAccount `json:"ServiceAccount,omitempty" yaml:"ServiceAccount,omitempty"`
+}
+
 // ExtendedSpace defines model for ExtendedSpace.
 type ExtendedSpace struct {
 	// AttributeFilter Defines an entity filter.
@@ -3875,6 +3886,62 @@ type SelectionChange struct {
 	SpaceSlug  string             `json:"SpaceSlug,omitempty" yaml:"SpaceSlug,omitempty"`
 }
 
+// ServiceAccount An identity of the organization that is not a person and does not log in through the identity provider, such as an automation or an agent. Each ServiceAccount is backed by a User, which is what other entities' Permissions and Groups name to grant it access. The ServiceAccount's own Permissions say who may manage it.
+type ServiceAccount struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
+
+	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
+	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion.
+	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName string `json:"DisplayName,omitempty" yaml:"DisplayName,omitempty"`
+
+	// EntityType The type of entity.
+	EntityType string `json:"EntityType,omitempty" yaml:"EntityType,omitempty"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason string `json:"HiddenReason,omitempty" yaml:"HiddenReason,omitempty"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels map[string]string `json:"Labels,omitempty" yaml:"Labels,omitempty"`
+
+	// OrgRole Organization-level role of the ServiceAccount's User. Defaults to none, which leaves the User with only the permissions granted to it. It cannot be set above the role of the caller setting it, and changing it requires Manage permission on the service account.
+	OrgRole string `json:"OrgRole,omitempty" yaml:"OrgRole,omitempty"`
+
+	// OrganizationID Unique identifier for an organization.
+	OrganizationID openapi_types.UUID `json:"OrganizationID,omitempty" yaml:"OrganizationID,omitempty"`
+
+	// Permissions Permissions to access this service account.
+	Permissions *Permissions `json:"Permissions,omitempty" yaml:"Permissions,omitempty"`
+
+	// ServiceAccountID Unique identifier for a service account.
+	ServiceAccountID openapi_types.UUID `json:"ServiceAccountID,omitempty" yaml:"ServiceAccountID,omitempty"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug string `json:"Slug" yaml:"Slug"`
+
+	// UpdatedAt The timestamp when the entity was last updated in "2023-01-01T12:00:00Z" format.
+	UpdatedAt time.Time `json:"UpdatedAt,omitempty" yaml:"UpdatedAt,omitempty"`
+
+	// UserID The User the service account acts as. Grant the service account access to other entities by naming this User in their Permissions, or by adding it to a Group.
+	UserID openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version int64 `json:"Version,omitempty" yaml:"Version,omitempty"`
+}
+
+// ServiceAccountCreateOrUpdateResponse defines model for ServiceAccountCreateOrUpdateResponse.
+type ServiceAccountCreateOrUpdateResponse struct {
+	Error *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
+
+	// ServiceAccount An identity of the organization that is not a person and does not log in through the identity provider, such as an automation or an agent. Each ServiceAccount is backed by a User, which is what other entities' Permissions and Groups name to grant it access. The ServiceAccount's own Permissions say who may manage it.
+	ServiceAccount *ServiceAccount `json:"ServiceAccount,omitempty" yaml:"ServiceAccount,omitempty"`
+}
+
 // Space The logical container for most entities in ConfigHub. Namespaces triggers, units, targets, workers, and other entities.
 type Space struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
@@ -5491,6 +5558,227 @@ type BulkPatchComponentsParams struct {
 
 	// FromBackingUnits Patch each selected Component with what its backing Unit holds that it has not taken yet: the change to the Unit since its LastReleasedRevisionNum. The request body is applied after it. Selecting one with no backing Unit is an error, and so are outstanding ValidationErrors on a backing Unit.
 	FromBackingUnits *bool `form:"from_backing_units,omitempty" json:"from_backing_units,omitempty" yaml:"from_backing_units,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// BulkDeleteServiceAccountsParams defines parameters for BulkDeleteServiceAccounts.
+type BulkDeleteServiceAccountsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ServiceAccount list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ServiceAccount).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ServiceAccount are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ServiceAccount entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ServiceAccount entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// BulkPatchServiceAccountsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchServiceAccounts.
+type BulkPatchServiceAccountsApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OrgRole     *string                             `json:"OrgRole" yaml:"OrgRole"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug" yaml:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// BulkPatchServiceAccountsParams defines parameters for BulkPatchServiceAccounts.
+type BulkPatchServiceAccountsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ServiceAccount list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ServiceAccount).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// IncludeHidden Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ServiceAccount are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Limit Maximum number of ServiceAccount entities to act on, in ID order. A request that names limit or continue also stops when it runs short of time, and returns a ConfigHub-Continue header to pass as the continue parameter of the next request; keep sending requests until a response has none. If neither is specified, the request acts on every selected entity.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous request, to act on the ServiceAccount entities after the last one it acted on. The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
 
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
@@ -12901,6 +13189,204 @@ type SearchRevisionMutationSourcesParams struct {
 
 // SearchRevisionMutationSourcesParamsDistinctOn defines parameters for SearchRevisionMutationSources.
 type SearchRevisionMutationSourcesParamsDistinctOn string
+
+// ListServiceAccountsParams defines parameters for ListServiceAccounts.
+type ListServiceAccountsParams struct {
+	// Where The specified string is an expression for the purpose of filtering
+	// the list of ServiceAccounts returned. The expression syntax was inspired by SQL.
+	// It supports conjunctions using `AND` of relational expressions of the form *attribute*
+	// *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+	// as in the JSON encoding.
+	// Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+	// String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+	// `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+	// String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+	// `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+	// Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+	// UUIDs and boolean attributes support equality and inequality only.
+	// UUID and time literals must be quoted as string literals.
+	// String literals are quoted with single quotes, such as `'string'`.
+	// Time literals use the same form as when serialized as JSON,
+	// such as: `CreatedAt > '2025-02-18T23:16:34'`.
+	// Integer and boolean literals are also supported for attributes of those types.
+	// Arrays support the `?` operator to to match any element of the array,
+	// as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+	// Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+	// An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+	// as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+	// Without the `*` such a reference is an error, since it names no single value to compare.
+	// Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+	// Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+	// as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+	// Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+	// These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+	// The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+	// such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+	// Conjunctions are supported using the `AND` operator.
+	// An example conjunction is:
+	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+	//
+	// Supported attributes for filtering on ServiceAccount: Annotations, CreatedAt, DeleteGates, DisplayName, HiddenReason, Labels, OrgRole, OrganizationID, Permissions, ServiceAccountID, Slug, UpdatedAt, UserID.
+	//
+	// The whole string must be query-encoded.
+	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
+
+	// Filter UUID of a Filter entity to apply to the ServiceAccount list.
+	//
+	// The Filter must be in the same Organization as the user credentials.
+	//
+	// The Filter's From field must match the entity type being filtered (ServiceAccount).
+	//
+	// For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+	//
+	// The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+	//
+	// If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+	Filter *string `form:"filter,omitempty" json:"filter,omitempty" yaml:"filter,omitempty"`
+
+	// Contains Free text search that approximately matches the specified string against string fields and map keys/values.
+	//
+	// The search is case-insensitive and uses pattern matching to find entities containing the text.
+	//
+	// Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+	//
+	// For map fields (like Labels and Annotations), the search matches both map keys and values.
+	//
+	// The search uses OR logic across all searchable fields, so matching any field will return the entity.
+	//
+	// If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+	//
+	// Searchable fields for ServiceAccount include string and map-type attributes from the queryable attributes list.
+	//
+	// The whole string must be query-encoded.
+	Contains *string `form:"contains,omitempty" json:"contains,omitempty" yaml:"contains,omitempty"`
+
+	// Include Include clause for expanding related entities in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ServiceAccount are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+
+	// IncludeHidden Hidden ServiceAccount entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+	//
+	// It is a comma-separated list of HiddenReasons, or `*` for all of them.
+	//
+	// A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+	//
+	// ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+	IncludeHidden *string `form:"include_hidden,omitempty" json:"include_hidden,omitempty" yaml:"include_hidden,omitempty"`
+
+	// Limit Maximum number of ServiceAccount entities to return. If not specified, all matching entities are returned. Values greater than 1000 are rejected with 400. When there may be more entities, the response has a ConfigHub-Continue header to pass as the continue parameter of the next request.
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" yaml:"limit,omitempty"`
+
+	// OrderBy Comma-separated list of fields to sort ServiceAccount results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+	//
+	// Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+	//
+	// Supported attributes for ordering ServiceAccount: CreatedAt, DisplayName, HiddenReason, OrgRole, OrganizationID, ServiceAccountID, Slug, UpdatedAt, UserID.
+	//
+	// Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+	//
+	// Results are ordered by the ServiceAccount's ID after the fields named, and by the ID alone if none are.
+	//
+	// The whole string must be query-encoded.
+	OrderBy *string `form:"order_by,omitempty" json:"order_by,omitempty" yaml:"order_by,omitempty"`
+
+	// Continue The token from the ConfigHub-Continue header of the previous page, to return the ServiceAccount entities after it.
+	//
+	// The request's other parameters, except limit, must be the same as those of the request that returned the token.
+	//
+	// Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+	Continue *string `form:"continue,omitempty" json:"continue,omitempty" yaml:"continue,omitempty"`
+}
+
+// CreateServiceAccountParams defines parameters for CreateServiceAccount.
+type CreateServiceAccountParams struct {
+	// AllowExists Allowed values are true and false. Default is false. When true, reports success when an entity already exists and returns the existing entity
+	AllowExists *string `form:"allow_exists,omitempty" json:"allow_exists,omitempty" yaml:"allow_exists,omitempty"`
+
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// GetServiceAccountParams defines parameters for GetServiceAccount.
+type GetServiceAccountParams struct {
+	// Include Include clause for expanding related entities in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	//
+	// Supported attributes for ServiceAccount are OrganizationID.
+	//
+	// The whole string must be query-encoded.
+	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
+
+	// Select Select clause for specifying which fields to include in the response for ServiceAccount.
+	// The attribute names are case-sensitive, PascalCase, and
+	// expected in a comma-separated list format as in the JSON encoding.
+	// If not specified, all fields are returned.
+	// Entity and parent IDs (like OrganizationID, SpaceID, ServiceAccountID) and Slug are always returned regardless of the select parameter.
+	// Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+	// Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+	// The whole string must be query-encoded.
+	Select *string `form:"select,omitempty" json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+// PatchServiceAccountApplicationMergePatchPlusJSONBody defines parameters for PatchServiceAccount.
+type PatchServiceAccountApplicationMergePatchPlusJSONBody struct {
+	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
+	Annotations *map[string]*string `json:"Annotations" yaml:"Annotations"`
+
+	// DeleteGates An optional set of gates that, if any is present, will block deletion
+	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
+
+	// DisplayName Friendly name for the entity.
+	DisplayName *string `json:"DisplayName" yaml:"DisplayName"`
+
+	// HiddenReason The reason the entity is hidden, if it is. A hidden entity is left out of List and Search results, and of what bulk operations act on, unless the include_hidden parameter names its reason or is *, or the where parameter names the entity by Slug or ID. ConfigHub/YAML Units are created hidden with the reason BackingUnit unless given another.
+	HiddenReason *string `json:"HiddenReason" yaml:"HiddenReason"`
+
+	// Labels An optional map of Label key/value pairs to specify identifying attributes of entities for the purpose of grouping and filtering them.
+	Labels      *map[string]*string                 `json:"Labels" yaml:"Labels"`
+	OrgRole     *string                             `json:"OrgRole" yaml:"OrgRole"`
+	Permissions *map[string]*map[string]interface{} `json:"Permissions" yaml:"Permissions"`
+
+	// Slug Unique URL-safe identifier for the entity.
+	Slug *string `json:"Slug" yaml:"Slug"`
+
+	// Version An entity-specific sequence number used for optimistic concurrency control. The value read must be sent in calls to Update.
+	Version *int `json:"Version" yaml:"Version"`
+}
+
+// PatchServiceAccountParams defines parameters for PatchServiceAccount.
+type PatchServiceAccountParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// UpdateServiceAccountParams defines parameters for UpdateServiceAccount.
+type UpdateServiceAccountParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// CreateServiceAccountKeyParams defines parameters for CreateServiceAccountKey.
+type CreateServiceAccountKeyParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
 
 // ListSpacesParams defines parameters for ListSpaces.
 type ListSpacesParams struct {
@@ -22124,6 +22610,9 @@ type BulkMoveViewsParams struct {
 // BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchComponents for application/merge-patch+json ContentType.
 type BulkPatchComponentsApplicationMergePatchPlusJSONRequestBody BulkPatchComponentsApplicationMergePatchPlusJSONBody
 
+// BulkPatchServiceAccountsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchServiceAccounts for application/merge-patch+json ContentType.
+type BulkPatchServiceAccountsApplicationMergePatchPlusJSONRequestBody BulkPatchServiceAccountsApplicationMergePatchPlusJSONBody
+
 // BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchSpaces for application/merge-patch+json ContentType.
 type BulkPatchSpacesApplicationMergePatchPlusJSONRequestBody BulkPatchSpacesApplicationMergePatchPlusJSONBody
 
@@ -22234,6 +22723,18 @@ type PromoteJSONRequestBody = PromoteRequest
 
 // BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody defines body for BulkPatchReviewComments for application/merge-patch+json ContentType.
 type BulkPatchReviewCommentsApplicationMergePatchPlusJSONRequestBody BulkPatchReviewCommentsApplicationMergePatchPlusJSONBody
+
+// CreateServiceAccountJSONRequestBody defines body for CreateServiceAccount for application/json ContentType.
+type CreateServiceAccountJSONRequestBody = ServiceAccount
+
+// PatchServiceAccountApplicationMergePatchPlusJSONRequestBody defines body for PatchServiceAccount for application/merge-patch+json ContentType.
+type PatchServiceAccountApplicationMergePatchPlusJSONRequestBody PatchServiceAccountApplicationMergePatchPlusJSONBody
+
+// UpdateServiceAccountJSONRequestBody defines body for UpdateServiceAccount for application/json ContentType.
+type UpdateServiceAccountJSONRequestBody = ServiceAccount
+
+// CreateServiceAccountKeyJSONRequestBody defines body for CreateServiceAccountKey for application/json ContentType.
+type CreateServiceAccountKeyJSONRequestBody = CreateUserKeyRequest
 
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space

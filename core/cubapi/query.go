@@ -326,6 +326,30 @@ func ListComponents(ctx context.Context, c *Client, where Where, opts ListOpts) 
 	})
 }
 
+// ListServiceAccounts returns the ServiceAccount entities in the organization matching where.
+func ListServiceAccounts(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*goclientnew.ExtendedServiceAccount, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListServiceAccountsParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedServiceAccount, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListServiceAccountsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
 // ListOrganizations returns the organizations the caller belongs to matching
 // where. Results are ExtendedOrganization envelopes; the core record is in each
 // element's .Organization field.

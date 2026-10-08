@@ -77,6 +77,12 @@ func resolveComponent(ref string, selectParam string) (*goclientnew.ExtendedComp
 	return cubapi.ResolveComponent(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
 }
 
+// resolveServiceAccount resolves a ServiceAccount by slug or UUID. A ServiceAccount is not in a
+// space.
+func resolveServiceAccount(ref string, selectParam string) (*goclientnew.ExtendedServiceAccount, error) {
+	return cubapi.ResolveServiceAccount(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
+}
+
 func resolveOrganization(ref string, selectParam string) (*goclientnew.ExtendedOrganization, error) {
 	return cubapi.ResolveOrganization(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts("", selectParam))
 }

@@ -429,6 +429,8 @@ type ModelConstraint interface {
 		goclientnew.UserKey |
 		goclientnew.Component |
 		goclientnew.ExtendedComponent |
+		goclientnew.ServiceAccount |
+		goclientnew.ExtendedServiceAccount |
 		Component |
 		Context
 }

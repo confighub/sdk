@@ -52,7 +52,7 @@ var workerCreateUseUserIdentity bool
 
 func init() {
 	addStandardCreateFlags(workerCreateCmd)
-	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	workerCreateCmd.Flags().StringSliceVar(&workerCreatePermissions, "permission", []string{}, permissionCreateHelp)
 	workerCreateCmd.Flags().StringVar(&workerCreateOrgRole, "org-role", "", "organization-level role for the worker (admin, manager, editor, user, viewer, creator, member, or none); the default is none, which leaves the worker with only the permissions granted to its bot user")
 	workerCreateCmd.Flags().BoolVar(&workerCreateIsServerWorker, "is-server-worker", false, "mark this worker as a server-hosted worker")
 	workerCreateCmd.Flags().BoolVar(&workerCreateUseUserIdentity, "use-user-identity", false, "has no effect")

@@ -54,7 +54,7 @@ func init() {
 	enableWhereFlag(bridgeworkerUpdateCmd)
 	enableFilterFlag(bridgeworkerUpdateCmd)
 	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerIdentifiers, "worker", []string{}, "target specific bridge workers by slug or UUID for bulk patch (can be repeated or comma-separated)")
-	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	bridgeworkerUpdateCmd.Flags().StringSliceVar(&workerUpdatePermissions, "permission", []string{}, permissionUpdateHelp)
 	bridgeworkerUpdateCmd.Flags().StringVar(&workerUpdateOrgRole, "org-role", "", "organization-level role for the worker (e.g., admin, manager, editor, user, viewer, creator, member, none)")
 	workerCmd.AddCommand(bridgeworkerUpdateCmd)
 }

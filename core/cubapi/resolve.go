@@ -304,6 +304,29 @@ func ResolveComponent(ctx context.Context, c *Client, ref Ref, opts ResolveOpts)
 	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
 }
 
+// ResolveServiceAccount looks up one ServiceAccount by slug or UUID. A ServiceAccount is
+// organization-level, so ResolveOpts.Space is ignored.
+func ResolveServiceAccount(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedServiceAccount, error) {
+	r := resolver[goclientnew.ExtendedServiceAccount]{
+		entity: "service account", idField: "ServiceAccountID", include: "", orgLevel: true,
+		list: ListServiceAccounts,
+		slugOf: func(e *goclientnew.ExtendedServiceAccount) string {
+			if e.ServiceAccount == nil {
+				return ""
+			}
+			return e.ServiceAccount.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedServiceAccount) goclientnew.UUID {
+			if e.ServiceAccount == nil {
+				return goclientnew.UUID{}
+			}
+			return e.ServiceAccount.ServiceAccountID
+		},
+	}
+	// A service account reference never carries a space.
+	return r.resolve(ctx, c, Ref{Name: ref.Name, ID: ref.ID, isID: ref.isID}, ResolveOpts{Select: opts.Select, Include: opts.Include})
+}
+
 // ResolveOrganization looks up one organization by slug or UUID, among the
 // organizations the caller belongs to. An organization resides in no space, so
 // ResolveOpts.Space is ignored.

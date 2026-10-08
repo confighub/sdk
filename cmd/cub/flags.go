@@ -90,11 +90,11 @@ var hiddenReasonFlag string
 const clearFlagValue = "-"
 
 func enableCreatePermissionFlag(cmd *cobra.Command) {
-	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername (e.g., Manage:user@example.com, can be repeated)")
+	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, permissionCreateHelp)
 }
 
 func enableUpdatePermissionFlag(cmd *cobra.Command) {
-	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, "permission in format Action:UserIDOrUsername to add, or -Action:UserIDOrUsername to remove (e.g., Manage:user@example.com, -View:user@example.com, can be repeated)")
+	cmd.Flags().StringSliceVar(&permissionFlag, "permission", []string{}, permissionUpdateHelp)
 }
 
 func enableDisplayNameFlag(cmd *cobra.Command) {
