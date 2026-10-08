@@ -96,6 +96,12 @@ func WithPromoteDiff(params *goclientnew.PromoteParams) {
 	params.Include = appendInclude(params.Include, "Diff")
 }
 
+// WithPromoteConfigData asks a promotion for the configuration each Unit write produced, or on a
+// dry run would produce.
+func WithPromoteConfigData(params *goclientnew.PromoteParams) {
+	params.Include = appendInclude(params.Include, "ConfigData")
+}
+
 // appendInclude adds a name to a comma-separated include parameter, so that the with mutators
 // combine rather than each replacing the last.
 func appendInclude(include *string, name string) *string {

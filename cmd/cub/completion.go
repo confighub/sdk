@@ -244,6 +244,11 @@ var refArgKinds = map[string][]*refKind{
 	"worker get-envs": {kindWorker}, "worker get-secret": {kindWorker},
 	"worker list-function": {kindWorker}, "worker list-status": {kindWorker},
 	"worker key add": {kindWorker}, "worker key list": {kindWorker}, "worker key delete": {kindWorker},
+	"changeorder rename": {kindChangeOrder, nil}, "changeset rename": {kindChangeSet, nil},
+	"changeworkflow rename": {kindChangeWorkflow, nil}, "filter rename": {kindFilter, nil},
+	"invocation rename": {kindInvocation, nil}, "link rename": {kindLink, nil}, "space rename": {kindSpace, nil},
+	"tag rename": {kindTag, nil}, "target rename": {kindTarget, nil}, "trigger rename": {kindTrigger, nil},
+	"unit rename": {kindUnit, nil}, "view rename": {kindView, nil}, "worker rename": {kindWorker, nil},
 }
 
 // refFlagKinds maps a flag name to the kind of reference it takes, for every

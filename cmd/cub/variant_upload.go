@@ -40,6 +40,8 @@ type variantUploadOptions struct {
 	annotations      []string
 	spaceLabels      []string
 	changeDesc       string
+	tag              string
+	subgroup         string
 	dryRun           bool
 	yes              bool
 	clientPull       bool
@@ -144,6 +146,14 @@ usable, and the platform normally provisions those together.
 The writes are recorded in a ChangeSet, so an entire upload can be rolled back with the
 "cub unit update --restore Before:ChangeSet:<slug>" command printed at the end.
 
+The writes take the options a unit update does, and every Unit write of the upload carries
+them: creates, merges, revivals, adoptions, and empties. --clearance names the guarded
+reasons the writes are cleared for, and a guarded path it does not cover is withheld and
+reported as a conflict; --subgroup is recorded on each write's mutations. --tag marks the
+revision each Unit the upload writes is left at, created Units included, and leaves Units it
+does not change untagged. An upload with a Unit to write that the tag already marks is
+refused before anything is written.
+
 Use --dry-run to see what would be created, updated, emptied, revived, or adopted
 without changing anything.
 
@@ -172,6 +182,12 @@ Examples:
   # Pull from a registry only this machine can reach.
   cub variant upload --client-pull --component web --variant base \
     oci://registry.internal:5000/configs/web:1.2.0
+
+  # Upload a release, tagging what it writes and taking guarded paths owned by the
+  # platform team.
+  cub variant upload --component cubbychat --variant base --yes \
+    --tag cubbychat-base/v2 --clearance owner=platform \
+    oci://ghcr.io/confighub/configs/cubbychat:v2
 
   # Preview that upload first.
   cub variant upload --dry-run --component cubbychat --variant base \
@@ -205,6 +221,9 @@ func init() {
 	_ = variantUploadCmd.Flags().MarkDeprecated("label", "use --unit-label")
 	_ = variantUploadCmd.Flags().MarkDeprecated("annotation", "use --unit-annotation")
 	variantUploadCmd.Flags().StringVar(&variantUploadArgs.changeDesc, "change-desc", "", "change description recorded on each written Unit")
+	addClearanceFlag(variantUploadCmd)
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.tag, "tag", "", "tag (slug, space/slug, or UUID) to put on the revision each Unit the upload writes is left at")
+	variantUploadCmd.Flags().StringVar(&variantUploadArgs.subgroup, "subgroup", "", "category recorded on the mutations of each Unit write of the upload: alphanumeric, at most 64 characters")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.dryRun, "dry-run", false, "report what the upload would create, update, empty, revive, or adopt, and exit without changing anything")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.yes, "yes", false, "do not ask for confirmation when the upload would empty Units")
 	variantUploadCmd.Flags().BoolVar(&variantUploadArgs.clientPull, "client-pull", false, "pull oci:// inputs on this machine rather than having the server pull them, for a registry the server cannot reach")
@@ -292,11 +311,26 @@ func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 		SpaceLabels:       labels,
 		SpacePattern:      strings.TrimPrefix(a.spacePattern, "template:"),
 		ChangeDescription: a.changeDesc,
+		Subgroup:          a.subgroup,
 		Source: &goclientnew.UploadSourceInfo{
 			Ref:           uploadSourceDescription(args),
 			Client:        "cub",
 			ClientVersion: Version,
 		},
+	}
+	if len(changeClearance) > 0 {
+		clearance, clearanceErr := parseClearanceSpecs(changeClearance)
+		if clearanceErr != nil {
+			return clearanceErr
+		}
+		req.Clearance = &clearance
+	}
+	if a.tag != "" {
+		tagID, tagErr := resolveTagID(a.tag)
+		if tagErr != nil {
+			return fmt.Errorf("failed to get tag: %w", tagErr)
+		}
+		req.TagID = &tagID
 	}
 	serverPull, err := uploadServerPull(args, a.clientPull)
 	if err != nil {

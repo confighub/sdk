@@ -19,7 +19,7 @@ import (
 // so every client -- cub, the installer, the UI -- gets the same answer for the
 // same bundle.
 //
-// With dryRun set nothing is written and the result describes what would happen.
+// With dryRun set, or req.DryRun, nothing is written and the result describes what would happen.
 // A partial success (some Unit or Link write failed, each carrying its own
 // error) is returned as a result rather than an error, because the writes that
 // did land are real and the caller has to be able to report them; check each
@@ -31,6 +31,9 @@ func Upload(ctx context.Context, c *Client, req goclientnew.UploadRequest, dryRu
 	with ...func(*goclientnew.UploadParams)) (*goclientnew.UploadResult, error) {
 	params := &goclientnew.UploadParams{}
 	if dryRun {
+		req.DryRun = true
+		// Also as the deprecated query parameter, which is all a server that predates DryRun in
+		// the body reads: sent only in the body, a dry run would be applied there.
 		params.DryRun = &dryRun
 	}
 	for _, fn := range with {

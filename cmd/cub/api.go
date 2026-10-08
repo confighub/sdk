@@ -39,7 +39,11 @@ the body, which carries the server's error.`,
   cub api GET "space/$SPACE_ID/unit?select=Slug,UnitID"
 
   # A request body from stdin
-  jq -n '{Slug: "demo"}' | cub api POST space --data -`,
+  jq -n '{Slug: "demo"}' | cub api POST space --data -
+
+  # A PATCH, which takes a JSON merge patch rather than JSON
+  echo '{}' | cub api PATCH unit --content-type application/merge-patch+json --data - \
+    --query "where=SpaceID = '$SPACE_ID'" --query upgrade=true --query dry_run=true`,
 	Args: cobra.ExactArgs(2),
 	RunE: apiCmdRun,
 }

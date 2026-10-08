@@ -34,6 +34,8 @@ var referenceOperandCommands = []string{
 	"worker get-envs", "worker get-secret", "worker list-function", "worker list-status",
 	"worker key add", "worker key list", "worker key delete",
 	"user key add", "user key list", "user key delete",
+	"changeorder rename", "changeset rename", "changeworkflow rename", "filter rename", "invocation rename",
+	"link rename", "tag rename", "target rename", "trigger rename", "unit rename", "view rename", "worker rename",
 }
 
 func findCommand(t *testing.T, path string) *cobra.Command {

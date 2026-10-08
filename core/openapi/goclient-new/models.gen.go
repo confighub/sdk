@@ -3177,6 +3177,9 @@ type PromoteUnitResult struct {
 	// Action Upgrade, Resolve, Mark, Empty, Revive, Clone, Invoke, Unchanged, or Skip.
 	Action string `json:"Action,omitempty" yaml:"Action,omitempty"`
 
+	// ConfigData The configuration the write produced, or on a dry run would produce. Returned when include names ConfigData, for a Unit the promotion writes.
+	ConfigData string `json:"ConfigData,omitempty" yaml:"ConfigData,omitempty"`
+
 	// Conflicts Paths withheld because they were overridden locally or guarded.
 	Conflicts *MutationConflictList `json:"Conflicts,omitempty" yaml:"Conflicts,omitempty"`
 
@@ -4943,8 +4946,14 @@ type UploadRequest struct {
 	// ChangeSetID An existing ChangeSet to record the writes in. Default: one new ChangeSet per Space.
 	ChangeSetID *openapi_types.UUID `json:"ChangeSetID,omitempty" yaml:"ChangeSetID,omitempty"`
 
+	// Clearance The guarded reasons the Unit writes are cleared for. A path whose guards this does not cover is not written, and the withheld change is reported in the Unit's Conflicts.
+	Clearance *Clearance `json:"Clearance,omitempty" yaml:"Clearance,omitempty"`
+
 	// Components Placement of each component. Exactly one is supported.
 	Components []UploadComponentRequest `json:"Components,omitempty" yaml:"Components,omitempty"`
+
+	// DryRun Plan the upload and return the same response without writing anything.
+	DryRun bool `json:"DryRun,omitempty" yaml:"DryRun,omitempty"`
 
 	// Files The bundle's files. Paths must be relative and may not contain "..". Exactly one of Files and Source.Pull is given.
 	Files []UploadRequestFile `json:"Files,omitempty" yaml:"Files,omitempty"`
@@ -4958,6 +4967,12 @@ type UploadRequest struct {
 
 	// SpacePattern Slug pattern for created Spaces, over the Space's Component and labels. Default {{.Component.Slug}}-{{.Labels.Variant}}.
 	SpacePattern string `json:"SpacePattern,omitempty" yaml:"SpacePattern,omitempty"`
+
+	// Subgroup A category recorded on the Mutations of each Unit write. Alphanumeric, at most 64 characters, and not starting with ConfigHub.
+	Subgroup string `json:"Subgroup,omitempty" yaml:"Subgroup,omitempty"`
+
+	// TagID A Tag to put on the Revision each Unit the upload writes is left at, created Units included. Units the upload leaves Unchanged are not tagged. Requires Use permission on the Tag; a ChangeSet's or ChangeOrder's own Tag is refused. An upload with a Unit to write that the Tag already marks fails, and nothing is written.
+	TagID *openapi_types.UUID `json:"TagID,omitempty" yaml:"TagID,omitempty"`
 }
 
 // UploadRequestFile defines model for UploadRequestFile.
@@ -11869,7 +11884,7 @@ type PromoteParams struct {
 	// DryRun Deprecated: use DryRun in the request body. Plan the promotion, evaluate its gates, and return the same response without writing anything. Either one asks for a dry run.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
-	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. On a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
+	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides, and ConfigData for the configuration each Unit write produced, or on a dry run would produce. On a dry run any of them runs the merges a plan otherwise skips, so they are returned only when named.
 	Include *string `form:"include,omitempty" json:"include,omitempty" yaml:"include,omitempty"`
 }
 
@@ -21266,7 +21281,7 @@ type SearchUnitMutationSourcesParams struct {
 
 // UploadParams defines parameters for Upload.
 type UploadParams struct {
-	// DryRun Plan the upload and return the same response without writing anything.
+	// DryRun Deprecated: use DryRun in the request body. Plan the upload and return the same response without writing anything. Either one asks for a dry run.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 
 	// Include Comma-separated parts of the result to return in addition to the actions: Mutations for what each Unit write changed, or on a dry run would change, as entries of its MutationSources, and Diff for the same change path by path with the values on both sides. They cost something to return, and on a dry run either one runs the merges a plan otherwise skips, so they are returned only when named.
