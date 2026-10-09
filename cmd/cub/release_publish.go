@@ -25,8 +25,10 @@ Space); a Space ID is also accepted. The consuming Target is the Space's
 ReleaseTargetID, set via `+"`cub space create/update --release-target`"+`.
 
 By default each bundled Unit is captured at its head Revision. Pass --revision
-to instead pin each Unit to the highest-numbered Revision carrying a Tag; a Unit
-with no matching tagged Revision falls back to its head Revision.
+to instead pin each Unit to the highest-numbered Revision carrying a Tag. A Unit
+the Tag marks no Revision of is left out of the Release, and listed as skipped,
+when it has never been released; once a Unit has been released, the Tag has to
+mark one of its Revisions, since leaving it out would delete it from the Target.
 
 Each Unit's Revision is selected by Tag, so what --revision names has to come
 down to one Tag. A Tag does; so do the boundaries of a ChangeSet and a
@@ -84,7 +86,7 @@ func init() {
 	enableAnnotationFlag(releasePublishCmd)
 	enableDeleteGateFlag(releasePublishCmd)
 	enableCreatePermissionFlag(releasePublishCmd)
-	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. Units without a matching tagged Revision fall back to their head Revision.")
+	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. A Unit without a matching tagged Revision is skipped if it has never been released, and refused otherwise.")
 	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
 	releaseCmd.AddCommand(releasePublishCmd)
 }

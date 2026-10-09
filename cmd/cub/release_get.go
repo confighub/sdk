@@ -224,6 +224,10 @@ func displayReleaseDetailsInView(releaseDetails *goclientnew.Release, view *tabl
 	view.Append([]string{"Published", strconv.FormatBool(releaseDetails.Published)})
 	view.Append([]string{"Digest", releaseDetails.Digest})
 	view.Append([]string{"Manifest Digest", releaseDetails.ManifestDigest})
+	view.Append([]string{"Unit Count", strconv.FormatInt(releaseDetails.UnitCount, 10)})
+	if len(releaseDetails.SkippedUnits) > 0 {
+		view.Append([]string{"Skipped Units", skippedUnitsSummary(releaseDetails.SkippedUnits)})
+	}
 	if status := releaseDetails.LiveStatus; status != nil {
 		live := liveStatusSummary(status)
 		if status.Operation != "" {

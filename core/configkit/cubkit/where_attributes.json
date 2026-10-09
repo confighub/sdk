@@ -1125,6 +1125,10 @@
       "ReleaseNum": {
         "dataType": "int"
       },
+      "SkippedUnits": {
+        "dataType": "map[uuid]string",
+        "references": "Unit"
+      },
       "SpaceID": {
         "dataType": "uuid",
         "references": "Space",

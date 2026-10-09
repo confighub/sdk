@@ -141,7 +141,7 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 		view.Append([]string{"Aborted Reason", changeorderDetails.AbortedReason})
 	}
 	if len(changeorderDetails.SkippedUnits) > 0 {
-		view.Append([]string{"Skipped Units", changeorderSkippedUnits(changeorderDetails.SkippedUnits)})
+		view.Append([]string{"Skipped Units", skippedUnitsSummary(changeorderDetails.SkippedUnits)})
 	}
 	// Where the change has got to, which the server derives when it reads the change order.
 	// In-scope first: it is what the other two are measured against.
@@ -287,16 +287,15 @@ func changeorderParameters(parameters map[string]any) string {
 	return strings.Join(rendered, ", ")
 }
 
-// changeorderSkippedUnits renders what the change order covers nothing of, by unit slug and
+// skippedUnitsSummary renders the units a change order or a release left out, by unit slug and
 // reason. The server stores the reason against the unit's id, since a slug can be renamed.
 // The generated client keys a uuid-keyed map by string, since JSON object keys are strings.
-func changeorderSkippedUnits(skipped map[string]string) string {
+func skippedUnitsSummary(skipped map[string]string) string {
 	lines := make([]string, 0, len(skipped))
 	for unitID, reason := range skipped {
 		name := unitID
-		// Looked up by id across the organization: the units the derivation walked are the change
-		// order's own space's, except a fan-out change order's, which are its sources outside the
-		// component.
+		// Looked up by id across the organization: a fan-out change order's skipped units are its
+		// sources, outside its own space.
 		if unit, err := resolveUnit(unitID, "", "UnitID,Slug"); err == nil && unit != nil {
 			name = unit.Unit.Slug
 		}
