@@ -38,8 +38,24 @@ number that means something different in every Unit:
   --revision <slug> | Tag:<slug>          the Revision that Tag marks
   --revision ChangeSet:<slug>             where a Closed ChangeSet ended
   --revision Before:ChangeSet:<slug>      the state it started from
-  --revision ChangeOrder:<slug>           where the change arrived
+  --revision ChangeOrder:<slug>           the change order's release tag
   --revision Before:ChangeOrder:<slug>    the state before it
+
+A ChangeOrder's release tag marks every releasable Unit of each Space the change
+is in, at the state the change left it in, and follows what resolving Links
+within the Space writes after the promotion. Publishing by ChangeOrder publishes
+for that ChangeOrder: its release prerequisites are checked against what is
+bundled, and its stage is advanced. Move the release tag to adopt a later
+Revision of a Unit before releasing with "cub unit tag --move".
+
+A Release of a ChangeOrder can carry revisions from before the change: a unit's
+revisions after its last released one, up to where the change starts, which an
+earlier change promoted on from this Space without releasing it here.
+--prior-revisions Error refuses such a Release, naming them and the change
+orders they belong to; Include, the default, releases them.
+
+--dry-run publishes in a transaction that is rolled back, reporting the Release
+that would be published or why it would be refused.
 
 A revision number, a Revision ID and the named revisions each pick out a
 Revision of one Unit, so they are not accepted. Slugs resolve like any other
@@ -64,6 +80,10 @@ Examples:
   # Bundle each Unit at the Revision a closed ChangeSet ended on
   cub release publish --revision ChangeSet:rollout-42 my-space
 
+  # Release a change order, after checking what would be released
+  cub release publish --revision ChangeOrder:bump-base-image --dry-run my-space
+  cub release publish --revision ChangeOrder:bump-base-image my-space
+
   # Release the state a promotion started from, to roll it back
   cub release publish --revision Before:ChangeOrder:bump-base-image my-space
 
@@ -78,6 +98,8 @@ Examples:
 var (
 	releasePublishRevision       string
 	releasePublishBundleBaseName string
+	releasePublishDryRun         bool
+	releasePublishPrior          string
 )
 
 func init() {
@@ -87,6 +109,8 @@ func init() {
 	enableDeleteGateFlag(releasePublishCmd)
 	enableCreatePermissionFlag(releasePublishCmd)
 	releasePublishCmd.Flags().StringVar(&releasePublishRevision, "revision", "", "Which tagged Revision to bundle for each Unit, as a Tag (slug, Tag:slug, space/slug or Tag ID) or as a ChangeSet:slug or ChangeOrder:slug boundary, optionally prefixed with Before:. A Unit without a matching tagged Revision is skipped if it has never been released, and refused otherwise.")
+	releasePublishCmd.Flags().StringVar(&releasePublishPrior, "prior-revisions", "", "with --revision ChangeOrder:<slug>, what to do with a unit's revisions from before the change -- after its last released revision, up to where the change starts: Include releases them; Error refuses, naming them and the change orders they belong to. Defaults to the change order's ReleasePriorRevisions")
+	releasePublishCmd.Flags().BoolVar(&releasePublishDryRun, "dry-run", false, "publish in a transaction that is rolled back: report the release that would be published, or why it would be refused, including a change order's release prerequisites, and publish nothing")
 	releasePublishCmd.Flags().StringVar(&releasePublishBundleBaseName, "bundle-base-name", "", "base filename for the release's stored bundle, without the .tar.gz suffix; defaults to the bundled Unit's slug for a single-Unit release and to the Space's slug otherwise")
 	releaseCmd.AddCommand(releasePublishCmd)
 }
@@ -133,21 +157,35 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		body.TagID = &tagID
 
-		// A Release of where a ChangeOrder arrived is published for that ChangeOrder, which the
-		// server records on the Release and advances in the same transaction. The state before
-		// it is not the change, so Before:ChangeOrder: names none.
+		// A Release of a ChangeOrder is published for that ChangeOrder, which the server records
+		// on the Release and advances in the same transaction, and at its release tag, which the
+		// server supplies: only the ChangeOrder is sent. The state before it is not the change,
+		// so Before:ChangeOrder: names none and is sent as the Tag it resolves to.
 		if identifier, ok := strings.CutPrefix(releasePublishRevision, "ChangeOrder:"); ok {
 			changeOrder, err := changeOrderByRef(identifier)
 			if err != nil {
 				return err
 			}
 			body.ChangeOrderID = &changeOrder.ChangeOrderID
+			body.TagID = nil
 		}
 	}
+
+	body.DryRun = releasePublishDryRun
+	body.PriorRevisions = goclientnew.ReleasePublishRequestPriorRevisions(releasePublishPrior)
 
 	res, err := cubClientNew.PublishReleaseWithResponse(ctx, space.Space.SpaceID, body)
 	if cubapi.IsAPIError(err, res) {
 		return cubapi.InterpretErrorGeneric(err, res)
+	}
+	if releasePublishDryRun && res.JSON200.Message == "" {
+		if !quiet && !isAlternativeOutput() {
+			tprint("Dry run: nothing was published. The release would be:")
+			displayReleaseDetails(res.JSON200.Release)
+			return nil
+		}
+		renderPayload(res.JSON200)
+		return nil
 	}
 
 	// A Space unchanged since its latest Release publishes nothing: the response

@@ -5,14 +5,17 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
 
 var (
 	tagRevision string
+	tagMove     bool
 )
 
 var unitTagCmd = &cobra.Command{
@@ -34,6 +37,15 @@ Tag a specific revision type:
   --revision Remove              Remove the tag from the revision
   --revision -                   Remove the tag (shorthand for Remove)
 `+"```"+`
+
+--move moves the tag from the revision it marks on each selected unit to the
+revision named, and refuses a unit it marks no revision of. Tags a changeset, a
+change order or a release made cannot be added or removed; a change order's
+release tag, named as ChangeOrder:<slug>, can be moved, to adopt a revision made
+after the promotion before the change is released. It cannot move to a revision
+before the one the change order's end tag marks or the unit's last released
+revision, to one with validation errors, or at all in a space where a release
+has been published at it.
 
 Examples:
 `+"```"+`
@@ -57,6 +69,9 @@ Examples:
 
   # Use space/tag syntax to target tag in specific space
   cub unit tag dev-space/dev-tag --unit my-unit
+
+  # Release a fix made in review with a change order: move its release tag to the fixed revision
+  cub unit tag ChangeOrder:base/bump-image --move --revision HeadRevisionNum --space staging --unit web
 `+"```"+`
 `, ""),
 	Args:        cobra.ExactArgs(1), // Require tag slug or ID
@@ -67,6 +82,8 @@ Examples:
 func init() {
 	unitTagCmd.Flags().StringVar(&tagRevision, "revision", "HeadRevisionNum",
 		"Which revision to tag: a named revision (HeadRevisionNum, LastReleasedRevisionNum), a revision number, a tag slug, Tag:slug, ChangeSet:slug, ChangeOrder:slug, any of those prefixed with Before:, or Remove (-) to remove the tag")
+	unitTagCmd.Flags().BoolVar(&tagMove, "move", false,
+		"move the tag from the revision it marks on each unit to --revision, refusing a unit it marks no revision of; the only way to move a change order's release tag (ChangeOrder:slug)")
 	enableWhereFlag(unitTagCmd)
 	enableFilterFlag(unitTagCmd)
 	unitTagCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{},
@@ -78,6 +95,10 @@ func checkUnitTagConflictingArgs(args []string) error {
 	// Check for mutual exclusivity between --unit and --where flags
 	if len(unitIdentifiers) > 0 && where != "" {
 		return fmt.Errorf("--unit and --where flags are mutually exclusive")
+	}
+
+	if tagMove && (tagRevision == "Remove" || tagRevision == "-") {
+		return fmt.Errorf("--move names the revision to move the tag to, so it cannot be combined with --revision Remove")
 	}
 
 	// At least one selection method is required
@@ -107,11 +128,24 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Parse the tag argument (supports space/tag format)
+	// Parse the tag argument (supports space/tag format). ChangeOrder:<slug> is the change
+	// order's release tag, the one tag a change order owns that can be moved.
 	tagSlugOrID := args[0]
-	tagID, err := resolveTagID(tagSlugOrID)
-	if err != nil {
-		return fmt.Errorf("failed to parse tag: %w", err)
+	var tagID uuid.UUID
+	if identifier, ok := strings.CutPrefix(tagSlugOrID, "ChangeOrder:"); ok {
+		changeOrder, err := changeOrderByRef(identifier)
+		if err != nil {
+			return err
+		}
+		if changeOrder.ReleaseTagID == uuid.Nil {
+			return fmt.Errorf("change order %s has no release tag; it was created before change orders had one", changeOrder.Slug)
+		}
+		tagID = changeOrder.ReleaseTagID
+	} else {
+		var err error
+		if tagID, err = resolveTagID(tagSlugOrID); err != nil {
+			return fmt.Errorf("failed to parse tag: %w", err)
+		}
 	}
 
 	// Convert "-" to "Remove" for the API. Everything else is resolved server-side, but slugs
@@ -164,6 +198,7 @@ func unitTagCmdRun(cmd *cobra.Command, args []string) error {
 	body := goclientnew.UnitTagRequest{
 		TagID:    tagID,
 		Revision: revision,
+		Move:     tagMove,
 	}
 
 	// Call the bulk tag API

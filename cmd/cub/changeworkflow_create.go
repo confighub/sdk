@@ -47,22 +47,24 @@ components; a stage can name a component, but that ties the workflow to it. A st
 other way is written in a file.
 
 The gates a stage can declare are:
-  Validated  no Unit of any Space of the stage ahead has ValidationErrors on the Revision the change
-             order's end tag marks
-  Released   every Space of the stage ahead has released the change; a Space with no release
+  Validated  no Unit the change changed, in any Space of the stage before, has ValidationErrors
+             on what a release of it would bundle there
+  Released   every Space of the stage before has released the change; a Space with no release
              target has nothing to release, so it passes
-  Healthy    every Space of the stage ahead reports it Synced, Succeeded and Healthy
+  Healthy    every Space of the stage before reports it Synced, Succeeded and Healthy
 
---prerequisites is one set of gates, given to every stage and to the final stage alike. A stage's
-gates are its entry gates: they are checked over the stage before it, so the first stage's are
-never evaluated. The final stage's are what the last stage must satisfy for the rollout to read as
-completed, which no promotion can gate because no hop is left. A rollout whose stages gate
-differently from one another is written in a file, as is one declaring custom prerequisites.
+--prerequisites is one set of gates, given to every stage after the first and to the final stage.
+A stage's gates are its entry gates: they are checked over the stage before it, and the first
+stage's over the space the change order was created in, where the change already is -- which is
+why the flag leaves the first stage without them. The final stage's are what the last stage must
+satisfy for the rollout to read as completed, which no promotion can gate because no hop is left.
+A rollout whose stages gate differently from one another is written in a file, as is one gating
+its first stage or declaring custom prerequisites.
 
 Single Examples:
 ` + "```" + `
   # From flags. Each --stage names one stage, given in the order a change is promoted through
-  # them, and --prerequisites gates every one of them alike.
+  # them, and --prerequisites gates every one after the first alike.
   cub changeworkflow create --space workflows myapp-main-line \
     --stage dev --stage staging --stage prod \
     --prerequisites Released,Healthy
@@ -102,8 +104,8 @@ prints:
 An attestation prerequisite requires Attestations (see "cub attestation") of each Revision a gate
 reads: Count distinct users recording a Pass, of Type Approval unless another is named. By
 default an author of the change does not count (AllowAuthors), and an unrevoked Fail blocks
-(IgnoreFail). A stage's Prerequisites read the Revisions the change order marks in the stage
-ahead; its ReleasePrerequisites, which may name only attestation prerequisites, read what a
+(IgnoreFail). A stage's Prerequisites read what a release of the change would bundle in the
+stage before, for the Units it changed; its ReleasePrerequisites, which may name only attestation prerequisites, read what a
 release of the change order in one of the stage's spaces bundles. "cub variant approve" records
 approvals.
 
@@ -160,7 +162,7 @@ func init() {
 
 	// Single create specific flags
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. A stage selects the Spaces labeled \"Labels."+changeWorkflowStageLabel+" = '<name>'\", which is what \"cub variant create --stage\" sets; a stage selecting its Spaces some other way is written in a file")
-	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage ahead of it, so the first stage's are never evaluated. A custom prerequisite is declared under CustomPrerequisites and gated on by name, which only a file can carry")
+	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.prerequisites, "prerequisites", nil, "gates given to every stage after the first and to the final stage (can be repeated or comma-separated): "+strings.Join(knownPrerequisites, ", ")+". A stage's gates are checked over every Space of the stage before it, and the first stage's over the change order's own space, which is why the first stage is not given them. A custom prerequisite is declared under CustomPrerequisites and gated on by name, which only a file can carry")
 
 	// Bulk create specific flags
 	changeworkflowCreateCmd.Flags().StringSliceVar(&changeworkflowCreateArgs.changeworkflowSlugs, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk create (can be repeated or comma-separated)")
@@ -284,14 +286,19 @@ func changeworkflowCreateCmdRun(cmd *cobra.Command, args []string) error {
 // way, so what a stage name means is decided here rather than by each command.
 func changeWorkflowStagesFromFlags(stageNames, prerequisites []string) ([]goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowFinalStage, error) {
 	stages := make([]goclientnew.ChangeWorkflowStage, 0, len(stageNames))
-	for _, name := range stageNames {
+	for i, name := range stageNames {
 		stage, err := changeWorkflowStage(name)
 		if err != nil {
 			return nil, nil, err
 		}
-		// Cloned so the stages do not go on sharing one slice with each other and with the final
-		// stage, which a later edit to any of them would write through.
-		stage.Prerequisites = slices.Clone(prerequisites)
+		// The first stage's gates are evaluated over the change order's own space, which a set
+		// meant for the hops between stages does not describe -- Healthy fails a space with no
+		// release target, as the base usually is. Cloned so the stages do not go on sharing one
+		// slice with each other and with the final stage, which a later edit to any of them would
+		// write through.
+		if i > 0 {
+			stage.Prerequisites = slices.Clone(prerequisites)
+		}
 		stages = append(stages, *stage)
 	}
 	final := &goclientnew.ChangeWorkflowFinalStage{

@@ -116,6 +116,15 @@ func displayExtendedChangeOrderDetails(extendedChangeOrder *goclientnew.Extended
 	if extendedChangeOrder.RestoreTag != nil {
 		view.Append([]string{"Restore Tag", extendedChangeOrder.RestoreTag.Slug})
 	}
+	// The tag a release of the change order is published at; see cub release publish.
+	if extendedChangeOrder.ReleaseTag != nil {
+		view.Append([]string{"Release Tag", extendedChangeOrder.ReleaseTag.Slug})
+	} else if changeorderDetails.ReleaseTagID != uuid.Nil {
+		view.Append([]string{"Release Tag ID", changeorderDetails.ReleaseTagID.String()})
+	}
+	if changeorderDetails.UserID != nil {
+		view.Append([]string{"Created By ID", changeorderDetails.UserID.String()})
+	}
 	// What an Invoke change order runs, and over which units. Absent on the two update types
 	// that follow links, which take their change from revisions the source unit already has.
 	if extendedChangeOrder.Invocation != nil {

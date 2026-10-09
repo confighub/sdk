@@ -47,7 +47,10 @@ stage of its change workflow with --stage. These combine as an intersection.
 In each space, the units approved are those with a Target -- what a release of the space
 would publish -- unless --change-order or --all is given, in which case they are every
 unit. --where narrows the units further. The revision of each is the head, or with
---change-order the revision its end tag marks there, or --revision: a number,
+--change-order the revision a release of the change would bundle there, which its release
+tag marks -- the revision its end tag marks, for a unit the release tag does not mark --
+so one approval satisfies both the change order's entry gates and its release gates. Or
+--revision: a number,
 LastReleasedRevisionNum, Tag:<tag>, ChangeSet:<changeset> or ChangeOrder:<changeorder>,
 optionally prefixed with Before:. A unit with no such revision is reported and skipped.
 
@@ -87,7 +90,7 @@ func init() {
 	variantApproveCmd.Flags().BoolVar(&variantApproveArgs.all, "all", false,
 		"approve every unit in the space, not only the ones with a Target")
 	variantApproveCmd.Flags().StringVar(&variantApproveArgs.changeOrder, "change-order", "",
-		"approve this change order: the spaces it is headed for, and the revisions its end tag marks")
+		"approve this change order: the spaces it is headed for, and in each unit the revision a release of it would bundle, which its release tag marks, or for a unit the release tag does not mark, the revision its end tag marks")
 	variantApproveCmd.Flags().StringVar(&variantApproveArgs.stage, "stage", "",
 		"with --change-order, approve in the spaces of this stage of its change workflow")
 	variantApproveCmd.Flags().StringVar(&variantApproveArgs.whereSpace, "where-space", "",

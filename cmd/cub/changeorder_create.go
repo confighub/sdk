@@ -122,6 +122,8 @@ var changeorderCreateArgs struct {
 	spaceFilter      string
 	endTag           string
 	updateType       string
+	priorRevisions   string
+	releasePrior     string
 	filterSpace      string
 	variantLabels    []string
 	namePattern      string
@@ -146,6 +148,8 @@ func init() {
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereSpaceField, "where-space-field", "", "where expression over Spaces selecting where this change order is headed, stored on it as WhereSpace and ANDed with --space-filter; the server records the spaces they select as its in-scope spaces")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.spaceFilter, "space-filter", "", "filter over Spaces (slug, space/slug, or UUID) selecting where this change order is headed, ANDed with --where-space-field")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.updateType, "update-type", "", "how the change order propagates: UpgradeUnit (the clone lineage, the default) or MergeUnits, which follow links and take the change from revisions the source unit already has; Insert, Upsert, or TransformPaths, which resolve the links of that type from the spaces in scope to units outside the spaces in scope at the revision each is at when the change order is created (the links must not be AutoUpdate, and the spaces in scope must be named); or Invoke, where the change is one invocation run in each space in scope and is made after the change order is created")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.priorRevisions, "prior-revisions", "", "how the change order marks the units its change does not change, and the default --prior-revisions for its promotions: Include (the default), Skip or Error mark such a unit where its followers have it, or where it is released when that is later, so promoting the change does not move it, and differ in what a promotion does with a changed unit's revisions from before the change; All marks every such unit at its head, so promoting the change brings every unit up to the space it takes from. Fixed once the change order is created")
+	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.releasePrior, "release-prior-revisions", "", "what a release of the change order does with a unit's revisions from before the change -- after its last released revision, up to where the change starts: Include (the default) releases them; Error refuses, naming them and the change orders they belong to. cub release publish --prior-revisions overrides it")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.invocation, "invocation", "", "invocation (slug, space/slug, or UUID) to run in each space in scope; required with --update-type Invoke and refused otherwise. Naming it on the change order is what holds every space to the same update -- the invoke API takes what it runs from here. Immutable once set")
 	changeorderCreateCmd.Flags().StringArrayVar(&changeorderCreateArgs.params, "param", []string{}, "value for one of the invocation's declared parameters, as name=value (can be repeated). One set for the whole change order, since a value that differed by space would make each variant a different change")
 	changeorderCreateCmd.Flags().StringVar(&changeorderCreateArgs.whereUnit, "where-unit", "", "where expression selecting which units of each space in scope the change order covers; without one it covers every unit. It takes what --where does on unit list, attributes of what a unit refers to included, as in \"Space.Labels.Environment = 'prod'\". Only for --update-type Invoke. Unlike the spaces, this is asked again on every read, so a unit added to a space afterwards counts as not having had the invocation run on it")
@@ -310,6 +314,12 @@ func runSingleChangeOrderCreate(args []string) error {
 	}
 	if changeorderCreateArgs.updateType != "" {
 		newBody.UpdateType = changeorderCreateArgs.updateType
+	}
+	if changeorderCreateArgs.priorRevisions != "" {
+		newBody.PriorRevisions = goclientnew.ChangeOrderPriorRevisions(changeorderCreateArgs.priorRevisions)
+	}
+	if changeorderCreateArgs.releasePrior != "" {
+		newBody.ReleasePriorRevisions = goclientnew.ChangeOrderReleasePriorRevisions(changeorderCreateArgs.releasePrior)
 	}
 	// What an Invoke change order runs, and over which units. The server refuses these on the
 	// two update types that follow links, and refuses an Invoke change order without an

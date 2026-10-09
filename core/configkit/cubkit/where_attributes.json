@@ -285,6 +285,9 @@
       "Permissions": {
         "dataType": "map[string]map[string]map[uuid]bool"
       },
+      "PriorRevisions": {
+        "dataType": "string"
+      },
       "PromotionFailures": {
         "dataType": "JSON"
       },
@@ -293,6 +296,14 @@
       },
       "Promotions": {
         "dataType": "JSON"
+      },
+      "ReleasePriorRevisions": {
+        "dataType": "string"
+      },
+      "ReleaseTagID": {
+        "dataType": "uuid",
+        "references": "Tag",
+        "expandable": true
       },
       "ReleasedRestoredSpaceIDs": {
         "dataType": "[]uuid"
@@ -352,6 +363,10 @@
       },
       "UpdatedAt": {
         "dataType": "time"
+      },
+      "UserID": {
+        "dataType": "uuid",
+        "references": "User"
       },
       "WhereSpace": {
         "dataType": "string"

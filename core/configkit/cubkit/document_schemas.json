@@ -206,7 +206,7 @@
           "type": "string"
         },
         "Prerequisites": {
-          "description": "The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage ahead of this one, so the first stage's are never evaluated.",
+          "description": "The stage's entry gates, each naming a built-in check or one declared in CustomPrerequisites. Evaluated over every Space of the stage before this one; the first stage's are evaluated over the Space the ChangeOrder resides in, and refused for Invoke and fan-out ChangeOrders, whose change is in no Space before it is promoted.",
           "items": {
             "type": "string"
           },
