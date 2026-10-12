@@ -1373,6 +1373,12 @@ type CreateUserKeyRequest struct {
 	PublicJWK   interface{} `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
 }
 
+// CreateUserTokenRequest defines model for CreateUserTokenRequest.
+type CreateUserTokenRequest struct {
+	Description string    `json:"Description,omitempty" yaml:"Description,omitempty"`
+	ExpiresAt   time.Time `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+}
+
 // DeleteResponse Response for successful delete operation
 type DeleteResponse struct {
 	// Error Error information if the delete operation failed.
@@ -2547,6 +2553,12 @@ type Issue struct {
 
 	// Message A more detailed and specific explanation of the issue found
 	Message string `json:"Message,omitempty" yaml:"Message,omitempty"`
+}
+
+// IssuedUserToken defines model for IssuedUserToken.
+type IssuedUserToken struct {
+	Token     string     `json:"Token,omitempty" yaml:"Token,omitempty"`
+	UserToken *UserToken `json:"UserToken,omitempty" yaml:"UserToken,omitempty"`
 }
 
 // Link Link connects two config Units in a dependency / producer-consumer relationship.
@@ -5253,6 +5265,19 @@ type UserKey struct {
 	PublicJWK   interface{}        `json:"PublicJWK,omitempty" yaml:"PublicJWK,omitempty"`
 	UserID      openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
 	UserKeyID   openapi_types.UUID `json:"UserKeyID,omitempty" yaml:"UserKeyID,omitempty"`
+}
+
+// UserToken defines model for UserToken.
+type UserToken struct {
+	CreatedAt       time.Time          `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
+	CreatedByUserID openapi_types.UUID `json:"CreatedByUserID,omitempty" yaml:"CreatedByUserID,omitempty"`
+	Description     string             `json:"Description,omitempty" yaml:"Description,omitempty"`
+	ExpiresAt       time.Time          `json:"ExpiresAt,omitempty" yaml:"ExpiresAt,omitempty"`
+	Jti             string             `json:"Jti,omitempty" yaml:"Jti,omitempty"`
+	LastUsedAt      time.Time          `json:"LastUsedAt,omitempty" yaml:"LastUsedAt,omitempty"`
+	RevokedAt       time.Time          `json:"RevokedAt,omitempty" yaml:"RevokedAt,omitempty"`
+	UserID          openapi_types.UUID `json:"UserID,omitempty" yaml:"UserID,omitempty"`
+	UserTokenID     openapi_types.UUID `json:"UserTokenID,omitempty" yaml:"UserTokenID,omitempty"`
 }
 
 // ValidationResult defines model for ValidationResult.
@@ -13445,6 +13470,12 @@ type UpdateServiceAccountParams struct {
 
 // CreateServiceAccountKeyParams defines parameters for CreateServiceAccountKey.
 type CreateServiceAccountKeyParams struct {
+	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
+	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
+}
+
+// CreateServiceAccountTokenParams defines parameters for CreateServiceAccountToken.
+type CreateServiceAccountTokenParams struct {
 	// DryRun If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.
 	DryRun *bool `form:"dry_run,omitempty" json:"dry_run,omitempty" yaml:"dry_run,omitempty"`
 }
@@ -22798,6 +22829,9 @@ type UpdateServiceAccountJSONRequestBody = ServiceAccount
 
 // CreateServiceAccountKeyJSONRequestBody defines body for CreateServiceAccountKey for application/json ContentType.
 type CreateServiceAccountKeyJSONRequestBody = CreateUserKeyRequest
+
+// CreateServiceAccountTokenJSONRequestBody defines body for CreateServiceAccountToken for application/json ContentType.
+type CreateServiceAccountTokenJSONRequestBody = CreateUserTokenRequest
 
 // CreateSpaceJSONRequestBody defines body for CreateSpace for application/json ContentType.
 type CreateSpaceJSONRequestBody = Space

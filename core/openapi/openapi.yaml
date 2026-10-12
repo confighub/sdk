@@ -19105,6 +19105,229 @@ paths:
       summary: Remove a public key from a service account
       tags:
       - ServiceAccount
+  /service_account/{service_account_id}/token:
+    get:
+      description: List the long-lived tokens issued to a service account, revoked
+        ones included. The tokens themselves are not returned; each entry carries
+        the jti, who issued it, when it was last used, and whether it has been revoked.
+        Requires View permission on the service account.
+      operationId: ListServiceAccountTokens
+      parameters:
+      - description: UUID of the service account whose tokens are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UserToken'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List a service account's long-lived tokens
+      tags:
+      - ServiceAccount
+    post:
+      description: Issue a token with no expiry (or the given ExpiresAt) that authenticates
+        as the service account, for consumers that can hold only a static credential,
+        such as a registry Secret. The token is returned once and never stored; it
+        can be revoked by its jti. Requires Impersonate permission on the service
+        account, which Manage does not include; a service account cannot issue a token
+        for itself.
+      operationId: CreateServiceAccountToken
+      parameters:
+      - description: UUID of the service account whose tokens are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserTokenRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuedUserToken'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Issue a long-lived token for a service account
+      tags:
+      - ServiceAccount
+  /service_account/{service_account_id}/token/{jti}:
+    delete:
+      description: Revoke one token by its jti. The token stops working within a minute
+        on every server; the record stays, marked revoked. Requires Impersonate permission
+        on the service account.
+      operationId: RevokeServiceAccountToken
+      parameters:
+      - description: UUID of the service account whose tokens are being managed.
+        in: path
+        name: service_account_id
+        required: true
+        schema:
+          type: string
+      - description: The jti of the token to revoke, as listed and as carried in the
+          token's own claims.
+        in: path
+        name: jti
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'ServiceAccount is still in use: it has DeleteGates, or other
+            entities still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: ServiceAccount could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing ServiceAccount.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Revoke a service account's long-lived token
+      tags:
+      - ServiceAccount
   /space:
     get:
       description: List Spaces
@@ -49907,6 +50130,17 @@ components:
         PublicJWK:
           x-go-type-skip-optional-pointer: true
       type: object
+    CreateUserTokenRequest:
+      properties:
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
     DeleteResponse:
       description: Response for successful delete operation
       properties:
@@ -51713,6 +51947,14 @@ components:
           description: A more detailed and specific explanation of the issue found
           type: string
           x-go-type-skip-optional-pointer: true
+      type: object
+    IssuedUserToken:
+      properties:
+        Token:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserToken:
+          $ref: '#/components/schemas/UserToken'
       type: object
     Link:
       description: |-
@@ -57838,6 +58080,50 @@ components:
           type: string
           x-go-type-skip-optional-pointer: true
         UserKeyID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    UserToken:
+      properties:
+        CreatedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CreatedByUserID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ExpiresAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Jti:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LastUsedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        RevokedAt:
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        UserTokenID:
           example: 248df4b7-aa70-47b8-a036-33ac447e668d
           format: uuid
           type: string

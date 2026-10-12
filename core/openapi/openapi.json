@@ -18716,6 +18716,343 @@
         }
       }
     },
+    "/service_account/{service_account_id}/token": {
+      "get": {
+        "tags": [
+          "ServiceAccount"
+        ],
+        "summary": "List a service account's long-lived tokens",
+        "description": "List the long-lived tokens issued to a service account, revoked ones included. The tokens themselves are not returned; each entry carries the jti, who issued it, when it was last used, and whether it has been revoked. Requires View permission on the service account.",
+        "operationId": "ListServiceAccountTokens",
+        "parameters": [
+          {
+            "name": "service_account_id",
+            "in": "path",
+            "description": "UUID of the service account whose tokens are being managed.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserToken"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ServiceAccount request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ServiceAccount not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ServiceAccount.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ServiceAccount"
+        ],
+        "summary": "Issue a long-lived token for a service account",
+        "description": "Issue a token with no expiry (or the given ExpiresAt) that authenticates as the service account, for consumers that can hold only a static credential, such as a registry Secret. The token is returned once and never stored; it can be revoked by its jti. Requires Impersonate permission on the service account, which Manage does not include; a service account cannot issue a token for itself.",
+        "operationId": "CreateServiceAccountToken",
+        "parameters": [
+          {
+            "name": "service_account_id",
+            "in": "path",
+            "description": "UUID of the service account whose tokens are being managed.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dry_run",
+            "in": "query",
+            "description": "If true, report what the write would do without doing it: the write runs, including every check it makes, and is then rolled back. The response is the one the write would return, with the entities as they would be written. An entity a dry run creates is given an ID that the real create will not reuse.",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IssuedUserToken"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ServiceAccount request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ServiceAccount not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ServiceAccount data conflict. Data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ServiceAccount.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/service_account/{service_account_id}/token/{jti}": {
+      "delete": {
+        "tags": [
+          "ServiceAccount"
+        ],
+        "summary": "Revoke a service account's long-lived token",
+        "description": "Revoke one token by its jti. The token stops working within a minute on every server; the record stays, marked revoked. Requires Impersonate permission on the service account.",
+        "operationId": "RevokeServiceAccountToken",
+        "parameters": [
+          {
+            "name": "service_account_id",
+            "in": "path",
+            "description": "UUID of the service account whose tokens are being managed.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "jti",
+            "in": "path",
+            "description": "The jti of the token to revoke, as listed and as carried in the token's own claims.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Response for successful delete operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ServiceAccount request is invalid (Bad Request).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden access.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ServiceAccount not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "ServiceAccount is still in use: it has DeleteGates, or other entities still reference it. Or data has changed since last read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "ServiceAccount could not be deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Something went wrong while processing ServiceAccount.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/space": {
       "get": {
         "tags": [
@@ -52545,6 +52882,21 @@
           }
         }
       },
+      "CreateUserTokenRequest": {
+        "type": "object",
+        "properties": {
+          "Description": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
       "DeleteResponse": {
         "type": "object",
         "properties": {
@@ -54925,6 +55277,18 @@
             "type": "string",
             "description": "A more detailed and specific explanation of the issue found",
             "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "IssuedUserToken": {
+        "type": "object",
+        "properties": {
+          "Token": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserToken": {
+            "$ref": "#/components/schemas/UserToken"
           }
         }
       },
@@ -61929,6 +62293,61 @@
             "x-go-type-skip-optional-pointer": true
           },
           "UserKeyID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          }
+        }
+      },
+      "UserToken": {
+        "type": "object",
+        "properties": {
+          "CreatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "CreatedByUserID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Description": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "ExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "Jti": {
+            "type": "string",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "LastUsedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "RevokedAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2006-01-02T15:04:05Z07:00",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserID": {
+            "type": "string",
+            "format": "uuid",
+            "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
+            "x-go-type-skip-optional-pointer": true
+          },
+          "UserTokenID": {
             "type": "string",
             "format": "uuid",
             "example": "248df4b7-aa70-47b8-a036-33ac447e668d",
