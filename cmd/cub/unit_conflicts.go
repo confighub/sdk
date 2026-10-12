@@ -174,9 +174,7 @@ func unitConflictsCmdRun(_ *cobra.Command, args []string) error {
 		displayUnitChanges(args[0], "apply withheld merge changes", resp.Diff)
 	}
 	if !dryRun && wait && resp.Unit != nil && (resp.Applied > 0 || resp.Dismissed > 0) {
-		if !quiet && !isAlternativeOutput() {
-			tprintRaw("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		if err := awaitTriggersRemoval(resp.Unit); err != nil {
 			return err
 		}

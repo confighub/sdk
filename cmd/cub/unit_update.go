@@ -211,6 +211,7 @@ var (
 	whereMutation           string
 	filterMutation          string
 	tag                     string
+	ifMatchDataHash         string
 )
 
 func init() {
@@ -239,6 +240,7 @@ func init() {
 	unitUpdateCmd.Flags().StringVar(&mergeExternalSource, "merge-external-source", "", "external source identifier for merge-on-update")
 	unitUpdateCmd.Flags().BoolVar(&mergeEnableSubtraction, "merge-enable-subtraction", false, "also subtract the target's local differences from the patch during --upgrade and --merge-source, on top of the stored path protection that preserves overrides by default (no effect on --merge-source Self)")
 	unitUpdateCmd.Flags().StringVar(&tag, "tag", "", "UUID of tag to attach to (new) head revision")
+	unitUpdateCmd.Flags().StringVar(&ifMatchDataHash, "if-match", "", "write the config data given only if the unit's configuration is still the one with this DataHash (as cub unit get shows it), so that a change made since it was read is not overwritten; refused, writing nothing, when it is not")
 	enableWhereFlag(unitUpdateCmd)
 	enableFilterFlag(unitUpdateCmd)
 	unitUpdateCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
@@ -273,6 +275,9 @@ func checkConflictingArgs(args []string) bool {
 		// ask for would take each unit's current data as the incoming change.
 		if mergeExternalSource != "" {
 			failOnError(fmt.Errorf("--merge-external-source is not supported in bulk patch mode; it describes configuration being written, and a bulk patch writes none"))
+		}
+		if ifMatchDataHash != "" {
+			failOnError(fmt.Errorf("--if-match is not supported in bulk patch mode; it conditions a configuration write, and a bulk patch writes none"))
 		}
 
 		if restore != "" {
@@ -438,6 +443,8 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	currentUnit := currentUnitEnvelope.Unit
 	spaceID := currentUnit.SpaceID
+	// Kept apart from currentUnit, which --replace swaps for an empty Unit.
+	storedDataHash := currentUnit.DataHash
 
 	unitSlug := currentUnit.Slug
 	newConfigData := ""
@@ -599,7 +606,7 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 
 	if restore != "" {
 		// Parse restore parameter - enhanced to support Tag:slug, ChangeSet:slug formats
-		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameter(restore, serverResolvedRevision, currentUnit.HeadRevisionNum)
+		restoreFormatted, restoreIsUUID, err := parseSelectedRevisionParameterIn(currentUnit.SpaceID.String(), restore, serverResolvedRevision, currentUnit.HeadRevisionNum)
 		if err != nil {
 			return err
 		}
@@ -652,13 +659,13 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		}
 		newParams.MergeSource = &mergeSourceStr
 
-		mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
+		mergeBaseFormatted, _, err := parseSelectedRevisionParameterIn(mergeSourceUnit.SpaceID.String(), mergeBase, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge base specification: %w", err)
 		}
 		newParams.MergeBase = &mergeBaseFormatted
 
-		mergeEndFormatted, _, err := parseSelectedRevisionParameter(mergeEnd, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
+		mergeEndFormatted, _, err := parseSelectedRevisionParameterIn(mergeSourceUnit.SpaceID.String(), mergeEnd, serverResolvedRevision, mergeSourceUnit.HeadRevisionNum)
 		if err != nil {
 			return fmt.Errorf("invalid merge end specification: %w", err)
 		}
@@ -700,10 +707,23 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		// }
 	}
 
+	if ifMatchDataHash != "" {
+		if !newConfigDataSupplied {
+			return errors.New("--if-match conditions a configuration write: give the config data to write")
+		}
+		// Checked here as well as by the server, because the configuration is written after
+		// the metadata: a mismatch found only by the data write would leave the metadata
+		// written. The server's check is what closes the window between the two.
+		if !sameDataHash(ifMatchDataHash, storedDataHash) {
+			return fmt.Errorf("unit %s's configuration has changed: its DataHash is %s, not %s; nothing was written",
+				unitSlug, storedDataHash, ifMatchDataHash)
+		}
+	}
+
 	if mergeExternalSource != "" {
 		newParams.MergeExternalSource = &mergeExternalSource
 		if mergeBase != "" {
-			mergeBaseFormatted, _, err := parseSelectedRevisionParameter(mergeBase, serverResolvedRevision, currentUnit.HeadRevisionNum)
+			mergeBaseFormatted, _, err := parseSelectedRevisionParameterIn(currentUnit.SpaceID.String(), mergeBase, serverResolvedRevision, currentUnit.HeadRevisionNum)
 			if err != nil {
 				return fmt.Errorf("invalid merge base specification: %w", err)
 			}
@@ -749,6 +769,9 @@ func unitUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	// act on there -- and dry_run on it alone would leave this write to happen for real.
 	if newConfigDataSupplied {
 		dataParams := unitDataParamsFromUpdate(newParams, currentUnit.LastChangeDescription)
+		if ifMatchDataHash != "" {
+			dataParams.IfMatch = &ifMatchDataHash
+		}
 		dataResult, dataErr := putUnitData(spaceID, unitDetails.UnitID, newConfigData, dataParams)
 		if dataErr != nil {
 			return fmt.Errorf("unit %s metadata was updated, but its config data could not be written: %w",
@@ -1100,6 +1123,23 @@ func patchUnit(spaceID uuid.UUID, unitID uuid.UUID, updateParams *goclientnew.Up
 	return unitRes.JSON200, nil
 }
 
+// showProgress reports whether a command may print text about its own progress, such as that it
+// is awaiting triggers. That text goes to stdout with the command's result, so it is left out
+// whenever the result is meant to be read by a program -- an -o format or a function --show
+// section -- as well as with --quiet.
+func showProgress() bool {
+	return !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput()
+}
+
+// printAwaitingTriggers says that the command is waiting for the triggers of the units it wrote.
+// Every command that waits says it through here, so that none of them adds it to output a
+// program parses.
+func printAwaitingTriggers() {
+	if showProgress() {
+		tprintRaw("Awaiting triggers...")
+	}
+}
+
 func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	// TODO: Implement configurable timeout, similar to awaitCompletion
 	unitID := unitDetails.UnitID
@@ -1133,10 +1173,10 @@ func awaitTriggersRemoval(unitDetails *goclientnew.Unit) error {
 	if !done {
 		return errors.New("triggers didn't execute on unit " + unitDetails.Slug)
 	}
-	if len(unitDetails.ValidationErrors) > 0 && !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
+	if len(unitDetails.ValidationErrors) > 0 && showProgress() {
 		tprint("Unit %s (%s) has validation errors: %s", unitDetails.Slug, unitDetails.UnitID.String(), validationErrorsToString(unitDetails.ValidationErrors))
 	}
-	if len(unitDetails.ValidationWarnings) > 0 && !quiet && !isAlternativeOutput() && !hasAlternativeFunctionOutput() {
+	if len(unitDetails.ValidationWarnings) > 0 && showProgress() {
 		tprint("Unit %s (%s) has validation warnings: %s", unitDetails.Slug, unitDetails.UnitID.String(), validationErrorsToString(unitDetails.ValidationWarnings))
 	}
 	return nil
@@ -1158,9 +1198,7 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 		}
 
 		if len(successfulUnits) > 0 {
-			if !quiet && !isAlternativeOutput() {
-				tprintRaw("Awaiting triggers...")
-			}
+			printAwaitingTriggers()
 			// Wait for each successfully updated unit
 			for _, unit := range successfulUnits {
 				// The units returned don't have the extended information, so we re-fetch them with that information.
@@ -1212,6 +1250,7 @@ func handleBulkCreateOrUpdateResponse(responses *[]goclientnew.UnitCreateOrUpdat
 // per-Unit by the server.
 func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, isUpgrade bool) (string, error) {
 	var sourceHeadRevisionNum int64
+	sourceSpaceID := defaultSpaceID()
 	if isUpgrade && currentUnit != nil {
 		if currentUnit.UpstreamUnitID == nil || currentUnit.UpstreamSpaceID == nil {
 			return "", fmt.Errorf("--merge-end requires an upstream unit to upgrade from")
@@ -1221,10 +1260,11 @@ func parseSourceEndRevision(revisionSpec string, currentUnit *goclientnew.Unit, 
 			return "", fmt.Errorf("failed to get upstream unit for --merge-end: %w", err)
 		}
 		sourceHeadRevisionNum = upstreamUnit.Unit.HeadRevisionNum
+		sourceSpaceID = upstreamUnit.Unit.SpaceID.String()
 	} else if strings.HasPrefix(revisionSpec, "-") {
 		return "", fmt.Errorf("--merge-end relative to head is not supported here, since the source is not a single unit; name a Tag, a ChangeSet, or an absolute revision")
 	}
-	formatted, isUUID, err := parseSelectedRevisionParameter(revisionSpec, serverResolvedRevision, sourceHeadRevisionNum)
+	formatted, isUUID, err := parseSelectedRevisionParameterIn(sourceSpaceID, revisionSpec, serverResolvedRevision, sourceHeadRevisionNum)
 	if err != nil {
 		return "", fmt.Errorf("invalid merge end specification: %w", err)
 	}
@@ -1302,6 +1342,15 @@ func isNamedRevision(identifier string) bool {
 // bare Revision UUID: some APIs take it as a RevisionID field, and the rest want it put back
 // behind a "Revision:" prefix.
 func parseSelectedRevisionParameter(revisionSpec string, resolution revisionResolution, headRevisionNum int64) (string, bool, error) {
+	return parseSelectedRevisionParameterIn(defaultSpaceID(), revisionSpec, resolution, headRevisionNum)
+}
+
+// parseSelectedRevisionParameterIn is parseSelectedRevisionParameter with the space a bare
+// Tag, ChangeSet or ChangeOrder slug is looked up in: the space of the unit the revision
+// belongs to, when the caller has resolved one, so that a unit named as <space>/<slug> finds
+// its own "release-2" rather than every space's. A slug written as <space>/<slug>, or a UUID,
+// carries its own scope and is unaffected.
+func parseSelectedRevisionParameterIn(spaceID string, revisionSpec string, resolution revisionResolution, headRevisionNum int64) (string, bool, error) {
 	// Check for Before: prefix and remove it
 	var isBeforeModifier bool
 	originalSpec := revisionSpec
@@ -1346,14 +1395,14 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 			if isBeforeModifier {
 				return "", false, fmt.Errorf("invalid revision '%s': no Tag marks the Revision before a tagged one; name the ChangeSet or ChangeOrder the Tag bounds instead", originalSpec)
 			}
-			tagUUID, err = resolveTagID(identifier)
+			tagUUID, err = resolveTagIDIn(spaceID, identifier)
 			if err != nil {
 				return "", false, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 			}
 		case "ChangeSet":
-			tagUUID, err = changeSetBoundaryTagID(identifier, isBeforeModifier)
+			tagUUID, err = changeSetBoundaryTagID(spaceID, identifier, isBeforeModifier)
 		case "ChangeOrder":
-			tagUUID, err = changeOrderBoundaryTagID(identifier, isBeforeModifier)
+			tagUUID, err = changeOrderBoundaryTagID(spaceID, identifier, isBeforeModifier)
 		default:
 			return "", false, fmt.Errorf("invalid revision '%s': %s", originalSpec, resolveToTagForms)
 		}
@@ -1403,7 +1452,7 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 	// Handle entity type-specific parsing
 	if entityType == "Tag" {
 		// Parse tag slug/ID and convert to UUID
-		tagUUID, err := resolveTagID(identifier)
+		tagUUID, err := resolveTagIDIn(spaceID, identifier)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to parse tag '%s': %w", identifier, err)
 		}
@@ -1415,7 +1464,7 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 
 	} else if entityType == "ChangeSet" {
 		// Parse changeset slug/ID and convert to UUID
-		changesetUUID, err := resolveChangeSetID(identifier)
+		changesetUUID, err := resolveChangeSetIDIn(spaceID, identifier)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
 		}
@@ -1430,7 +1479,7 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 		// promoted on every Unit it landed in, so this names a revision of *this* Unit:
 		// ChangeOrder:x is where the change arrived and Before:ChangeOrder:x is the state before
 		// it, which is what undoes a promotion however many revisions it made.
-		changeorderUUID, err := resolveChangeOrderID(identifier)
+		changeorderUUID, err := resolveChangeOrderIDIn(spaceID, identifier)
 		if err != nil {
 			return "", false, fmt.Errorf("failed to parse change order '%s': %w", identifier, err)
 		}
@@ -1460,9 +1509,9 @@ func parseSelectedRevisionParameter(revisionSpec string, resolution revisionReso
 // the Revision its end Tag marks, and Before: the one its start Tag marks. The two cases the
 // server covers by counting Revisions have no Tag to return, so they are refused here rather than
 // released at the wrong Revision.
-func changeSetBoundaryTagID(identifier string, isBeforeModifier bool) (uuid.UUID, error) {
+func changeSetBoundaryTagID(spaceID string, identifier string, isBeforeModifier bool) (uuid.UUID, error) {
 	// All fields: the boundary Tags and the state that says whether they are placed.
-	changeset, err := resolveChangeSet(identifier, defaultSpaceID(), "*")
+	changeset, err := resolveChangeSet(identifier, spaceID, "*")
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to parse changeset '%s': %w", identifier, err)
 	}
@@ -1492,9 +1541,9 @@ func changeSetBoundaryTagID(identifier string, isBeforeModifier bool) (uuid.UUID
 // it marks, and its start Tag always marks the Revision before the change, so the two ends map
 // onto Tags directly: the ChangeOrder is where the change arrived, and Before: is the state it
 // started from -- what rolls a promotion back however many Revisions it made.
-func changeOrderBoundaryTagID(identifier string, isBeforeModifier bool) (uuid.UUID, error) {
+func changeOrderBoundaryTagID(spaceID string, identifier string, isBeforeModifier bool) (uuid.UUID, error) {
 	// All fields, for the boundary Tags.
-	changeOrder, err := resolveChangeOrder(identifier, defaultSpaceID(), "*")
+	changeOrder, err := resolveChangeOrder(identifier, spaceID, "*")
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("failed to parse change order '%s': %w", identifier, err)
 	}

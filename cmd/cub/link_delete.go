@@ -157,9 +157,7 @@ func uniqueFromUnitsFromLinks(links []*goclientnew.ExtendedLink) []linkFromUnit 
 // from-unit. Errors fetching individual units are silently ignored so the
 // caller can proceed with the remaining units.
 func awaitTriggersOnLinkFromUnits(fromUnits []linkFromUnit) {
-	if !quiet && !isAlternativeOutput() {
-		tprintRaw("Awaiting triggers...")
-	}
+	printAwaitingTriggers()
 	for _, unit := range fromUnits {
 		unitDetails, err := resolveUnit(unit.UnitID, unit.SpaceID, "*")
 		if err != nil {
@@ -212,9 +210,7 @@ func linkDeleteCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	displayDeleteResults("link", args[0], linkDetails.Link.LinkID.String(), deleteRes)
 	if wait {
-		if !quiet {
-			tprint("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		fromUnitID := linkDetails.Link.FromUnitID
 		unitDetails, err := resolveUnit(fromUnitID.String(), linkDetails.Link.SpaceID.String(), "*") // get all fields for now
 		if err != nil {

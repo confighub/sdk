@@ -150,9 +150,7 @@ func handleBulkLinkUpdateResponse(responses200 *[]goclientnew.LinkCreateOrUpdate
 		}
 
 		if len(successfulLinks) > 0 {
-			if !quiet && !isAlternativeOutput() {
-				tprintRaw("Awaiting triggers...")
-			}
+			printAwaitingTriggers()
 			// Wait for triggers on each affected unit
 			for _, link := range successfulLinks {
 				unitDetails, err := resolveUnit(link.FromUnitID.String(), link.SpaceID.String(), "*")
@@ -589,9 +587,7 @@ func runIndividualLinkPatch(cmd *cobra.Command, linkSlug string) error {
 	linkDetails := res.JSON200
 	displayUpdateResults(linkDetails, "link", linkSlug, linkDetails.LinkID.String(), displayLinkDetails)
 	if wait {
-		if !quiet {
-			tprint("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		unitDetails, err := resolveUnit(linkDetails.FromUnitID.String(), linkDetails.SpaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err
@@ -710,9 +706,7 @@ func linkUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	linkDetails := linkRes.JSON200
 	displayUpdateResults(linkDetails, "link", args[0], linkDetails.LinkID.String(), displayLinkDetails)
 	if wait {
-		if !quiet {
-			tprint("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		unitDetails, err := resolveUnit(fromUnitID.String(), spaceID.String(), "*") // get all fields for now
 		if err != nil {
 			return err

@@ -41,7 +41,7 @@ var variantCreateArgs struct {
 }
 
 var variantCreateCmd = &cobra.Command{
-	Use:   "create <variant-name> <upstream-space>",
+	Use:   "create <variant-name> <upstream-variant>",
 	Short: "Create a variant by cloning a space and its units",
 	Args:  cobra.ExactArgs(2),
 	Long: getCommandHelp(`Create a variant of an upstream space by cloning the space and all of its units into a new
@@ -210,7 +210,7 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 	upstreamSpaceSlug := args[1]
 
 	// Resolve the upstream space.
-	upstreamSpace, err := resolveSpace(upstreamSpaceSlug, "*")
+	upstreamSpace, err := resolveVariantOrSpace(upstreamSpaceSlug, "*")
 	if err != nil {
 		return err
 	}

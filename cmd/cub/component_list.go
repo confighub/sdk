@@ -5,12 +5,15 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var componentListCmd = &cobra.Command{
@@ -22,7 +25,7 @@ var componentListCmd = &cobra.Command{
 }
 
 func getComponentListHelp() string {
-	baseHelp := `List the Component entities in this organization, with whether a ChangeWorkflow is required to promote and release, how many ChangeWorkflows they allow, their owner, and their variants: the spaces naming them with ComponentID.
+	baseHelp := `List the Component entities in this organization, with whether a ChangeWorkflow is required to promote and release, how many ChangeWorkflows they allow, their owner, and their variants: the Variant label of each space naming them with ComponentID, which is the name --variant <component>/<variant> takes.
 
 The Owner column is the Component's own Owner label when it has one. Otherwise it is the Owner
 label all of the Component's spaces share with one value, and it is empty when they disagree,
@@ -129,6 +132,25 @@ func spacesByComponent() (map[goclientnew.UUID][]*goclientnew.ExtendedSpace, err
 	return byComponent, nil
 }
 
+// variantNames names a Component's variants as --variant takes them: by each space's Variant
+// label, sorted. A space naming the Component without that label is shown by its slug, so
+// that it is not left out of the row.
+func variantNames(spaces []*goclientnew.ExtendedSpace) []string {
+	names := make([]string, 0, len(spaces))
+	for _, extendedSpace := range spaces {
+		if extendedSpace == nil || extendedSpace.Space == nil {
+			continue
+		}
+		if variant := extendedSpace.Space.Labels["Variant"]; variant != "" {
+			names = append(names, variant)
+		} else {
+			names = append(names, extendedSpace.Space.Slug)
+		}
+	}
+	sort.Strings(names)
+	return names
+}
+
 func displayComponentEntityList(components []*goclientnew.ExtendedComponent) {
 	if displayRequestedColumns(components, componentAliases, nil) {
 		return
@@ -139,20 +161,72 @@ func displayComponentEntityList(components []*goclientnew.ExtendedComponent) {
 	if !noheader {
 		table.SetHeader([]string{"Name", "Workflow-Required", "#Allowed-Workflows", "Owner", "Variants"})
 	}
+	rows := make([][]string, 0, len(components))
 	for _, c := range components {
 		component := c.Component
 		spaces := byComponent[component.ComponentID]
-		slugs := make([]string, 0, len(spaces))
-		for _, extendedSpace := range spaces {
-			slugs = append(slugs, extendedSpace.Space.Slug)
-		}
-		table.Append([]string{
+		rows = append(rows, []string{
 			component.Slug,
 			fmt.Sprintf("%t", component.ChangeWorkflowRequired),
 			fmt.Sprintf("%d", len(component.AllowedChangeWorkflowIDs)),
 			componentOwner(component.Labels, spaces),
-			strings.Join(slugs, ", "),
+			strings.Join(variantNames(spaces), ", "),
 		})
 	}
+	width := lastColumnWidth(rows, []string{"Name", "Workflow-Required", "#Allowed-Workflows", "Owner", "Variants"}, terminalWidth())
+	for _, row := range rows {
+		row[len(row)-1] = wrapList(row[len(row)-1], width)
+		table.Append(row)
+	}
 	table.Render()
+}
+
+// terminalWidth is the width of the terminal stdout is, or 0 when stdout is not a terminal:
+// a pipeline reads one row per line, so nothing is wrapped for it.
+func terminalWidth() int {
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		return 0
+	}
+	width, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		return 0
+	}
+	return width
+}
+
+// lastColumnWidth is how wide a table's last column may be before its text wraps: what is
+// left of a terminal of the given width after the other columns and the padding between
+// them, and at least minWrapWidth so that a narrow window still gets a readable list. A
+// width of 0 means the output is not a terminal, and nothing wraps.
+func lastColumnWidth(rows [][]string, header []string, terminal int) int {
+	if terminal <= 0 {
+		return 0
+	}
+	used := 0
+	for column := 0; column < len(header)-1; column++ {
+		widest := len(header[column])
+		for _, row := range rows {
+			widest = max(widest, len(row[column]))
+		}
+		used += widest + len(tablePadding)
+	}
+	return max(terminal-used, minWrapWidth)
+}
+
+// tablePadding is what tableView puts between columns, and minWrapWidth the narrowest a
+// wrapped column is allowed to be.
+const (
+	tablePadding = "    "
+	minWrapWidth = 30
+)
+
+// wrapList breaks a comma-separated list onto lines no wider than width, at the spaces
+// after the commas, so that a cell holding many names reads down rather than off the
+// screen. A width of 0 leaves it on one line.
+func wrapList(list string, width int) string {
+	if width <= 0 {
+		return list
+	}
+	lines, _ := tablewriter.WrapString(list, width)
+	return strings.Join(lines, "\n")
 }

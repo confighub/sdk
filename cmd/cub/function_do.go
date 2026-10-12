@@ -68,6 +68,10 @@ Examples:
     set-container-image nginx nginx:mainline-otel \
     --wait
 
+  # Name the resource rather than the unit, in the base variant of the web component.
+  # --resource finds the one unit holding that Deployment and runs on that resource alone.
+  cub function do --variant web/base --resource Deployment/backend set-replicas 3
+
   # Read the container image with get-yq. Non-mutating, so cub function get
   # would be the better verb; do accepts it too.
   cub function do \
@@ -132,8 +136,13 @@ do, which is what an agent should emit unless one command must mix kinds:
 Key flags for agents:
 - --unit: Target units by slug or UUID (repeatable or comma-separated); shorter
   than --where "Slug = '...'" when the space is pinned
+- --resource: Target one resource as <kind>/<name> (Deployment/backend) or
+  <kind>/<namespace>/<name>, without knowing which unit holds it; an error when
+  it matches none or more than one
 - --where: Filter units (use quotes around expressions)
 - --space: Target space ("*" for all spaces where supported)
+- --variant: Target the space that is a Component's variant, as <component>/<variant>;
+  the same scope as --space
 - --show output: Show just function output, not execution details
 - --quiet: Suppress status messages
 - --wait: Wait for async triggers to complete
@@ -210,6 +219,7 @@ func init() {
 	functionDoCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionDoCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionDoCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
+	addResourceFlag(functionDoCmd)
 	functionDoCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	functionDoCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
 	functionCmd.AddCommand(functionDoCmd)
@@ -690,6 +700,10 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 	} else {
 		effectiveWhere = where
 	}
+	effectiveWhere, err = applyResourceFlag(effectiveWhere)
+	if err != nil {
+		return err
+	}
 
 	// Parse changeset once if specified
 	var changesetID string
@@ -769,9 +783,7 @@ func runFunctionInvocations(cmd *cobra.Command, args []string, mode FunctionKind
 		outputFunctionInvocationResponse(resp)
 	}
 	if wait {
-		if !quiet && !isAlternativeOutput() && effectiveShow() == ShowDefault {
-			tprintRaw("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		// Wait one at a time
 		for _, resp := range *resp {
 			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")

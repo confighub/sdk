@@ -14,7 +14,7 @@ import (
 )
 
 var releasePublishCmd = &cobra.Command{
-	Use:         "publish <space-slug>",
+	Use:         "publish <variant>",
 	Short:       "Publish a release",
 	Args:        cobra.ExactArgs(1),
 	Annotations: map[string]string{"OrgLevel": ""},
@@ -116,10 +116,10 @@ func init() {
 }
 
 func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
-	// args[0] is a Space slug (a Space ID is also accepted); resolve it to the
+	// args[0] is a variant, as <component>/<variant> or by its space slug or ID; resolve it to the
 	// Space whose Units are bundled. The consuming Target is the Space's
 	// ReleaseTargetID, resolved server-side.
-	space, err := resolveSpace(args[0], "SpaceID")
+	space, err := resolveVariantOrSpace(args[0], "SpaceID")
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 	// than handing the server a specification to resolve per Unit as the other revision flags
 	// do. Revision numbers and Revision IDs have no Tag to become, and are refused.
 	if releasePublishRevision != "" {
-		formatted, _, err := parseSelectedRevisionParameter(releasePublishRevision, resolveToTag, 0)
+		formatted, _, err := parseSelectedRevisionParameterIn(space.Space.SpaceID.String(), releasePublishRevision, resolveToTag, 0)
 		if err != nil {
 			return fmt.Errorf("invalid --revision value: %w", err)
 		}

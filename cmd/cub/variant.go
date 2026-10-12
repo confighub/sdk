@@ -28,7 +28,10 @@ func getVariantCommandGroupHelp() string {
 
 A variant is a clone of an upstream space (and its units) into a new downstream space,
 customized for a different environment, region, tenant, or experiment. The clone is linked
-to the upstream so it can later be upgraded as the upstream changes.`
+to the upstream so it can later be upgraded as the upstream changes.
+
+A variant is named as <component>/<variant> wherever these commands take one: the space naming
+that Component whose Variant label is <variant>. Its space slug or ID is accepted as well.`
 
 	agentContext := `A variant clones a whole space and its units in one step, equivalent to running
 'cub space create' in bulk mode followed by 'cub unit create' in bulk mode.

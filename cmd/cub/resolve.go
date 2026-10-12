@@ -231,7 +231,13 @@ func resolveTriggerID(ref string) (uuid.UUID, error) {
 }
 
 func resolveTagID(ref string) (uuid.UUID, error) {
-	tag, err := resolveTag(ref, defaultSpaceID(), idSelect("TagID"))
+	return resolveTagIDIn(defaultSpaceID(), ref)
+}
+
+// resolveTagIDIn looks a bare Tag slug up in the given space; a qualified slug or a UUID
+// carries its own scope.
+func resolveTagIDIn(spaceID string, ref string) (uuid.UUID, error) {
+	tag, err := resolveTag(ref, spaceID, idSelect("TagID"))
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -239,7 +245,11 @@ func resolveTagID(ref string) (uuid.UUID, error) {
 }
 
 func resolveChangeSetID(ref string) (uuid.UUID, error) {
-	changeSet, err := resolveChangeSet(ref, defaultSpaceID(), idSelect("ChangeSetID"))
+	return resolveChangeSetIDIn(defaultSpaceID(), ref)
+}
+
+func resolveChangeSetIDIn(spaceID string, ref string) (uuid.UUID, error) {
+	changeSet, err := resolveChangeSet(ref, spaceID, idSelect("ChangeSetID"))
 	if err != nil {
 		return uuid.Nil, err
 	}
@@ -247,7 +257,11 @@ func resolveChangeSetID(ref string) (uuid.UUID, error) {
 }
 
 func resolveChangeOrderID(ref string) (uuid.UUID, error) {
-	changeOrder, err := resolveChangeOrder(ref, defaultSpaceID(), idSelect("ChangeOrderID"))
+	return resolveChangeOrderIDIn(defaultSpaceID(), ref)
+}
+
+func resolveChangeOrderIDIn(spaceID string, ref string) (uuid.UUID, error) {
+	changeOrder, err := resolveChangeOrder(ref, spaceID, idSelect("ChangeOrderID"))
 	if err != nil {
 		return uuid.Nil, err
 	}

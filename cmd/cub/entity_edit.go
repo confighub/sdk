@@ -227,7 +227,7 @@ func editThroughBackingUnit(entityName, command, entitySlug string, unitID gocli
 			entityName, unitName, entityName, unit.HeadRevisionNum, entityName, unit.LastReleasedRevisionNum, command)
 	}
 
-	current, err := fetchUnitData(unit.SpaceID, unit.UnitID)
+	current, etag, err := fetchUnitDataForEdit(unit.SpaceID, unit.UnitID)
 	if err != nil {
 		return err
 	}
@@ -243,6 +243,11 @@ func editThroughBackingUnit(entityName, command, entitySlug string, unitID gocli
 	params, err := unitDataParams(fmt.Sprintf("Edit of %s %s", entityName, entitySlug), changeSetIDForDataWrite(unit))
 	if err != nil {
 		return keptEdit(path, err)
+	}
+	// Written only over the configuration that was read, so the edit cannot overwrite a change
+	// made while the editor was open.
+	if etag != "" {
+		params.IfMatch = &etag
 	}
 	if _, err := putUnitData(unit.SpaceID, unit.UnitID, string(edited), params); err != nil {
 		return keptEdit(path, err)

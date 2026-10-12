@@ -39,6 +39,10 @@ func TestReferenceFlagsRegistered(t *testing.T) {
 		{"unit create", "target"},
 		{"unit diff", "with-unit"},
 		{"function do", "unit"},
+		{"unit list", "variant"},
+		{"function set", "variant"},
+		{"function set", "resource"},
+		{"function exec", "resource"},
 	} {
 		if _, ok := findCommand(t, tc.path).GetFlagCompletionFunc(tc.flag); !ok {
 			t.Errorf("%q --%s has no completion function", tc.path, tc.flag)
@@ -94,6 +98,130 @@ func TestCompleteReference(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			c, kind := fakeCompleter(tc.spaceFlag)
 			got, directive := c.complete(kind, tc.toComplete)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("candidates = %v, want %v", got, tc.want)
+			}
+			if directive != tc.directive {
+				t.Errorf("directive = %v, want %v", directive, tc.directive)
+			}
+		})
+	}
+}
+
+// TestVariantLabelFlagsDoNotCompleteAsVariants: the --variant of "cub space create" and
+// "cub variant upload" is a label value, not a <component>/<variant> reference, so the
+// completer attached to the scope flag must not reach them.
+func TestVariantLabelFlagsDoNotCompleteAsVariants(t *testing.T) {
+	installReferenceCompletions(rootCmd)
+	for _, path := range []string{"space create", "space update", "space list", "variant upload", "component open"} {
+		if _, ok := findCommand(t, path).GetFlagCompletionFunc("variant"); ok {
+			t.Errorf("%q --variant takes a label value but has a completion function", path)
+		}
+	}
+}
+
+func fakeScopeCompleter(spaceFlag, variantFlag string) *refCompleter {
+	c, _ := fakeCompleter(spaceFlag)
+	c.variantFlag = variantFlag
+	c.components = func(context.Context) ([]string, error) { return []string{"api", "web"}, nil }
+	c.variants = func(_ context.Context, component string) ([]string, error) {
+		switch component {
+		case "web":
+			return []string{"base", "dev", "prod"}, nil
+		case "api":
+			return []string{"base"}, nil
+		}
+		return nil, fmt.Errorf("component %q not found", component)
+	}
+	c.variantSpaceID = func(_ context.Context, ref string) (goclientnew.UUID, error) {
+		if ref == "web/dev" {
+			return goclientnew.UUID{2}, nil
+		}
+		return goclientnew.UUID{}, fmt.Errorf("variant %q not found", ref)
+	}
+	resources := map[goclientnew.UUID][]resourceCandidate{
+		{1}: {{"Deployment", "backend"}, {"Service", "backend"}},
+		{2}: {{"Deployment", "backend"}, {"Deployment", "frontend"}, {"Namespace", "shop"}},
+		{}:  {{"Deployment", "backend"}, {"Service", "backend"}, {"Deployment", "backend"}, {"Deployment", "frontend"}, {"Namespace", "shop"}},
+	}
+	c.resources = func(_ context.Context, spaceID goclientnew.UUID) ([]resourceCandidate, error) {
+		return resources[spaceID], nil
+	}
+	return c
+}
+
+func TestCompleteVariant(t *testing.T) {
+	noFile := cobra.ShellCompDirectiveNoFileComp
+	for _, tc := range []struct {
+		name, toComplete string
+		want             []string
+		directive        cobra.ShellCompDirective
+	}{
+		{"components first, held open", "", []string{"api/", "web/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"component prefix narrows", "w", []string{"web/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"variants of the named component", "web/", []string{"web/base", "web/dev", "web/prod"}, noFile},
+		{"variant prefix narrows", "web/p", []string{"web/prod"}, noFile},
+		{"unknown component completes to nothing", "db/", nil, noFile},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, directive := fakeScopeCompleter("", "").completeVariant(tc.toComplete)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("candidates = %v, want %v", got, tc.want)
+			}
+			if directive != tc.directive {
+				t.Errorf("directive = %v, want %v", directive, tc.directive)
+			}
+		})
+	}
+	if got, _ := (&refCompleter{}).completeVariant("w"); got != nil {
+		t.Errorf("no context completed to %v", got)
+	}
+}
+
+// TestCompleteVariantOrSpace: a variant argument offers the space slugs and the components
+// held open, then a component's variants once one is typed.
+func TestCompleteVariantOrSpace(t *testing.T) {
+	noFile := cobra.ShellCompDirectiveNoFileComp
+	for _, tc := range []struct {
+		name, toComplete string
+		want             []string
+		directive        cobra.ShellCompDirective
+	}{
+		{"spaces and components, the latter held open", "", []string{"alpha", "api/", "beta", "web/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"a prefix matching only spaces", "al", []string{"alpha"}, noFile},
+		{"a prefix matching only components", "w", []string{"web/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"variants of the typed component", "web/d", []string{"web/dev"}, noFile},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, directive := fakeScopeCompleter("", "").complete(kindVariantOrSpace, tc.toComplete)
+			if !reflect.DeepEqual(got, tc.want) {
+				t.Errorf("candidates = %v, want %v", got, tc.want)
+			}
+			if directive != tc.directive {
+				t.Errorf("directive = %v, want %v", directive, tc.directive)
+			}
+		})
+	}
+}
+
+func TestCompleteResource(t *testing.T) {
+	noFile := cobra.ShellCompDirectiveNoFileComp
+	for _, tc := range []struct {
+		name, spaceFlag, variantFlag, toComplete string
+		want                                     []string
+		directive                                cobra.ShellCompDirective
+	}{
+		{"kinds first, held open, once each", "", "", "", []string{"Deployment/", "Namespace/", "Service/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"kind prefix narrows", "", "", "Dep", []string{"Deployment/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"names of the kind, once each", "", "", "Deployment/", []string{"Deployment/backend", "Deployment/frontend"}, noFile},
+		{"the kind is matched in any case and kept as typed", "", "", "deployment/f", []string{"deployment/frontend"}, noFile},
+		{"a namespace is typed by hand", "", "", "Deployment/shop/", nil, noFile},
+		{"--space scopes", "alpha", "", "", []string{"Deployment/", "Service/"}, noFile | cobra.ShellCompDirectiveNoSpace},
+		{"--variant scopes", "", "web/dev", "Deployment/", []string{"Deployment/backend", "Deployment/frontend"}, noFile},
+		{"an unknown scope completes to nothing", "", "web/qa", "", nil, noFile},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, directive := fakeScopeCompleter(tc.spaceFlag, tc.variantFlag).completeResource(tc.toComplete)
 			if !reflect.DeepEqual(got, tc.want) {
 				t.Errorf("candidates = %v, want %v", got, tc.want)
 			}

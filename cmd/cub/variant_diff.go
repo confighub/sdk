@@ -22,7 +22,7 @@ var variantDiffArgs struct {
 }
 
 var variantDiffCmd = &cobra.Command{
-	Use:         "diff <space> <fromTag> [toTag]",
+	Use:         "diff <variant> <fromTag> [toTag]",
 	Short:       "Show differences in a Variant between Tags",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Show what changed across a whole variant space between two Tags.
@@ -189,7 +189,7 @@ func variantDiffCmdRun(cmd *cobra.Command, args []string) error {
 		toTag = args[2]
 	}
 
-	space, err := resolveSpace(args[0], "SpaceID,Slug")
+	space, err := resolveVariantOrSpace(args[0], "SpaceID,Slug")
 	if err != nil {
 		return err
 	}

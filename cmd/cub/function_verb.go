@@ -269,6 +269,7 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	cmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	cmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
+	addResourceFlag(cmd)
 	cmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	cmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
 	enableOutputFileFlag(cmd)

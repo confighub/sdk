@@ -4,8 +4,6 @@
 package main
 
 import (
-	"errors"
-
 	"github.com/confighub/sdk/core/cubapi"
 	"github.com/spf13/cobra"
 )
@@ -49,21 +47,32 @@ func init() {
 }
 
 func componentOpenCmdRun(_ *cobra.Command, args []string) error {
-	if len(args) == 0 {
-		if componentOpenArgs.variant != "" {
-			return errors.New("--variant requires a component")
+	// --variant names the component inline as <component>/<variant>, or alone beside the
+	// positional, which then has to agree.
+	componentName := ""
+	if len(args) == 1 {
+		componentName = args[0]
+	}
+	variant := ""
+	if componentOpenArgs.variant != "" {
+		var err error
+		componentName, variant, err = qualifiedVariant(componentName, componentOpenArgs.variant)
+		if err != nil {
+			return err
 		}
+	}
+	if componentName == "" {
 		return openWebUI(cubapi.GetComponentListURL(webUIServerURL()))
 	}
 
-	component, err := apiGetComponentFromName(args[0])
+	component, err := apiGetComponentFromName(componentName)
 	if err != nil {
 		return err
 	}
 
 	spaceID := ""
-	if componentOpenArgs.variant != "" {
-		spaceID, err = component.spaceIDForVariant(componentOpenArgs.variant)
+	if variant != "" {
+		spaceID, err = component.spaceIDForVariant(variant)
 		if err != nil {
 			return err
 		}

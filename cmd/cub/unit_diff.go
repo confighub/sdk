@@ -479,12 +479,12 @@ func runRevisionDiff(cmd *cobra.Command, args []string) error {
 	}
 
 	// Resolve revision numbers using parseSelectedRevisionParameter
-	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(revFrom, serverResolvedRevision, unit.Unit.HeadRevisionNum)
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameterIn(unit.Unit.SpaceID.String(), revFrom, serverResolvedRevision, unit.Unit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}
 
-	toFormatted, toIsUUID, err := parseSelectedRevisionParameter(revTo, serverResolvedRevision, toUnit.HeadRevisionNum)
+	toFormatted, toIsUUID, err := parseSelectedRevisionParameterIn(toUnit.SpaceID.String(), revTo, serverResolvedRevision, toUnit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}
@@ -602,7 +602,8 @@ func resolveFormattedRevision(formatted string, isUUID bool, unit *goclientnew.U
 		strings.HasPrefix(formatted, "Before:") {
 		// Use the API restore parameter to let the server resolve this
 		// For now, fall back to resolveRevisionNumber for simple numeric cases
-		return resolveRevisionNumber(unit.Slug, formatted)
+		// By ID: the unit is already resolved, and its bare slug may be held in other spaces too.
+		return resolveRevisionNumber(unit.UnitID.String(), formatted)
 	}
 
 	// Try parsing as number
@@ -643,7 +644,7 @@ func runFileDiff(unitSlug, fromRev, file string, structuredDiff bool) error {
 	if err != nil {
 		return fmt.Errorf("failed to get unit %s: %v", unitSlug, err)
 	}
-	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameter(fromRev, serverResolvedRevision, unit.Unit.HeadRevisionNum)
+	fromFormatted, fromIsUUID, err := parseSelectedRevisionParameterIn(unit.Unit.SpaceID.String(), fromRev, serverResolvedRevision, unit.Unit.HeadRevisionNum)
 	if err != nil {
 		return err
 	}

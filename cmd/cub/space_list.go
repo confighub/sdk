@@ -165,6 +165,9 @@ func spaceListCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
+	if err := spaceListArgs.spaceLabels.qualifyVariant(&spaceListArgs.component); err != nil {
+		return err
+	}
 	effectiveWhere := addEqualityToWhereClause(where, "Component.Slug", spaceListArgs.component)
 	effectiveWhere = spaceListArgs.spaceLabels.addToWhereClause(effectiveWhere)
 	extendedSpaces, err := apiListExtendedSpaces(effectiveWhere, selectFields, filterID, true)

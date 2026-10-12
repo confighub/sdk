@@ -285,9 +285,7 @@ func RegisterFunctionsAsCobraCommands() {
 						outputFunctionInvocationResponse(respMsgs)
 					}
 					if wait {
-						if !quiet {
-							tprint("Awaiting triggers...")
-						}
+						printAwaitingTriggers()
 						// Wait one at a time
 						for _, respMsg := range *respMsgs {
 							unitDetails, err := resolveUnit(respMsg.UnitID.String(), respMsg.SpaceID.String(), "*") // get all fields for now

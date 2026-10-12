@@ -287,9 +287,7 @@ func runSingleLinkCreate(cmd *cobra.Command, args []string) error {
 	linkDetails := linkRes.JSON200
 	displayCreateResults(linkDetails, "link", linkDetails.Slug, linkDetails.LinkID.String(), displayLinkDetails)
 	if wait && !dryRun {
-		if !quiet {
-			tprint("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		unitDetails, err := resolveUnit(fromUnitID.String(), selectedSpaceID, "*") // get all fields for now
 		if err != nil {
 			return err

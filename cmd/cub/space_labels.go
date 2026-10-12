@@ -69,6 +69,24 @@ func (values spaceLabelFlagValues) addToWhereClause(whereClause string) string {
 	return whereClause
 }
 
+// qualifyVariant lets --variant name its Component inline, as <component>/<variant>, the
+// way the scope flag does: the component part goes to --component's value, which has to
+// agree if it was given, and the label keeps the variant alone. A bare value is left as it
+// is, since here the component is optional.
+func (values spaceLabelFlagValues) qualifyVariant(component *string) error {
+	value := *values["Variant"]
+	if !strings.Contains(value, "/") {
+		return nil
+	}
+	qualifier, variant, err := qualifiedVariant(*component, value)
+	if err != nil {
+		return err
+	}
+	*component = qualifier
+	*values["Variant"] = variant
+	return nil
+}
+
 // apply prepends the labels set by the well-known label flags to the --label
 // slice, so that both the whole-body path (setLabels) and the patch path
 // (BuildPatchData) pick them up. They go first so that an explicit --label for

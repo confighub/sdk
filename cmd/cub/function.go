@@ -56,8 +56,12 @@ Arguments are positional, in signature order. To pass them by name
 not read them as its own flags.
 
 Functions are toolchain-specific (Kubernetes/YAML, AppConfig/Properties, etc.)
-and operate on the units selected by --space, --unit, --where, and --where-data.
---where-resource narrows which resources within those units are operated on.`
+and operate on the units selected by --space or --variant, --unit, --where, and
+--where-data. --where-resource narrows which resources within those units are
+operated on, and --resource names exactly one of them the way kubectl does, as
+<kind>/<name>, finding the unit that holds it:
+
+  cub function set --variant web/base --resource Deployment/backend set-replicas 3`
 	agentContext := `Functions operate on configuration data stored in ConfigHub without requiring local file retrieval.
 
 Key workflow for agents:

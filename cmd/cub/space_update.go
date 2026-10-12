@@ -120,6 +120,9 @@ func checkSpaceUpdateConflictingArgs(args []string) (bool, error) {
 }
 
 func spaceUpdateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := spaceUpdateArgs.spaceLabels.qualifyVariant(&spaceUpdateArgs.component); err != nil {
+		return err
+	}
 	spaceUpdateArgs.spaceLabels.apply()
 	isBulkPatchMode, err := checkSpaceUpdateConflictingArgs(args)
 	if err != nil {

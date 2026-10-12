@@ -31101,6 +31101,21 @@ func NewUploadUnitDataRequestWithBody(server string, spaceId openapi_types.UUID,
 
 	req.Header.Add("Content-Type", contentType)
 
+	if params != nil {
+
+		if params.IfMatch != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithLocation("simple", false, "If-Match", runtime.ParamLocationHeader, *params.IfMatch)
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam0)
+		}
+
+	}
+
 	return req, nil
 }
 

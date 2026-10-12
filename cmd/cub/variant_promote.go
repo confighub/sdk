@@ -61,7 +61,7 @@ var variantPromoteArgs struct {
 }
 
 var variantPromoteCmd = &cobra.Command{
-	Use:         "promote [<space>]",
+	Use:         "promote [<variant>]",
 	Short:       "Promote a variant space to match its upstream space",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Promote variant spaces to match changes in their upstream spaces.
@@ -269,7 +269,7 @@ func variantPromoteCmdRun(cmd *cobra.Command, args []string) error {
 	// selected space.
 	changeOrderSpaceID := defaultSpaceID()
 	if len(args) > 0 {
-		space, err := resolveSpace(args[0], "*")
+		space, err := resolveVariantOrSpace(args[0], "*")
 		if err != nil {
 			return err
 		}

@@ -99,6 +99,20 @@ var (
 			}
 			return e.Unit.Slug
 		})}
+	// A variant argument takes <component>/<variant> or a space slug; its lister is the
+	// space lister, and complete adds the components, held open.
+	kindVariantOrSpace = &refKind{name: "variant", slugs: kindSpace.slugs}
+	// A resource argument takes <kind>/[<namespace>/]<name>, completed by completeResource
+	// from the resources in scope; it has no slug lister.
+	kindResource = &refKind{name: "resource"}
+	// A Component is in no space, so its lister ignores the space it is given.
+	kindComponent = &refKind{name: "component", slugs: slugLister(cubapi.ListComponents,
+		func(e *goclientnew.ExtendedComponent) string {
+			if e.Component == nil {
+				return ""
+			}
+			return e.Component.Slug
+		})}
 	kindTarget = &refKind{name: "target", slugs: slugLister(cubapi.ListTargets,
 		func(e *goclientnew.ExtendedTarget) string {
 			if e.Target == nil {
@@ -206,6 +220,8 @@ var refArgKinds = map[string][]*refKind{
 	"changeorder get": {kindChangeOrder}, "changeorder update": {kindChangeOrder}, "changeorder delete": {kindChangeOrder},
 	"changeset get": {kindChangeSet}, "changeset update": {kindChangeSet}, "changeset delete": {kindChangeSet},
 	"changeworkflow get": {kindChangeWorkflow}, "changeworkflow update": {kindChangeWorkflow}, "changeworkflow delete": {kindChangeWorkflow},
+	"component get": {kindComponent}, "component update": {kindComponent}, "component delete": {kindComponent},
+	"component open": {kindComponent}, "component tree": {kindComponent},
 	"filter get": {kindFilter}, "filter update": {kindFilter}, "filter delete": {kindFilter},
 	"group add-worker": {nil, kindWorker}, "group remove-worker": {nil, kindWorker},
 	"invocation get": {kindInvocation}, "invocation update": {kindInvocation}, "invocation delete": {kindInvocation},
@@ -219,7 +235,8 @@ var refArgKinds = map[string][]*refKind{
 	"link update":     {kindLink, kindUnit, kindUnit, kindSpace},
 	"mutation get":    {kindUnit},
 	"mutation list":   {kindUnit},
-	"release publish": {kindSpace},
+	"release publish": {kindVariantOrSpace},
+	"resource data":   {kindResource},
 	"revision get":    {kindUnit},
 	"revision data":   {kindUnit},
 	"space get":       {kindSpace}, "space update": {kindSpace}, "space delete": {kindSpace}, "space open": {kindSpace},
@@ -237,8 +254,9 @@ var refArgKinds = map[string][]*refKind{
 	"unit-action get":  {kindUnit},
 	"unit-action data": {kindUnit},
 	"unit-event get":   {kindUnit},
-	"variant approve":  {kindSpace}, "variant demote": {kindSpace}, "variant diff": {kindSpace}, "variant promote": {kindSpace},
-	"variant create": {nil, kindSpace},
+	"variant approve":  {kindVariantOrSpace}, "variant demote": {kindVariantOrSpace}, "variant diff": {kindVariantOrSpace}, "variant promote": {kindVariantOrSpace},
+	"variant conflicts": {kindVariantOrSpace}, "variant delete": {kindVariantOrSpace},
+	"variant create": {nil, kindVariantOrSpace},
 	"view get":       {kindView}, "view update": {kindView}, "view delete": {kindView},
 	"worker get": {kindWorker}, "worker update": {kindWorker}, "worker delete": {kindWorker},
 	"worker get-envs": {kindWorker}, "worker get-secret": {kindWorker},
@@ -262,6 +280,7 @@ var refFlagKinds = map[string]*refKind{
 	"upstream-unit":  kindUnit,
 	"with-unit":      kindUnit,
 	"target":         kindTarget,
+	"component":      kindComponent,
 	"trigger":        kindTrigger,
 	"invocation":     kindInvocation,
 	"filter":         kindFilter,
@@ -304,16 +323,45 @@ func installReferenceCompletions(root *cobra.Command) {
 		}
 	}
 	walk(root)
+	// --variant and --resource are not entity references, so they are attached to the
+	// commands that define them rather than found by name: the --variant of "cub space
+	// create" and "cub variant upload" is a label value, and must not complete as one.
+	for _, cmd := range spaceScopedCommands {
+		_ = cmd.RegisterFlagCompletionFunc("variant", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return liveCompleter().completeVariant(toComplete)
+		})
+	}
+	for _, cmd := range resourceFlagCommands {
+		_ = cmd.RegisterFlagCompletionFunc("resource", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return liveCompleter().completeResource(toComplete)
+		})
+	}
 }
 
 // refCompleter holds what completing a reference needs from the outside: the
 // spaces, how a space reference becomes an id, the --space in effect, and a
 // context to run under. Tests supply fakes; liveCompleter reads the real ones.
 type refCompleter struct {
-	ctx       context.Context
-	spaceFlag string
-	spaces    func(ctx context.Context) ([]string, error)
-	spaceID   func(ctx context.Context, ref string) (goclientnew.UUID, error)
+	ctx         context.Context
+	spaceFlag   string
+	variantFlag string
+	spaces      func(ctx context.Context) ([]string, error)
+	spaceID     func(ctx context.Context, ref string) (goclientnew.UUID, error)
+	// components lists the Component slugs; variants the Variant labels of one Component's
+	// spaces; variantSpaceID resolves a <component>/<variant> reference as --variant does.
+	components     func(ctx context.Context) ([]string, error)
+	variants       func(ctx context.Context, component string) ([]string, error)
+	variantSpaceID func(ctx context.Context, ref string) (goclientnew.UUID, error)
+	// resources lists the kind and name of every resource in a space, or in the
+	// organization for the zero UUID.
+	resources func(ctx context.Context, spaceID goclientnew.UUID) ([]resourceCandidate, error)
+}
+
+// resourceCandidate is one resource as --resource names it: its kind, as written in the
+// configuration, and its name without the namespace.
+type resourceCandidate struct {
+	Kind string
+	Name string
 }
 
 // liveCompleter builds the completer over the API client. The client is
@@ -334,9 +382,20 @@ func liveCompleter() *refCompleter {
 	// lookups, and the process exits as soon as the completion is printed.
 	ctx, cancel := context.WithTimeout(context.Background(), completionTimeout)
 	_ = cancel
+	componentID := func(ctx context.Context, ref string) (goclientnew.UUID, error) {
+		if id, err := uuid.Parse(ref); err == nil {
+			return goclientnew.UUID(id), nil
+		}
+		component, err := cubapi.ResolveComponent(ctx, cubClient, cubapi.ParseRef(ref), cubapi.ResolveOpts{Select: "ComponentID,Slug"})
+		if err != nil {
+			return goclientnew.UUID{}, err
+		}
+		return component.Component.ComponentID, nil
+	}
 	return &refCompleter{
-		ctx:       ctx,
-		spaceFlag: spaceFlag,
+		ctx:         ctx,
+		spaceFlag:   spaceFlag,
+		variantFlag: variantFlag,
 		spaces: func(ctx context.Context) ([]string, error) {
 			return kindSpace.slugs(ctx, goclientnew.UUID{})
 		},
@@ -350,7 +409,192 @@ func liveCompleter() *refCompleter {
 			}
 			return space.Space.SpaceID, nil
 		},
+		components: func(ctx context.Context) ([]string, error) {
+			components, err := cubapi.ListComponents(ctx, cubClient, cubapi.Where{}, cubapi.ListOpts{Select: "Slug"})
+			if err != nil {
+				return nil, err
+			}
+			slugs := make([]string, 0, len(components))
+			for _, component := range components {
+				if component != nil && component.Component != nil && component.Component.Slug != "" {
+					slugs = append(slugs, component.Component.Slug)
+				}
+			}
+			sort.Strings(slugs)
+			return slugs, nil
+		},
+		variants: func(ctx context.Context, component string) ([]string, error) {
+			id, err := componentID(ctx, component)
+			if err != nil {
+				return nil, err
+			}
+			spaces, err := listVariantSpaces(ctx, id, "")
+			if err != nil {
+				return nil, err
+			}
+			variants := make([]string, 0, len(spaces))
+			for _, space := range spaces {
+				if space == nil || space.Space == nil {
+					continue
+				}
+				if variant := space.Space.Labels["Variant"]; variant != "" {
+					variants = append(variants, variant)
+				}
+			}
+			sort.Strings(variants)
+			return slices.Compact(variants), nil
+		},
+		variantSpaceID: func(ctx context.Context, ref string) (goclientnew.UUID, error) {
+			component, variant, err := parseVariantRef(ref)
+			if err != nil {
+				return goclientnew.UUID{}, err
+			}
+			id, err := componentID(ctx, component)
+			if err != nil {
+				return goclientnew.UUID{}, err
+			}
+			spaces, err := listVariantSpaces(ctx, id, variant)
+			if err != nil {
+				return goclientnew.UUID{}, err
+			}
+			if len(spaces) != 1 {
+				return goclientnew.UUID{}, fmt.Errorf("%d spaces are variant %s", len(spaces), ref)
+			}
+			return spaces[0].Space.SpaceID, nil
+		},
+		resources: func(ctx context.Context, spaceID goclientnew.UUID) ([]resourceCandidate, error) {
+			where := cubapi.Where{}
+			if spaceID != (goclientnew.UUID{}) {
+				where = where.SpaceID(spaceID)
+			}
+			rows, err := cubapi.ListResources(ctx, cubClient, where, cubapi.ListOpts{Select: "ResourceID,ResourceType,ResourceName"})
+			if err != nil {
+				return nil, err
+			}
+			candidates := make([]resourceCandidate, 0, len(rows))
+			for _, row := range rows {
+				if row == nil || row.Resource == nil {
+					continue
+				}
+				_, kind := splitResourceType(row.Resource.ResourceType)
+				_, name := splitResourceName(row.Resource.ResourceName)
+				candidates = append(candidates, resourceCandidate{Kind: kind, Name: name})
+			}
+			return candidates, nil
+		},
 	}
+}
+
+// completeVariant completes a --variant reference in two steps, as a space-qualified
+// reference does: the components first, each as "component/" and held open, then the
+// variants of the named component as "component/variant".
+func (c *refCompleter) completeVariant(toComplete string) ([]string, cobra.ShellCompDirective) {
+	if c.ctx == nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	if component, variant, qualified := strings.Cut(toComplete, "/"); qualified {
+		variants, err := c.variants(c.ctx, component)
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return withPrefix(variants, variant, component+"/"), cobra.ShellCompDirectiveNoFileComp
+	}
+	components, err := c.components(c.ctx)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	out := withPrefix(components, toComplete, "")
+	for i := range out {
+		out[i] += "/"
+	}
+	return out, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
+}
+
+// completeVariantOrSpace completes an argument that takes a variant as <component>/<variant>
+// or as a space slug: the space slugs and the components, the latter held open with a
+// slash, and once a component is typed, its variants. The slash on every component entry
+// is what tells the two apart in the list.
+func (c *refCompleter) completeVariantOrSpace(toComplete string) ([]string, cobra.ShellCompDirective) {
+	if c.ctx == nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	if strings.Contains(toComplete, "/") {
+		return c.completeVariant(toComplete)
+	}
+	spaces, err := c.spaces(c.ctx)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	components, err := c.components(c.ctx)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	out := withPrefix(spaces, toComplete, "")
+	held := withPrefix(components, toComplete, "")
+	for _, component := range held {
+		out = append(out, component+"/")
+	}
+	sort.Strings(out)
+	directive := cobra.ShellCompDirectiveNoFileComp
+	if len(held) > 0 {
+		directive |= cobra.ShellCompDirectiveNoSpace
+	}
+	return out, directive
+}
+
+// scopeID is the space the command line scopes to, from --variant or --space, or the zero
+// UUID for the organization. It reports false when a scope was named but does not resolve.
+func (c *refCompleter) scopeID() (goclientnew.UUID, bool) {
+	if c.variantFlag != "" {
+		id, err := c.variantSpaceID(c.ctx, c.variantFlag)
+		return id, err == nil
+	}
+	if c.spaceFlag != "" && c.spaceFlag != "*" {
+		id, err := c.spaceID(c.ctx, c.spaceFlag)
+		return id, err == nil
+	}
+	return goclientnew.UUID{}, true
+}
+
+// completeResource completes a --resource reference from the resources in scope: the
+// kinds first, each as "Kind/" and held open, then the names of the typed kind as
+// "Kind/name". A namespace, the optional middle part, is typed by hand; once the word has
+// a second slash nothing is offered.
+func (c *refCompleter) completeResource(toComplete string) ([]string, cobra.ShellCompDirective) {
+	if c.ctx == nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	spaceID, ok := c.scopeID()
+	if !ok {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	candidates, err := c.resources(c.ctx, spaceID)
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	if kind, name, qualified := strings.Cut(toComplete, "/"); qualified {
+		if strings.Contains(name, "/") {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		var names []string
+		for _, candidate := range candidates {
+			if strings.EqualFold(candidate.Kind, kind) {
+				names = append(names, candidate.Name)
+			}
+		}
+		sort.Strings(names)
+		return withPrefix(slices.Compact(names), name, kind+"/"), cobra.ShellCompDirectiveNoFileComp
+	}
+	kinds := make([]string, 0, len(candidates))
+	for _, candidate := range candidates {
+		kinds = append(kinds, candidate.Kind)
+	}
+	sort.Strings(kinds)
+	out := withPrefix(slices.Compact(kinds), toComplete, "")
+	for i := range out {
+		out[i] += "/"
+	}
+	return out, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 }
 
 // complete returns the candidates for a reference of the given kind that
@@ -365,6 +609,20 @@ func (c *refCompleter) complete(kind *refKind, toComplete string) ([]string, cob
 			return nil, cobra.ShellCompDirectiveNoFileComp
 		}
 		return withPrefix(spaces, toComplete, ""), cobra.ShellCompDirectiveNoFileComp
+	}
+	if kind == kindVariantOrSpace {
+		return c.completeVariantOrSpace(toComplete)
+	}
+	if kind == kindResource {
+		return c.completeResource(toComplete)
+	}
+	if kind == kindComponent {
+		// Not space-resident either, so flat, from the organization.
+		components, err := kind.slugs(c.ctx, goclientnew.UUID{})
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return withPrefix(components, toComplete, ""), cobra.ShellCompDirectiveNoFileComp
 	}
 	if space, name, qualified := strings.Cut(toComplete, "/"); qualified {
 		// "*/" is the whole organization, which is the zero UUID.

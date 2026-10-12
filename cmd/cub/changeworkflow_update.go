@@ -91,7 +91,7 @@ func init() {
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowIdentifiers, "changeworkflow", []string{}, "target specific change workflows by slug or UUID for bulk patch (can be repeated or comma-separated)")
 
 	// Single update specific flags
-	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. The ones named are the stages the workflow has: one it had before keeps its other fields, one it did not have selects the Spaces labeled with its name, and one not named is removed. With --patch the stages are replaced whole")
+	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.stages, "stage", nil, "name of one stage of the workflow (can be repeated or comma-separated), given in the order a change is promoted through them. The ones named are the stages the workflow has: one it had before keeps its other fields, one it did not have selects the Spaces labeled with its name, and one not named is removed")
 	changeworkflowUpdateCmd.Flags().StringSliceVar(&changeworkflowUpdateArgs.prerequisites, "prerequisites", nil, "gates given to every stage and to the final stage (can be repeated or comma-separated); requires --stage")
 
 	addBackingUnitFlags(changeworkflowUpdateCmd, "ChangeWorkflow", false, false)
@@ -156,11 +156,37 @@ func checkChangeWorkflowConflictingArgs(args []string) bool {
 	return isBulkPatchMode
 }
 
-// changeWorkflowStagesFromUpdateFlags builds the stages --stage and --prerequisites describe on an
-// update. It is the create path's rule applied to a workflow that already exists: the stages named
-// replace the ones there, and the gates go to each of them and to the final stage alike.
-func changeWorkflowStagesFromUpdateFlags() ([]goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowFinalStage, error) {
-	return changeWorkflowStagesFromFlags(changeworkflowUpdateArgs.stages, changeworkflowUpdateArgs.prerequisites)
+// changeWorkflowStagesForPatch builds the stages --stage and --prerequisites describe for a patch of
+// one workflow. A patch cannot merge a list, so it sends Stages whole: each stage named that the
+// workflow already has, as it has it, and a new one as create would make it. Built by the create
+// rule alone, the patch reset every stage it named again -- its WhereSpace to the Spaces labeled
+// with its name, and its gates to none -- although the stage was only being kept.
+//
+// --prerequisites replaces the gates of every stage after the first, as on create, and of the
+// final stage. Without it the final stage is not in the patch at all.
+func changeWorkflowStagesForPatch(current []goclientnew.ChangeWorkflowStage, stageNames, prerequisites []string) ([]goclientnew.ChangeWorkflowStage, *goclientnew.ChangeWorkflowFinalStage, error) {
+	stages, final, err := changeWorkflowStagesFromFlags(stageNames, prerequisites)
+	if err != nil {
+		return nil, nil, err
+	}
+	existing := make(map[string]goclientnew.ChangeWorkflowStage, len(current))
+	for _, stage := range current {
+		existing[stage.Name] = stage
+	}
+	for i := range stages {
+		stage, ok := existing[stages[i].Name]
+		if !ok {
+			continue
+		}
+		if i > 0 && len(prerequisites) > 0 {
+			stage.Prerequisites = stages[i].Prerequisites
+		}
+		stages[i] = stage
+	}
+	if len(prerequisites) == 0 {
+		final = nil
+	}
+	return stages, final, nil
 }
 
 func runBulkChangeWorkflowUpdate() error {
@@ -222,7 +248,8 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	isBulkPatchMode := checkChangeWorkflowConflictingArgs(args)
 
 	// An update that writes the workflow whole keeps what each stage it names again has. A patch
-	// replaces the stages, since it cannot merge a list, and can change no one element.
+	// cannot change one element of a list, so it sends the stages whole instead
+	// (changeWorkflowStagesForPatch), and the edits of one stage's fields are refused.
 	if err := changeworkflowUpdateLists.queue(!isBulkPatchMode && !changeworkflowPatch, changeworkflowUpdateArgs.prerequisites); err != nil {
 		return err
 	}
@@ -257,7 +284,8 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		var stages []goclientnew.ChangeWorkflowStage
 		var final *goclientnew.ChangeWorkflowFinalStage
 		if len(changeworkflowUpdateArgs.stages) > 0 {
-			stages, final, err = changeWorkflowStagesFromUpdateFlags()
+			stages, final, err = changeWorkflowStagesForPatch(currentChangeWorkflow.Stages,
+				changeworkflowUpdateArgs.stages, changeworkflowUpdateArgs.prerequisites)
 			if err != nil {
 				return err
 			}
@@ -266,6 +294,8 @@ func changeworkflowUpdateCmdRun(cmd *cobra.Command, args []string) error {
 		changeWorkflowEnhancer := func(patchData map[string]interface{}) {
 			if stages != nil {
 				patchData["Stages"] = stages
+			}
+			if final != nil {
 				patchData["Final"] = final
 			}
 		}

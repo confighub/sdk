@@ -17045,6 +17045,9 @@ type UploadUnitDataParams struct {
 
 	// Subgroup User-defined category for the Mutation. Must be alphanumeric, at most 64 characters. The prefix 'ConfigHub' is reserved.
 	Subgroup *string `form:"subgroup,omitempty" json:"subgroup,omitempty" yaml:"subgroup,omitempty"`
+
+	// IfMatch The DataHash of the configuration this write replaces, as the ETag a read of the Unit's data served it (quoted) or bare. The write is refused with 409 Conflict when the Unit's configuration is not that one, so an edit made from one Unit's configuration, or before somebody else's write, cannot land over another. Omitted, the write is unconditional.
+	IfMatch *string `json:"If-Match,omitempty" yaml:"If-Match,omitempty"`
 }
 
 // GetUnitDiffParams defines parameters for GetUnitDiff.

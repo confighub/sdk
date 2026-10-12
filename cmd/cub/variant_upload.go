@@ -244,12 +244,14 @@ var variantUploadReservedLabels = map[string]string{
 
 func variantUploadCmdRun(cmd *cobra.Command, args []string) error {
 	a := &variantUploadArgs
-	if a.component == "" {
-		return fmt.Errorf("--component is required")
+	if a.component == "" && !strings.Contains(a.variant, "/") {
+		return fmt.Errorf("--component is required, or name it in --variant as <component>/<variant>")
 	}
-	if a.variant == "" {
-		return fmt.Errorf("--variant must not be empty")
+	qualifier, variantName, err := qualifiedVariant(a.component, a.variant)
+	if err != nil {
+		return err
 	}
+	a.component, a.variant = qualifier, variantName
 
 	a.labels = append(a.labels, a.deprecatedLabels...)
 	a.annotations = append(a.annotations, a.deprecatedAnnotations...)

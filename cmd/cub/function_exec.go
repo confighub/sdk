@@ -88,6 +88,7 @@ func init() {
 	functionExecCmd.Flags().StringVar(&resourceType, "resource-type", "", "resource-type filter")
 	functionExecCmd.Flags().StringVar(&whereData, "where-data", "", "where data filter")
 	functionExecCmd.Flags().StringVar(&whereResource, "where-resource", "", "filter which resources the function operates on")
+	addResourceFlag(functionExecCmd)
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionExecCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
@@ -131,6 +132,10 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 		effectiveWhere = whereFromUnits
 	} else {
 		effectiveWhere = whereClause
+	}
+	effectiveWhere, err = applyResourceFlag(effectiveWhere)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	// Parse changeset once if specified (not for revision-based invocations)
@@ -228,9 +233,7 @@ func functionExecCommandRun(cmd *cobra.Command, args []string) error {
 		outputFunctionInvocationResponse(resp)
 	}
 	if wait {
-		if !quiet && !isAlternativeOutput() && effectiveShow() == ShowDefault {
-			tprintRaw("Awaiting triggers...")
-		}
+		printAwaitingTriggers()
 		// Wait one at a time
 		for _, resp := range *resp {
 			unitDetails, err := resolveUnit(resp.UnitID.String(), resp.SpaceID.String(), "*")

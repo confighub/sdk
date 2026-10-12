@@ -30,7 +30,7 @@ var variantApproveArgs struct {
 }
 
 var variantApproveCmd = &cobra.Command{
-	Use:         "approve [<space>]",
+	Use:         "approve [<variant>]",
 	Short:       "Approve the units of one or more variants",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Approve one revision of each unit in one or more variant spaces.
@@ -120,7 +120,7 @@ func variantApproveCmdRun(cmd *cobra.Command, args []string) error {
 	request := goclientnew.AttestRequest{}
 	var spaceClauses []string
 	if len(args) == 1 {
-		space, err := resolveSpace(args[0], "SpaceID,Slug")
+		space, err := resolveVariantOrSpace(args[0], "SpaceID,Slug")
 		if err != nil {
 			return err
 		}

@@ -146,6 +146,9 @@ func checkSpaceCreateConflictingArgs(args []string) (bool, error) {
 }
 
 func spaceCreateCmdRun(cmd *cobra.Command, args []string) error {
+	if err := spaceCreateArgs.spaceLabels.qualifyVariant(&spaceCreateArgs.component); err != nil {
+		return err
+	}
 	spaceCreateArgs.spaceLabels.apply()
 	isBulkCreateMode, err := checkSpaceCreateConflictingArgs(args)
 	if err != nil {

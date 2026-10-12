@@ -48,6 +48,23 @@ func fetchUnitData(spaceID, unitID uuid.UUID) (string, error) {
 	return string(res.Body), nil
 }
 
+// fetchUnitDataForEdit returns a Unit's configuration and the ETag it was served with, which is
+// what a read+modify+write sends back as If-Match: the write is then refused, rather than
+// landing over a configuration somebody else wrote after the read.
+func fetchUnitDataForEdit(spaceID, unitID uuid.UUID) (data string, etag string, err error) {
+	res, err := cubClientNew.DownloadUnitDataWithResponse(ctx, spaceID, unitID)
+	if err := rawBodyErr(err, res); err != nil {
+		return "", "", err
+	}
+	return string(res.Body), res.HTTPResponse.Header.Get("ETag"), nil
+}
+
+// sameDataHash reports whether an If-Match value names the DataHash, accepting it quoted, as an
+// ETag is, or bare, as `cub unit get` shows it.
+func sameDataHash(ifMatch, dataHash string) bool {
+	return strings.Trim(strings.TrimSpace(ifMatch), `"`) == dataHash
+}
+
 // putUnitData writes a Unit's configuration, and returns the operation's result so a dry run
 // can report what it produced.
 //

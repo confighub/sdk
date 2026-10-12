@@ -36185,7 +36185,7 @@
           "Unit"
         ],
         "summary": "Upload config data",
-        "description": "Replace the config data of a unit. The request body is the configuration itself. This is the only way configuration reaches a Unit other than a clone, which copies it server-side: Data is not part of the Unit entity, so no metadata write can carry one or destroy one. Send If-Match with the DataHash a read served to make the write conditional on nobody having written first. Requires Edit permission.",
+        "description": "Replace the config data of a unit. The request body is the configuration itself. This is the only way configuration reaches a Unit other than a clone, which copies it server-side: Data is not part of the Unit entity, so no metadata write can carry one or destroy one. Send If-Match with the DataHash a read served to make the write conditional on the configuration still being that one. Requires Edit permission.",
         "operationId": "UploadUnitData",
         "parameters": [
           {
@@ -36221,6 +36221,15 @@
             "name": "include",
             "in": "query",
             "description": "Comma-separated parts of the result to return in addition to the Unit: ConfigData for the configuration the operation produced, MutationSources for what set each value in it, and Diff for what the operation changed, path by path with the values on both sides. None is a field of a Unit, and each costs something to return, so they are returned only when named. A dry run stores nothing, so this is the only way to see what it would have produced.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "description": "The DataHash of the configuration this write replaces, as the ETag a read of the Unit's data served it (quoted) or bare. The write is refused with 409 Conflict when the Unit's configuration is not that one, so an edit made from one Unit's configuration, or before somebody else's write, cannot land over another. Omitted, the write is unconditional.",
             "required": false,
             "schema": {
               "type": "string"

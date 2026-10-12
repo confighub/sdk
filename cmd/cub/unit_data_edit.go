@@ -58,7 +58,7 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("unit is in ChangeSet %s; use --changeset", currentUnit.Unit.ChangeSetID.String())
 	}
 
-	currentData, err := fetchUnitData(currentUnit.Unit.SpaceID, currentUnit.Unit.UnitID)
+	currentData, etag, err := fetchUnitDataForEdit(currentUnit.Unit.SpaceID, currentUnit.Unit.UnitID)
 	if err != nil {
 		return err
 	}
@@ -67,21 +67,28 @@ func unitDataEditCmdRun(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(path)
 
 	if bytes.Equal(currentContent, updatedContent) {
+		os.Remove(path)
 		fmt.Println("No changes made")
 		return nil
 	}
 	// Edit is a read+modify+write, so it is not considered an external merge source. The
-	// configuration is written through the data endpoint; the Unit itself is unchanged.
+	// configuration is written through the data endpoint; the Unit itself is unchanged. It is
+	// written only over the configuration that was read, so an edit cannot overwrite a change
+	// made while the editor was open.
 	editParams, err := unitDataParams(currentUnit.Unit.LastChangeDescription, changeSetIDForDataWrite(currentUnit.Unit))
 	if err != nil {
-		return err
+		return keptEdit(path, err)
+	}
+	if etag != "" {
+		editParams.IfMatch = &etag
 	}
 	if _, err := putUnitData(spaceID, currentUnit.Unit.UnitID, string(updatedContent), editParams); err != nil {
-		return err
+		return keptEdit(path, err)
 	}
+	// The Unit holds the edit now, so the file is no longer the only copy of it.
+	os.Remove(path)
 	unitDetails, err := resolveUnit(currentUnit.Unit.UnitID.String(), spaceID.String(), "*")
 	if err != nil {
 		return err

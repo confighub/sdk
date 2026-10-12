@@ -35,7 +35,7 @@ const (
 )
 
 var variantDemoteCmd = &cobra.Command{
-	Use:         "demote [<space>]",
+	Use:         "demote [<variant>]",
 	Short:       "Undo a change order, restoring the revisions before it",
 	Annotations: map[string]string{"OrgLevel": ""},
 	Long: getCommandHelp(`Undo a change order in the spaces it reached, restoring each unit it marked to the
@@ -148,7 +148,7 @@ func variantDemoteCmdRun(cmd *cobra.Command, args []string) error {
 	// another space is: <space>/<slug>, or by UUID. A bare slug resolves in the space named, or
 	// in the selected space.
 	if len(args) > 0 {
-		space, err := resolveSpace(args[0], "*")
+		space, err := resolveVariantOrSpace(args[0], "*")
 		if err != nil {
 			return err
 		}
