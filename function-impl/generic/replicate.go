@@ -82,7 +82,7 @@ func genericFnReplicate(resourceProvider yamlkit.ResourceProvider, options *api.
 			return output, nil // Already found a match
 		}
 		if resourceInfo.ResourceCategory != matchResourceCategory ||
-			resourceInfo.ResourceType != matchResourceType ||
+			!api.SameResourceType(resourceProvider, resourceInfo.ResourceType, matchResourceType) ||
 			resourceInfo.ResourceNameWithoutScope != matchResourceName {
 			return output, nil
 		}

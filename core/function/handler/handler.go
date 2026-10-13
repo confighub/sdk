@@ -315,7 +315,7 @@ func (fh *FunctionHandler) InvokeCore(ctx context.Context, functionInvocation *a
 				}
 				// log.Debugf("%v", newMutations)
 				var hasNewMutations bool
-				mutations, hasNewMutations = yamlkit.AddMutations(mutations, newMutations)
+				mutations, hasNewMutations = yamlkit.AddMutations(fh.resourceProvider, mutations, newMutations)
 				hasMutations = hasMutations || hasNewMutations
 				mutators = append(mutators, functionIndex)
 				serializedData = newSerializedData

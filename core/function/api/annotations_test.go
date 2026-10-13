@@ -381,7 +381,7 @@ func TestDiffGuardsCarriesARemoval(t *testing.T) {
 		"spec.template.spec": {"owner": "platform"},
 	})
 
-	diffs := api.DiffGuards(base, end)
+	diffs := api.DiffGuards(k8s, base, end)
 	require.Len(t, diffs, 1)
 	require.Len(t, diffs[0].Deltas, 1)
 	assert.Equal(t, api.ResolvedPath("spec.template.spec"), diffs[0].Deltas[0].Path)
@@ -398,7 +398,7 @@ func TestDiffGuardsCarriesAdditionsAndChanges(t *testing.T) {
 		"spec.template.spec.containers.?name=app.image": {"owner": "transform-link"},
 	})
 
-	diffs := api.DiffGuards(base, end)
+	diffs := api.DiffGuards(k8s, base, end)
 	require.Len(t, diffs, 1)
 	byPath := map[api.ResolvedPath]api.GuardDelta{}
 	for _, delta := range diffs[0].Deltas {
@@ -414,7 +414,7 @@ func TestDiffGuardsIsEmptyWhenNothingChanged(t *testing.T) {
 	same := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.replicas": {"owner": "platform"},
 	})
-	assert.Empty(t, api.DiffGuards(same, api.ClonePathAnnotationList(same)),
+	assert.Empty(t, api.DiffGuards(k8s, same, api.ClonePathAnnotationList(same)),
 		"an unchanged table produces no work for the merge to do")
 }
 
@@ -424,7 +424,7 @@ func TestDiffGuardsReportsAResourceThatIsGone(t *testing.T) {
 	base := table("ns/web", map[api.ResolvedPath]map[string]string{
 		"spec.replicas": {"owner": "platform"},
 	})
-	diffs := api.DiffGuards(base, nil)
+	diffs := api.DiffGuards(k8s, base, nil)
 	require.Len(t, diffs, 1)
 	require.Len(t, diffs[0].Deltas, 1)
 	assert.Equal(t, []string{"owner"}, diffs[0].Deltas[0].Remove)
@@ -442,10 +442,10 @@ func TestApplyGuardDeltaRoundTrips(t *testing.T) {
 	// Applying the base->end diff to a copy of base reproduces end. This is the property the
 	// whole propagation rests on: what a downstream receives is what the upstream changed.
 	downstream := api.ClonePathAnnotationList(base)
-	for _, diff := range api.DiffGuards(base, end) {
+	for _, diff := range api.DiffGuards(k8s, base, end) {
 		for i := range diff.Deltas {
 			var changed bool
-			downstream, changed = api.ApplyGuardDelta(downstream, diff.Resource, &diff.Deltas[i])
+			downstream, changed = api.ApplyGuardDelta(k8s, downstream, diff.Resource, &diff.Deltas[i])
 			assert.True(t, changed, "a delta the diff produced must change something")
 		}
 	}
@@ -466,10 +466,10 @@ func TestApplyGuardDeltaIsIdempotent(t *testing.T) {
 		Set:  map[string]string{"owner": "platform"},
 	}
 
-	downstream, changed := api.ApplyGuardDelta(downstream, resource, &delta)
+	downstream, changed := api.ApplyGuardDelta(k8s, downstream, resource, &delta)
 	assert.True(t, changed)
 
-	_, changed = api.ApplyGuardDelta(downstream, resource, &delta)
+	_, changed = api.ApplyGuardDelta(k8s, downstream, resource, &delta)
 	assert.False(t, changed, "applying the same delta again is not a change")
 }
 
@@ -518,7 +518,7 @@ func TestSetGuardsStampsPathsAndTheResourceAsAWhole(t *testing.T) {
 	resource := api.ResourceInfo{ResourceType: "apps/v1/Deployment", ResourceName: "default/app"}
 	imagePath := api.ResolvedPath("spec.template.spec.containers.?name=app.image")
 
-	table := api.SetGuards(nil, []api.ResourceGuards{{
+	table := api.SetGuards(k8s, nil, []api.ResourceGuards{{
 		Resource: resource,
 		Set: map[api.ResolvedPath]map[string]string{
 			"":        {"owner": "transform-link"},
@@ -543,7 +543,7 @@ func TestSetGuardsOverwritesAKeyAndLeavesTheRestAlone(t *testing.T) {
 	path := api.ResolvedPath("spec.template.spec")
 	identity := func(p api.ResolvedPath) api.ResolvedPath { return p }
 
-	table := api.SetGuards(nil, []api.ResourceGuards{{
+	table := api.SetGuards(k8s, nil, []api.ResourceGuards{{
 		Resource: resource,
 		Set: map[api.ResolvedPath]map[string]string{
 			path: {"owner": "trigger", "policy-exception": "host-network"},
@@ -552,7 +552,7 @@ func TestSetGuardsOverwritesAKeyAndLeavesTheRestAlone(t *testing.T) {
 
 	// A second change states a different owner. Add and overwrite only: the exception it says
 	// nothing about survives, which is what makes a stamp safe to run repeatedly.
-	table = api.SetGuards(table, []api.ResourceGuards{{
+	table = api.SetGuards(k8s, table, []api.ResourceGuards{{
 		Resource: resource,
 		Set:      map[api.ResolvedPath]map[string]string{path: {"owner": "link"}},
 	}}, identity)

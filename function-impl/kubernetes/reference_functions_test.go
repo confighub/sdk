@@ -303,3 +303,82 @@ roleRef:
 	assert.ElementsMatch(t, []string{"rbac.authorization.k8s.io/v1/ClusterRole", "rbac.authorization.k8s.io/v1/Role"},
 		api.PropertyValueAlternatives(required["web/to-unknown"]))
 }
+
+// A ConfigMap rendered from AppConfig is consumed one way, and says which; any other ConfigMap
+// can be mounted as files or read as environment variables, so it satisfies both kinds of
+// reference.
+func TestConfigMapFormatOfPlainAndRenderedConfigMaps(t *testing.T) {
+	const bundle = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: apps
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        envFrom:
+        - configMapRef:
+            name: confighubplaceholder
+        volumeMounts:
+        - name: config
+          mountPath: /etc/app
+      volumes:
+      - name: config
+        configMap:
+          name: confighubplaceholder
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: plain
+  namespace: apps
+data:
+  key: value
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rendered
+  namespace: apps
+  annotations:
+    confighub.com/ConfigMapFormat: KeyValue
+data:
+  key: value
+`
+	invoke := func(fn string) api.AttributeValueList {
+		t.Helper()
+		resp, err := testFunctionHandler.InvokeCore(context.Background(), &api.FunctionInvocationRequest{
+			ConfigData:          bundle,
+			FunctionInvocations: []api.FunctionInvocation{{FunctionName: fn}},
+		})
+		require.NoError(t, err)
+		require.True(t, resp.Success, "%s should succeed; errors: %v", fn, resp.ErrorMessages)
+		var values api.AttributeValueList
+		require.NoError(t, json.Unmarshal(resp.Outputs[api.OutputTypeAttributeValueList], &values))
+		return values
+	}
+
+	required := map[string]string{}
+	for _, v := range invoke("get-needed") {
+		if v.Details != nil && v.Details.NeededRequired["ConfigMapFormat"] != "" {
+			required[string(v.Path)] = v.Details.NeededRequired["ConfigMapFormat"]
+		}
+	}
+	envFrom := required["spec.template.spec.containers.?name=app.envFrom.0.configMapRef.name"]
+	volume := required["spec.template.spec.volumes.?name=config.configMap.name"]
+	require.Equal(t, "KeyValue", envFrom)
+	require.Equal(t, "File", volume)
+
+	offered := map[string]string{}
+	for _, v := range invoke("get-provided") {
+		if v.ResourceType == "v1/ConfigMap" && v.Path == "metadata.name" && v.Details != nil {
+			offered[string(v.ResourceNameWithoutScope)] = v.Details.ProvidedProperties["ConfigMapFormat"]
+		}
+	}
+	assert.True(t, api.PropertyValueSatisfiedBy(envFrom, offered["plain"]), "a plain ConfigMap can be read as environment variables")
+	assert.True(t, api.PropertyValueSatisfiedBy(volume, offered["plain"]), "a plain ConfigMap can be mounted as files")
+	assert.True(t, api.PropertyValueSatisfiedBy(envFrom, offered["rendered"]))
+	assert.False(t, api.PropertyValueSatisfiedBy(volume, offered["rendered"]), "a key/value rendering is not the file one")
+}

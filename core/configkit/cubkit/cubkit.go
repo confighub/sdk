@@ -180,6 +180,12 @@ func (*ConfigHubResourceProviderType) ParseResourceName(resourceName api.Resourc
 	return spaceSlug, unscopedResourceName
 }
 
+// RemoveAPIVersionFromResourceType returns the type as it is: ConfigHub entity types carry no
+// API version.
+func (*ConfigHubResourceProviderType) RemoveAPIVersionFromResourceType(resourceType api.ResourceType) api.ResourceType {
+	return resourceType
+}
+
 // TODO: Trigger and Invocation?
 func (*ConfigHubResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
 	return resourceTypeA == resourceTypeB

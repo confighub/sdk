@@ -272,5 +272,6 @@ func registerFunctionVerbFlags(cmd *cobra.Command) {
 	addResourceFlag(cmd)
 	cmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
 	cmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
+	addIncludeContextFlags(cmd.Flags())
 	enableOutputFileFlag(cmd)
 }

@@ -127,7 +127,7 @@ func genericFnGetPlaceholderMutations(resourceProvider yamlkit.ResourceProvider,
 		return parsedData, nil, err
 	}
 	avl := placeholders.(api.AttributeValueList)
-	mutations := api.AttributeValueListToResourceMutationList(avl)
+	mutations := api.AttributeValueListToResourceMutationList(resourceProvider, avl)
 	return parsedData, mutations, nil
 }
 

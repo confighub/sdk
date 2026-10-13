@@ -309,8 +309,9 @@ func GetPathRegistryForAttributeNameByProperty(
 			if info.Details == nil {
 				continue
 			}
-			provided := info.Details.ProvidedProperties[propertyKey] == propertyValue
-			needed := api.PropertyValueSatisfiedBy(info.Details.NeededRequired[propertyKey], propertyValue)
+			provided := api.PropertyValueWithoutAPIVersions(resourceProvider, propertyKey, info.Details.ProvidedProperties[propertyKey]) ==
+				api.PropertyValueWithoutAPIVersions(resourceProvider, propertyKey, propertyValue)
+			needed := api.PropertySatisfiedBy(resourceProvider, propertyKey, info.Details.NeededRequired[propertyKey], propertyValue)
 			if _, requires := info.Details.NeededRequired[propertyKey]; !requires {
 				needed = false
 			}
@@ -380,6 +381,13 @@ func GetVisitorMapForPath(resourceProvider ResourceProvider, rt api.ResourceType
 	}
 	resourceTypeToPaths := api.ResourceTypeToPathToVisitorInfoType{
 		rt: {path: visitorInfo},
+	}
+	// The caller's type names the type in every API version, so the paths are also filed
+	// under the type without its version, which is the key VisitPathsDoc looks up when a
+	// resource's own type is not in the map. A map built from the path registry has no such
+	// key, so what is registered for one version is not applied to another.
+	if versionless := api.ResourceTypeWithoutAPIVersion(resourceProvider, rt); versionless != rt {
+		resourceTypeToPaths[versionless] = api.PathToVisitorInfoType{path: visitorInfo}
 	}
 	return resourceTypeToPaths
 }

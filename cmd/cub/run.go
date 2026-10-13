@@ -62,6 +62,7 @@ func init() {
 	_ = runCmd.PersistentFlags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	runCmd.PersistentFlags().StringVar(&changeDescription, "change-desc", "", "change description")
 	runCmd.PersistentFlags().StringVar(&functionChangesetSlug, "changeset", "", "changeset to associate units with")
+	addIncludeContextFlags(runCmd.PersistentFlags())
 	runCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
 	addPersistentClearanceFlag(runCmd)
 	addPersistentGuardFlag(runCmd)

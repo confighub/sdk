@@ -164,6 +164,10 @@ func resolveLink(ref string, spaceID string, selectParam string) (*goclientnew.E
 	return cubapi.ResolveLink(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }
 
+func resolveChannel(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedChannel, error) {
+	return cubapi.ResolveChannel(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
+}
+
 func resolveWorker(ref string, spaceID string, selectParam string) (*goclientnew.ExtendedBridgeWorker, error) {
 	return cubapi.ResolveBridgeWorker(ctx, cubClient, cubapi.ParseRef(ref), resolveOpts(spaceID, selectParam))
 }

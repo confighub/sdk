@@ -316,10 +316,15 @@ func configMapEnricher(doc *gaby.YamlDoc, attr *api.AttributeValue, isProvided b
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(stableCorePath), true); found && v != "" {
 			attr.Details.ProvidedProperties["Name"] = v
 		}
-		// Extract ConfigMapFormat
+		// A ConfigMap rendered from AppConfig says which way it is meant to be consumed, so
+		// that a Deployment linked to both renderings binds its envFrom to the key/value one and
+		// its volume to the file one. Any other ConfigMap can be consumed either way.
 		formatPath := k8skit.K8sContextPath(constants.ConfigMapFormatKeySuffix)
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, api.ResolvedPath(formatPath), true); found && v != "" {
 			attr.Details.ProvidedProperties["ConfigMapFormat"] = v
+		} else {
+			attr.Details.ProvidedProperties["ConfigMapFormat"] = constants.ConfigMapFormatFile +
+				api.PropertyValueSeparator + constants.ConfigMapFormatKeyValue
 		}
 		// Extract Namespace
 		if v, found, _ := yamlkit.YamlSafePathGetValue[string](doc, "metadata.namespace", true); found && v != "" && v != yamlkit.PlaceHolderBlockApplyString {

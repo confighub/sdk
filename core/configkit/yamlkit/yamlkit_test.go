@@ -50,6 +50,9 @@ func (testResourceProvider) SetResourceName(doc *gaby.YamlDoc, name string) erro
 	_, err := doc.SetP(name, "metadata.name")
 	return err
 }
+func (testResourceProvider) RemoveAPIVersionFromResourceType(t api.ResourceType) api.ResourceType {
+	return RemoveSchemaVersionSegments(t)
+}
 func (testResourceProvider) ResourceTypesAreSimilar(a, b api.ResourceType) bool { return a == b }
 func (testResourceProvider) TypeDescription() string                            { return "Kind" }
 func (testResourceProvider) NormalizeName(name string) string                   { return name }

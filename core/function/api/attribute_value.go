@@ -109,7 +109,7 @@ const PropertyKeyNamespace = "Namespace"
 // PropertyValueSeparator joins the alternatives a needed property will accept. A reference
 // field that can point at several kinds -- an HPA's scaleTargetRef naming any workload
 // controller, a RoleBinding's roleRef naming a Role or a ClusterRole -- requires one of them,
-// not all and not anything.
+// not all and not anything. It also joins the alternatives a provided property offers.
 const PropertyValueSeparator = ","
 
 // PropertyValueAlternatives splits a property value into the alternatives it accepts.
@@ -119,12 +119,41 @@ func PropertyValueAlternatives(value string) []string {
 
 // PropertyValueSatisfiedBy reports whether a provided value satisfies a needed one. A needed
 // value naming several alternatives is satisfied by any of them; an empty needed value requires
-// nothing.
+// nothing. A provided value can name several alternatives too, when the resource can be used in
+// more than one way -- a plain ConfigMap can be mounted as files or read as environment
+// variables -- and it satisfies a needed value that accepts any one of them.
 func PropertyValueSatisfiedBy(neededValue, providedValue string) bool {
 	if neededValue == "" {
 		return true
 	}
-	return slices.Contains(PropertyValueAlternatives(neededValue), providedValue)
+	needed := PropertyValueAlternatives(neededValue)
+	for _, offered := range PropertyValueAlternatives(providedValue) {
+		if slices.Contains(needed, offered) {
+			return true
+		}
+	}
+	return false
+}
+
+// PropertyValueWithoutAPIVersions returns a property value as it is matched: the ResourceType
+// property names resource types, which identify a type across its API versions, so each
+// alternative it names has its version removed. Other properties are returned as they are.
+func PropertyValueWithoutAPIVersions(identifier ResourceIdentifier, propertyKey, value string) string {
+	if propertyKey != PropertyKeyResourceType || value == "" {
+		return value
+	}
+	alternatives := PropertyValueAlternatives(value)
+	for i := range alternatives {
+		alternatives[i] = string(ResourceTypeWithoutAPIVersion(identifier, ResourceType(alternatives[i])))
+	}
+	return strings.Join(alternatives, PropertyValueSeparator)
+}
+
+// PropertySatisfiedBy reports whether a provided value of a property satisfies a needed one, as
+// PropertyValueSatisfiedBy does, matching resource types across their API versions.
+func PropertySatisfiedBy(identifier ResourceIdentifier, propertyKey, neededValue, providedValue string) bool {
+	return PropertyValueSatisfiedBy(PropertyValueWithoutAPIVersions(identifier, propertyKey, neededValue),
+		PropertyValueWithoutAPIVersions(identifier, propertyKey, providedValue))
 }
 
 // UnionPropertyValue adds a value to a needed property's alternatives, keeping them sorted so

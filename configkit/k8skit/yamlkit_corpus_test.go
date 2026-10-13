@@ -2003,7 +2003,7 @@ func TestMutationSourcesKeepOneEntryPerElementAcrossAnInsertion(t *testing.T) {
 		diff, err := yamlkit.ComputeMutations(parseCorpus(t, pair[0]), parseCorpus(t, pair[1]),
 			int64(step+1), provider)
 		require.NoError(t, err, "computing the downstream's diff for step %d", step+1)
-		stored, _ = yamlkit.AddMutations(stored, diff)
+		stored, _ = yamlkit.AddMutations(k8skit.NewK8sResourceProvider(), stored, diff)
 	}
 
 	require.Len(t, stored, 1, "one resource was edited")
@@ -2601,7 +2601,7 @@ func checkMergeProperties(t *testing.T, mode string, provider yamlkit.ResourcePr
 		if resourceMutation.ResourceMutationInfo.MutationType != api.MutationTypeUpdate {
 			continue
 		}
-		patchIndex := api.NewResourceMutationIndex(patch)
+		patchIndex := api.NewResourceMutationIndex(k8skit.NewK8sResourceProvider(), patch)
 		patchResource, found := patchIndex.Find(resourceMutation.Resource, resourceMutation.AliasesWithoutScopes)
 		// Compare on canonical paths: the index in an associative segment records where
 		// the element sat on the side the path came from, and the two sides disagree

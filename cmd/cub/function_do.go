@@ -12,6 +12,7 @@ import (
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var functionDoCmd = &cobra.Command{
@@ -171,6 +172,16 @@ var functionTriggerIdentifiers []string
 var functionInvocationIdentifiers []string
 var updateValidationResults bool
 var functionIncludeConflicts bool
+var functionIncludeLinkFindings bool
+
+// addIncludeContextFlags registers the flags that put what the server knows about each unit,
+// beyond its configuration, into the functions' context. Every command that sends a function
+// invocation request takes them: newFunctionInvocationsRequest reads them for all of them, and a
+// validating function such as vet-no-link-findings is most often run by function vet.
+func addIncludeContextFlags(flags *pflag.FlagSet) {
+	flags.BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
+	flags.BoolVar(&functionIncludeLinkFindings, "include-link-findings", false, "pass what the resolves of each unit's links could not do to the functions, for functions that reason about it (e.g. vet-no-link-findings)")
+}
 var revisionIdentifier string
 var functionChangesetSlug string
 var functionToolchainType string
@@ -210,7 +221,7 @@ func init() {
 	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
 	functionDoCmd.Flags().BoolVar(&updateValidationResults, "update-apply-gates", false, "deprecated alias for --update-validation-results")
 	_ = functionDoCmd.Flags().MarkDeprecated("update-apply-gates", "use --update-validation-results")
-	functionDoCmd.Flags().BoolVar(&functionIncludeConflicts, "include-conflicts", false, "pass each unit's outstanding merge conflicts to the functions, for functions that reason about them (e.g. vet-no-merge-conflicts)")
+	addIncludeContextFlags(functionDoCmd.Flags())
 	enableWhereFlag(functionDoCmd)
 	enableFilterFlag(functionDoCmd)
 	addStandardDisplayFlags(functionDoCmd)
@@ -242,6 +253,7 @@ func newFunctionInvocationsRequest() *goclientnew.FunctionInvocationsRequest {
 	req.UpdateValidationResults = updateValidationResults
 	req.WhereResource = whereResource
 	req.IncludeConflicts = functionIncludeConflicts
+	req.IncludeLinkFindings = functionIncludeLinkFindings
 	req.ToolchainType = functionToolchainType
 	if workerSlug != "" {
 		workerUUID, err := resolveWorkerID(workerSlug)

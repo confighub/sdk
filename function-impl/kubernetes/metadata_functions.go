@@ -379,7 +379,8 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		if len(types) > 0 {
 			extraClusterScoped = make(map[api.ResourceType]bool, len(types))
 			for _, t := range types {
-				extraClusterScoped[api.ResourceType(t)] = true
+				// Keyed without the API version: a type names its kind in every version.
+				extraClusterScoped[rp.RemoveAPIVersionFromResourceType(api.ResourceType(t))] = true
 			}
 		}
 	}
@@ -391,7 +392,7 @@ func k8sFnEnsureNamespaces(rp *k8skit.K8sResourceProviderType, options *api.Func
 		}
 		if nameSegments[0] == "" {
 			// No namespace. Check whether it should have one.
-			if k8skit.IsResourceTypeClusterScoped(resourceInfo.ResourceType) || extraClusterScoped[resourceInfo.ResourceType] {
+			if k8skit.IsResourceTypeClusterScoped(resourceInfo.ResourceType) || extraClusterScoped[rp.RemoveAPIVersionFromResourceType(resourceInfo.ResourceType)] {
 				return output, nil
 			}
 			_, err := doc.SetP(yamlkit.PlaceHolderBlockApplyString, ".metadata.namespace")
@@ -464,7 +465,8 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 			if len(types) > 0 {
 				extraClusterScoped = make(map[api.ResourceType]bool, len(types))
 				for _, t := range types {
-					extraClusterScoped[api.ResourceType(t)] = true
+					// Keyed without the API version: a type names its kind in every version.
+					extraClusterScoped[rp.RemoveAPIVersionFromResourceType(api.ResourceType(t))] = true
 				}
 			}
 		}
@@ -488,7 +490,7 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 
 	resourceTypeToPaths := yamlkit.GetPathRegistryForAttributeName(rp, AttributeNameNamespaceNameReference)
 	if len(extraClusterScoped) > 0 {
-		resourceTypeToPaths = overlayClusterScopedExceptions(resourceTypeToPaths, extraClusterScoped)
+		resourceTypeToPaths = overlayClusterScopedExceptions(rp, resourceTypeToPaths, extraClusterScoped)
 	}
 	updater := func(current string) string {
 		if explicitOldNamespace != "" && current != "" && current != explicitOldNamespace &&
@@ -535,6 +537,7 @@ func k8sFnSetNamespace(rp *k8skit.K8sResourceProviderType, options *api.Function
 // metadata.name, a ClusterRoleBinding's subject namespaces) are registered deliberately for types
 // that are themselves cluster-scoped, so they must keep applying.
 func overlayClusterScopedExceptions(
+	rp *k8skit.K8sResourceProviderType,
 	registry api.ResourceTypeToPathToVisitorInfoType,
 	extra map[api.ResourceType]bool,
 ) api.ResourceTypeToPathToVisitorInfoType {
@@ -551,7 +554,7 @@ func overlayClusterScopedExceptions(
 		clone := *info
 		base := info
 		clone.TypeExceptionFunc = api.TypeExceptionPredicate(func(rt api.ResourceType) bool {
-			return extra[rt] || base.SkipsResourceType(rt)
+			return extra[rp.RemoveAPIVersionFromResourceType(rt)] || base.SkipsResourceType(rt)
 		})
 		overlaid[path] = &clone
 	}

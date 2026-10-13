@@ -134,7 +134,7 @@ func genericFnGetResourcesOfType(resourceProvider yamlkit.ResourceProvider, _ *a
 	var list api.ResourceInfoList
 	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
 		func(_ *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
-			if resourceInfo.ResourceType == resourceType {
+			if api.SameResourceType(resourceProvider, resourceInfo.ResourceType, resourceType) {
 				list = append(list, *resourceInfo)
 			}
 			return output, nil

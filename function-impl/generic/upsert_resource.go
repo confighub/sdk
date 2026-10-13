@@ -72,14 +72,16 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, options 
 	targetResourceType := api.ResourceType(args[1].Value.(string))
 	targetResourceName := api.ResourceName(args[2].Value.(string))
 
-	// Find the resource to upsert from the resource list
-	var resourceToUpsert *api.Resource
+	// Find the resource to upsert from the resource list, and below the resource it replaces, by
+	// name, or by name without the namespace when that names one resource.
+	target := api.ResourceInfo{ResourceType: targetResourceType, ResourceName: targetResourceName}
+	listed := make([]api.ResourceInfo, len(resourceList))
 	for i := range resourceList {
-		if resourceList[i].ResourceType == targetResourceType &&
-			resourceProvider.RemoveScopeFromResourceName(resourceList[i].ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
-			resourceToUpsert = &resourceList[i]
-			break
-		}
+		listed[i] = resourceList[i].ResourceInfo
+	}
+	var resourceToUpsert *api.Resource
+	if position, found := api.NewResourceIndex(resourceProvider, listed).Find(target); found {
+		resourceToUpsert = &resourceList[position]
 	}
 
 	if resourceToUpsert == nil {
@@ -92,19 +94,13 @@ func genericFnUpsertResource(resourceProvider yamlkit.ResourceProvider, options 
 		return parsedData, nil, fmt.Errorf("failed to parse resource body: %v", err)
 	}
 
-	// Use VisitResources to find the existing resource and track its position
-	foundIndex := -1
-	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		if resourceInfo.ResourceType == targetResourceType &&
-			resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
-			foundIndex = index
-		}
-		return output, []error{}
-	}
-
-	_, err = yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
+	foundIndex, match, err := yamlkit.MatchResource(parsedData, resourceProvider, options, target)
 	if err != nil {
 		return parsedData, nil, fmt.Errorf("failed to search for existing resource: %v", err)
+	}
+	if len(match.Ambiguous) > 0 {
+		return parsedData, nil, fmt.Errorf("resource with type %s and name %s matches several resources in different scopes: %v",
+			targetResourceType, targetResourceName, match.Ambiguous)
 	}
 
 	if foundIndex >= 0 {

@@ -109,7 +109,9 @@ type ResourceProvider interface {
 	// ResourceNameStableCoreGetter returns the stable core of the resource name, with
 	// generated prefixes and suffixes stripped. Returns empty string if not present.
 	ResourceNameStableCoreGetter(doc *gaby.YamlDoc) (api.ResourceName, error)
-	RemoveScopeFromResourceName(resourceName api.ResourceName) api.ResourceName
+	// ResourceIdentifier reduces names and types to what identifies a resource, removing the
+	// scope from names and the API version from types.
+	api.ResourceIdentifier
 	ScopelessResourceNamePath() api.ResolvedPath
 	SetResourceName(doc *gaby.YamlDoc, name string) error
 	ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool
@@ -244,9 +246,10 @@ func ResourceAndCategoryTypeMaps(parsedData gaby.Container, resourceProvider Res
 }
 
 // FindResourceDoc finds the document in parsedData that best matches the given target
-// ResourceInfo. It uses the same matching hierarchy as ComputeMutations:
-//  1. Exact ResourceName or ResourceNameWithoutScope match
-//  2. ResourceTypesAreSimilar as a prerequisite for any match
+// ResourceInfo. It uses the same matching hierarchy as ComputeMutations, among documents whose
+// types ResourceTypesAreSimilar to the target's:
+//  1. The same ResourceName, scope included
+//  2. The same ResourceNameWithoutScope, when exactly one document has it
 //
 // Returns the matching doc and its ResourceInfo, or (nil, nil) if no match is found.
 func FindResourceDoc(
@@ -254,28 +257,69 @@ func FindResourceDoc(
 	resourceProvider ResourceProvider,
 	target *api.ResourceInfo,
 ) (*gaby.YamlDoc, *api.ResourceInfo) {
-	var bestDoc *gaby.YamlDoc
-	var bestInfo *api.ResourceInfo
+	var exactDoc, unscopedDoc *gaby.YamlDoc
+	var exactInfo, unscopedInfo *api.ResourceInfo
+	unscopedMatches := 0
+	targetNameWithoutScope := api.ResourceNameWithoutScopeFromResourceInfo(resourceProvider, *target)
 
 	visitor := func(doc *gaby.YamlDoc, output any, _ int, ri *api.ResourceInfo) (any, []error) {
 		if !resourceProvider.ResourceTypesAreSimilar(ri.ResourceType, target.ResourceType) {
 			return output, nil
 		}
-
-		// Exact name match (full or without scope)
-		if bestDoc == nil {
-			if ri.ResourceName == target.ResourceName ||
-				ri.ResourceNameWithoutScope == target.ResourceNameWithoutScope {
-				bestDoc = doc
-				bestInfo = ri
-			}
+		if exactDoc == nil && ri.ResourceName == target.ResourceName {
+			exactDoc, exactInfo = doc, ri
 		}
-
+		if targetNameWithoutScope != "" && ri.ResourceNameWithoutScope == targetNameWithoutScope {
+			unscopedMatches++
+			unscopedDoc, unscopedInfo = doc, ri
+		}
 		return output, nil
 	}
 
 	_, _ = VisitResources(parsedData, nil, resourceProvider, visitor)
-	return bestDoc, bestInfo
+	if exactDoc != nil {
+		return exactDoc, exactInfo
+	}
+	if unscopedMatches == 1 {
+		return unscopedDoc, unscopedInfo
+	}
+	return nil, nil
+}
+
+// ConfigurationResources lists the resources in parsedData, for matching stored records against
+// them (api.ResourceIndex.Counterparts).
+func ConfigurationResources(parsedData gaby.Container, resourceProvider ResourceProvider) []api.ResourceInfo {
+	var resources []api.ResourceInfo
+	_, _ = VisitResources(parsedData, nil, resourceProvider,
+		func(_ *gaby.YamlDoc, output any, _ int, resourceInfo *api.ResourceInfo) (any, []error) {
+			resources = append(resources, *resourceInfo)
+			return output, nil
+		})
+	return resources
+}
+
+// MatchResource finds the position in parsedData of the resource target identifies, among the
+// resources options select, as api.ResourceIndex finds one: by type in any API version, and by
+// name with its scope or, when that names one resource, without it. The match reports the names
+// a scopeless name was ambiguous between.
+func MatchResource(parsedData gaby.Container, resourceProvider ResourceProvider, options *api.FunctionOptions,
+	target api.ResourceInfo) (int, api.ResourceMatch, error) {
+	var resources []api.ResourceInfo
+	var positions []int
+	_, err := VisitResourcesFiltered(parsedData, nil, resourceProvider, options,
+		func(_ *gaby.YamlDoc, output any, position int, resourceInfo *api.ResourceInfo) (any, []error) {
+			resources = append(resources, *resourceInfo)
+			positions = append(positions, position)
+			return output, nil
+		})
+	if err != nil {
+		return -1, api.ResourceMatch{}, err
+	}
+	match := api.NewResourceIndex(resourceProvider, resources).Match(target)
+	if !match.Found {
+		return -1, match, nil
+	}
+	return positions[match.Position], match, nil
 }
 
 // EnrichMergeKeysFromDoc extracts merge keys from the resolved path of an AttributeValue

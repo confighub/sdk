@@ -498,6 +498,118 @@
         "references": "ChangeWorkflow"
       }
     },
+    "Channel": {
+      "Annotations": {
+        "dataType": "map[string]string"
+      },
+      "ChannelID": {
+        "dataType": "uuid"
+      },
+      "Condition": {
+        "dataType": "string"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "Declarations": {
+        "dataType": "JSON"
+      },
+      "DeleteGates": {
+        "dataType": "map[string]bool"
+      },
+      "DisplayName": {
+        "dataType": "string"
+      },
+      "EventPosition": {
+        "dataType": "int"
+      },
+      "HiddenReason": {
+        "dataType": "string"
+      },
+      "IPAddress": {
+        "dataType": "string"
+      },
+      "Labels": {
+        "dataType": "map[string]string"
+      },
+      "LastMessage": {
+        "dataType": "string"
+      },
+      "LastSeenAt": {
+        "dataType": "time"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization",
+        "expandable": true
+      },
+      "Permissions": {
+        "dataType": "map[string]map[string]map[uuid]bool"
+      },
+      "Slug": {
+        "dataType": "string"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space",
+        "expandable": true
+      },
+      "Subscriptions": {
+        "dataType": "JSON"
+      },
+      "UpdatedAt": {
+        "dataType": "time"
+      }
+    },
+    "CommandRun": {
+      "ChannelID": {
+        "dataType": "uuid",
+        "references": "Channel"
+      },
+      "Command": {
+        "dataType": "string"
+      },
+      "CommandRunID": {
+        "dataType": "uuid"
+      },
+      "CompletedAt": {
+        "dataType": "time"
+      },
+      "CreatedAt": {
+        "dataType": "time"
+      },
+      "CreatedBy": {
+        "dataType": "uuid"
+      },
+      "Deadline": {
+        "dataType": "time"
+      },
+      "DeliveredAt": {
+        "dataType": "time"
+      },
+      "OrganizationID": {
+        "dataType": "uuid",
+        "references": "Organization"
+      },
+      "SpaceID": {
+        "dataType": "uuid",
+        "references": "Space"
+      },
+      "Status": {
+        "dataType": "string"
+      },
+      "TargetID": {
+        "dataType": "uuid",
+        "references": "Target"
+      },
+      "TimeoutAt": {
+        "dataType": "time"
+      },
+      "UnitID": {
+        "dataType": "uuid",
+        "references": "Unit"
+      }
+    },
     "Component": {
       "AllowedChangeWorkflowIDs": {
         "dataType": "[]uuid",
@@ -1310,6 +1422,9 @@
       "HiddenReason": {
         "dataType": "string"
       },
+      "LinkFindings": {
+        "dataType": "JSON"
+      },
       "NeededPaths": {
         "dataType": "JSON"
       },
@@ -1801,6 +1916,9 @@
         "dataType": "int",
         "references": "Revision",
         "expandable": true
+      },
+      "LinkFindings": {
+        "dataType": "JSON"
       },
       "NeededPaths": {
         "dataType": "JSON"

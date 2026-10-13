@@ -27,9 +27,9 @@ import (
 // The rule is not reimplemented here. The stored table is converted to the SDK's type and
 // GuardsForPath is asked, so the CLI cannot answer this question differently from the merge
 // engine that enforces it -- which is the failure mode a second implementation would have.
-func blameGuardsForPath(annotations goclientnew.PathAnnotationList,
+func blameGuardsForPath(identifier api.ResourceIdentifier, annotations goclientnew.PathAnnotationList,
 	resourceType, resourceName, resourceNameCore, path string) map[string]string {
-	entry := matchBlameAnnotations(annotations, resourceType, resourceName, resourceNameCore)
+	entry := matchBlameAnnotations(identifier, annotations, resourceType, resourceName, resourceNameCore)
 	if entry == nil {
 		return nil
 	}
@@ -44,23 +44,16 @@ func blameGuardsForPath(annotations goclientnew.PathAnnotationList,
 // matchBlameAnnotations finds the annotation entry for a resource, falling back to the
 // unscoped name the way matchBlameResource does: a variant that renamed a resource still
 // carries the guards written under the name it had.
-func matchBlameAnnotations(annotations goclientnew.PathAnnotationList,
+func matchBlameAnnotations(identifier api.ResourceIdentifier, annotations goclientnew.PathAnnotationList,
 	resourceType, resourceName, resourceNameCore string) *goclientnew.ResourcePathAnnotations {
-	var unscoped *goclientnew.ResourcePathAnnotations
+	resources := make([]*goclientnew.ResourceInfo, len(annotations))
 	for i := range annotations {
-		entry := &annotations[i]
-		if entry.Resource == nil || entry.Resource.ResourceType != resourceType {
-			continue
-		}
-		if entry.Resource.ResourceName == resourceName {
-			return entry
-		}
-		if unscoped == nil && resourceNameCore != "" &&
-			entry.Resource.ResourceNameWithoutScope == resourceNameCore {
-			unscoped = entry
-		}
+		resources[i] = annotations[i].Resource
 	}
-	return unscoped
+	if i, found := matchBlameResourceInfo(identifier, resources, resourceType, resourceName, resourceNameCore); found {
+		return &annotations[i]
+	}
+	return nil
 }
 
 // apiResourcePathAnnotations converts one generated entry to the SDK type, so the shared

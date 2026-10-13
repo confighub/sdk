@@ -53,6 +53,7 @@ Key information provided:
 - Unit metadata: ID, slug, display name, creation/update times
 - Revision tracking: HeadRevisionNum vs LastReleasedRevisionNum shows pending changes
 - Validation state: ValidationErrors, and the Attestations covering the head Revision
+- Link findings: what the resolves of the unit's links could not do, such as a path a link names that is not there
 - Configuration data: Actual YAML/HCL content via 'cub unit data'
 
 Important flags for agents:
@@ -287,6 +288,15 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 		if conflicts > 0 {
 			view.Append([]string{"Conflicts", fmt.Sprintf("%d %s", conflicts, plural("conflict", conflicts))})
 		}
+		// What the unit's links could not do, printed in full for the same reason: a link that
+		// names a path that is not there leaves the unit holding a value nothing supplies.
+		linkFindings := 0
+		if unitDetails.Unit.LinkFindings != nil {
+			linkFindings = len(*unitDetails.Unit.LinkFindings)
+		}
+		if linkFindings > 0 {
+			view.Append([]string{"Link Findings", fmt.Sprintf("%d %s", linkFindings, plural("finding", linkFindings))})
+		}
 		pathAnnotations := 0
 		if unitDetails.Unit.PathAnnotations != nil {
 			pathAnnotations = len(*unitDetails.Unit.PathAnnotations)
@@ -306,6 +316,12 @@ func displayExtendedUnitDetails(unitDetails *goclientnew.ExtendedUnit) {
 			tprintRaw("Conflicts:")
 			tprintRaw("----------")
 			displayConflicts(*unitDetails.Unit.Conflicts)
+		}
+		if linkFindings > 0 {
+			tprintRaw("")
+			tprintRaw("Link Findings:")
+			tprintRaw("--------------")
+			displayLinkFindings(*unitDetails.Unit.LinkFindings)
 		}
 		if verbose {
 			displayJSONSection("Path Annotations", unitDetails.Unit.PathAnnotations)

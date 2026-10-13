@@ -772,6 +772,83 @@ func ListLinks(ctx context.Context, c *Client, where Where, opts ListOpts) ([]*g
 	})
 }
 
+// ListChannels lists Channels across the organization, narrowed by where.
+func ListChannels(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllChannelsParams)) ([]*goclientnew.ExtendedChannel, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllChannelsParams{
+		Where:         ptrIf(where.String()),
+		Select:        ptrIf(opts.Select),
+		Include:       ptrIf(opts.Include),
+		Filter:        ptrIf(opts.Filter),
+		Contains:      ptrIf(opts.Contains),
+		IncludeHidden: ptrIf(opts.IncludeHidden),
+		OrderBy:       ptrIf(opts.OrderBy),
+	}
+	for _, fn := range with {
+		fn(params)
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.ExtendedChannel, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllChannelsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
+// ListCommandRuns lists command runs across the organization, narrowed by where.
+func ListCommandRuns(ctx context.Context, c *Client, where Where, opts ListOpts, with ...func(*goclientnew.ListAllCommandRunsParams)) ([]*goclientnew.CommandRun, error) {
+	if err := where.Err(); err != nil {
+		return nil, err
+	}
+	params := &goclientnew.ListAllCommandRunsParams{
+		Where:   ptrIf(where.String()),
+		Select:  ptrIf(opts.Select),
+		OrderBy: ptrIf(opts.OrderBy),
+	}
+	for _, fn := range with {
+		fn(params)
+	}
+	return ReadPages(opts, func(limit *int, token *string) (*http.Response, *[]goclientnew.CommandRun, error) {
+		params.Limit, params.Continue = limit, token
+		res, err := c.API.ListAllCommandRunsWithResponse(ctx, params)
+		if IsAPIError(err, res) {
+			return nil, nil, InterpretErrorGeneric(err, res)
+		}
+		return res.HTTPResponse, res.JSON200, nil
+	})
+}
+
+// ListDeclaredCommands lists the commands the organization's channels declare, or one
+// space's when spaceID is given, and only the named command when command is not empty.
+func ListDeclaredCommands(ctx context.Context, c *Client, spaceID *goclientnew.UUID, command string) ([]*goclientnew.DeclaredCommand, error) {
+	var listed *[]goclientnew.DeclaredCommand
+	if spaceID != nil {
+		res, err := c.API.ListCommandsWithResponse(ctx, *spaceID, &goclientnew.ListCommandsParams{Command: ptrIf(command)})
+		if IsAPIError(err, res) {
+			return nil, InterpretErrorGeneric(err, res)
+		}
+		listed = res.JSON200
+	} else {
+		res, err := c.API.ListAllCommandsWithResponse(ctx, &goclientnew.ListAllCommandsParams{Command: ptrIf(command)})
+		if IsAPIError(err, res) {
+			return nil, InterpretErrorGeneric(err, res)
+		}
+		listed = res.JSON200
+	}
+	if listed == nil {
+		return nil, nil
+	}
+	commands := make([]*goclientnew.DeclaredCommand, 0, len(*listed))
+	for i := range *listed {
+		commands = append(commands, &(*listed)[i])
+	}
+	return commands, nil
+}
+
 // ListBridgeWorkers returns bridge workers across the organization matching
 // where. Bridge-worker-specific options (Summary) are set via the with mutators,
 // which run after the common where/opts are applied.

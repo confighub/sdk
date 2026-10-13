@@ -433,6 +433,10 @@ type ModelConstraint interface {
 		goclientnew.ExtendedComponent |
 		goclientnew.ServiceAccount |
 		goclientnew.ExtendedServiceAccount |
+		goclientnew.Channel |
+		goclientnew.ExtendedChannel |
+		goclientnew.CommandRun |
+		goclientnew.DeclaredCommand |
 		Component |
 		Context
 }

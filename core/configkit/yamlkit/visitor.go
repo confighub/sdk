@@ -236,6 +236,11 @@ func VisitPathsDoc(
 		multiErrs := []error{}
 		unresolvedPaths := api.PathToVisitorInfoType{}
 		formatPaths, ok := resourceTypeToPaths[resourceInfo.ResourceType]
+		if !ok {
+			// A map built for a caller's type (GetVisitorMapForPath) matches the type in any API
+			// version.
+			formatPaths, ok = resourceTypeToPaths[api.ResourceTypeWithoutAPIVersion(resourceProvider, resourceInfo.ResourceType)]
+		}
 		if ok {
 			for k, pathInfo := range formatPaths {
 				unresolvedPaths[k] = pathInfo
@@ -298,6 +303,12 @@ func VisitPathsDoc(
 				if err != nil || ((!found || currentDoc == nil) && !upsert) {
 					// Don't report the error. Not found is expected.
 					continue // Skip if not found or an error, unless in upsert mode
+				}
+				if !found {
+					if err := checkUpsertCreatable(doc, resolvedPath.Path); err != nil {
+						multiErrs = append(multiErrs, err)
+						continue
+					}
 				}
 				// In upsert mode, currentDoc will already be nil if !found
 				context := VisitorContext{
@@ -853,3 +864,4 @@ func DeletePaths(
 	_, err := VisitPathsDoc(parsedData, resourceTypeToPaths, keys, nil, resourceProvider, docVisitor, false, options)
 	return err
 }
+

@@ -133,13 +133,13 @@ func TestCreditPathUsesClosestAncestor(t *testing.T) {
 		PathMutationMap:      &pathMutations,
 	}}
 
-	info, _ := creditPath(sources, "apps/v1/Deployment", "default/web", "web",
+	info, _ := creditPath(nil, sources, "apps/v1/Deployment", "default/web", "web",
 		"spec.template.spec.containers.?name=app.env.?name=Z.value")
 	if info == nil || info.Index != 4 {
 		t.Fatalf("a leaf of an added element should be credited to the element's Add (4), got %+v", info)
 	}
 
-	info, _ = creditPath(sources, "apps/v1/Deployment", "default/web", "web",
+	info, _ = creditPath(nil, sources, "apps/v1/Deployment", "default/web", "web",
 		"spec.template.spec.containers.?name=app.image")
 	if info == nil || info.Index != 1 {
 		t.Fatalf("a path whose only ancestor entry is a Delete should fall back to the resource (1), got %+v", info)
@@ -161,15 +161,15 @@ func TestMatchBlameResourceFallsBackToUnscopedName(t *testing.T) {
 			ResourceMutationInfo: &goclientnew.MutationInfo{MutationType: &add, Index: 1},
 		},
 	}
-	rm := matchBlameResource(sources, "apps/v1/Deployment", "apptique/frontend", "frontend")
+	rm := matchBlameResource(nil, sources, "apps/v1/Deployment", "apptique/frontend", "frontend")
 	if rm == nil {
 		t.Fatal("a differently scoped name should still match on the name itself")
 	}
 
-	if other := matchBlameResource(sources, "apps/v1/Deployment", "apptique/backend", "backend"); other != nil {
+	if other := matchBlameResource(nil, sources, "apps/v1/Deployment", "apptique/backend", "backend"); other != nil {
 		t.Error("a different resource should not match")
 	}
-	if other := matchBlameResource(sources, "v1/Service", "apptique/frontend", "frontend"); other != nil {
+	if other := matchBlameResource(nil, sources, "v1/Service", "apptique/frontend", "frontend"); other != nil {
 		t.Error("a different resource type should not match")
 	}
 }

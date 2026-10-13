@@ -2483,27 +2483,55 @@ func matchResources(previousParsedData, modifiedParsedData gaby.Container, funct
 			previousInfos[previousDocIndex].ResourceType, modifiedInfos[modifiedDocIndex].ResourceType)
 	}
 
-	// Pass 1: exact name matches.
+	// Pass 1: name matches. Names with their scopes first, so that two resources of one type and
+	// name in different namespaces each pair with their own.
 	for modifiedDocIndex := range modifiedParsedData {
-		modifiedInfo := modifiedInfos[modifiedDocIndex]
 		for previousDocIndex := range previousParsedData {
-			if previousMatched[previousDocIndex] || !pairIsCompatible(previousDocIndex, modifiedDocIndex) {
-				continue
-			}
-			previousInfo := previousInfos[previousDocIndex]
-			nameMatches := previousInfo.ResourceName == modifiedInfo.ResourceName
-			// Only compare unscoped names when both are populated: an empty unscoped name
-			// on both sides says nothing about whether they are the same resource.
-			if !nameMatches && previousInfo.ResourceNameWithoutScope != "" {
-				nameMatches = previousInfo.ResourceNameWithoutScope == modifiedInfo.ResourceNameWithoutScope
-			}
-			if !nameMatches {
+			if previousMatched[previousDocIndex] || !pairIsCompatible(previousDocIndex, modifiedDocIndex) ||
+				previousInfos[previousDocIndex].ResourceName != modifiedInfos[modifiedDocIndex].ResourceName {
 				continue
 			}
 			matchedPrevious[modifiedDocIndex] = previousDocIndex
 			previousMatched[previousDocIndex] = true
 			break
 		}
+	}
+	// Then names without their scopes, which is a namespace change, when the pairing is one to
+	// one. Several resources of one name changing namespace at once are left to the rename
+	// matching below, which pairs them by content. Unscoped names are compared only when
+	// populated: an empty unscoped name on both sides says nothing about whether they are the
+	// same resource.
+	unscopedCandidates := func(modifiedDocIndex int) []int {
+		var candidates []int
+		name := modifiedInfos[modifiedDocIndex].ResourceNameWithoutScope
+		for previousDocIndex := range previousParsedData {
+			if !previousMatched[previousDocIndex] && name != "" &&
+				previousInfos[previousDocIndex].ResourceNameWithoutScope == name &&
+				pairIsCompatible(previousDocIndex, modifiedDocIndex) {
+				candidates = append(candidates, previousDocIndex)
+			}
+		}
+		return candidates
+	}
+	for modifiedDocIndex := range modifiedParsedData {
+		if matchedPrevious[modifiedDocIndex] >= 0 {
+			continue
+		}
+		candidates := unscopedCandidates(modifiedDocIndex)
+		if len(candidates) != 1 {
+			continue
+		}
+		competing := 0
+		for otherDocIndex := range modifiedParsedData {
+			if matchedPrevious[otherDocIndex] < 0 && slices.Contains(unscopedCandidates(otherDocIndex), candidates[0]) {
+				competing++
+			}
+		}
+		if competing != 1 {
+			continue
+		}
+		matchedPrevious[modifiedDocIndex] = candidates[0]
+		previousMatched[candidates[0]] = true
 	}
 
 	// Pass 2: rename matching over the leftovers, best pair first.
@@ -2858,34 +2886,37 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 	var conflicts api.MutationConflictList
 	if len(mutationsToSubtract) > 0 {
 		var subtractConflicts api.MutationConflictList
-		mutationsPatch, subtractConflicts = SubtractMutations(mutationsPatch, mutationsToSubtract)
+		mutationsPatch, subtractConflicts = SubtractMutations(resourceProvider, mutationsPatch, mutationsToSubtract)
 		conflicts = append(conflicts, subtractConflicts...)
 	}
 	// Build the protection index with prefer-unprotected dedup: when multiple mutation
 	// sources exist for the same resource (e.g., one from clone and one from triggers),
 	// prefer the unprotected one so the resource is not incorrectly filtered out.
-	protectionIdx := api.NewResourceMutationIndex(mutationsProtection)
-	for i := range mutationsProtection {
-		resourceInfo := mutationsProtection[i].Resource
-		if resourceInfo.ResourceNameWithoutScope == "" {
-			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
-		}
-		key := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		if existingIdx, exists := protectionIdx.NameMap[key]; exists {
-			if !mutationsProtection[existingIdx].ResourceMutationInfo.Protected &&
+	// Every index is matched against the resources of this configuration, so that a name that
+	// identifies one of them only with its namespace is not matched by another's record.
+	documents := ConfigurationResources(parsedData, resourceProvider)
+	protectionIdx := api.NewResourceMutationIndex(resourceProvider, mutationsProtection)
+	protectionIdx.Counterparts(documents)
+	protectionIdx.Choose(func(positions []int) int {
+		chosen := positions[0]
+		for _, i := range positions[1:] {
+			if !mutationsProtection[chosen].ResourceMutationInfo.Protected &&
 				mutationsProtection[i].ResourceMutationInfo.Protected {
 				continue
 			}
+			chosen = i
 		}
-		protectionIdx.NameMap[key] = i
-	}
+		return chosen
+	})
 
-	patchIdx := api.NewResourceMutationIndex(mutationsPatch)
+	patchIdx := api.NewResourceMutationIndex(resourceProvider, mutationsPatch)
+	patchIdx.Counterparts(documents)
 	// The subtrahend is the target's own diff. Subtraction has already removed the patch
 	// entries it overlaps; what is still wanted from it is the record of which paths the
 	// target claimed, which is how a merge with subtraction on expresses the ownership a
 	// merge without it expresses as stored protection.
-	subtractIdx := api.NewResourceMutationIndex(mutationsToSubtract)
+	subtractIdx := api.NewResourceMutationIndex(resourceProvider, mutationsToSubtract)
+	subtractIdx.Counterparts(documents)
 
 	// The annotation table is keyed by resource the same way the mutation lists are, which is
 	// what ResourcePathAnnotations was shaped for: one index implementation, one set of rename
@@ -2893,7 +2924,8 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 	var guardIdx *api.ResourceMutationIndex
 	var guardClearance api.Clearance
 	if guards.active() {
-		guardIdx = api.NewResourceMutationIndex(guardResourceMutations(guards.Annotations))
+		guardIdx = api.NewResourceMutationIndex(resourceProvider, guardResourceMutations(guards.Annotations))
+		guardIdx.Counterparts(documents)
 		guardClearance = guards.Clearance
 	}
 
@@ -2921,7 +2953,7 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 
 		// Filter the patch at the resource level.
 		if hasProtection && mutationsProtection[protectionIndex].ResourceMutationInfo.Protected {
-			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo))
+			slog.Info("patch filtered", "resource", api.ResourceTypeAndNameFromResourceInfo(resourceProvider, *docResourceInfo))
 			protectedMutInfo := mutationsProtection[protectionIndex].ResourceMutationInfo
 			conflicts = append(conflicts, api.MutationConflict{
 				Reason:   api.ConflictReasonProtectedPath,
@@ -2943,7 +2975,7 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
 				visitorErrs = append(visitorErrs, fmt.Errorf("error parsing value for resource %s: %w",
-					api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo), err))
+					api.ResourceTypeAndNameFromResourceInfo(resourceProvider, *docResourceInfo), err))
 			}
 			parsedData[docIndex] = valueDoc
 			// Some paths also could have been modified
@@ -3050,7 +3082,7 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 			if protectedMutInfo != nil {
 				// The target deleted this resource and marked the deletion protected.
 				slog.Info("patch filtered", "resource",
-					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource))
+					api.ResourceTypeAndNameFromResourceInfo(resourceProvider, mutationsPatch[i].Resource))
 				conflicts = append(conflicts, api.MutationConflict{
 					Reason:   api.ConflictReasonProtectedPath,
 					Resource: mutationsPatch[i].Resource,
@@ -3063,7 +3095,7 @@ func PatchMutationsGuarded(parsedData gaby.Container, mutationsProtection, mutat
 			valueDoc, err := gaby.ParseYAML([]byte(valueString))
 			if err != nil {
 				errs = append(errs, fmt.Errorf("error parsing value for unmatched resource %s: %w",
-					api.ResourceTypeAndNameFromResourceInfo(mutationsPatch[i].Resource), err))
+					api.ResourceTypeAndNameFromResourceInfo(resourceProvider, mutationsPatch[i].Resource), err))
 				continue
 			}
 			var pathConflicts api.MutationConflictList
@@ -4116,20 +4148,11 @@ func applyPathMutations(doc *gaby.YamlDoc, pathMutationMap api.MutationMap,
 func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationList, resourceProvider ResourceProvider, options *api.FunctionOptions) error {
 	mutationsProtection, _ = CanonicalizeStoredMutationPaths(mutationsProtection, parsedData, resourceProvider)
 
-	protectionMap := make(map[api.ResourceTypeAndName]int)
-	for i := range mutationsProtection {
-		resourceInfo := mutationsProtection[i].Resource
-		if resourceInfo.ResourceNameWithoutScope == "" {
-			resourceInfo.ResourceNameWithoutScope = resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName)
-		}
-		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(resourceInfo)
-		protectionMap[resourceInfoKey] = i
-	}
+	protectionIdx := api.NewResourceMutationIndex(resourceProvider, mutationsProtection)
+	protectionIdx.Counterparts(ConfigurationResources(parsedData, resourceProvider))
 
 	visitor := func(doc *gaby.YamlDoc, _ any, _ int, docResourceInfo *api.ResourceInfo) (any, []error) {
-		resourceInfoKey := api.ResourceTypeAndNameFromResourceInfo(*docResourceInfo)
-
-		protectionIndex, hasProtection := protectionMap[resourceInfoKey]
+		protectionIndex, hasProtection := protectionIdx.Find(*docResourceInfo, nil)
 		if !hasProtection {
 			// Nothing to reset
 			return nil, nil
@@ -4231,9 +4254,10 @@ func Reset(parsedData gaby.Container, mutationsProtection api.ResourceMutationLi
 //   - Accumulative: designed to be called repeatedly as changes occur.
 //   - Last-write-wins for values and types on exact-path matches.
 //   - Alias awareness: handles resources renamed between mutation sets.
-func AddMutations(mutations, newMutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
+func AddMutations(identifier api.ResourceIdentifier, mutations, newMutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
 	hasMutations := false
-	idx := api.NewResourceMutationIndex(mutations)
+	idx := api.NewResourceMutationIndex(identifier, mutations)
+	idx.Counterparts(newMutations.Resources())
 	for i := range newMutations {
 		if newMutations[i].ResourceMutationInfo.MutationType == api.MutationTypeNone {
 			continue
@@ -4256,9 +4280,11 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 			continue
 		}
 
-		// Update the resource name, which may have changed.
+		// Update the resource name, which may have changed, and the type, whose API version
+		// may have: the entry is matched without either, and records the resource as it is now.
 		mutations[mi].Resource.ResourceName = newMutations[i].Resource.ResourceName
 		mutations[mi].Resource.ResourceNameWithoutScope = newMutations[i].Resource.ResourceNameWithoutScope
+		mutations[mi].Resource.ResourceType = newMutations[i].Resource.ResourceType
 		if mutations[mi].Aliases == nil {
 			mutations[mi].Aliases = make(map[api.ResourceName]struct{})
 		}
@@ -4414,8 +4440,9 @@ func AddMutations(mutations, newMutations api.ResourceMutationList) (api.Resourc
 //   - Alias awareness: matches resources across renames.
 //   - Partial expansion: only splits a parent path when subtract has finer-grained
 //     conflicts under it; unaffected branches stay whole.
-func SubtractMutations(mutations, subtractMutations api.ResourceMutationList) (api.ResourceMutationList, api.MutationConflictList) {
-	subtractIdx := api.NewResourceMutationIndex(subtractMutations)
+func SubtractMutations(identifier api.ResourceIdentifier, mutations, subtractMutations api.ResourceMutationList) (api.ResourceMutationList, api.MutationConflictList) {
+	subtractIdx := api.NewResourceMutationIndex(identifier, subtractMutations)
+	subtractIdx.Counterparts(mutations.Resources())
 
 	result := make(api.ResourceMutationList, 0, len(mutations))
 	var conflicts api.MutationConflictList
@@ -4634,7 +4661,10 @@ func FindMutationIndex(parsedData gaby.Container, mutationSources api.ResourceMu
 	resource api.ResourceInfo, path api.ResolvedPath, resourceProvider ResourceProvider) (int64, bool) {
 	mutationSources, _ = CanonicalizeStoredMutationPaths(mutationSources, parsedData, resourceProvider)
 
-	idx := api.NewResourceMutationIndex(mutationSources)
+	idx := api.NewResourceMutationIndex(resourceProvider, mutationSources)
+	if parsedData != nil && resourceProvider != nil {
+		idx.Counterparts(ConfigurationResources(parsedData, resourceProvider))
+	}
 	mi, found := idx.Find(resource, nil)
 	if !found {
 		return 0, false
@@ -4719,7 +4749,8 @@ func SetProtection(parsedData gaby.Container, mutations api.ResourceMutationList
 	mutations, _ = CanonicalizeStoredMutationPaths(mutations, parsedData, resourceProvider)
 
 	var unresolved []api.ResolvedPath
-	idx := api.NewResourceMutationIndex(mutations)
+	idx := api.NewResourceMutationIndex(resourceProvider, mutations)
+	idx.Counterparts(ConfigurationResources(parsedData, resourceProvider))
 	mi, found := idx.Find(resource, nil)
 	if !found {
 		for path := range protection {

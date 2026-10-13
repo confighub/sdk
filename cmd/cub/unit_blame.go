@@ -225,6 +225,9 @@ func blameUnit(unit *goclientnew.Unit, upstreamMax int) ([]*blameField, error) {
 		return nil, err
 	}
 
+	// Resources are matched in their records across the API versions of their types. Without a
+	// provider for the toolchain they are matched by their exact types.
+	identifier, _ := blameResourceProvider(unit.ToolchainType)
 	resolver := newBlameResolver(upstreamMax)
 	fields := make([]*blameField, 0, len(flattened))
 	// The annotation table travels on the Unit, so no second fetch. A Unit that has never been
@@ -235,11 +238,11 @@ func blameUnit(unit *goclientnew.Unit, upstreamMax int) ([]*blameField, error) {
 	}
 
 	for _, f := range flattened {
-		info, protected := creditPath(*mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath)
+		info, protected := creditPath(identifier, *mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath)
 		f.Protected = protected
 		// Keyed by the authored path, which is the form the annotation table stores: its
 		// paths are canonical, so they carry no anchor to strip.
-		f.Guards = blameGuardsForPath(annotations, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
+		f.Guards = blameGuardsForPath(identifier, annotations, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
 		if info != nil {
 			chain, err := resolver.walk(unit, *info, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath, 0)
 			if err != nil {
@@ -372,8 +375,8 @@ func quietSlog() func() {
 // adds an array element or a map records one entry for the whole of it, not one per leaf,
 // so a leaf of an env var added later has no entry of its own; without the ancestor it
 // falls through to the resource and reads as having arrived when the Unit was created.
-func creditPath(mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore, path string) (*goclientnew.MutationInfo, bool) {
-	rm := matchBlameResource(mutationSources, resourceType, resourceName, resourceNameCore)
+func creditPath(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore, path string) (*goclientnew.MutationInfo, bool) {
+	rm := matchBlameResource(identifier, mutationSources, resourceType, resourceName, resourceNameCore)
 	if rm != nil {
 		if info := lookupPathMutation(rm.PathMutationMap, path); info != nil {
 			return info, info.Protected
@@ -432,28 +435,50 @@ func lookupAncestorMutation(pathMutationMap *goclientnew.MutationMap, path strin
 }
 
 // matchBlameResource finds the entry for a resource, by name and then by name
-// without its scope.
+// without its scope, when that names one resource -- the rule every lookup of a
+// stored record follows (api.ResourceIndex).
 //
 // The second try is what makes the upstream walk work at all: a variant fills in the
 // namespace its base left as a placeholder, so the same resource is
 // "apptique/frontend" here and "confighubplaceholder/frontend" upstream. Matching on
 // the scoped name alone would stop every walk at the clone.
-func matchBlameResource(mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore string) *goclientnew.ResourceMutation {
-	var unscoped *goclientnew.ResourceMutation
+func matchBlameResource(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore string) *goclientnew.ResourceMutation {
+	resources := make([]*goclientnew.ResourceInfo, len(mutationSources))
 	for i := range mutationSources {
-		rm := &mutationSources[i]
-		if rm.Resource == nil || rm.Resource.ResourceType != resourceType {
+		resources[i] = mutationSources[i].Resource
+	}
+	if i, found := matchBlameResourceInfo(identifier, resources, resourceType, resourceName, resourceNameCore); found {
+		return &mutationSources[i]
+	}
+	return nil
+}
+
+// matchBlameResourceInfo finds a resource among recorded ones as api.ResourceIndex does.
+// A nil entry is no resource.
+func matchBlameResourceInfo(identifier api.ResourceIdentifier, recorded []*goclientnew.ResourceInfo,
+	resourceType, resourceName, resourceNameCore string) (int, bool) {
+	var resources []api.ResourceInfo
+	var positions []int
+	for i, resource := range recorded {
+		if resource == nil {
 			continue
 		}
-		if rm.Resource.ResourceName == resourceName {
-			return rm
-		}
-		if unscoped == nil && resourceNameCore != "" &&
-			rm.Resource.ResourceNameWithoutScope == resourceNameCore {
-			unscoped = rm
-		}
+		resources = append(resources, api.ResourceInfo{
+			ResourceType:             api.ResourceType(resource.ResourceType),
+			ResourceName:             api.ResourceName(resource.ResourceName),
+			ResourceNameWithoutScope: api.ResourceName(resource.ResourceNameWithoutScope),
+		})
+		positions = append(positions, i)
 	}
-	return unscoped
+	position, found := api.NewResourceIndex(identifier, resources).Find(api.ResourceInfo{
+		ResourceType:             api.ResourceType(resourceType),
+		ResourceName:             api.ResourceName(resourceName),
+		ResourceNameWithoutScope: api.ResourceName(resourceNameCore),
+	})
+	if !found {
+		return 0, false
+	}
+	return positions[position], true
 }
 
 // authoredPath renders a stored path the way someone would type it: an associative

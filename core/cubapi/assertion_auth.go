@@ -5,6 +5,7 @@ package cubapi
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,8 +26,18 @@ import (
 // its header), so unlike PerformWorkerAuth nothing else needs naming here. The
 // server resolves the credential from the kid alone.
 func PerformAssertionAuth(serverURL string, signer *AssertionSigner) (*AuthSession, error) {
+	return PerformAssertionAuthContext(context.Background(), nil, serverURL, signer)
+}
+
+// PerformAssertionAuthContext is PerformAssertionAuth under a context, over the given HTTP
+// client, or the default one when nil. A long-lived process authenticates this way, so that
+// its authentication is bounded and goes through the same client as everything else it does.
+func PerformAssertionAuthContext(ctx context.Context, httpClient *http.Client, serverURL string, signer *AssertionSigner) (*AuthSession, error) {
 	if signer == nil {
 		return nil, fmt.Errorf("no signing key configured")
+	}
+	if httpClient == nil {
+		httpClient = http.DefaultClient
 	}
 
 	assertion, err := signer.Sign()
@@ -48,13 +59,13 @@ func PerformAssertionAuth(serverURL string, signer *AssertionSigner) (*AuthSessi
 	}
 
 	endpoint := fmt.Sprintf("%s/auth/worker", serverURL)
-	req, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := httpClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make authentication request: %w", err)
 	}

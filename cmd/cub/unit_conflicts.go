@@ -231,6 +231,24 @@ func displayConflicts(conflicts []goclientnew.MutationConflict) {
 	table.Render()
 }
 
+// displayLinkFindings prints what the resolves of a unit's links could not do, one row each.
+func displayLinkFindings(findings []goclientnew.LinkFinding) {
+	table := tableView()
+	table.SetHeader([]string{"Link", "Reason", "Entry", "Resource", "Path", "Details"})
+	for _, finding := range findings {
+		resourceName := ""
+		if finding.Resource != nil {
+			resourceName = finding.Resource.ResourceName
+		}
+		entry := finding.Entry
+		if finding.Key != "" {
+			entry += " " + finding.Key
+		}
+		table.Append([]string{finding.LinkID.String(), finding.Reason, entry, resourceName, finding.Path, finding.Details})
+	}
+	table.Render()
+}
+
 // truncateValue keeps a conflict's value to one readable line: newlines would break the row it
 // sits in, whatever its length.
 func truncateValue(value string) string {

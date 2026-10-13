@@ -53,6 +53,11 @@ type ClientOptions struct {
 	// callers' convenience and does not affect requests.
 	Space string
 
+	// Authenticator mints the client's session, and renews it when a request comes back 401,
+	// so that a client built once serves a process for as long as it runs. With one, Token and
+	// Session are the credentials to start with, if given, and are renewed like any other.
+	Authenticator Authenticator
+
 	UserAgent  string
 	Debug      bool         // dump requests and responses to stdout
 	HTTPClient *http.Client // base client; defaults to a client using http.DefaultTransport
@@ -110,14 +115,17 @@ func NewClient(opts ClientOptions) (*Client, error) {
 	if opts.PageBulkOperations {
 		outer = &bulkPagingTransport{base: transport}
 	}
+	authHeader := authHeaderValue(opts)
+	if opts.Authenticator != nil {
+		outer = &authTransport{base: outer, authenticate: opts.Authenticator, header: authHeader}
+		authHeader = ""
+	}
 	httpClient := &http.Client{
 		Transport:     outer,
 		CheckRedirect: base.CheckRedirect,
 		Jar:           base.Jar,
 		Timeout:       base.Timeout,
 	}
-
-	authHeader := authHeaderValue(opts)
 
 	api, err := goclientnew.NewClientWithResponses(server+"/api", func(c *goclientnew.Client) error {
 		c.Client = httpClient

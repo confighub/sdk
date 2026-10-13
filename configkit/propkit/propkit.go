@@ -129,8 +129,14 @@ func (*PropertiesResourceProviderType) RemoveScopeFromResourceName(resourceName 
 	return resourceName
 }
 
-func (*PropertiesResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
-	return resourceTypeA == resourceTypeB
+// RemoveAPIVersionFromResourceType removes the version from a configuration schema, such as
+// v1alpha3 from registrybot.confighub.com/v1alpha3 (see yamlkit.RemoveSchemaVersionSegments).
+func (*PropertiesResourceProviderType) RemoveAPIVersionFromResourceType(resourceType api.ResourceType) api.ResourceType {
+	return yamlkit.RemoveSchemaVersionSegments(resourceType)
+}
+
+func (rp *PropertiesResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
+	return api.SameResourceType(rp, resourceTypeA, resourceTypeB)
 }
 
 func (*PropertiesResourceProviderType) DataType() api.DataType {

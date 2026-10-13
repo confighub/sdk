@@ -57,6 +57,19 @@ func invokeSetAttributes(t *testing.T, input, attributeListJSON string) gaby.Con
 	return result
 }
 
+// setAttributesError runs set-attributes over the input config and returns the error it reports.
+func setAttributesError(t *testing.T, input, attributeListJSON string) error {
+	t.Helper()
+	rp := k8skit.NewK8sResourceProvider()
+	parsedData, err := gaby.ParseAll([]byte(input))
+	require.NoError(t, err)
+
+	args := []api.FunctionArgument{{ParameterName: "attribute-list", Value: attributeListJSON}}
+	_, _, err = genericFnSetAttributes(rp, nil, parsedData, args, nil)
+	require.Error(t, err)
+	return err
+}
+
 // valueAt returns the value at path in the resource named name.
 func valueAt(t *testing.T, docs gaby.Container, name, path string) any {
 	t.Helper()
@@ -203,19 +216,104 @@ func TestSetAttributes_SharedNameAnyType(t *testing.T) {
 	assert.Equal(t, "new", valueAtKind(t, out, "Deployment", "metadata.labels.tier"))
 }
 
-// An attribute naming a resource the Unit doesn't have writes nothing, rather than
-// falling back to every resource of its type.
-func TestSetAttributes_UnknownResourceNameWritesNothing(t *testing.T) {
+// An attribute recorded while its resource was in another API version -- a NeededPath stored
+// before an upgrade moved the Deployment to apps/v1, say -- still reaches the resource, and
+// still only the resource it names.
+func TestSetAttributes_TypeInAnotherAPIVersion(t *testing.T) {
 	out := invokeSetAttributes(t, twoDeployments, `[{
+		"ResourceType": "apps/v1beta1/Deployment",
+		"ResourceName": "default/web",
+		"ResourceNameWithoutScope": "web",
+		"AttributeName": "spec.replicas",
+		"Path": "spec.replicas",
+		"DataType": "int",
+		"Value": 5
+	}]`)
+
+	assert.Equal(t, 5, valueAt(t, out, "web", "spec.replicas"))
+	assert.Equal(t, 1, valueAt(t, out, "worker", "spec.replicas"))
+}
+
+// A type in another group is another type, whatever its version, so the attribute names a
+// resource the configuration doesn't have.
+func TestSetAttributes_TypeInAnotherGroupIsAnError(t *testing.T) {
+	err := setAttributesError(t, twoDeployments, `[{
+		"ResourceType": "example.com/v1/Deployment",
+		"ResourceName": "default/web",
+		"Path": "spec.replicas",
+		"DataType": "int",
+		"Value": 5
+	}]`)
+	assert.ErrorContains(t, err, "the configuration has no example.com/v1/Deployment named default/web")
+}
+
+// An attribute naming a resource the Unit doesn't have is an error, rather than a write to
+// nothing that leaves the caller believing it landed, or a fallback to every resource of its
+// type.
+func TestSetAttributes_UnknownResourceNameIsAnError(t *testing.T) {
+	err := setAttributesError(t, twoDeployments, `[{
 		"ResourceType": "apps/v1/Deployment",
 		"ResourceName": "default/absent",
 		"Path": "spec.replicas",
 		"DataType": "int",
 		"Value": 5
 	}]`)
+	assert.ErrorContains(t, err, "the configuration has no apps/v1/Deployment named default/absent")
+}
 
-	assert.Equal(t, 1, valueAt(t, out, "web", "spec.replicas"))
+// An attribute recorded under the namespace a resource had -- a Link's DownstreamPaths after
+// a clone and set-namespace, or a placeholder namespace a variant has since filled in -- still
+// reaches the resource.
+func TestSetAttributes_ResourceInAnotherNamespace(t *testing.T) {
+	out := invokeSetAttributes(t, twoDeployments, `[{
+		"ResourceType": "apps/v1/Deployment",
+		"ResourceName": "confighubplaceholder/web",
+		"Path": "spec.replicas",
+		"DataType": "int",
+		"Value": 5
+	}]`)
+
+	assert.Equal(t, 5, valueAt(t, out, "web", "spec.replicas"))
 	assert.Equal(t, 1, valueAt(t, out, "worker", "spec.replicas"))
+}
+
+// Two resources of one type and name in different namespaces are two resources: an attribute
+// naming one by its namespace reaches that one, and a name that matches both only without its
+// namespace reaches neither.
+const oneNameTwoNamespaces = `apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: leaderelection
+  namespace: kube-system
+rules: []
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: leaderelection
+  namespace: cert-manager
+rules: []
+`
+
+func TestSetAttributes_OneNameInTwoNamespaces(t *testing.T) {
+	out := invokeSetAttributes(t, oneNameTwoNamespaces, `[{
+		"ResourceType": "rbac.authorization.k8s.io/v1/Role",
+		"ResourceName": "cert-manager/leaderelection",
+		"Path": "metadata.labels.owner",
+		"DataType": "string",
+		"Value": "cert-manager"
+	}]`)
+	assert.Equal(t, "cert-manager", out[1].Path("metadata.labels.owner").Data())
+	assert.Nil(t, out[0].Path("metadata.labels.owner"), "the Role in kube-system is another resource")
+
+	err := setAttributesError(t, oneNameTwoNamespaces, `[{
+		"ResourceType": "rbac.authorization.k8s.io/v1/Role",
+		"ResourceName": "confighubplaceholder/leaderelection",
+		"Path": "metadata.labels.owner",
+		"DataType": "string",
+		"Value": "cert-manager"
+	}]`)
+	assert.ErrorContains(t, err, "matches several resources in different scopes: [cert-manager/leaderelection kube-system/leaderelection]")
 }
 
 // Resource names are resolved before any attribute is applied, so an attribute that
@@ -289,4 +387,64 @@ func TestSearchReplace_DoesNotCrossResources(t *testing.T) {
 	assert.Equal(t, "ghcr.io/example/web:v2.0.0", valueAt(t, out, "web", "spec.template.spec.containers.0.image"))
 	assert.Equal(t, "ghcr.io/example/worker:v9.9.9", valueAt(t, out, "worker", "spec.template.spec.containers.0.image"),
 		"the resource with no match keeps its own image")
+}
+
+const deploymentWithEnv = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: default
+spec:
+  template:
+    spec:
+      containers:
+      - name: app
+        env:
+        - name: A
+          value: confighubplaceholder
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: settings
+  namespace: default
+data:
+  existing: "1"
+`
+
+func setOneString(resourceType, resourceName, path string) string {
+	return `[{"ResourceType": "` + resourceType + `", "ResourceName": "` + resourceName +
+		`", "AttributeName": "x", "Path": "` + path + `", "DataType": "string", "Value": "set"}]`
+}
+
+// An index below a list that does not exist cannot be created, and is reported rather than
+// written as a map with a numeric key.
+func TestSetAttributes_IndexUnderMissingListIsAnError(t *testing.T) {
+	err := setAttributesError(t, twoDeployments,
+		setOneString("apps/v1/Deployment", "default/web", "spec.template.spec.containers.0.env.3.value"))
+	assert.Contains(t, err.Error(), "would be an index into a list that does not exist")
+}
+
+// An index past the end of a list that exists is reported too.
+func TestSetAttributes_IndexPastEndIsAnError(t *testing.T) {
+	err := setAttributesError(t, deploymentWithEnv,
+		setOneString("apps/v1/Deployment", "default/web", "spec.template.spec.containers.0.env.3.value"))
+	assert.Contains(t, err.Error(), "has 1 elements, so 3 names none of them")
+}
+
+// A merge key that matches no element of the named resource is a write to nowhere, and says so.
+func TestSetAttributes_UnmatchedMergeKeyIsAnError(t *testing.T) {
+	err := setAttributesError(t, deploymentWithEnv,
+		setOneString("apps/v1/Deployment", "default/web", "spec.template.spec.containers.?name=sidecar.image"))
+	assert.Contains(t, err.Error(), "matches nothing")
+}
+
+// Missing map keys are still created, including numeric ones in a map that exists.
+func TestSetAttributes_CreatesMissingMapKeys(t *testing.T) {
+	out := invokeSetAttributes(t, deploymentWithEnv,
+		setOneString("apps/v1/Deployment", "default/web", "spec.template.spec.containers.?name=app.workingDir"))
+	assert.Equal(t, "set", valueAt(t, out, "web", "spec.template.spec.containers.0.workingDir"))
+
+	out = invokeSetAttributes(t, deploymentWithEnv, setOneString("v1/ConfigMap", "default/settings", "data.404"))
+	assert.Equal(t, "set", valueAt(t, out, "settings", "data.404"))
 }

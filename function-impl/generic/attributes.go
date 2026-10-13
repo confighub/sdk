@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"slices"
 
 	"github.com/cockroachdb/errors"
 	"github.com/cockroachdb/errors/join"
@@ -124,73 +125,122 @@ func genericFnSetAttributes(resourceProvider yamlkit.ResourceProvider, functionC
 	return genericSetAttributesFromList(resourceProvider, functionContext, parsedData, attributeList, options)
 }
 
-// indexedResource is a resource's position in the parsed data together with its type,
-// which tells apart resources that share a name — a Deployment and a Service both named
-// default/web, say.
-type indexedResource struct {
-	Index        int
-	ResourceType api.ResourceType
-}
-
-// resourceIndexesByName maps each resource's name to the resources carrying that name.
+// attributeResources indexes the resources in the parsed data that an attribute can name, by
+// position.
 //
-// The map is built from the data as it stands before any attribute is applied, and indexes
+// The index is built from the data as it stands before any attribute is applied, and positions
 // stay valid across the setters, which mutate resources in place without reordering them.
-// Resolving names to indexes up front is what lets an attribute reach the resource it names
+// Resolving names to positions up front is what lets an attribute reach the resource it names
 // even after an earlier attribute in the same list renamed that resource — as search-replace
 // does whenever the value it rewrites also appears in a resource's name.
-func resourceIndexesByName(parsedData gaby.Container, resourceProvider yamlkit.ResourceProvider) map[api.ResourceName][]indexedResource {
-	indexes := map[api.ResourceName][]indexedResource{}
+type attributeResources struct {
+	identifier api.ResourceIdentifier
+	resources  []api.ResourceInfo
+	positions  []int // positions[i] is the position in the parsed data of resources[i]
+	index      *api.ResourceIndex
+}
+
+func indexAttributeResources(parsedData gaby.Container, resourceProvider yamlkit.ResourceProvider) *attributeResources {
+	indexed := &attributeResources{identifier: resourceProvider}
 	_, _ = yamlkit.VisitResources(parsedData, nil, resourceProvider,
-		func(_ *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
+		func(_ *gaby.YamlDoc, output any, position int, resourceInfo *api.ResourceInfo) (any, []error) {
 			if resourceInfo.ResourceName != "" {
-				indexes[resourceInfo.ResourceName] = append(indexes[resourceInfo.ResourceName],
-					indexedResource{Index: index, ResourceType: resourceInfo.ResourceType})
+				indexed.resources = append(indexed.resources, *resourceInfo)
+				indexed.positions = append(indexed.positions, position)
 			}
 			return output, nil
 		})
-	return indexes
+	indexed.index = api.NewResourceIndex(resourceProvider, indexed.resources)
+	return indexed
 }
 
 // scopeOptionsToResource returns options restricted to the resource an attribute names,
 // so that the attribute is set only on that resource rather than on every resource of its
 // type. Returns options unchanged when the attribute names no resource.
 //
-// resourceType is matched as well as the name, so an attribute typed for one of two
-// same-named resources doesn't select the other. The setters apply their own resource-type
-// filter, which would mask an over-broad selection here; scoping on both keeps the index
-// set meaningful on its own. An attribute typed ResourceTypeAny names a resource of any
-// type, so it selects every resource carrying the name.
+// The resource is found as api.ResourceIndex finds one: by its type, in any API version, and
+// its name, with its scope or, when that names one resource, without it. So an attribute
+// recorded before a resource's namespace changed -- a Link's DownstreamPaths after a clone and
+// set-namespace, say -- still reaches it, and an attribute typed for one of two same-named
+// resources doesn't select the other. The setters apply their own resource-type filter, which
+// would mask an over-broad selection here; scoping on both keeps the index set meaningful on
+// its own. An attribute typed ResourceTypeAny names a resource of any type, so it selects
+// every resource carrying the name.
 //
-// An attribute naming a resource that isn't in the data is scoped to no resources rather
-// than to all of them: the caller named a resource this Unit doesn't have, so the safe
-// reading is that nothing should be written.
-func scopeOptionsToResource(options *api.FunctionOptions, indexesByName map[api.ResourceName][]indexedResource, resourceType api.ResourceType, resourceName api.ResourceName) *api.FunctionOptions {
+// An attribute naming a resource that isn't in the data, or a name that matches resources in
+// several namespaces without its own, is an error rather than a write to nothing or to
+// everything: the caller named a resource this configuration doesn't identify, and a write
+// that silently lands nowhere leaves the caller believing it landed.
+func scopeOptionsToResource(resources *attributeResources, options *api.FunctionOptions, resourceType api.ResourceType, resourceName api.ResourceName) (*api.FunctionOptions, error) {
 	if resourceName == "" {
-		return options
+		return options, nil
 	}
 	scoped := api.FunctionOptions{}
 	if options != nil {
 		scoped = *options
 	}
 	scoped.ResourceIndexes = []int{}
-	for _, resource := range indexesByName[resourceName] {
-		if resourceType == api.ResourceTypeAny || resource.ResourceType == resourceType {
-			scoped.ResourceIndexes = append(scoped.ResourceIndexes, resource.Index)
+
+	if resourceType != api.ResourceTypeAny {
+		match := resources.index.Match(api.ResourceInfo{ResourceType: resourceType, ResourceName: resourceName})
+		if len(match.Ambiguous) > 0 {
+			return nil, fmt.Errorf("%s %s matches several resources in different scopes: %v", resourceType, resourceName, match.Ambiguous)
+		}
+		if !match.Found {
+			return nil, fmt.Errorf("the configuration has no %s named %s", resourceType, resourceName)
+		}
+		scoped.ResourceIndexes = append(scoped.ResourceIndexes, resources.positions[match.Position])
+		return &scoped, nil
+	}
+
+	// Any type: every resource carrying the name, or carrying it without its scope when those
+	// are all in one scope.
+	nameWithoutScope := resources.identifier.RemoveScopeFromResourceName(resourceName)
+	var exact, unscoped []int
+	var unscopedNames []api.ResourceName
+	for i := range resources.resources {
+		resource := &resources.resources[i]
+		if resource.ResourceName == resourceName {
+			exact = append(exact, resources.positions[i])
+		}
+		if api.ResourceNameWithoutScopeFromResourceInfo(resources.identifier, *resource) == nameWithoutScope {
+			unscoped = append(unscoped, resources.positions[i])
+			if !slices.Contains(unscopedNames, resource.ResourceName) {
+				unscopedNames = append(unscopedNames, resource.ResourceName)
+			}
 		}
 	}
-	return &scoped
+	switch {
+	case len(exact) > 0:
+		scoped.ResourceIndexes = exact
+	case len(unscopedNames) == 1:
+		scoped.ResourceIndexes = unscoped
+	case len(unscopedNames) > 1:
+		slices.Sort(unscopedNames)
+		return nil, fmt.Errorf("%s matches resources in different scopes: %v", resourceName, unscopedNames)
+	default:
+		return nil, fmt.Errorf("the configuration has no resource named %s", resourceName)
+	}
+	return &scoped, nil
 }
 
 func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, functionContext *api.FunctionContext, parsedData gaby.Container, attributeList api.AttributeValueList, options *api.FunctionOptions) (gaby.Container, any, error) {
 	var multiErrs []error
-	indexesByName := resourceIndexesByName(parsedData, resourceProvider)
+	resources := indexAttributeResources(parsedData, resourceProvider)
 	for _, attribute := range attributeList {
 		var err error
 		setterArgs := make([]api.FunctionArgument, 3)
 		setterArgs[0].Value = string(attribute.ResourceType)
 		setterArgs[1].Value = string(attribute.Path)
-		attributeOptions := scopeOptionsToResource(options, indexesByName, attribute.ResourceType, attribute.ResourceName)
+		attributeOptions, err := scopeOptionsToResource(resources, options, attribute.ResourceType, attribute.ResourceName)
+		if err != nil {
+			multiErrs = append(multiErrs, fmt.Errorf("attribute %s at %s: %w", attribute.AttributeName, attribute.Path, err))
+			continue
+		}
+		if err := checkAttributePathResolves(parsedData, attributeOptions, attribute); err != nil {
+			multiErrs = append(multiErrs, err)
+			continue
+		}
 		switch attribute.DataType {
 		case api.DataTypeString:
 			stringValue, ok := attribute.Value.(string)
@@ -249,4 +299,25 @@ func genericSetAttributesFromList(resourceProvider yamlkit.ResourceProvider, fun
 		return parsedData, nil, join.Join(multiErrs...)
 	}
 	return parsedData, nil, nil
+}
+
+// checkAttributePathResolves reports an attribute that names a resource and a path the setter
+// cannot write in it. The setters skip a path they cannot resolve, which is right for a path
+// applied across resources of a type, where most may not have it; but an attribute that names
+// one resource asks for that path in that resource, and a merge-key segment matching no element
+// there -- `containers.?name=sidecar.image` with no sidecar -- would otherwise be a write to
+// nowhere reported as success.
+func checkAttributePathResolves(parsedData gaby.Container, options *api.FunctionOptions, attribute api.AttributeValue) error {
+	if attribute.ResourceName == "" || options == nil {
+		return nil
+	}
+	for _, position := range options.ResourceIndexes {
+		if position < 0 || position >= len(parsedData) {
+			continue
+		}
+		if err := yamlkit.CheckPathSettable(parsedData[position], api.UnresolvedPath(attribute.Path)); err != nil {
+			return fmt.Errorf("attribute %s in %s %s: %w", attribute.AttributeName, attribute.ResourceType, attribute.ResourceName, err)
+		}
+	}
+	return nil
 }

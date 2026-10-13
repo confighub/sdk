@@ -78,8 +78,14 @@ func init() {
 	functionExecCmd.Flags().StringSliceVar(&unitIdentifiers, "unit", []string{}, "target specific units by slug or UUID (can be repeated or comma-separated)")
 	functionExecCmd.Flags().StringVar(&revisionIdentifier, "revision", "", "target a specific revision (format: unit-slug/revision-number, e.g. mydeployment/3)")
 	functionExecCmd.Flags().BoolVar(&dryRun, "dry-run", false, "dry run mode: execute functions but skip updating configuration data")
+	// The functions in the file can write, so the writes take what function do's do: a claim on
+	// the paths they write, the guards they are cleared for, and the reasons they state.
+	functionExecCmd.Flags().BoolVar(&protectChange, "protect", false, "record the paths this change writes as protected local overrides, so a later merge from upstream does not overwrite them; by default a change claims nothing and each path keeps the protection it already has")
+	addClearanceFlag(functionExecCmd)
+	addGuardFlag(functionExecCmd)
 	functionExecCmd.Flags().StringSliceVar(&functionTriggerIdentifiers, "trigger", []string{}, "execute triggers by UUID, slug, or space/slug (can be repeated or comma-separated)")
 	functionExecCmd.Flags().StringSliceVar(&functionInvocationIdentifiers, "invocation", []string{}, "execute invocations by UUID, slug, or space/slug (can be repeated or comma-separated)")
+	functionExecCmd.Flags().BoolVar(&updateValidationResults, "update-validation-results", false, "update ValidationErrors and ValidationWarnings on units based on trigger results (requires --trigger)")
 	enableWhereFlag(functionExecCmd)
 	enableFilterFlag(functionExecCmd)
 	addStandardDisplayFlags(functionExecCmd)
@@ -92,6 +98,8 @@ func init() {
 	functionExecCmd.Flags().StringVar(&outputJQ, "output-jq", "", "apply jq to output JSON")
 	_ = functionExecCmd.Flags().MarkDeprecated("output-jq", "use --show output -o jq=<expr>")
 	functionExecCmd.Flags().StringVar(&functionToolchainType, "toolchain", "Kubernetes/YAML", "Toolchain type for the function invocations")
+	functionExecCmd.Flags().StringVar(&functionOtherDataSource, "other-data-source", "", "additional data source to pass to functions (e.g., LastReleasedRevisionNum); defaults to the sources each function expects")
+	addIncludeContextFlags(functionExecCmd.Flags())
 	functionCmd.AddCommand(functionExecCmd)
 }
 
@@ -196,12 +204,23 @@ func executeFunctionsFromFile(functionsFile, whereClause string, unitIds []strin
 			return resp, newBody, err
 		}
 	} else {
+		clearance, cerr := clearanceJSON()
+		if cerr != nil {
+			return nil, newBody, cerr
+		}
+		guards, gerr := guardsJSON()
+		if gerr != nil {
+			return nil, newBody, gerr
+		}
 		invokeArgs := &invokeArgs{
 			Where:        effectiveWhere,
 			FilterID:     filterID,
 			ResourceType: resourceType,
 			WhereData:    whereData,
 			DryRun:       dryRun,
+			Protect:      protectChange,
+			Clearance:    clearance,
+			Guards:       guards,
 			ChangeSetID:  changesetUUID,
 			Body:         newBody,
 		}

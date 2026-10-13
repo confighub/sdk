@@ -87,7 +87,7 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 	require.NoError(t, err)
 
-	_, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	_, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	require.Len(t, conflicts, 1)
 	c := conflicts[0]
 	assert.Equal(t, api.ConflictReasonSubtracted, c.Reason)
@@ -160,7 +160,7 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 	require.NoError(t, err)
 
-	_, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	_, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	// Source's requests.cpu should be subtracted because target also touched it.
 	require.NotEmpty(t, conflicts)
 	got := reasonsByPath(conflicts)
@@ -226,7 +226,7 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 	require.NoError(t, err)
 
-	result, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	result, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	// The source-side resources Delete passes through.
 	resourcesPath := api.ResolvedPath("spec.template.spec.containers.?name=app;@0.resources")
 	require.Len(t, result, 1)
@@ -310,7 +310,7 @@ spec:
 	srcMut, _ := yamlkit.ComputeMutations(baseP, srcP, 1, provider)
 	tgtMut, _ := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 
-	result, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	result, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	resourcesPath := api.ResolvedPath("spec.template.spec.containers.?name=app;@0.resources")
 	require.Len(t, result, 1)
 	_, hasDelete := result[0].PathMutationMap[resourcesPath]
@@ -355,7 +355,7 @@ spec:
 	srcMut, _ := yamlkit.ComputeMutations(baseP, srcP, 1, provider)
 	tgtMut, _ := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 
-	result, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	result, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	require.Len(t, result, 1)
 	assert.Equal(t, api.MutationTypeDelete, result[0].ResourceMutationInfo.MutationType,
 		"source-side resource-level Delete passes through")
@@ -405,7 +405,7 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, tgtP, 2, provider)
 	require.NoError(t, err)
 
-	_, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	_, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	require.Len(t, conflicts, 1)
 	c := conflicts[0]
 	assert.Equal(t, api.ConflictReasonSubtracted, c.Reason)
@@ -433,7 +433,7 @@ spec:
 	tgtMut, err := yamlkit.ComputeMutations(baseP, emptyP, 2, provider)
 	require.NoError(t, err)
 
-	_, conflicts := yamlkit.SubtractMutations(srcMut, tgtMut)
+	_, conflicts := yamlkit.SubtractMutations(k8skit.NewK8sResourceProvider(), srcMut, tgtMut)
 	require.Len(t, conflicts, 1)
 	assert.Equal(t, api.ConflictReasonSubtracted, conflicts[0].Reason)
 }

@@ -23,7 +23,7 @@ import (
 var referenceOperandCommands = []string{
 	"attribute get", "changeset get", "changeorder get", "changeworkflow get", "filter get",
 	"invocation get", "link get", "tag get", "target get", "trigger get",
-	"unit get", "view get", "worker get",
+	"unit get", "view get", "worker get", "channel get",
 	"unit blame", "unit conflicts", "unit data", "unit diff", "unit data-edit", "unit mutation-sources",
 	"unit set-guard", "unit set-protection",
 	"revision get", "revision data", "mutation get", "mutation list", "release get",
@@ -89,7 +89,8 @@ var resolverBackedWrites = []string{
 	"invocation delete", "invocation update", "link delete", "link update",
 	"tag delete", "tag update", "target delete", "target update",
 	"trigger delete", "trigger update", "unit delete", "unit update",
-	"view delete", "view update", "worker delete", "worker update",
+	"view delete", "view update", "worker delete", "worker update", "channel delete", "channel update",
+	"commandrun cancel",
 }
 
 // TestResolverBackedWritesAcceptWildcardSpace pins the gate these depend on. A

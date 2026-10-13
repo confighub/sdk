@@ -5,6 +5,7 @@ package api
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"sort"
 	"strconv"
@@ -392,70 +393,92 @@ func IsUUID(s string) bool {
 	return true
 }
 
-// ResourceMutationIndex provides efficient lookup of resources in a ResourceMutationList
-// by ResourceTypeAndName and AliasesWithoutScopes. It is used by AddMutations,
-// SubtractMutations, PatchMutations, and FindMutationIndex to match resources consistently.
+// ResourceMutationIndex provides efficient lookup of resources in a ResourceMutationList. It is
+// used by AddMutations, SubtractMutations, PatchMutations, and FindMutationIndex to match
+// resources consistently. Resources are matched as ResourceIndex matches them -- the type
+// without its API version, and the name with its scope or, when that names one resource,
+// without it -- and then by the names they had before a rename, recorded in
+// AliasesWithoutScopes.
 type ResourceMutationIndex struct {
-	NameMap      map[ResourceTypeAndName]int
-	AliasNameMap map[ResourceTypeAndName]int // from AliasesWithoutScopes of indexed mutations
+	resources *ResourceIndex
+	// aliases maps a name an indexed resource had, without its scope, to the resource's
+	// position.
+	aliases map[ResourceTypeAndName][]int
 }
 
-// NewResourceMutationIndex builds an index from a ResourceMutationList.
-// For duplicate keys, the last entry wins.
-func NewResourceMutationIndex(mutations ResourceMutationList) *ResourceMutationIndex {
+// Resources lists the resources a ResourceMutationList records.
+func (mutations ResourceMutationList) Resources() []ResourceInfo {
+	resources := make([]ResourceInfo, len(mutations))
+	for i := range mutations {
+		resources[i] = mutations[i].Resource
+	}
+	return resources
+}
+
+// NewResourceMutationIndex builds an index from a ResourceMutationList. Of several entries for
+// one resource, the last is found, unless Choose says otherwise.
+func NewResourceMutationIndex(identifier ResourceIdentifier, mutations ResourceMutationList) *ResourceMutationIndex {
 	idx := &ResourceMutationIndex{
-		NameMap:      make(map[ResourceTypeAndName]int, len(mutations)),
-		AliasNameMap: make(map[ResourceTypeAndName]int, len(mutations)),
+		resources: NewResourceIndex(identifier, mutations.Resources()),
+		aliases:   make(map[ResourceTypeAndName][]int, len(mutations)),
 	}
 	for i := range mutations {
-		resourceInfo := mutations[i].Resource
-		if resourceInfo.ResourceNameWithoutScope == "" {
-			_, resourceNameWithoutScope, _ := strings.Cut(string(resourceInfo.ResourceName), "/")
-			resourceInfo.ResourceNameWithoutScope = ResourceName(resourceNameWithoutScope)
-		}
-		idx.NameMap[ResourceTypeAndNameFromResourceInfo(resourceInfo)] = i
 		for alias := range mutations[i].AliasesWithoutScopes {
-			aliasInfo := ResourceInfo{
-				ResourceType:             resourceInfo.ResourceType,
-				ResourceCategory:         resourceInfo.ResourceCategory,
-				ResourceNameWithoutScope: alias,
-			}
-			aliasKey := ResourceTypeAndNameFromResourceInfo(aliasInfo)
-			if _, exists := idx.AliasNameMap[aliasKey]; !exists {
-				idx.AliasNameMap[aliasKey] = i
-			}
+			aliasKey := idx.keyWithoutScope(mutations[i].Resource, alias)
+			idx.aliases[aliasKey] = append(idx.aliases[aliasKey], i)
 		}
 	}
 	return idx
 }
 
+// Choose sets how the index picks one of several entries that record the same resource, given
+// their positions in ascending order.
+func (idx *ResourceMutationIndex) Choose(choose func(positions []int) int) {
+	idx.resources.Choose = choose
+}
+
+// Counterparts tells the index the resources it is matched against (see
+// ResourceIndex.Counterparts).
+func (idx *ResourceMutationIndex) Counterparts(resources []ResourceInfo) {
+	idx.resources.Counterparts(resources)
+}
+
 // Find looks up a resource in the index using multiple strategies:
-//  1. ResourceTypeAndName match
+//  1. Its type and name, as ResourceIndex matches them
 //  2. callerAliases against indexed mutation names
 //  3. Indexed mutation aliases against the caller's name
+//
+// A name that matches several resources without its scope matches none of them.
 func (idx *ResourceMutationIndex) Find(resource ResourceInfo, callerAliases map[ResourceName]struct{}) (int, bool) {
-	if resource.ResourceNameWithoutScope == "" {
-		_, resourceNameWithoutScope, _ := strings.Cut(string(resource.ResourceName), "/")
-		resource.ResourceNameWithoutScope = ResourceName(resourceNameWithoutScope)
-	}
-	// 1. ResourceTypeAndName
-	key := ResourceTypeAndNameFromResourceInfo(resource)
-	if i, ok := idx.NameMap[key]; ok {
+	// 1. Type and name
+	if i, ok := idx.resources.Find(resource); ok {
 		return i, true
 	}
 	// 2. Caller's aliases against indexed names
-	for alias := range callerAliases {
-		aliasInfo := resource
-		aliasInfo.ResourceNameWithoutScope = alias
-		if i, ok := idx.NameMap[ResourceTypeAndNameFromResourceInfo(aliasInfo)]; ok {
-			return i, true
+	for _, alias := range slices.Sorted(maps.Keys(callerAliases)) {
+		if match := idx.resources.MatchWithoutScope(idx.keyWithoutScope(resource, alias)); match.Found {
+			return match.Position, true
 		}
 	}
 	// 3. Indexed mutation aliases against caller's name
-	if i, ok := idx.AliasNameMap[key]; ok {
-		return i, true
+	key := ResourceTypeAndNameFromResourceInfo(idx.resources.identifier, resource)
+	if idx.resources.counterparts != nil && len(idx.resources.counterparts[key]) > 1 {
+		return 0, false
+	}
+	if match := idx.resources.unique(idx.aliases[key]); match.Found {
+		return match.Position, true
 	}
 	return 0, false
+}
+
+// keyWithoutScope is the key of a resource of the given resource's type under another name
+// without scope.
+func (idx *ResourceMutationIndex) keyWithoutScope(resource ResourceInfo, nameWithoutScope ResourceName) ResourceTypeAndName {
+	return ResourceTypeAndNameFromResourceInfo(idx.resources.identifier, ResourceInfo{
+		ResourceType:             resource.ResourceType,
+		ResourceCategory:         resource.ResourceCategory,
+		ResourceNameWithoutScope: nameWithoutScope,
+	})
 }
 
 func OffsetMutations(mutations ResourceMutationList, offset int64) {
@@ -480,12 +503,12 @@ func NoMutations(mutations ResourceMutationList) bool {
 // AttributeValueListToResourceMutationList converts an AttributeValueList to an equivalent
 // ResourceMutationList by grouping attribute values by resource and creating Update mutations
 // for each attribute path.
-func AttributeValueListToResourceMutationList(avl AttributeValueList) ResourceMutationList {
+func AttributeValueListToResourceMutationList(identifier ResourceIdentifier, avl AttributeValueList) ResourceMutationList {
 	resourceMap := make(map[ResourceTypeAndName]int)
 	var mutations ResourceMutationList
 
 	for _, av := range avl {
-		key := ResourceTypeAndNameFromResourceInfo(av.ResourceInfo)
+		key := ResourceTypeAndNameFromResourceInfo(identifier, av.ResourceInfo)
 		idx, exists := resourceMap[key]
 		if !exists {
 			idx = len(mutations)

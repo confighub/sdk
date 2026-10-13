@@ -40,11 +40,22 @@ import (
 // Two entries that rewrite to one key are folded: they are the same element recorded at two
 // positions, and the later one by MutationNum wins except that Protected survives from either,
 // since a lost Protected silently reopens a path its owner had closed.
+//
+// A resource recorded under two API versions is folded first, by foldAPIVersions: a record
+// written before resources were identified without their API versions can hold a resource
+// twice, once under each version.
 func CanonicalizeStoredMutationPaths(mutations api.ResourceMutationList, parsedData gaby.Container,
 	resourceProvider ResourceProvider) (api.ResourceMutationList, bool) {
 	if len(mutations) == 0 || resourceProvider == nil {
 		return mutations, false
 	}
+	mutations, folded := foldAPIVersions(resourceProvider, mutations)
+	rewritten, changed := canonicalizeStoredMutationPathKeys(mutations, parsedData, resourceProvider)
+	return rewritten, folded || changed
+}
+
+func canonicalizeStoredMutationPathKeys(mutations api.ResourceMutationList, parsedData gaby.Container,
+	resourceProvider ResourceProvider) (api.ResourceMutationList, bool) {
 	// Which resources have anything to rewrite, decided from the paths and the declared merge
 	// keys alone. A record with nothing to do -- the overwhelming majority -- reaches no
 	// further than this.
@@ -82,12 +93,117 @@ func StoredMutationPathsNeedRewriting(mutations api.ResourceMutationList, resour
 	if resourceProvider == nil {
 		return false
 	}
+	if hasResourceUnderTwoAPIVersions(resourceProvider, mutations) {
+		return true
+	}
 	for i := range mutations {
 		if storedPathsNeedRewriting(&mutations[i], resourceProvider) {
 			return true
 		}
 	}
 	return false
+}
+
+// hasResourceUnderTwoAPIVersions reports whether a record holds one resource under two API
+// versions of its type, which foldAPIVersions would fold.
+func hasResourceUnderTwoAPIVersions(identifier api.ResourceIdentifier, mutations api.ResourceMutationList) bool {
+	seen := make(map[api.ResourceTypeAndName]api.ResourceType, len(mutations))
+	for i := range mutations {
+		key := api.ResourceTypeAndFullNameFromResourceInfo(identifier, mutations[i].Resource)
+		if resourceType, found := seen[key]; found && resourceType != mutations[i].Resource.ResourceType {
+			return true
+		}
+		seen[key] = mutations[i].Resource.ResourceType
+	}
+	return false
+}
+
+// foldAPIVersions folds the entries of a stored record that record one resource under different
+// API versions of its type into the first of them. Resources used to be identified by their full
+// type, so an API version change in a resource's document -- a SecretStore moving from
+// external-secrets.io/v1beta1 to v1 -- recorded the changes made after it in a second entry, and
+// the first entry's protection went unread. Identified without the version, the two are one
+// resource again, and its record is what both entries say:
+//
+//   - The resource as the later entry records it, which is its current type and name.
+//   - The resource-level change the earlier entry records, as AddMutations keeps it, unless the
+//     later entry deletes or replaces the whole resource, which supersedes everything before it.
+//   - Every path either entry records. A path both record is folded as foldMutationInfo folds
+//     an element recorded at two positions: the later write wins, and Protected survives from
+//     either, since a lost Protected silently reopens a path its owner had closed.
+//
+// Entries are folded only when their names, scope included, are the same: two entries of one
+// type and name in different namespaces are two resources. The folded record is in the order
+// the resources were first recorded.
+func foldAPIVersions(identifier api.ResourceIdentifier, mutations api.ResourceMutationList) (api.ResourceMutationList, bool) {
+	if !hasResourceUnderTwoAPIVersions(identifier, mutations) {
+		return mutations, false
+	}
+	folded := make(api.ResourceMutationList, 0, len(mutations))
+	position := make(map[api.ResourceTypeAndName]int, len(mutations))
+	for i := range mutations {
+		key := api.ResourceTypeAndFullNameFromResourceInfo(identifier, mutations[i].Resource)
+		first, found := position[key]
+		if !found || folded[first].Resource.ResourceType == mutations[i].Resource.ResourceType {
+			if !found {
+				position[key] = len(folded)
+			}
+			folded = append(folded, mutations[i])
+			continue
+		}
+		folded[first] = foldResourceMutation(folded[first], mutations[i])
+	}
+	return folded, true
+}
+
+// foldResourceMutation folds a later entry for a resource into an earlier one, as
+// foldAPIVersions describes.
+func foldResourceMutation(earlier, later api.ResourceMutation) api.ResourceMutation {
+	if later.ResourceMutationInfo.MutationType == api.MutationTypeDelete ||
+		later.ResourceMutationInfo.MutationType == api.MutationTypeReplace {
+		return later
+	}
+	result := earlier
+	result.Resource = later.Resource
+	if earlier.ResourceMutationInfo.MutationType == api.MutationTypeNone ||
+		earlier.ResourceMutationInfo.MutationType == api.MutationTypeDelete {
+		result.ResourceMutationInfo = later.ResourceMutationInfo
+	}
+
+	result.PathMutationMap = make(api.MutationMap, len(earlier.PathMutationMap)+len(later.PathMutationMap))
+	maps.Copy(result.PathMutationMap, earlier.PathMutationMap)
+	for path, info := range later.PathMutationMap {
+		if existing, collides := result.PathMutationMap[path]; collides {
+			info = foldMutationInfo(existing, info)
+		}
+		result.PathMutationMap[path] = info
+	}
+
+	result.Aliases = unionResourceNames(earlier.Aliases, later.Aliases)
+	result.AliasesWithoutScopes = unionResourceNames(earlier.AliasesWithoutScopes, later.AliasesWithoutScopes)
+	result.ArrayOrders = unionLaterWins(earlier.ArrayOrders, later.ArrayOrders)
+	result.ArrayElementAliases = unionLaterWins(earlier.ArrayElementAliases, later.ArrayElementAliases)
+	return result
+}
+
+func unionResourceNames(a, b map[api.ResourceName]struct{}) map[api.ResourceName]struct{} {
+	if len(a) == 0 && len(b) == 0 {
+		return a
+	}
+	union := make(map[api.ResourceName]struct{}, len(a)+len(b))
+	maps.Copy(union, a)
+	maps.Copy(union, b)
+	return union
+}
+
+func unionLaterWins[V any](earlier, later map[api.ResolvedPath]V) map[api.ResolvedPath]V {
+	if len(later) == 0 {
+		return earlier
+	}
+	union := make(map[api.ResolvedPath]V, len(earlier)+len(later))
+	maps.Copy(union, earlier)
+	maps.Copy(union, later)
+	return union
 }
 
 // storedPathsNeedRewriting reports whether any key of one resource's record is not in the form

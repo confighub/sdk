@@ -1857,7 +1857,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -3389,7 +3389,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -8400,7 +8400,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -8797,6 +8797,996 @@ paths:
       summary: Move change workflows to another space
       tags:
       - ChangeWorkflow
+  /channel:
+    delete:
+      description: Delete multiple channels selected by query parameters
+      operationId: BulkDeleteChannels
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Channels returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Channel list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Channel).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Channel are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Channel entities to act on, in ID order. A
+          request that names limit or continue also stops when it runs short of time,
+          and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the Channel entities after the last one it acted on.
+          The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeleteResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'Channel is still in use: it has DeleteGates, or other entities
+            still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unable to delete entity
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk delete multiple channels
+      tags:
+      - Channel
+    get:
+      description: Retrieves a list of Channels across spaces in the Organization
+      operationId: ListAllChannels
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Channels returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Channel list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Channel).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Channel are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Channel entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Channel results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the Channel's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the Channel entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedChannel'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List of Channels across spaces
+      tags:
+      - Channel
+    patch:
+      description: Apply JSON merge patch to multiple channels selected by query parameters
+      operationId: BulkPatchChannels
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Channels returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Channel list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Channel).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Channel are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Channel entities to act on, in ID order. A
+          request that names limit or continue also stops when it runs short of time,
+          and returns a ConfigHub-Continue header to pass as the continue parameter
+          of the next request; keep sending requests until a response has none. If
+          neither is specified, the request acts on every selected entity.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: The token from the ConfigHub-Continue header of the previous
+          request, to act on the Channel entities after the last one it acted on.
+          The request's other parameters, except limit, must be the same as those
+          of the request that returned the token.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Channel. All fields are optional
+                and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                Declarations:
+                  description: ""
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EventPosition:
+                  description: ""
+                  nullable: true
+                  type: integer
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Subscriptions:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChannelCreateOrUpdateResponse'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "207":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChannelCreateOrUpdateResponse'
+                type: array
+          description: 'Multi-Status: Mixed success and failure results'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Bulk patch multiple channels
+      tags:
+      - Channel
+  /command:
+    get:
+      description: ""
+      operationId: ListAllCommands
+      parameters:
+      - description: List only the Channels declaring this command.
+        in: query
+        name: command
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeclaredCommand'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: DeclaredCommand request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: DeclaredCommand not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing DeclaredCommand.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List the commands declared across the Organization
+      tags:
+      - DeclaredCommand
+  /command_run:
+    get:
+      description: ""
+      operationId: ListAllCommandRuns
+      parameters:
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of CommandRuns returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the CommandRun list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (CommandRun).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for CommandRun include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for CommandRun.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for CommandRun are .
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for CommandRun.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of CommandRun entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort CommandRun results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the CommandRun's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the CommandRun entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CommandRun'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List command runs across the Organization
+      tags:
+      - CommandRun
   /component:
     get:
       description: List Components
@@ -10881,7 +11871,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -11502,7 +12492,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -13231,7 +14221,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -14718,7 +15708,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -17486,7 +18476,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -17738,7 +18728,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -17989,7 +18979,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list tagged Revisions use `Tags ? '<tag-id>'`.
 
@@ -24781,6 +25771,1618 @@ paths:
       summary: Update a ChangeWorkflow from an edit of its document
       tags:
       - ChangeWorkflow
+  /space/{space_id}/channel:
+    get:
+      description: List Channels
+      operationId: ListChannels
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of Channels returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the Channel list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (Channel).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for Channel include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Channel are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Hidden Channel entities, those with a HiddenReason, are left out of the results, or of what a bulk operation acts on, unless this names their HiddenReason.
+
+          It is a comma-separated list of HiddenReasons, or `*` for all of them.
+
+          A where clause naming the entities, by their Slug or ID with `=` or `IN`, or naming HiddenReason at all, also returns hidden entities it selects.
+
+          ConfigHub/YAML Units, which hold the configuration of entities, are hidden with the HiddenReason `BackingUnit`.
+        in: query
+        name: include_hidden
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of Channel entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort Channel results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering Channel: ChannelID, Condition, CreatedAt, DisplayName, EventPosition, HiddenReason, IPAddress, LastMessage, LastSeenAt, OrganizationID, Slug, SpaceID, UpdatedAt.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the Channel's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the Channel entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ExtendedChannel'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List Channels
+      tags:
+      - Channel
+    post:
+      description: Create Channel
+      operationId: CreateChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Allowed values are true and false. Default is false. When true,
+          reports success when an entity already exists and returns the existing entity
+        in: query
+        name: allow_exists
+        required: false
+        schema:
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Channel'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+          description: 'A Channel is a mailbox between ConfigHub and one bot. A client
+            claims it and polls it; callers run the commands it declares on it, each
+            as a CommandRun; it subscribes to events and bookmarks how far it has
+            read. It owns no identity: a ServiceAccount claims it by holding Claim
+            on it. Its Declarations and Subscriptions are set by whoever manages it,
+            not by the client.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Create Channel
+      tags:
+      - Channel
+  /space/{space_id}/channel/{channel_id}:
+    delete:
+      description: Delete Channel
+      operationId: DeleteChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+          description: Response for successful delete operation
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'Channel is still in use: it has DeleteGates, or other entities
+            still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Delete Channel
+      tags:
+      - Channel
+    get:
+      description: Get Channel
+      operationId: GetChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for Channel are OrganizationID, SpaceID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for Channel.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, ChannelID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtendedChannel'
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get Channel
+      tags:
+      - Channel
+    patch:
+      description: Patch Channel
+      operationId: PatchChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/merge-patch+json:
+            schema:
+              description: JSON Merge Patch schema for Channel. All fields are optional
+                and nullable. Readonly fields are ignored.
+              properties:
+                Annotations:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Annotation key/value pairs for tools
+                    to attach information to entities.
+                  nullable: true
+                  type: object
+                Declarations:
+                  description: ""
+                  nullable: true
+                  type: object
+                DeleteGates:
+                  additionalProperties:
+                    nullable: true
+                    type: boolean
+                  description: An optional set of gates that, if any is present, will
+                    block deletion
+                  nullable: true
+                  type: object
+                DisplayName:
+                  description: Friendly name for the entity.
+                  nullable: true
+                  type: string
+                EventPosition:
+                  description: ""
+                  nullable: true
+                  type: integer
+                HiddenReason:
+                  description: The reason the entity is hidden, if it is. A hidden
+                    entity is left out of List and Search results, and of what bulk
+                    operations act on, unless the include_hidden parameter names its
+                    reason or is *, or the where parameter names the entity by Slug
+                    or ID. ConfigHub/YAML Units are created hidden with the reason
+                    BackingUnit unless given another.
+                  nullable: true
+                  type: string
+                Labels:
+                  additionalProperties:
+                    nullable: true
+                    type: string
+                  description: An optional map of Label key/value pairs to specify
+                    identifying attributes of entities for the purpose of grouping
+                    and filtering them.
+                  nullable: true
+                  type: object
+                Permissions:
+                  additionalProperties:
+                    nullable: true
+                    type: object
+                  description: ""
+                  nullable: true
+                  type: object
+                Slug:
+                  description: Unique URL-safe identifier for the entity.
+                  nullable: true
+                  type: string
+                Subscriptions:
+                  description: ""
+                  items:
+                    nullable: true
+                    type: object
+                  nullable: true
+                  type: array
+                Version:
+                  description: An entity-specific sequence number used for optimistic
+                    concurrency control. The value read must be sent in calls to Update.
+                  nullable: true
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+          description: 'A Channel is a mailbox between ConfigHub and one bot. A client
+            claims it and polls it; callers run the commands it declares on it, each
+            as a CommandRun; it subscribes to events and bookmarks how far it has
+            read. It owns no identity: a ServiceAccount claims it by holding Claim
+            on it. Its Declarations and Subscriptions are set by whoever manages it,
+            not by the client.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Patch Channel
+      tags:
+      - Channel
+    put:
+      description: Update Channel
+      operationId: UpdateChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Channel'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+          description: 'A Channel is a mailbox between ConfigHub and one bot. A client
+            claims it and polls it; callers run the commands it declares on it, each
+            as a CommandRun; it subscribes to events and bookmarks how far it has
+            read. It owns no identity: a ServiceAccount claims it by holding Claim
+            on it. Its Declarations and Subscriptions are set by whoever manages it,
+            not by the client.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Update Channel
+      tags:
+      - Channel
+  /space/{space_id}/channel/{channel_id}/command_run/{command_run_id}/result:
+    post:
+      description: 'Reported by the Channel''s client once it has executed the run:
+        Completed with a Result, or Failed or Rejected with an ErrorMessage. A run
+        already terminal is returned unchanged.'
+      operationId: ReportCommandRunResult
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a command_run_id
+        in: path
+        name: command_run_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRunResult'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandRun'
+          description: 'CommandRun is one execution of a command on a Channel: the
+            request, from the caller, and the outcome, from the channel''s client.
+            Create one at the Space, naming the command and optionally the Channel;
+            without a Channel, the command is resolved to the one Channel in the Space
+            that declares it. A Pending run waits for the client until its Deadline;
+            a Delivered run has a fixed time to its outcome.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun data conflict. Data has changed since last read.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Report a command run's result
+      tags:
+      - CommandRun
+  /space/{space_id}/channel/{channel_id}/lease:
+    delete:
+      description: Releases the lease the token names, returning its Delivered runs
+        to Pending. Any other token is a no-op.
+      operationId: ReleaseChannelLease
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: The ClaimToken of the lease to release.
+        in: query
+        name: claim_token
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: 'Channel is still in use: it has DeleteGates, or other entities
+            still reference it. Or data has changed since last read.'
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel could not be deleted.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Release a Channel's lease
+      tags:
+      - Channel
+    post:
+      description: Takes the lease on the Channel, under which the client polls it,
+        reports results and advances its bookmark. Takes Claim on the Channel. A lease
+        held and fresh is 409; a stale one is taken over, and the runs it had been
+        delivered return to Pending.
+      operationId: AcquireChannelLease
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelLease'
+          description: 'ChannelLease is the lease a client holds on a Channel: its
+            ClaimToken, carried by every poll and release, and the TTL in seconds
+            a poll renews it for.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The lease is held.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Acquire a Channel's lease
+      tags:
+      - Channel
+  /space/{space_id}/channel/{channel_id}/poll:
+    post:
+      description: 'Under the lease, waits up to TimeoutSeconds for something to deliver:
+        up to MaxRuns Pending runs, oldest first, and the events after the Channel''s
+        bookmark that match its subscriptions, which advances the bookmark. Each poll
+        renews the lease. 204 when nothing arrived in time; 409 when the lease is
+        not held by the token, after which the client acquires it again.'
+      operationId: PollChannel
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a channel_id
+        in: path
+        name: channel_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelPollRequest'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/ChannelMessage'
+                type: array
+          description: OK
+        "204":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Nothing to deliver within the timeout.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Channel not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The lease is not held by this token.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing Channel.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Poll a Channel
+      tags:
+      - Channel
+  /space/{space_id}/command:
+    get:
+      description: The commands the Space's Channels declare, with each one's signature
+        and the Channel that declares it.
+      operationId: ListCommands
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: List only the Channels declaring this command.
+        in: query
+        name: command
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/DeclaredCommand'
+                type: array
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: DeclaredCommand request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: DeclaredCommand not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing DeclaredCommand.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List the commands runnable in the Space
+      tags:
+      - DeclaredCommand
+  /space/{space_id}/command_run:
+    get:
+      description: ""
+      operationId: ListCommandRuns
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: |-
+          The specified string is an expression for the purpose of filtering
+          the list of CommandRuns returned. The expression syntax was inspired by SQL.
+          It supports conjunctions using `AND` of relational expressions of the form *attribute*
+          *operator* *attribute_or_literal*. The attribute names are case-sensitive and PascalCase,
+          as in the JSON encoding.
+          Strings support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `LIKE`, `NOT LIKE`, `ILIKE`, `~~`, `!~~`, `~`, `~*`, `!~`, `!~*`, `IN`, `NOT IN`.
+          String pattern operators: `LIKE` and `~~` for pattern matching with `%` and `_` wildcards,
+          `ILIKE` for case-insensitive pattern matching, `NOT LIKE` and `!~~` for negated pattern matching.
+          String regex operators: `~` for regex matching, `~*` for case-insensitive regex,
+          `!~` and `!~*` for regex not matching (case-sensitive and insensitive).
+          Integers support the following operators: `<`, `>`, `<=`, `>=`, `=`, `!=`, `IN`, `NOT IN`.
+          UUIDs and boolean attributes support equality and inequality only.
+          UUID and time literals must be quoted as string literals.
+          String literals are quoted with single quotes, such as `'string'`.
+          Time literals use the same form as when serialized as JSON,
+          such as: `CreatedAt > '2025-02-18T23:16:34'`.
+          Integer and boolean literals are also supported for attributes of those types.
+          Arrays support the `?` operator to to match any element of the array,
+          as in `FromLinkID ? '7c61626f-ddbe-41af-93f6-b69f4ab6d308'`.
+          Arrays can perform LEN() to check for length, as in `LEN(FromLinkID) > 0`.
+          An attribute naming a list of other entities can be filtered on their attributes with a `*` segment,
+          as in `FromLink.*.Slug = 'upgrade-app'`, which holds when any element satisfies it.
+          Without the `*` such a reference is an error, since it names no single value to compare.
+          Map support the dot notation to specify a particular map key, as in `Labels.tier = 'Backend'`.
+          Maps support `IS NULL` and `IS NOT NULL` with dot notation to check for key absence or presence,
+          as in `Labels.tier IS NULL` (key doesn't exist) or `Labels.tier IS NOT NULL` (key exists).
+          Comparison results can be tested with `IS TRUE`, `IS FALSE`, `IS NOT TRUE`, and `IS NOT FALSE`.
+          These are useful for nullable columns: `MergeSourceID = '<uuid>' IS NOT FALSE` matches rows where MergeSourceID equals the value OR is NULL.
+          The `IN` and `NOT IN` operators accept a comma-separated list of values in parentheses,
+          such as `Slug IN ('slugone', 'slugtwo')` or `Labels.environment IN ('prod', 'staging')`.
+          Conjunctions are supported using the `AND` operator.
+          An example conjunction is:
+          `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
+
+          Supported attributes for filtering on CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+
+          The whole string must be query-encoded.
+        in: query
+        name: where
+        required: false
+        schema:
+          type: string
+      - description: |-
+          UUID of a Filter entity to apply to the CommandRun list.
+
+          The Filter must be in the same Organization as the user credentials.
+
+          The Filter's From field must match the entity type being filtered (CommandRun).
+
+          For Space-resident entities, if the Filter has a FromSpaceID, it must match the operation's SpaceID.
+
+          The Filter's Where clause will be combined with any explicit 'where' parameter using AND logic.
+
+          If both 'filter' and 'where' parameters are specified, they are combined with AND logic.
+        in: query
+        name: filter
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Free text search that approximately matches the specified string against string fields and map keys/values.
+
+          The search is case-insensitive and uses pattern matching to find entities containing the text.
+
+          Searchable string fields include attributes like Slug, DisplayName, and string-typed custom fields.
+
+          For map fields (like Labels and Annotations), the search matches both map keys and values.
+
+          The search uses OR logic across all searchable fields, so matching any field will return the entity.
+
+          If both 'where' and 'contains' parameters are specified, they are combined with AND logic.
+
+          Searchable fields for CommandRun include string and map-type attributes from the queryable attributes list.
+
+          The whole string must be query-encoded.
+        in: query
+        name: contains
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Include clause for expanding related entities in the response for CommandRun.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+
+          Supported attributes for CommandRun are .
+
+          The whole string must be query-encoded.
+        in: query
+        name: include
+        required: false
+        schema:
+          type: string
+      - description: |-
+          Select clause for specifying which fields to include in the response for CommandRun.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      - description: Maximum number of CommandRun entities to return. If not specified,
+          all matching entities are returned. Values greater than 1000 are rejected
+          with 400. When there may be more entities, the response has a ConfigHub-Continue
+          header to pass as the continue parameter of the next request.
+        in: query
+        name: limit
+        required: false
+        schema:
+          maximum: 1000
+          minimum: 0
+          type: integer
+      - description: |-
+          Comma-separated list of fields to sort CommandRun results by, each in the form 'ASC|DESC:FieldName' or just 'FieldName'.
+
+          Field names are case-sensitive and PascalCase, as in the JSON encoding. Sort direction defaults to ASC when the 'DIRECTION:' prefix is omitted.
+
+          Supported attributes for ordering CommandRun: ChannelID, Command, CommandRunID, CompletedAt, CreatedAt, CreatedBy, Deadline, DeliveredAt, OrganizationID, SpaceID, Status, TargetID, TimeoutAt, UnitID.
+
+          Example: 'DESC:CreatedAt' or 'DisplayName,DESC:CreatedAt'.
+
+          Results are ordered by the CommandRun's ID after the fields named, and by the ID alone if none are.
+
+          The whole string must be query-encoded.
+        in: query
+        name: order_by
+        required: false
+        schema:
+          type: string
+      - description: |-
+          The token from the ConfigHub-Continue header of the previous page, to return the CommandRun entities after it.
+
+          The request's other parameters, except limit, must be the same as those of the request that returned the token.
+
+          Keep reading until a response has no such header: a page can hold fewer entities than the limit, or none, and still be followed by more.
+        in: query
+        name: continue
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/CommandRun'
+                type: array
+          description: OK
+          headers:
+            ConfigHub-Continue:
+              description: The token to pass as the continue parameter of the next
+                request, when there may be more entities after this page. It is absent
+                on the last page. A page can hold fewer entities than the limit, or
+                none, and still have one.
+              schema:
+                type: string
+              style: simple
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: List the Space's command runs
+      tags:
+      - CommandRun
+    post:
+      description: 'Creates a run of the command on a Channel of the Space: the one
+        named by ChannelID, or else the one Channel in the Space that declares the
+        command. Running a command takes Use on the Channel. The run is returned Pending;
+        read it back with GET, with ?wait=<seconds> to hold until it completes.'
+      operationId: CreateCommandRun
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: 'If true, report what the write would do without doing it: the
+          write runs, including every check it makes, and is then rolled back. The
+          response is the one the write would return, with the entities as they would
+          be written. An entity a dry run creates is given an ID that the real create
+          will not reuse.'
+        in: query
+        name: dry_run
+        required: false
+        schema:
+          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandRun'
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandRun'
+          description: 'CommandRun is one execution of a command on a Channel: the
+            request, from the caller, and the outcome, from the channel''s client.
+            Create one at the Space, naming the command and optionally the Channel;
+            without a Channel, the command is resolved to the one Channel in the Space
+            that declares it. A Pending run waits for the client until its Deadline;
+            a Delivered run has a fixed time to its outcome.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Several Channels in the Space declare the command; name one
+            with ChannelID.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Run a command on a Channel
+      tags:
+      - CommandRun
+  /space/{space_id}/command_run/{command_run_id}:
+    get:
+      description: Reads the run. With ?wait=<seconds>, holds until the run reaches
+        a terminal status or the wait elapses, at most 25 seconds; a caller that waits
+        longer asks again.
+      operationId: GetCommandRun
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a command_run_id
+        in: path
+        name: command_run_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Seconds to hold for a terminal status; at most 25.
+        in: query
+        name: wait
+        required: false
+        schema:
+          type: integer
+      - description: |-
+          Select clause for specifying which fields to include in the response for CommandRun.
+          The attribute names are case-sensitive, PascalCase, and
+          expected in a comma-separated list format as in the JSON encoding.
+          If not specified, all fields are returned.
+          Entity and parent IDs (like OrganizationID, SpaceID, CommandRunID) and Slug are always returned regardless of the select parameter.
+          Fields used in where and contains filters, and fields named by order_by, are also automatically included.
+          Example: 'DisplayName,CreatedAt,Labels' will return only those fields plus the required ID and Slug fields.
+          The whole string must be query-encoded.
+        in: query
+        name: select
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandRun'
+          description: 'CommandRun is one execution of a command on a Channel: the
+            request, from the caller, and the outcome, from the channel''s client.
+            Create one at the Space, naming the command and optionally the Channel;
+            without a Channel, the command is resolved to the one Channel in the Space
+            that declares it. A Pending run waits for the client until its Deadline;
+            a Delivered run has a fixed time to its outcome.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Get a command run
+      tags:
+      - CommandRun
+  /space/{space_id}/command_run/{command_run_id}/cancel:
+    post:
+      description: Marks a Pending run Canceled. A run that has been delivered cannot
+        be canceled; it completes or times out.
+      operationId: CancelCommandRun
+      parameters:
+      - description: Unique identifier for a space_id
+        in: path
+        name: space_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      - description: Unique identifier for a command_run_id
+        in: path
+        name: command_run_id
+        required: true
+        schema:
+          format: uuid
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandRun'
+          description: 'CommandRun is one execution of a command on a Channel: the
+            request, from the caller, and the outcome, from the channel''s client.
+            Create one at the Space, naming the command and optionally the Channel;
+            without a Channel, the command is resolved to the one Channel in the Space
+            that declares it. A Pending run waits for the client until its Deadline;
+            a Delivered run has a fixed time to its outcome.'
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun request is invalid (Bad Request).
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unauthorized access.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Forbidden access.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: CommandRun not found.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: The run is not Pending.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Something went wrong while processing CommandRun.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardErrorResponse'
+          description: Unexpected error.
+      summary: Cancel a Pending command run
+      tags:
+      - CommandRun
   /space/{space_id}/document:
     get:
       description: 'Returns the Space as the document its backing Unit would hold:
@@ -26093,7 +28695,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -31802,7 +34404,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -35488,7 +38090,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Revision: ApplyGates, ApplyWarnings, Attestations, ChangeOrders, ChangeSetID, Conflicts, CreatedAt, DataHash, Description, HiddenReason, LinkFindings, NeededPaths, OrganizationID, ProvidedPaths, Releases, RevisionID, RevisionNum, Source, SpaceID, Tags, UnitID, UpdatedAt, UserAgent, UserID, ValidationErrors, ValidationPassed, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           To list a tagged Revision use `Tags ? '<tag-id>'`.
 
@@ -39720,7 +42322,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -41216,7 +43818,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -41715,7 +44317,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -41943,7 +44545,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -42248,7 +44850,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -42860,7 +45462,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -43351,7 +45953,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -43536,7 +46138,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -43725,7 +46327,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -44104,7 +46706,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -44417,7 +47019,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -44955,7 +47557,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           Finding all units created by cloning can be done using the expression `UpstreamRevisionNum > 0`. Clones of a specific unit can be found by additionally filtering based on `UpstreamUnitID`. Unapplied units can be found using `LastReleasedRevisionNum = 0`. Units with unapplied changes can be found with `HeadRevisionNum > LastReleasedRevisionNum`.
 
@@ -46874,7 +49476,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
+          Supported attributes for filtering on Unit: Annotations, ApplyGates, ApplyWarnings, ChangeSetID, Conflicts, CreatedAt, DataHash, DeleteGates, DestroyGates, DisplayName, FromLinkID, HeadRevisionID, HeadRevisionNum, HeadUnitActionNum, HeadUnitEventNum, HiddenReason, Labels, LastChangeDescription, LastReleasedRevisionNum, LinkFindings, NeededPaths, OrganizationID, Permissions, ProvidedPaths, ProviderType, Slug, SpaceID, TargetID, ToolchainType, UnitID, UpdatedAt, UpstreamRevisionNum, UpstreamSpaceID, UpstreamUnitID, ValidationErrors, ValidationTriggerIDs, ValidationWarnings, ValueTriggerIDs, Values.
 
           The Units to create entities from, with from_backing_units.
 
@@ -49887,6 +52489,282 @@ components:
       required:
       - Name
       type: object
+    Channel:
+      description: 'A Channel is a mailbox between ConfigHub and one bot. A client
+        claims it and polls it; callers run the commands it declares on it, each as
+        a CommandRun; it subscribes to events and bookmarks how far it has read. It
+        owns no identity: a ServiceAccount claims it by holding Claim on it. Its Declarations
+        and Subscriptions are set by whoever manages it, not by the client.'
+      properties:
+        Annotations:
+          additionalProperties:
+            maxLength: 1024
+            pattern: ^(.|\n)*$
+            type: string
+          description: An optional map of Annotation key/value pairs for tools to
+            attach information to entities.
+          type: object
+          x-confighub-where:
+            dataType: map[string]string
+          x-go-type-skip-optional-pointer: true
+        ChannelID:
+          description: ChannelID uniquely identifies a channel.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+          x-go-type-skip-optional-pointer: true
+        ClaimTTLSeconds:
+          description: How long a lease stays held without a poll renewing it.
+          readOnly: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        ClaimToken:
+          description: The token of the lease currently held.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+        Condition:
+          description: Claimed while a client holds the lease, Unclaimed otherwise.
+          enum:
+          - Claimed
+          - Unclaimed
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        Declarations:
+          allOf:
+          - $ref: '#/components/schemas/ChannelDeclarations'
+          description: The commands the channel handles, by name, each with its signature.
+            Set here, out of band; a connecting client verifies its handlers against
+            them.
+          x-confighub-where:
+            dataType: JSON
+        DeleteGates:
+          additionalProperties:
+            type: boolean
+          description: An optional set of gates that, if any is present, will block
+            deletion.
+          type: object
+          x-confighub-where:
+            dataType: map[string]bool
+          x-go-type-skip-optional-pointer: true
+        DisplayName:
+          description: Friendly name for the entity.
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EventPosition:
+          description: The channel's bookmark into the event log. Set to the log's
+            tail at creation; change it to replay or skip.
+          format: int64
+          type: integer
+          x-confighub-where:
+            dataType: int
+          x-go-type-skip-optional-pointer: true
+        HiddenReason:
+          description: The reason the entity is hidden, if it is. A hidden entity
+            is left out of List and Search results, and of what bulk operations act
+            on, unless the include_hidden parameter names its reason or is *, or the
+            where parameter names the entity by Slug or ID. ConfigHub/YAML Units are
+            created hidden with the reason BackingUnit unless given another.
+          maxLength: 64
+          pattern: ^([A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        IPAddress:
+          description: The address the client last polled from.
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        Labels:
+          additionalProperties:
+            maxLength: 128
+            pattern: ^[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9](([\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9]|
+              )*[\-_@/#$%&~+=!?.,:;(){}\[\]<>|A-Za-z0-9])?$
+            type: string
+          description: An optional map of Label key/value pairs to specify identifying
+            attributes of entities for the purpose of grouping and filtering them.
+          type: object
+          x-confighub-where:
+            dataType: map[string]string
+          x-go-type-skip-optional-pointer: true
+        LastMessage:
+          description: The last status message the client reported.
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        LastSeenAt:
+          description: The last time the client holding the lease polled.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: Unique identifier for an organization.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Organization
+          x-go-type-skip-optional-pointer: true
+        Permissions:
+          allOf:
+          - $ref: '#/components/schemas/Permissions'
+          description: 'Permissions to access this Channel. Claim: acquire its lease
+            and poll it. Use: run a command on it.'
+          x-confighub-where:
+            dataType: map[string]map[string]map[uuid]bool
+        Slug:
+          description: Unique URL-safe identifier for the entity.
+          maxLength: 128
+          pattern: ^[A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?$
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: Unique identifier for a space.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            expandable: true
+            references: Space
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space this entity belongs to. (readonly)
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Subscriptions:
+          description: Filters over the event log. An event after EventPosition that
+            matches any of them is delivered to the client.
+          items:
+            $ref: '#/components/schemas/EventSubscription'
+          type: array
+          x-confighub-where:
+            dataType: JSON
+          x-go-type-skip-optional-pointer: true
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Slug
+      - EventPosition
+      type: object
+    ChannelCreateOrUpdateResponse:
+      properties:
+        Channel:
+          $ref: '#/components/schemas/Channel'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+      type: object
+    ChannelDeclarations:
+      properties:
+        Commands:
+          additionalProperties:
+            $ref: '#/components/schemas/CommandSignature'
+          type: object
+          x-go-type-skip-optional-pointer: true
+      type: object
+    ChannelLease:
+      description: 'ChannelLease is the lease a client holds on a Channel: its ClaimToken,
+        carried by every poll and release, and the TTL in seconds a poll renews it
+        for.'
+      properties:
+        ClaimToken:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TTLSeconds:
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - ClaimToken
+      - TTLSeconds
+      type: object
+    ChannelMessage:
+      description: 'ChannelMessage is one item a Channel poll delivers. Kind says
+        which of CommandRun and Event is set: CommandRun or EventLog.'
+      properties:
+        CommandRun:
+          $ref: '#/components/schemas/CommandRun'
+        Event:
+          $ref: '#/components/schemas/EventLog'
+        Kind:
+          description: 'CommandRun or EventLog: which of the two is set.'
+          type: string
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Kind
+      type: object
+    ChannelPollRequest:
+      description: ChannelPollRequest is one poll of a Channel under its lease. The
+        response is the runs and events waiting for the client, up to MaxRuns runs,
+        or nothing after TimeoutSeconds.
+      properties:
+        ClaimToken:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        MaxRuns:
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        TimeoutSeconds:
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - ClaimToken
+      type: object
     Clearance:
       items:
         $ref: '#/components/schemas/ClearanceRequirement'
@@ -49956,6 +52834,227 @@ components:
         MetadataExpression:
           type: string
           x-go-type-skip-optional-pointer: true
+      type: object
+    CommandOption:
+      properties:
+        Choices:
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        DataType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Example:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Name:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Required:
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        Schema:
+          $ref: '#/components/schemas/Schema'
+      type: object
+    CommandRun:
+      description: 'CommandRun is one execution of a command on a Channel: the request,
+        from the caller, and the outcome, from the channel''s client. Create one at
+        the Space, naming the command and optionally the Channel; without a Channel,
+        the command is resolved to the one Channel in the Space that declares it.
+        A Pending run waits for the client until its Deadline; a Delivered run has
+        a fixed time to its outcome.'
+      properties:
+        ChannelID:
+          description: 'ChannelID is the Channel the run is delivered on. Optional
+            on create: absent, the command is resolved within the Space.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Channel
+          x-go-type-skip-optional-pointer: true
+        Command:
+          description: Command is the name of the command to run, as the Channel declares
+            it.
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        CommandRunID:
+          description: CommandRunID uniquely identifies the run.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+          x-go-type-skip-optional-pointer: true
+        CompletedAt:
+          description: CompletedAt is when the run reached a terminal status.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        CreatedAt:
+          description: When the run was created, in "2023-01-01T12:00:00Z" format.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        CreatedBy:
+          description: CreatedBy is the user that asked for the run.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: uuid
+          x-go-type-skip-optional-pointer: true
+        Deadline:
+          description: Deadline is when a Pending run expires. Defaults to five minutes
+            after creation; at most one hour.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        DeliveredAt:
+          description: DeliveredAt is when the run was handed to the client.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        ErrorMessage:
+          description: ErrorMessage explains a Failed or Rejected run.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          description: OrganizationID of the Space the run is in.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Organization
+          x-go-type-skip-optional-pointer: true
+        Params:
+          description: Params is the JSON object of inputs, keyed by the option names
+            the Channel declares for the command.
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Result:
+          description: Result is the JSON the client reported for a Completed run.
+          readOnly: true
+          type: object
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          description: 'SpaceID of the Space the run is in: the Channel''s Space.'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Space
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
+          description: Slug of the Space the run is in.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Status:
+          description: 'Status is where the run is: Pending, Delivered, Completed,
+            Failed, Rejected, Canceled, Expired or TimedOut.'
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: string
+          x-go-type-skip-optional-pointer: true
+        TargetID:
+          description: TargetID is the Target the run is about, if any. For the record;
+            not a foreign key.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Target
+        TimeoutAt:
+          description: TimeoutAt is when a Delivered run times out if the client has
+            reported nothing.
+          example: 2006-01-02T15:04:05Z07:00
+          format: date-time
+          readOnly: true
+          type: string
+          x-confighub-where:
+            dataType: time
+          x-go-type-skip-optional-pointer: true
+        UnitID:
+          description: UnitID is the Unit the run is about, if any. For the record;
+            not a foreign key.
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-confighub-where:
+            dataType: uuid
+            references: Unit
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control.
+          format: int64
+          readOnly: true
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Command
+      type: object
+    CommandRunResult:
+      description: 'CommandRunResult is what a Channel''s client reports for a run
+        it executed: Completed with a Result, or Failed or Rejected with an ErrorMessage.'
+      properties:
+        ErrorMessage:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Result:
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Status:
+          description: Completed, Failed or Rejected.
+          type: string
+          x-go-type-skip-optional-pointer: true
+      required:
+      - Status
+      type: object
+    CommandSignature:
+      properties:
+        Attributes:
+          additionalProperties: {}
+          type: object
+          x-go-type-skip-optional-pointer: true
+        Description:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Options:
+          items:
+            $ref: '#/components/schemas/CommandOption'
+          type: array
+          x-go-type-skip-optional-pointer: true
+        Returns:
+          $ref: '#/components/schemas/Schema'
       type: object
     Component:
       description: The Component a set of Variants make up. Each Variant is a Space
@@ -50148,6 +53247,33 @@ components:
         ExpiresAt:
           example: 2006-01-02T15:04:05Z07:00
           format: date-time
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    DeclaredCommand:
+      description: 'DeclaredCommand is a command a Channel declares: its name and
+        signature, and the Channel and Space that declare it. A command declared by
+        two Channels in a Space is listed twice, and a run of it has to name one.'
+      properties:
+        ChannelID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        ChannelSlug:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Command:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Signature:
+          $ref: '#/components/schemas/CommandSignature'
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SpaceSlug:
           type: string
           x-go-type-skip-optional-pointer: true
       type: object
@@ -50459,6 +53585,98 @@ components:
           type: array
           x-go-type-skip-optional-pointer: true
       type: object
+    EventLog:
+      properties:
+        CreatedAt:
+          description: The timestamp when the entity was created in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        CursorID:
+          format: int64
+          type: integer
+          x-go-type-skip-optional-pointer: true
+        EntityType:
+          description: The type of entity.
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EventLogID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        EventType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        HiddenReason:
+          description: The reason the entity is hidden, if it is. A hidden entity
+            is left out of List and Search results, and of what bulk operations act
+            on, unless the include_hidden parameter names its reason or is *, or the
+            where parameter names the entity by Slug or ID. ConfigHub/YAML Units are
+            created hidden with the reason BackingUnit unless given another.
+          maxLength: 64
+          pattern: ^([A-Za-z0-9]([\-_.A-Za-z0-9]*[A-Za-z0-9])?)?$
+          type: string
+          x-go-type-skip-optional-pointer: true
+        OrganizationID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Payload:
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        SubjectEntityID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        SubjectEntityType:
+          type: string
+          x-go-type-skip-optional-pointer: true
+        TargetID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        UpdatedAt:
+          description: The timestamp when the entity was last updated in "2023-01-01T12:00:00Z"
+            format.
+          example: "2025-04-04T11:50:02.95102-07:00"
+          format: date-time
+          readOnly: true
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Version:
+          description: An entity-specific sequence number used for optimistic concurrency
+            control. The value read must be sent in calls to Update.
+          format: int64
+          readOnly: false
+          type: integer
+          x-go-type-skip-optional-pointer: true
+      type: object
+    EventSubscription:
+      properties:
+        EventTypes:
+          items:
+            type: string
+          type: array
+          x-go-type-skip-optional-pointer: true
+        SpaceID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+        TargetID:
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+      type: object
     ExtendedAttestation:
       description: Attestation with additional related entities expanded based on
         the request's include parameter.
@@ -50540,6 +53758,17 @@ components:
       properties:
         ChangeWorkflow:
           $ref: '#/components/schemas/ChangeWorkflow'
+        Error:
+          $ref: '#/components/schemas/ResponseError'
+        Organization:
+          $ref: '#/components/schemas/Organization'
+        Space:
+          $ref: '#/components/schemas/Space'
+      type: object
+    ExtendedChannel:
+      properties:
+        Channel:
+          $ref: '#/components/schemas/Channel'
         Error:
           $ref: '#/components/schemas/ResponseError'
         Organization:
@@ -51277,6 +54506,11 @@ components:
         IncludeConflicts:
           description: Put the Unit's outstanding merge conflicts in the FunctionContext,
             for functions that reason about them
+          type: boolean
+          x-go-type-skip-optional-pointer: true
+        IncludeLinkFindings:
+          description: Put what the resolves of the Unit's Links could not do in the
+            FunctionContext, for functions that reason about it
           type: boolean
           x-go-type-skip-optional-pointer: true
         Invocations:
@@ -52377,6 +55611,54 @@ components:
         Link:
           $ref: '#/components/schemas/Link'
       type: object
+    LinkFinding:
+      properties:
+        Details:
+          description: Explanation the Reason alone cannot carry, such as the error
+            a failed resolve reported
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Entry:
+          description: The Link's entry the finding is about, as its list and position,
+            such as ManualBindings[0]
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Key:
+          description: The Key of the Link's entry the finding is about, when the
+            entry has one
+          type: string
+          x-go-type-skip-optional-pointer: true
+        LinkID:
+          description: The Link whose resolve recorded the finding
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Path:
+          description: The path the finding is about; empty for a resource-level finding
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Reason:
+          description: 'What the resolve could not do: NeededNotFound, ProvidedNotFound,
+            or ResolveFailed'
+          type: string
+          x-go-type-skip-optional-pointer: true
+        Resource:
+          allOf:
+          - $ref: '#/components/schemas/ResourceInfo'
+          description: The resource the finding is about, in the Unit Reason names;
+            empty for a finding about the resolve as a whole
+        UnitID:
+          description: 'The other Unit involved: the Link''s upstream Unit'
+          example: 248df4b7-aa70-47b8-a036-33ac447e668d
+          format: uuid
+          type: string
+          x-go-type-skip-optional-pointer: true
+      type: object
+    LinkFindingList:
+      items:
+        $ref: '#/components/schemas/LinkFinding'
+      type: array
     MergeKeyValue:
       properties:
         Key:
@@ -54859,6 +58141,8 @@ components:
           x-confighub-where:
             dataType: string
           x-go-type-skip-optional-pointer: true
+        LinkFindings:
+          $ref: '#/components/schemas/LinkFindingList'
         NeededPaths:
           description: Attribute paths this Revision's configuration needs from upstream
             Units via NeedsProvides Links.
@@ -55072,6 +58356,8 @@ components:
       type: object
       x-confighub-where:
         Conflicts:
+          dataType: JSON
+        LinkFindings:
           dataType: JSON
     RevisionData:
       properties:
@@ -56623,6 +59909,12 @@ components:
             expandable: true
             references: Revision
           x-go-type-skip-optional-pointer: true
+        LinkFindings:
+          allOf:
+          - $ref: '#/components/schemas/LinkFindingList'
+          readOnly: true
+          x-confighub-where:
+            dataType: JSON
         NeededPaths:
           description: Attribute paths that this Unit needs from upstream Units via
             NeedsProvides Links. Computed from get-needed and stored on data updates.

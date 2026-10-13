@@ -252,6 +252,7 @@ const (
 	attributeGetInclude      = "SpaceID"
 	linkGetInclude           = "SpaceID,ToSpaceID,FromUnitID,ToUnitID"
 	bridgeWorkerGetInclude   = "SpaceID"
+	channelGetInclude        = "SpaceID"
 )
 
 // ResolveSpace looks up one space by slug or UUID. A space is not itself
@@ -665,6 +666,41 @@ func ResolveLink(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*go
 				return goclientnew.UUID{}
 			}
 			return e.Link.LinkID
+		},
+	}.resolve(ctx, c, ref, opts)
+}
+
+// ResolveCommandRun finds a command run by UUID, in whichever space it is in. Runs have no
+// slug, so a reference that is not a UUID finds nothing.
+func ResolveCommandRun(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.CommandRun, error) {
+	return resolver[goclientnew.CommandRun]{
+		entity: "command run", idField: "CommandRunID",
+		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.CommandRun, error) {
+			return ListCommandRuns(ctx, c, w, o)
+		},
+		slugOf: func(run *goclientnew.CommandRun) string { return "" },
+		idOf:   func(run *goclientnew.CommandRun) goclientnew.UUID { return run.CommandRunID },
+	}.resolve(ctx, c, ref, opts)
+}
+
+// ResolveChannel finds a Channel by slug, by <space>/<slug>, or by UUID.
+func ResolveChannel(ctx context.Context, c *Client, ref Ref, opts ResolveOpts) (*goclientnew.ExtendedChannel, error) {
+	return resolver[goclientnew.ExtendedChannel]{
+		entity: "channel", idField: "ChannelID", include: channelGetInclude,
+		list: func(ctx context.Context, c *Client, w Where, o ListOpts) ([]*goclientnew.ExtendedChannel, error) {
+			return ListChannels(ctx, c, w, o)
+		},
+		slugOf: func(e *goclientnew.ExtendedChannel) string {
+			if e.Channel == nil {
+				return ""
+			}
+			return e.Channel.Slug
+		},
+		idOf: func(e *goclientnew.ExtendedChannel) goclientnew.UUID {
+			if e.Channel == nil {
+				return goclientnew.UUID{}
+			}
+			return e.Channel.ChannelID
 		},
 	}.resolve(ctx, c, ref, opts)
 }

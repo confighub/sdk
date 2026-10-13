@@ -383,11 +383,11 @@ func MergeGuardStamps(earlier, later GuardStamp) GuardStamp {
 // A resource the Unit does not have is not refused, for the same reason a path that does not
 // exist is not: policy about a configuration can be written before the configuration has the
 // thing it is about, and a guard on something absent is inert rather than wrong.
-func SetGuards(table PathAnnotationList, guards []ResourceGuards,
+func SetGuards(identifier ResourceIdentifier, table PathAnnotationList, guards []ResourceGuards,
 	canonicalizePath func(ResolvedPath) ResolvedPath) PathAnnotationList {
 	for i := range guards {
 		edit := &guards[i]
-		position, found := findResourceAnnotations(table, edit.Resource)
+		position, found := findResourceAnnotations(identifier, table, edit.Resource)
 		if !found {
 			table = append(table, ResourcePathAnnotations{Resource: edit.Resource})
 			position = len(table) - 1
@@ -444,25 +444,25 @@ func annotationsForPath(entry *ResourcePathAnnotations, path ResolvedPath) PathA
 	return entry.PathAnnotationMap[path]
 }
 
-// findResourceAnnotations locates a resource in a table by name, then by alias -- the same order
-// every other resource lookup uses.
-func findResourceAnnotations(table PathAnnotationList, resource ResourceInfo) (int, bool) {
+// findResourceAnnotations locates a resource in a table as MutationSources are searched: by type
+// and name, with its scope or, when that names one resource, without it, then by alias.
+func findResourceAnnotations(identifier ResourceIdentifier, table PathAnnotationList, resource ResourceInfo) (int, bool) {
+	return annotationIndex(identifier, table).Find(resource, nil)
+}
+
+// annotationIndex indexes a table's resources as a ResourceMutationIndex, which is what
+// ResourcePathAnnotations was shaped for: one implementation of resource matching and of
+// renames.
+func annotationIndex(identifier ResourceIdentifier, table PathAnnotationList) *ResourceMutationIndex {
+	identities := make(ResourceMutationList, len(table))
 	for i := range table {
-		if table[i].Resource.ResourceName == resource.ResourceName {
-			return i, true
+		identities[i] = ResourceMutation{
+			Resource:             table[i].Resource,
+			Aliases:              table[i].Aliases,
+			AliasesWithoutScopes: table[i].AliasesWithoutScopes,
 		}
 	}
-	for i := range table {
-		if _, aliased := table[i].Aliases[resource.ResourceName]; aliased {
-			return i, true
-		}
-		if resource.ResourceNameWithoutScope != "" {
-			if _, aliased := table[i].AliasesWithoutScopes[resource.ResourceNameWithoutScope]; aliased {
-				return i, true
-			}
-		}
-	}
-	return 0, false
+	return NewResourceMutationIndex(identifier, identities)
 }
 
 // A clearance is what an operation carries to say which classes of reason it knows about. A
@@ -685,12 +685,14 @@ type ResourceGuardDiff struct {
 //
 // Resources are matched by name and alias, so a rename inside the range does not read as one
 // resource losing all its guards and another gaining them.
-func DiffGuards(base, end PathAnnotationList) []ResourceGuardDiff {
+func DiffGuards(identifier ResourceIdentifier, base, end PathAnnotationList) []ResourceGuardDiff {
 	var diffs []ResourceGuardDiff
+	baseIndex := annotationIndex(identifier, base)
+	endIndex := annotationIndex(identifier, end)
 	for i := range end {
 		endEntry := &end[i]
 		var baseEntry *ResourcePathAnnotations
-		if position, found := findResourceAnnotations(base, endEntry.Resource); found {
+		if position, found := baseIndex.Find(endEntry.Resource, endEntry.AliasesWithoutScopes); found {
 			baseEntry = &base[position]
 		}
 		if deltas := diffResourceGuards(baseEntry, endEntry); len(deltas) > 0 {
@@ -701,7 +703,7 @@ func DiffGuards(base, end PathAnnotationList) []ResourceGuardDiff {
 	// removal propagates rather than being lost with the entry.
 	for i := range base {
 		baseEntry := &base[i]
-		if _, found := findResourceAnnotations(end, baseEntry.Resource); found {
+		if _, found := endIndex.Find(baseEntry.Resource, baseEntry.AliasesWithoutScopes); found {
 			continue
 		}
 		if deltas := diffResourceGuards(baseEntry, &ResourcePathAnnotations{Resource: baseEntry.Resource}); len(deltas) > 0 {
@@ -759,11 +761,11 @@ func diffResourceGuards(base, end *ResourcePathAnnotations) []GuardDelta {
 
 // ApplyGuardDelta applies one delta to a table entry, creating the entry if the resource has
 // none. Returns whether anything changed.
-func ApplyGuardDelta(table PathAnnotationList, resource ResourceInfo, delta *GuardDelta) (PathAnnotationList, bool) {
+func ApplyGuardDelta(identifier ResourceIdentifier, table PathAnnotationList, resource ResourceInfo, delta *GuardDelta) (PathAnnotationList, bool) {
 	if delta.IsEmpty() {
 		return table, false
 	}
-	position, found := findResourceAnnotations(table, resource)
+	position, found := findResourceAnnotations(identifier, table, resource)
 	if !found {
 		table = append(table, ResourcePathAnnotations{Resource: resource})
 		position = len(table) - 1

@@ -105,7 +105,8 @@ func (r *blameResolver) upstreamCredit(origin *blameOrigin, resourceType, resour
 		}
 		r.sources[key] = sources
 	}
-	info, _ := creditPath(sources, resourceType, resourceName, resourceNameCore, path)
+	identifier, _ := blameResourceProvider(upstream.ToolchainType)
+	info, _ := creditPath(identifier, sources, resourceType, resourceName, resourceNameCore, path)
 	return info, nil
 }
 

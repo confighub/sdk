@@ -52,19 +52,16 @@ func genericFnDeleteResource(resourceProvider yamlkit.ResourceProvider, options 
 	targetResourceType := api.ResourceType(args[0].Value.(string))
 	targetResourceName := api.ResourceName(args[1].Value.(string))
 
-	// Use VisitResources to find the existing resource and track its position
-	foundIndex := -1
-	visitor := func(doc *gaby.YamlDoc, output any, index int, resourceInfo *api.ResourceInfo) (any, []error) {
-		if resourceInfo.ResourceType == targetResourceType &&
-			resourceProvider.RemoveScopeFromResourceName(resourceInfo.ResourceName) == resourceProvider.RemoveScopeFromResourceName(targetResourceName) {
-			foundIndex = index
-		}
-		return output, []error{}
-	}
-
-	_, err := yamlkit.VisitResourcesFiltered(parsedData, nil, resourceProvider, options, visitor)
+	// Find the resource: by its name, or by its name without its namespace when that names one
+	// resource, so that a stored invocation still finds a resource a clone has moved.
+	foundIndex, match, err := yamlkit.MatchResource(parsedData, resourceProvider, options,
+		api.ResourceInfo{ResourceType: targetResourceType, ResourceName: targetResourceName})
 	if err != nil {
 		return parsedData, nil, fmt.Errorf("failed to search for resource to delete: %v", err)
+	}
+	if len(match.Ambiguous) > 0 {
+		return parsedData, nil, fmt.Errorf("resource with type %s and name %s matches several resources in different scopes: %v",
+			targetResourceType, targetResourceName, match.Ambiguous)
 	}
 
 	if foundIndex < 0 {

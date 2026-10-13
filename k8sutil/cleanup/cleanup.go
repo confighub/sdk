@@ -75,7 +75,7 @@ func IsStandardWorkload(gvk *schema.GroupVersionKind) bool {
 	resourceType := GvkToResourceType(gvk)
 	isWorkload := k8skit.SimilarityClassOf(resourceType) == k8skit.SimilarityClassWorkload
 	// TODO: Handle CronJob
-	return isWorkload && resourceType != funcapi.ResourceType("batch/v1/CronJob")
+	return isWorkload && !(gvk.Group == "batch" && gvk.Kind == "CronJob")
 }
 
 // Field managers whose managed fields should be removed during import/refresh

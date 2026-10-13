@@ -40,11 +40,11 @@ func TestBlameGuardsForPathFindsAPathsOwnEntry(t *testing.T) {
 		"spec.replicas": {"policy-exception": "capacity"},
 	}, nil)
 
-	got := blameGuardsForPath(table, "apps/v1/Deployment", "ns/web", "web", "spec.replicas")
+	got := blameGuardsForPath(nil, table, "apps/v1/Deployment", "ns/web", "web", "spec.replicas")
 	if got["policy-exception"] != "capacity" {
 		t.Errorf("expected the path's own guard, got %v", got)
 	}
-	if guards := blameGuardsForPath(table, "apps/v1/Deployment", "ns/web", "web", "spec.paused"); guards != nil {
+	if guards := blameGuardsForPath(nil, table, "apps/v1/Deployment", "ns/web", "web", "spec.paused"); guards != nil {
 		t.Errorf("an unguarded path should report nothing, got %v", guards)
 	}
 }
@@ -56,7 +56,7 @@ func TestBlameGuardsForPathInheritsFromAnAncestorAndTheResource(t *testing.T) {
 
 	// A field inside the guarded subtree carries both the subtree's reason and the resource's,
 	// which is what an operation writing there has to be cleared for.
-	got := blameGuardsForPath(table, "apps/v1/Deployment", "ns/web", "web",
+	got := blameGuardsForPath(nil, table, "apps/v1/Deployment", "ns/web", "web",
 		"spec.template.spec.containers.?name=app.image")
 	if got["owner"] != "platform" {
 		t.Errorf("expected the ancestor's guard to be inherited, got %v", got)
@@ -66,7 +66,7 @@ func TestBlameGuardsForPathInheritsFromAnAncestorAndTheResource(t *testing.T) {
 	}
 
 	// A field outside the subtree still carries the resource's.
-	outside := blameGuardsForPath(table, "apps/v1/Deployment", "ns/web", "web", "spec.replicas")
+	outside := blameGuardsForPath(nil, table, "apps/v1/Deployment", "ns/web", "web", "spec.replicas")
 	if outside["policy-exception"] != "pinned" {
 		t.Errorf("expected the resource-level guard outside the subtree, got %v", outside)
 	}
@@ -82,19 +82,19 @@ func TestBlameGuardsForPathMatchesARenamedResource(t *testing.T) {
 		"spec.replicas": {"owner": "platform"},
 	}, nil)
 
-	got := blameGuardsForPath(table, "apps/v1/Deployment", "other/web", "web", "spec.replicas")
+	got := blameGuardsForPath(nil, table, "apps/v1/Deployment", "other/web", "web", "spec.replicas")
 	if got["owner"] != "platform" {
 		t.Errorf("expected the unscoped name to match, got %v", got)
 	}
 
-	none := blameGuardsForPath(table, "apps/v1/Deployment", "other/api", "api", "spec.replicas")
+	none := blameGuardsForPath(nil, table, "apps/v1/Deployment", "other/api", "api", "spec.replicas")
 	if none != nil {
 		t.Errorf("a different resource must not pick up another's guards, got %v", none)
 	}
 }
 
 func TestBlameGuardsForPathIsEmptyForAnUnguardedUnit(t *testing.T) {
-	if got := blameGuardsForPath(nil, "apps/v1/Deployment", "ns/web", "web", "spec.replicas"); got != nil {
+	if got := blameGuardsForPath(nil, nil, "apps/v1/Deployment", "ns/web", "web", "spec.replicas"); got != nil {
 		t.Errorf("a Unit with no annotations should report nothing, got %v", got)
 	}
 }

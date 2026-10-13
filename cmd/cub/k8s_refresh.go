@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/confighub/sdk/configkit/k8skit"
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	"github.com/confighub/sdk/core/function/api"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
@@ -222,7 +223,8 @@ func computeClusterDrift(releasedData, liveData, resourceType, name string) (api
 
 	drift := make(api.ResourceMutationList, 0, 1)
 	for _, rm := range mutations {
-		if string(rm.Resource.ResourceType) != resourceType || !matchesResourceName(rm.Resource, name) {
+		if !api.SameResourceType(refreshResourceIdentifier, rm.Resource.ResourceType, api.ResourceType(resourceType)) ||
+			!matchesResourceName(rm.Resource, name) {
 			continue
 		}
 		if isNoOpMutation(rm) {
@@ -337,14 +339,14 @@ func whereResourceForOneResource(resourceType, name string) string {
 		resourceType, name)
 }
 
+// refreshResourceIdentifier identifies the Kubernetes resources a refresh compares: the cluster
+// may serve a resource in another API version than the Unit records it in.
+var refreshResourceIdentifier api.ResourceIdentifier = k8skit.NewK8sResourceProvider()
+
 // matchesResourceName reports whether a mutation's resource is the one named on the command
 // line, comparing without scope for the same reason whereResourceForOneResource does.
 func matchesResourceName(info api.ResourceInfo, name string) bool {
-	if string(info.ResourceNameWithoutScope) == name {
-		return true
-	}
-	_, withoutScope, found := strings.Cut(string(info.ResourceName), "/")
-	return found && withoutScope == name
+	return string(api.ResourceNameWithoutScopeFromResourceInfo(refreshResourceIdentifier, info)) == name
 }
 
 // reportRefreshConflicts prints the changes from the cluster the refresh did not write --

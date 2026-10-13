@@ -43,6 +43,12 @@ type FunctionContext struct {
 	// decide whether an unresolved merge should block apply; an argument's template or CEL
 	// expression can reach them as {{.Conflicts}} / functionContext.Conflicts.
 	Conflicts MutationConflictList `json:",omitempty" description:"The Unit's outstanding merge conflicts; present only when the invocation asked for them"`
+
+	// LinkFindings are what the resolves of the Unit's Links could not do -- a path a Link names
+	// that is not there, a resolve that failed. Populated, like Conflicts, only when the
+	// invocation asks for them with FunctionInvocationOptions.IncludeLinkFindings, and always for
+	// a Trigger, where the policy on whether they block apply lives.
+	LinkFindings LinkFindingList `json:",omitempty" description:"What the resolves of the Unit's Links could not do; present only when the invocation asked for them"`
 }
 
 // InstanceString returns a string that uniquely identifies the configuration Unit and,
@@ -185,6 +191,10 @@ type FunctionInvocationOptions struct {
 	// unbounded in a way the rest of the context is not, and no ordinary invocation needs
 	// them.
 	IncludeConflicts bool `json:",omitempty" description:"Put the Unit's outstanding merge conflicts in the FunctionContext, for functions that reason about them"`
+
+	// IncludeLinkFindings asks the server to put what the Unit's Links' resolves could not do
+	// into the FunctionContext, as IncludeConflicts does for merge conflicts.
+	IncludeLinkFindings bool `json:",omitempty" description:"Put what the resolves of the Unit's Links could not do in the FunctionContext, for functions that reason about it"`
 }
 
 // FunctionOptions contains options that affect how functions operate on resources that need to be

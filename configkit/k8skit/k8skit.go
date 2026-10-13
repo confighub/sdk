@@ -231,11 +231,31 @@ func (rp *K8sResourceProviderType) ResourceNameStableCoreGetter(doc *gaby.YamlDo
 	return api.ResourceName(name), nil
 }
 
-func (*K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
-	if resourceTypeA == resourceTypeB {
+// RemoveAPIVersionFromResourceType removes the version from a resource type of the form
+// <apiVersion>/<kind>, leaving <group>/<kind>, or just <kind> for the core group: an
+// apps/v1/Deployment is the same Deployment once it is written in apps/v2.
+//
+// The version is found by position, not by its form: an apiVersion is <group>/<version>, or
+// <version> for the core group, and a version is any name a CustomResourceDefinition gives one
+// -- v1beta1, v1b1, or stable. A type of any other shape, such as ResourceTypeAny, is returned as
+// it is.
+func (*K8sResourceProviderType) RemoveAPIVersionFromResourceType(resourceType api.ResourceType) api.ResourceType {
+	segments := strings.Split(string(resourceType), "/")
+	switch len(segments) {
+	case 2:
+		return api.ResourceType(segments[1])
+	case 3:
+		return api.ResourceType(segments[0] + "/" + segments[2])
+	default:
+		return resourceType
+	}
+}
+
+func (rp *K8sResourceProviderType) ResourceTypesAreSimilar(resourceTypeA, resourceTypeB api.ResourceType) bool {
+	if api.SameResourceType(rp, resourceTypeA, resourceTypeB) {
 		return true
 	}
-	// Strip groups and versions to check same type, different versions
+	// Strip groups to check the same kind moved to a different group
 	resourceTypeAString := string(resourceTypeA)
 	resourceTypeASegments := strings.Split(resourceTypeAString, "/")
 	resourceTypeBString := string(resourceTypeB)
