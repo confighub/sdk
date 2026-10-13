@@ -199,5 +199,8 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 	displayCreateResults(release, "release", release.ReleaseID.String(), release.ReleaseID.String(), displayReleaseDetails)
-	return nil
+
+	// A variant deployed to a `cub cluster up --controller sveltos` cluster has
+	// its ClusterProfile released only now that its first Release exists.
+	return publishVariantSveltosProfile(cmd.OutOrStdout(), space.Space.SpaceID)
 }

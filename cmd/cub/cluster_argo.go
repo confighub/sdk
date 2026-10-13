@@ -104,7 +104,11 @@ func clusterArgoInstall(ctx context.Context, kubeconfigPath string, nodePort int
 // telling the repo-server to use plain HTTP against the OCI registry. Needed
 // when wired up against a local cub server (http://localhost...) whose OCI
 // endpoint is also plain HTTP. No effect for production https endpoints.
-func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, ociURL, workerID, workerSecret string, insecureHTTP bool, out io.Writer) error {
+//
+// The credential is a long-lived token of the cluster's service account,
+// presented the way ConfigHub's registry takes any of its own tokens: as the
+// password, with the fixed username "token".
+func clusterArgoApplyOCIRepoCreds(ctx context.Context, kubeconfigPath, ociURL, pullToken string, insecureHTTP bool, out io.Writer) error {
 	extra := ""
 	if insecureHTTP {
 		extra = "  insecureOCIForceHttp: \"true\"\n"
@@ -121,9 +125,9 @@ stringData:
   type: oci
   url: %s
   enableOCI: "true"
-%s  username: %s
+%s  username: token
   password: %s
-`, clusterArgoNamespace, ociURL, extra, workerID, workerSecret)
+`, clusterArgoNamespace, ociURL, extra, pullToken)
 	fmt.Fprintln(out, "Applying confighub-oci-creds repo-creds Secret to argocd namespace...")
 	return clusterKubectlApply(ctx, kubeconfigPath, []byte(secret), out)
 }

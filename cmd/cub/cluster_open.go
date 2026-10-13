@@ -21,11 +21,16 @@ var clusterOpenArgs struct {
 
 var clusterOpenCmd = &cobra.Command{
 	Use:   "open [<cluster-name>]",
-	Short: "Open a cluster's Argo CD UI in the browser",
+	Short: "Open a cluster's Argo CD UI or Sveltos dashboard in the browser",
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Open the Argo CD admin UI of a cub-managed cluster, log-in credentials in hand:
 the admin password is copied to your clipboard so you can paste it into Argo's
 login form instead of digging it out of the cluster.
+
+For a cluster from "cub cluster up --controller sveltos", this opens the Sveltos
+dashboard instead, and copies a login token to your clipboard. The token is
+created each time from the cluster's platform-admin ServiceAccount, and is valid
+for 24 hours. --print-password prints it instead.
 
 The cluster name may be given as an argument or with --name, and can be omitted
 when this host has exactly one cub-managed cluster. `+"`cub cluster list`"+` shows the
@@ -60,7 +65,7 @@ Examples:
 func init() {
 	enableOpenFlags(clusterOpenCmd)
 	clusterOpenCmd.Flags().StringVar(&clusterOpenArgs.name, "name", "", "cluster name (may also be given as a positional argument)")
-	clusterOpenCmd.Flags().BoolVar(&clusterOpenArgs.printPassword, "print-password", false, "print the admin password to the terminal instead of copying it to the clipboard")
+	clusterOpenCmd.Flags().BoolVar(&clusterOpenArgs.printPassword, "print-password", false, "print the admin password (for Sveltos, the dashboard token) to the terminal instead of copying it to the clipboard")
 	clusterCmd.AddCommand(clusterOpenCmd)
 }
 
@@ -84,6 +89,14 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	// The env file is the local, no-round-trip source for both the endpoint and
 	// the password; each has its own fallback below when it is absent.
 	env := clusterReadEnvFile(name)
+
+	sveltos, space, err := clusterOpenIsSveltos(name, env)
+	if err != nil {
+		return err
+	}
+	if sveltos {
+		return clusterOpenSveltos(out, name, env, space, printPassword)
+	}
 
 	url, err := clusterArgoURL(name, env)
 	if err != nil {
@@ -114,6 +127,61 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 			fmt.Fprintf(out, "  password: %s  (could not copy to clipboard: %v)\n", password, cerr)
 		} else {
 			fmt.Fprintf(out, "  password: in your clipboard — paste it into Argo's login form\n")
+		}
+	}
+	return nil
+}
+
+// clusterOpenIsSveltos reports whether the cluster runs Sveltos rather than Argo
+// CD. The env file answers without a round-trip: `cub cluster up` writes
+// SVELTOS_DASHBOARD for a Sveltos cluster and ARGOCD_SERVER for an Argo one.
+// Without either, the cluster Space's controller annotation decides, and the
+// Space is returned for the caller's own fallbacks.
+func clusterOpenIsSveltos(name string, env map[string]string) (bool, *clusterSpace, error) {
+	switch {
+	case env["SVELTOS_DASHBOARD"] != "":
+		return true, nil, nil
+	case env["ARGOCD_SERVER"] != "":
+		return false, nil, nil
+	}
+	space, err := clusterSpaceByName(name)
+	if err != nil {
+		return false, nil, err
+	}
+	return space != nil && space.Controller == clusterControllerSveltos, space, nil
+}
+
+// clusterOpenSveltos opens a Sveltos cluster's dashboard with a fresh login
+// token in hand: copied to the clipboard, or printed with --print-password.
+// Without a token the dashboard is still opened, and the error is reported.
+func clusterOpenSveltos(out io.Writer, name string, env map[string]string, space *clusterSpace, printToken bool) error {
+	url, err := clusterSveltosDashboardEndpoint(name, env, space)
+	if err != nil {
+		return err
+	}
+	if printURL {
+		fmt.Fprintln(out, url)
+		return nil
+	}
+
+	// Create the token before launching the browser, so the paste is ready by
+	// the time the login form is.
+	token, tokenErr := clusterSveltosDashboardToken(ctx, name)
+
+	if err := open.Start(url); err != nil {
+		return fmt.Errorf("failed to open browser on %s: %w", url, err)
+	}
+	fmt.Fprintf(out, "Opened the Sveltos dashboard of cluster %q: %s\n", name, url)
+	switch {
+	case token == "":
+		fmt.Fprintf(out, "  token: could not be created (%v)\n", tokenErr)
+	case printToken:
+		fmt.Fprintf(out, "  token: %s\n", token)
+	default:
+		if cerr := clipboardCopy(ctx, token); cerr != nil {
+			fmt.Fprintf(out, "  token: %s  (could not copy to clipboard: %v)\n", token, cerr)
+		} else {
+			fmt.Fprintf(out, "  token: in your clipboard, valid for %s — paste it into the dashboard's login form\n", clusterSveltosDashboardTokenDuration)
 		}
 	}
 	return nil

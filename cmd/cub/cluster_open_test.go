@@ -53,6 +53,43 @@ func TestClusterArgoURLFromEnvFile(t *testing.T) {
 	}
 }
 
+func TestClusterSveltosEnvFileOpensDashboard(t *testing.T) {
+	// Exactly what `cub cluster up --controller sveltos` writes: the env file alone
+	// says the cluster runs Sveltos, and where its dashboard is.
+	env := clusterParseEnvFile(clusterBuildSveltosEnvFile("mycluster", "/tmp/mycluster.kubeconfig", 30002))
+
+	sveltos, _, err := clusterOpenIsSveltos("mycluster", env)
+	if err != nil || !sveltos {
+		t.Fatalf("clusterOpenIsSveltos() = %v, %v; want a Sveltos cluster from the env file", sveltos, err)
+	}
+	got, err := clusterSveltosDashboardEndpoint("mycluster", env, nil)
+	if err != nil || got != "http://localhost:30002" {
+		t.Errorf("clusterSveltosDashboardEndpoint() = %q, %v; want http://localhost:30002", got, err)
+	}
+
+	argoEnv := clusterParseEnvFile(clusterBuildEnvFile("mycluster", "/tmp/mycluster.kubeconfig", 30042, "pw"))
+	if sveltos, _, err := clusterOpenIsSveltos("mycluster", argoEnv); err != nil || sveltos {
+		t.Errorf("clusterOpenIsSveltos() = %v, %v for an Argo env file; want Argo", sveltos, err)
+	}
+}
+
+func TestClusterSveltosDashboardEndpointFromSpace(t *testing.T) {
+	space := &clusterSpace{SpaceSlug: "mycluster", Controller: clusterControllerSveltos, SveltosPort: "30002"}
+	got, err := clusterSveltosDashboardEndpoint("mycluster", map[string]string{}, space)
+	if err != nil || got != "http://localhost:30002" {
+		t.Errorf("clusterSveltosDashboardEndpoint() = %q, %v; want http://localhost:30002", got, err)
+	}
+
+	space.SveltosPort = ""
+	if _, err := clusterSveltosDashboardEndpoint("mycluster", map[string]string{}, space); err == nil ||
+		!strings.Contains(err.Error(), clusterAnnotationSveltosPort) {
+		t.Errorf("clusterSveltosDashboardEndpoint() error = %v; want one naming %s", err, clusterAnnotationSveltosPort)
+	}
+	if _, err := clusterSveltosDashboardEndpoint("mycluster", map[string]string{}, nil); err == nil {
+		t.Error("clusterSveltosDashboardEndpoint() with no env file and no Space: want an error")
+	}
+}
+
 func TestClusterResolveName(t *testing.T) {
 	t.Setenv("CUB_CONFIG", t.TempDir())
 

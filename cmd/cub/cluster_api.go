@@ -26,9 +26,11 @@ type clusterSpace struct {
 	SpaceID     uuid.UUID
 	SpaceSlug   string
 	ClusterName string // from clusterAnnotationName; falls back to SpaceSlug
+	Controller  string // from clusterAnnotationController; clusterControllerArgo when absent, as on clusters made before it
 	PortRange   string
 	Host        string
 	ArgoPort    string
+	SveltosPort string // the Sveltos dashboard's NodePort, from clusterAnnotationSveltosPort
 	CreatedAt   time.Time
 }
 
@@ -109,13 +111,19 @@ func clusterListSpacesForHost(hostname string) ([]clusterSpace, error) {
 		if name == "" {
 			name = s.Slug
 		}
+		controller := s.Annotations[clusterAnnotationController]
+		if controller == "" {
+			controller = clusterControllerArgo
+		}
 		out = append(out, clusterSpace{
 			SpaceID:     s.SpaceID,
 			SpaceSlug:   s.Slug,
 			ClusterName: name,
+			Controller:  controller,
 			PortRange:   s.Annotations[clusterAnnotationPortRange],
 			Host:        s.Annotations[clusterAnnotationHost],
 			ArgoPort:    s.Annotations[clusterAnnotationArgoPort],
+			SveltosPort: s.Annotations[clusterAnnotationSveltosPort],
 			CreatedAt:   s.CreatedAt,
 		})
 	}
@@ -137,45 +145,111 @@ func clusterCreateSpace(slug, displayName string, labels, annotations map[string
 	return res.JSON200.SpaceID, nil
 }
 
-// clusterCreateOCIWorker creates a server-hosted worker — no pod runs in the
-// user's cluster; ConfigHub hosts it. It is the identity Argo pulls as: its
-// secret is handed to Argo as OCI repo-creds, so OrgRole is forced to "none"
-// and it must carry no org-level REST privileges. Returns the worker's UUID,
-// its Secret (needed for the Argo repo-creds Secret), and its bot user, which
-// the cluster's Target grants access to.
-func clusterCreateOCIWorker(spaceID uuid.UUID, slug, displayName string) (uuid.UUID, string, uuid.UUID, error) {
-	body := &goclientnew.BridgeWorker{
-		SpaceID:     spaceID,
+// clusterServiceAccountSlug is the service account `cub cluster up` creates for a
+// cluster: the identity Argo CD pulls as and argobot runs as. Org-scoped, so it
+// is named for the cluster, beside the argobot variant Space argobot-<name>.
+func clusterServiceAccountSlug(name string) string {
+	return "argo-" + name
+}
+
+// clusterServiceAccountExists reports whether a service account with the slug
+// exists in the current org.
+func clusterServiceAccountExists(slug string) (bool, error) {
+	where := fmt.Sprintf("Slug = '%s'", slug)
+	res, err := cubClientNew.ListServiceAccountsWithResponse(ctx, &goclientnew.ListServiceAccountsParams{Where: &where})
+	if cubapi.IsAPIError(err, res) {
+		return false, cubapi.InterpretErrorGeneric(err, res)
+	}
+	for _, sa := range *res.JSON200 {
+		if sa.ServiceAccount != nil && sa.ServiceAccount.Slug == slug {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// clusterCreateServiceAccount creates the cluster's service account with no
+// organization role: its only access is what the cluster's Target and Channel
+// grant its user, which is what the Argo side of the cluster needs and nothing
+// else. Returns the service account's ID and the user it acts as. The caller is
+// given Impersonate on it, which is what lets the key and token below be issued.
+func clusterCreateServiceAccount(slug, displayName string, annotations map[string]string) (uuid.UUID, uuid.UUID, error) {
+	body := goclientnew.ServiceAccount{
 		Slug:        slug,
 		DisplayName: displayName,
 		OrgRole:     "none",
-		ProvidedInfo: &goclientnew.WorkerInfo{
-			IsServerWorker: true,
-		},
+		Annotations: annotations,
 	}
-	worker, err := apiCreateWorker(body, spaceID)
+	res, err := cubClientNew.CreateServiceAccountWithResponse(ctx, &goclientnew.CreateServiceAccountParams{}, body)
+	if cubapi.IsAPIError(err, res) {
+		return uuid.Nil, uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	sa := res.JSON200
+	if uuid.UUID(sa.UserID) == uuid.Nil {
+		return uuid.Nil, uuid.Nil, fmt.Errorf("service account %q: server returned no user", slug)
+	}
+	return uuid.UUID(sa.ServiceAccountID), uuid.UUID(sa.UserID), nil
+}
+
+// clusterCreateServiceAccountKey mints a keypair for the service account,
+// registers the public half, and returns the private half as a JWK for whatever
+// authenticates as the service account. The private key exists only here and
+// where the caller puts it: ConfigHub holds the public half and nothing it
+// could replay. The JWK records the user's external ID, so the holder can sign
+// without being told separately who it is.
+func clusterCreateServiceAccountKey(serviceAccountID, userID uuid.UUID, description string) (json.RawMessage, error) {
+	user, err := resolveUserCore(userID.String())
 	if err != nil {
-		return uuid.Nil, "", uuid.Nil, err
+		return nil, fmt.Errorf("resolve the service account's user: %w", err)
 	}
-	secret := worker.Secret
-	userID := worker.UserID
-	if secret == "" || userID == nil {
-		// Some server responses blank Secret on create; fetch via Get as
-		// `cub worker get-secret` does.
-		got, gerr := resolveWorker(worker.BridgeWorkerID.String(), spaceID.String(), "*")
-		if gerr != nil {
-			return uuid.Nil, "", uuid.Nil, fmt.Errorf("get worker secret after create: %w", gerr)
-		}
-		secret = got.BridgeWorker.Secret
-		userID = got.BridgeWorker.UserID
+	pair, err := generateEd25519Key(user.ExternalID)
+	if err != nil {
+		return nil, err
 	}
-	if secret == "" {
-		return uuid.Nil, "", uuid.Nil, fmt.Errorf("worker %q: server returned no Secret", slug)
+	if _, err := apiCreateServiceAccountKey(serviceAccountID.String(), pair.PublicJWK, description); err != nil {
+		return nil, err
 	}
-	if userID == nil || *userID == uuid.Nil {
-		return uuid.Nil, "", uuid.Nil, fmt.Errorf("worker %q: server returned no bot user", slug)
+	return pair.PrivateJWK, nil
+}
+
+// clusterCreateServiceAccountToken issues a long-lived token for the service
+// account, for a consumer that can hold only a static credential: Argo CD's
+// repository Secret. A registry client presents it as the password with the
+// username "token". It is shown once; ConfigHub keeps a record it can revoke
+// (`cub serviceaccount token list|revoke`) and not the token itself.
+func clusterCreateServiceAccountToken(serviceAccountID uuid.UUID, description string) (string, error) {
+	body := goclientnew.CreateServiceAccountTokenJSONRequestBody{Description: description}
+	res, err := cubClientNew.CreateServiceAccountTokenWithResponse(ctx, serviceAccountID.String(), &goclientnew.CreateServiceAccountTokenParams{}, body)
+	if cubapi.IsAPIError(err, res) {
+		return "", cubapi.InterpretErrorGeneric(err, res)
 	}
-	return worker.BridgeWorkerID, secret, *userID, nil
+	if res.JSON200.Token == "" {
+		return "", fmt.Errorf("service account %s: server returned no token", serviceAccountID)
+	}
+	return res.JSON200.Token, nil
+}
+
+// clusterDeleteServiceAccount deletes the cluster's service account by slug,
+// with its keys and tokens. A slug that does not resolve is already gone: a
+// cluster created before service accounts were part of `cub cluster up` has
+// none, and tearing it down must not fail on that.
+func clusterDeleteServiceAccount(slug string) error {
+	exists, err := clusterServiceAccountExists(slug)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return nil
+	}
+	sa, err := resolveServiceAccount(slug, "ServiceAccountID")
+	if err != nil {
+		return err
+	}
+	res, err := cubClientNew.DeleteServiceAccountWithResponse(ctx, sa.ServiceAccount.ServiceAccountID)
+	if cubapi.IsAPIError(err, res) {
+		return cubapi.InterpretErrorGeneric(err, res)
+	}
+	return nil
 }
 
 // clusterWhereTriggerForSpace is the Target's WhereTrigger expression: every
@@ -225,21 +299,21 @@ func clusterCreateGateTrigger(spaceID uuid.UUID, slug string) (uuid.UUID, error)
 	return res.JSON200.TriggerID, nil
 }
 
-// clusterCreateOCITarget creates the cluster's Target and grants the worker's
-// bot user View, ViewChildren and EditChildren on it. ViewChildren is what
-// authorizes Argo, pulling as that worker, to pull the Releases of every Space
-// that releases to the Target; View is what lets argobot, running as the same
-// worker, find it; and EditChildren is what lets argobot record each Release's
-// LiveStatus.
+// clusterCreateOCITarget creates the cluster's Target and grants the cluster
+// service account's user View, ViewChildren and EditChildren on it.
+// ViewChildren is what authorizes Argo, pulling as that service account, to
+// pull the Releases of every Space that releases to the Target; View is what
+// lets argobot, running as the same service account, find it; and EditChildren
+// is what lets argobot record each Release's LiveStatus.
 // annotations (may be nil) are attached to the Target, e.g. the URL-TargetUI
 // deep link. whereTrigger selects the Triggers that gate Units bound to this
 // Target; the server resolves it into TriggerIDs here, so any Trigger it
 // selects must already exist.
-func clusterCreateOCITarget(spaceID, workerUserID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
+func clusterCreateOCITarget(spaceID, botUserID uuid.UUID, slug, displayName string, annotations map[string]string, whereTrigger string) (uuid.UUID, error) {
 	permissions := goclientnew.Permissions{
-		"View":         {UserIDs: map[string]bool{workerUserID.String(): true}},
-		"ViewChildren": {UserIDs: map[string]bool{workerUserID.String(): true}},
-		"EditChildren": {UserIDs: map[string]bool{workerUserID.String(): true}},
+		"View":         {UserIDs: map[string]bool{botUserID.String(): true}},
+		"ViewChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
+		"EditChildren": {UserIDs: map[string]bool{botUserID.String(): true}},
 	}
 	body := goclientnew.Target{
 		SpaceID:      spaceID,

@@ -4,9 +4,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 
+	"github.com/confighub/sdk/core/cubapi"
+	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
 	"github.com/google/uuid"
 )
 
@@ -22,7 +26,7 @@ import (
 // of that path.
 //
 // Everything argobot-specific lives in this file; the rest of the cluster
-// package is generic (kind, Argo CD, ConfigHub Spaces/Workers/Targets). The one
+// package is generic (kind, Argo CD, ConfigHub Spaces/Targets/ServiceAccounts). The one
 // coupling into `cub cluster up` is clusterInstallArgobotStep, called once from
 // clusterUpRun.
 
@@ -40,6 +44,12 @@ const (
 	// clusterArgobotOCIRef is the default OCI reference of argobot's config
 	// bundle (its Kubernetes manifests), overridable with --argobot-oci.
 	clusterArgobotOCIRef = "oci://ghcr.io/confighub/configs/argobot"
+	// The Sveltos counterparts. argobot's Sveltos deployment
+	// (manifests/sveltos/argobot.yaml in its repository) needs different RBAC
+	// and its own HealthCheck, so it is a base of its own, beside the Argo CD one.
+	clusterArgobotSveltosBaseVariant = "sveltos-base"
+	clusterArgobotSveltosBaseSpace   = "argobot-sveltos-base"
+	clusterArgobotSveltosOCIRef      = "oci://ghcr.io/confighub/configs/argobot-sveltos"
 	// clusterArgobotNamespace is the namespace argobot's manifests deploy into.
 	clusterArgobotNamespace = "argobot"
 	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The bundle
@@ -49,20 +59,31 @@ const (
 	clusterArgobotUnitSlug = "argobot"
 	// clusterArgobotContainer is the container name in argobot's Deployment.
 	clusterArgobotContainer = "argobot"
-	// clusterArgobotSecret is the out-of-band Secret argobot reads its worker
-	// credentials from (never shipped in the OCI bundle).
+	// clusterArgobotSecret is the out-of-band Secret argobot reads its service
+	// account key from (never shipped in the OCI bundle).
 	clusterArgobotSecret = "argobot-secrets"
+	// clusterArgobotChannelSlug is the Channel argobot listens on, created in
+	// the cluster Space beside the Target whose deploys it reacts to.
+	clusterArgobotChannelSlug = "argobot"
 )
+
+// The event type argobot reacts to: a Release published for the cluster's
+// Target. It is what argobot --print-subscriptions prints; named here so the
+// Channel is created without running the bot.
+const clusterArgobotEventReleasePublished = "release.published"
 
 // clusterArgobotDeps carries the cluster-derived values the argobot install
 // needs from clusterUpRun — the pieces of a freshly created cluster argobot
 // binds to. The child Argo Application is created by `cub variant create` from
 // the OCI target's argo-apps-space annotation, so the install itself only needs
-// the worker credentials (for the out-of-band Secret) and the kubeconfig.
+// the identity argobot runs as (for the Channel grant and the out-of-band
+// Secret) and the kubeconfig.
 type clusterArgobotDeps struct {
-	workerID       uuid.UUID // the cluster's oci-worker (argobot reuses it as its identity)
-	workerSecret   string    // the oci-worker secret (goes into the out-of-band Secret)
-	kubeconfigPath string
+	clusterSpaceID       uuid.UUID       // the cluster Space; argobot's Channel lives here, beside the Target
+	targetID             uuid.UUID       // the cluster's OCI target, which the Channel's subscription is scoped to
+	serviceAccountUserID uuid.UUID       // the user of the cluster's service account, which claims the Channel
+	privateKey           json.RawMessage // its private key (goes into the out-of-band Secret)
+	kubeconfigPath       string
 }
 
 // clusterInstallArgobotStep is the single argobot seam into `cub cluster up`.
@@ -100,24 +121,73 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep cluster
 		return err
 	}
 
-	fmt.Fprintln(out, "\nInstalling argobot (event-driven Argo CD sync)...")
+	sveltos := opts.controller == clusterControllerSveltos
+	if sveltos {
+		fmt.Fprintln(out, "\nInstalling argobot (event-driven Sveltos redeploy)...")
+	} else {
+		fmt.Fprintln(out, "\nInstalling argobot (event-driven Argo CD sync)...")
+	}
 	return clusterInstallArgobot(out, clusterArgobotOptions{
-		clusterName:        opts.name,
-		ociTargetRef:       opts.spaceSlug + "/" + clusterTargetSlug,
-		workerID:           dep.workerID.String(),
-		workerSecret:       dep.workerSecret,
-		apiURLForContainer: apiURLForContainer,
-		ociRef:             opts.argobotOCIRef,
-		kubeconfigPath:     dep.kubeconfigPath,
+		sveltos:              sveltos,
+		clusterName:          opts.name,
+		clusterSpaceID:       dep.clusterSpaceID,
+		clusterSpaceSlug:     opts.spaceSlug,
+		targetID:             dep.targetID,
+		ociTargetRef:         opts.spaceSlug + "/" + clusterTargetSlug,
+		serviceAccountUserID: dep.serviceAccountUserID,
+		privateKey:           dep.privateKey,
+		apiURLForContainer:   apiURLForContainer,
+		ociRef:               opts.argobotOCIRef,
+		kubeconfigPath:       dep.kubeconfigPath,
 	})
 }
 
+// clusterArgobotSubscriptions is what argobot's Channel subscribes to: the
+// release events of the cluster's Target, so a bot reacts to its own cluster's
+// deploys and nothing else.
+func clusterArgobotSubscriptions(targetID uuid.UUID) []goclientnew.EventSubscription {
+	target := goclientnew.UUID(targetID)
+	return []goclientnew.EventSubscription{
+		{
+			EventTypes: []string{clusterArgobotEventReleasePublished},
+			TargetID:   &target,
+		},
+	}
+}
+
+// clusterCreateArgobotChannel creates argobot's Channel in the cluster Space,
+// subscribed to the cluster Target's deploys, and grants Claim to the cluster
+// service account's user, which is what lets argobot, running as that service
+// account, claim and poll it. The Channel is a mailbox with no identity of its
+// own: what it delivers is set here, and argobot only needs to be told its name.
+func clusterCreateArgobotChannel(spaceID, targetID, serviceAccountUserID uuid.UUID) (uuid.UUID, error) {
+	permissions := goclientnew.Permissions{
+		"Claim": {UserIDs: map[string]bool{serviceAccountUserID.String(): true}},
+	}
+	body := goclientnew.Channel{
+		SpaceID:       spaceID,
+		Slug:          clusterArgobotChannelSlug,
+		DisplayName:   clusterArgobotChannelSlug,
+		Permissions:   &permissions,
+		Subscriptions: clusterArgobotSubscriptions(targetID),
+	}
+	res, err := cubClientNew.CreateChannelWithResponse(ctx, spaceID, &goclientnew.CreateChannelParams{}, body)
+	if cubapi.IsAPIError(err, res) {
+		return uuid.Nil, cubapi.InterpretErrorGeneric(err, res)
+	}
+	return res.JSON200.ChannelID, nil
+}
+
 // clusterArgobotSecretManifest returns the YAML for the out-of-band Secret that
-// carries argobot's worker credentials. It is applied straight to the cluster
-// via kubectl (never shipped in the OCI bundle) so credential material never
-// enters a published Release. The Namespace is created alongside so the Secret
-// has somewhere to land before Argo renders argobot's Deployment.
-func clusterArgobotSecretManifest(workerID, workerSecret string) []byte {
+// carries argobot's service account key, as the private JWK argobot reads from
+// CONFIGHUB_AUTH_PRIVATE_KEY. It is applied straight to the cluster via kubectl
+// (never shipped in the OCI bundle) so credential material never enters a
+// published Release. The Namespace is created alongside so the Secret has
+// somewhere to land before Argo renders argobot's Deployment.
+//
+// The JWK goes in as a literal block scalar: one JSON line, indented, with no
+// quoting to get wrong. A JWK carries no newline of its own.
+func clusterArgobotSecretManifest(privateKey json.RawMessage) []byte {
 	return fmt.Appendf(nil, `apiVersion: v1
 kind: Namespace
 metadata:
@@ -130,29 +200,35 @@ metadata:
   namespace: %s
 type: Opaque
 stringData:
-  CONFIGHUB_WORKER_ID: %s
-  CONFIGHUB_WORKER_SECRET: %s
-`, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace, workerID, workerSecret)
+  CONFIGHUB_AUTH_PRIVATE_KEY: |-
+    %s
+`, clusterArgobotNamespace, clusterArgobotSecret, clusterArgobotNamespace, bytes.TrimSpace(privateKey))
 }
 
 // clusterArgobotOptions carries everything the argobot install needs from the
 // surrounding `cub cluster up` run.
 type clusterArgobotOptions struct {
-	clusterName        string // cluster name; also the argobot variant name
-	ociTargetRef       string // "<prefix>/target" — argobot's release + event target
-	workerID           string // the cluster's oci-worker (argobot's identity)
-	workerSecret       string // the oci-worker secret (goes into the out-of-band Secret)
-	apiURLForContainer string // ConfigHub API URL as argobot (in-cluster) reaches it
-	ociRef             string // argobot config-bundle OCI reference
-	kubeconfigPath     string
+	sveltos              bool            // install argobot's Sveltos deployment, from its own base
+	clusterName          string          // cluster name; also the argobot variant name
+	clusterSpaceID       uuid.UUID       // the cluster Space, where argobot's Channel is created
+	clusterSpaceSlug     string          // its slug, the Space part of argobot's CONFIGHUB_CHANNEL
+	targetID             uuid.UUID       // the cluster's OCI target, which the Channel subscribes to
+	ociTargetRef         string          // "<prefix>/target" — argobot's release target
+	serviceAccountUserID uuid.UUID       // the cluster service account's user, granted Claim on the Channel
+	privateKey           json.RawMessage // the service account's private key (goes into the out-of-band Secret)
+	apiURLForContainer   string          // ConfigHub API URL as argobot (in-cluster) reaches it
+	ociRef               string          // argobot config-bundle OCI reference
+	kubeconfigPath       string
 }
 
-// clusterInstallArgobot installs argobot for a freshly created cluster: it
-// reuses the cluster's server-hosted oci-worker as argobot's identity (the OCI
-// target grants that worker's bot user access, so event auto-scoping and the
-// credential Secret are the whole story). The argobot Deployment runs in the default kubernetes
-// sync mode — it patches an Application's refresh annotation via the in-cluster
-// ServiceAccount, needing no Argo CD API token.
+// clusterInstallArgobot installs argobot for a freshly created cluster: argobot
+// runs as the cluster's service account (the OCI target grants that service
+// account's user the access live-status reporting needs), and the Channel
+// argobot listens on is created in the cluster Space, subscribed to the
+// Target's deploys and claimable by that service account. The argobot
+// Deployment runs in the default kubernetes sync mode — it patches an
+// Application's refresh annotation via the in-cluster ServiceAccount, needing
+// no Argo CD API token.
 //
 // It creates argobot's units and publishes argobot's own variant Release. The
 // child Argo Application Unit that makes argobot live is created in the apps
@@ -162,6 +238,10 @@ type clusterArgobotOptions struct {
 // returns, so that the root app-of-apps' first sync already includes argobot.
 func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
+	baseVariant, baseSpace := clusterArgobotBaseVariant, clusterArgobotBaseSpace
+	if o.sveltos {
+		baseVariant, baseSpace = clusterArgobotSveltosBaseVariant, clusterArgobotSveltosBaseSpace
+	}
 
 	// 1. Ensure the shared base component exists, installed from argobot's
 	// published OCI config bundle. Re-installing is a no-op: an upload is
@@ -173,7 +253,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	fmt.Fprintf(out, "Installing argobot base component from %s...\n", o.ociRef)
 	if err := runCub("variant", "upload",
 		"--component", clusterArgobotComponent,
-		"--variant", clusterArgobotBaseVariant,
+		"--variant", baseVariant,
 		o.ociRef); err != nil {
 		return fmt.Errorf("install argobot base component: %w", err)
 	}
@@ -195,7 +275,7 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	fmt.Fprintf(out, "Creating per-cluster argobot variant %q...\n", argobotSpace)
 	if err := runCub("variant", "create",
 		"--target", o.ociTargetRef,
-		o.clusterName, clusterArgobotBaseSpace); err != nil {
+		o.clusterName, baseSpace); err != nil {
 		return fmt.Errorf("create argobot variant: %w", err)
 	}
 
@@ -204,20 +284,29 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		return fmt.Errorf("resolve argobot variant space %q: %w", argobotSpace, err)
 	}
 
-	// 3. Point argobot at this ConfigHub. Its event subscription needs no
-	// explicit target: argobot auto-discovers the Targets its worker is the
-	// bridge for, and the oci-worker it reuses owns the cluster's OCI target.
-	// set-env upserts literal env vars; the worker id/secret stay as
-	// secretKeyRef (supplied out of band, step 5).
-	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL)...")
+	// 3. The Channel argobot listens on, beside the Target in the cluster Space:
+	// subscribed to that Target's apply and release events, claimable by the
+	// service account argobot runs as. The cluster Space's rollback deletes it
+	// with the Space.
+	channelRef := o.clusterSpaceSlug + "/" + clusterArgobotChannelSlug
+	fmt.Fprintf(out, "Creating argobot channel %q (subscribed to the target's deploys)...\n", channelRef)
+	if _, err := clusterCreateArgobotChannel(o.clusterSpaceID, o.targetID, o.serviceAccountUserID); err != nil {
+		return fmt.Errorf("create argobot channel: %w", err)
+	}
+
+	// 4. Point argobot at this ConfigHub and its Channel. set-env upserts
+	// literal env vars; the key stays a secretKeyRef (supplied out of band,
+	// step 6).
+	fmt.Fprintln(out, "Configuring argobot (CONFIGHUB_URL, CONFIGHUB_CHANNEL)...")
 	if err := runCub("function", "do", "--quiet",
 		"--space", argobotSpace, "--unit", clusterArgobotUnitSlug,
 		"set-env", clusterArgobotContainer,
-		"CONFIGHUB_URL="+o.apiURLForContainer); err != nil {
+		"CONFIGHUB_URL="+o.apiURLForContainer,
+		"CONFIGHUB_CHANNEL="+channelRef); err != nil {
 		return fmt.Errorf("configure argobot env: %w", err)
 	}
 
-	// 4. Publish the variant's Release; Argo pulls argobot's workload from here.
+	// 5. Publish the variant's Release; Argo pulls argobot's workload from here.
 	unit, err := resolveUnit(clusterArgobotUnitSlug, space.Space.SpaceID.String(), "UnitID")
 	if err != nil {
 		return fmt.Errorf("resolve argobot unit: %w", err)
@@ -230,15 +319,20 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		return err
 	}
 
-	// 5. Apply the out-of-band worker-credential Secret (and its Namespace) so
-	// argobot's pod can authenticate. Kept out of the OCI bundle deliberately.
-	fmt.Fprintf(out, "Applying argobot worker-credential Secret to the %q namespace...\n", clusterArgobotNamespace)
+	// 6. Apply the out-of-band key Secret (and its Namespace) so argobot's pod
+	// can authenticate. Kept out of the OCI bundle deliberately.
+	fmt.Fprintf(out, "Applying argobot key Secret to the %q namespace...\n", clusterArgobotNamespace)
 	if err := clusterKubectlApply(ctx, o.kubeconfigPath,
-		clusterArgobotSecretManifest(o.workerID, o.workerSecret), out); err != nil {
+		clusterArgobotSecretManifest(o.privateKey), out); err != nil {
 		return fmt.Errorf("apply argobot secret: %w", err)
 	}
 
-	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q (kubernetes sync mode)\n",
-		argobotSpace, argobotSpace)
+	if o.sveltos {
+		fmt.Fprintf(out, "argobot installed: variant %q, Sveltos ClusterProfile %q, channel %q\n",
+			argobotSpace, argobotSpace, channelRef)
+		return nil
+	}
+	fmt.Fprintf(out, "argobot installed: variant %q, Argo app %q, channel %q (kubernetes sync mode)\n",
+		argobotSpace, argobotSpace, channelRef)
 	return nil
 }

@@ -13,6 +13,13 @@ const (
 	clusterAnnotationPortRange = "confighub.com/cluster-port-range"
 	clusterAnnotationHost      = "confighub.com/cluster-host"
 	clusterAnnotationArgoPort  = "confighub.com/cluster-argo-port"
+	// clusterAnnotationController names the controller `cub cluster up`
+	// installed, clusterControllerArgo or clusterControllerSveltos, on the
+	// cluster Space and its OCI target.
+	clusterAnnotationController = "confighub.com/cluster-controller"
+	// clusterAnnotationSveltosPort is the Sveltos dashboard's NodePort, the
+	// counterpart of clusterAnnotationArgoPort.
+	clusterAnnotationSveltosPort = "confighub.com/cluster-sveltos-port"
 	// clusterLabel is the queryable marker label on every cluster Space.
 	clusterLabel = "confighub.com/cluster"
 
@@ -28,16 +35,29 @@ const (
 	// and every child app). API clients resolve that Space from the target
 	// through this annotation. `cub cluster up` keeps those Units in a dedicated
 	// apps Space (the target-prefix Space slug + clusterArgoAppsSuffix), separate
-	// from the Space that holds the worker and target, so the value is that apps
+	// from the Space that holds the target, so the value is that apps
 	// Space slug rather than the target's own Space.
 	clusterAnnotationArgoAppsSpace = "confighub.com/argo-apps-space"
+
+	// clusterAnnotationSveltosAppsSpace is the Sveltos counterpart of
+	// clusterAnnotationArgoAppsSpace: stamped on a Sveltos cluster's OCI target,
+	// it names the apps Space holding the root and child ClusterProfile Units,
+	// where `cub variant create --target` adds a deployment's ClusterProfile.
+	clusterAnnotationSveltosAppsSpace = "confighub.com/sveltos-apps-space"
+
+	// clusterAnnotationSveltosPollInterval records, on a Sveltos cluster's OCI
+	// target, Sveltos's own poll interval (remoteURL.interval) for the cluster's
+	// profiles, so `cub variant create --target` gives a deployment's profile the
+	// same one as the root.
+	clusterAnnotationSveltosPollInterval = "confighub.com/sveltos-poll-interval"
 )
 
-// Slugs of the ConfigHub entities `cub cluster up` creates. The worker and
-// target live in the cluster (target-prefix) Space; the root Unit lives in the
-// dedicated apps Space. (argobot-specific constants live in cluster_argobot.go.)
+// Slugs of the ConfigHub entities `cub cluster up` creates. The target lives in
+// the cluster (target-prefix) Space; the root Unit lives in the dedicated apps
+// Space; the cluster's service account is org-scoped and named by
+// clusterServiceAccountSlug. (argobot-specific constants live in
+// cluster_argobot.go.)
 const (
-	clusterWorkerSlug   = "worker"
 	clusterTargetSlug   = "target"
 	clusterRootUnitSlug = "root"
 
@@ -49,11 +69,17 @@ const (
 
 	// clusterArgoAppsSuffix is appended to the cluster (target-prefix) Space
 	// slug to form the slug of the dedicated Space holding the Argo Application
-	// Units. Keeping the worker/target out of that Space means the apps Space's
+	// Units. Keeping the target out of that Space means the apps Space's
 	// ReleaseTargetID points at a target in a different Space, so it is never
 	// self-referential — the cluster Space is a pure namespace, the apps Space is
 	// the config bundle.
 	clusterArgoAppsSuffix = "-argo-apps"
+)
+
+// The controllers `cub cluster up --controller` installs.
+const (
+	clusterControllerArgo    = "argo"
+	clusterControllerSveltos = "sveltos"
 )
 
 // Default search range and window size for NodePort allocation. The window
@@ -67,10 +93,11 @@ const (
 var clusterCmd = &cobra.Command{
 	Use:   "cluster",
 	Short: "Manage local kind clusters wired into ConfigHub",
-	Long: `The cluster subcommands bring up a local kind cluster, install Argo CD into
-it, and wire it into ConfigHub so that adding a new Argo Application is a
-single cub unit create. Argo pulls its config from ConfigHub's OCI registry —
-no separate worker pod runs in your cluster.`,
+	Long: `The cluster subcommands bring up a local kind cluster, install Argo CD (or
+Sveltos) into it, and wire it into ConfigHub so that adding a new Argo
+Application is a single cub unit create. The controller pulls its config from
+ConfigHub's OCI registry as the cluster's service account — no worker runs
+anywhere.`,
 	PersistentPreRunE: globalPreRun,
 }
 

@@ -46,7 +46,8 @@ type clusterListRow struct {
 	kindPresent bool
 	spaceSlug   string // present if matching Space found in current context
 	portRange   string
-	argoPort    string
+	controller  string // from the Space; empty when there is none
+	uiPort      string // the controller UI's NodePort: Argo CD's, or the Sveltos dashboard's
 	createdAt   time.Time
 }
 
@@ -88,7 +89,11 @@ func clusterListRun(out io.Writer) error {
 		}
 		r.spaceSlug = s.SpaceSlug
 		r.portRange = s.PortRange
-		r.argoPort = s.ArgoPort
+		r.controller = s.Controller
+		r.uiPort = s.ArgoPort
+		if s.Controller == clusterControllerSveltos {
+			r.uiPort = s.SveltosPort
+		}
 		r.createdAt = s.CreatedAt
 	}
 
@@ -104,16 +109,18 @@ func clusterListRun(out io.Writer) error {
 	sort.Strings(names)
 
 	tw := tabwriter.NewWriter(out, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tSPACE\tPORTS\tARGO\tKUBECONFIG\tSTATUS")
+	fmt.Fprintln(tw, "NAME\tSPACE\tCONTROLLER\tPORTS\tUI\tKUBECONFIG\tSTATUS")
 	for _, n := range names {
 		r := rows[n]
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			r.name, clusterDash(r.spaceSlug), clusterDash(r.portRange), clusterArgoCol(r.argoPort), clusterDash(r.kubeconfig), clusterStatusOf(r))
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			r.name, clusterDash(r.spaceSlug), clusterDash(r.controller), clusterDash(r.portRange), clusterUICol(r.uiPort), clusterDash(r.kubeconfig), clusterStatusOf(r))
 	}
 	return tw.Flush()
 }
 
-func clusterArgoCol(port string) string {
+// clusterUICol renders the controller UI's endpoint: Argo CD, or the Sveltos
+// dashboard, on its NodePort.
+func clusterUICol(port string) string {
 	if port == "" {
 		return "-"
 	}
