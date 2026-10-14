@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package main
+package blame
 
 import (
 	"fmt"
@@ -81,9 +81,9 @@ func apiPathAnnotations(annotations goclientnew.PathAnnotations) api.PathAnnotat
 	return converted
 }
 
-// formatBlameGuards renders a field's guards the way --guard takes them, sorted so a listing
+// FormatGuards renders a field's guards the way --guard takes them, sorted so a listing
 // is diffable.
-func formatBlameGuards(guards map[string]string) string {
+func FormatGuards(guards map[string]string) string {
 	if len(guards) == 0 {
 		return ""
 	}

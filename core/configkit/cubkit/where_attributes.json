@@ -1105,10 +1105,6 @@
       },
       "UpdatedAt": {
         "dataType": "time"
-      },
-      "UpgradedFromUpstreamRevisionNum": {
-        "dataType": "int",
-        "references": "Revision"
       }
     },
     "Organization": {

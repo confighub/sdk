@@ -473,7 +473,7 @@ The `cub` CLI supports third-party plugins. Plugins are standalone executables p
 
 ### Plugin resolution
 
-`cub <name> [args...]` looks up the plugin by exact name in the plugin directory. All remaining arguments and flags are passed through to the plugin.
+`cub <name> [args...]` looks up the plugin by exact name in the plugin directory. cub's own global flags (`--context`, `--debug`) are cub's wherever they appear on the line, before or after the plugin name, exactly as for a built-in command; they select the context and debug mode the plugin inherits and are not passed on. Every other argument and flag is passed through to the plugin unchanged, and everything after a bare `--` is passed through even if it looks like one of cub's flags. A plugin therefore cannot define its own `--context` or `--debug`.
 
 ### Environment variables
 

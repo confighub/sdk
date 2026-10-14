@@ -7,6 +7,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log/slog"
 	"strings"
 
 	functionlogger "github.com/labstack/gommon/log"
@@ -362,4 +364,13 @@ func displayFunctionOutputByType(outputType string, outputBytes []byte, outputOn
 			fmt.Print(string(outputBytes))
 		}
 	}
+}
+
+// quietSlog raises the default log level to Error and returns a function putting it back.
+// The shared function handler logs every invocation at Info, which a command running a
+// function as a means to an end, rather than at the user's request, should not print.
+func quietSlog() func() {
+	previous := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
+	return func() { slog.SetDefault(previous) }
 }

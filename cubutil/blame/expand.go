@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package main
+package blame
 
 import (
 	"sort"
@@ -13,7 +13,6 @@ import (
 	"github.com/confighub/sdk/core/function/api"
 	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/workerapi"
-	funcimpl "github.com/confighub/sdk/function-impl"
 )
 
 // Flattening stops where a subtree arrived at once.
@@ -30,24 +29,12 @@ import (
 // containers are keyed by name, and a TOML file has no merge keys at all, so its
 // arrays are addressed positionally, which is correct for it.
 
-// blameProviders caches one resource provider per toolchain. Building one registers
-// that toolchain's path registry, which is worth doing once rather than per field.
-var blameProviders = map[string]yamlkit.ResourceProvider{}
-
 // blameResourceProvider returns the resource provider for a Unit's toolchain.
 func blameResourceProvider(toolchainType string) (yamlkit.ResourceProvider, error) {
-	if provider, ok := blameProviders[toolchainType]; ok {
-		return provider, nil
-	}
-	// The executor is the registry of which provider serves which toolchain; asking
-	// it keeps that list in one place rather than repeating it here, where it would
-	// silently fall behind as toolchains are added.
-	provider, ok := funcimpl.NewStandardExecutor(nil, false).
-		GetResourceProvider(workerapi.ToolchainType(toolchainType))
+	provider, ok := localExecutor().GetResourceProvider(workerapi.ToolchainType(toolchainType))
 	if !ok {
 		return nil, errors.Newf("no resource provider for toolchain %q", toolchainType)
 	}
-	blameProviders[toolchainType] = provider
 	return provider, nil
 }
 

@@ -103,9 +103,6 @@ func displayExtendedMutationDetails(extendedMutationDetails *goclientnew.Extende
 	if mutationDetails.RestoredRevisionNum != 0 {
 		view.Append([]string{"Restored Revision Num", fmt.Sprintf("%d", mutationDetails.RestoredRevisionNum)})
 	}
-	if mutationDetails.UpgradedFromUpstreamRevisionNum != 0 {
-		view.Append([]string{"Upgraded From Upstream Revision Num", fmt.Sprintf("%d", mutationDetails.UpgradedFromUpstreamRevisionNum)})
-	}
 	if extendedMutationDetails.MergeSource != nil {
 		view.Append([]string{"Merge Source", extendedMutationDetails.MergeSource.Slug})
 	} else if isSetUUID(mutationDetails.MergeSourceID) {

@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package main
+package blame
 
 import (
 	"testing"
@@ -101,11 +101,11 @@ func TestBlameGuardsForPathIsEmptyForAnUnguardedUnit(t *testing.T) {
 
 func TestFormatBlameGuardsIsSortedAndFlagShaped(t *testing.T) {
 	// Rendered the way --guard takes them, and sorted, so a listing is diffable between runs.
-	got := formatBlameGuards(map[string]string{"owner": "platform", "policy-exception": "pinned"})
+	got := FormatGuards(map[string]string{"owner": "platform", "policy-exception": "pinned"})
 	if got != "owner=platform policy-exception=pinned" {
 		t.Errorf("unexpected rendering: %q", got)
 	}
-	if formatBlameGuards(nil) != "" {
+	if FormatGuards(nil) != "" {
 		t.Error("no guards should render as nothing at all")
 	}
 }

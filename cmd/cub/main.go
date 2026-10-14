@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 var rootCmd = &cobra.Command{
@@ -19,6 +20,14 @@ var rootCmd = &cobra.Command{
 
 // Global context flag
 var globalContextFlag string
+
+// The root's persistent flags are registered at init rather than in main so
+// that splitPluginArgs, which reads them to learn what to carry over to a
+// plugin invocation, sees the same set under test as it does in the binary.
+func init() {
+	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Debug output")
+	rootCmd.PersistentFlags().StringVar(&globalContextFlag, "context", "", "The context to use for this command")
+}
 
 // What can select the context a command runs against, named as `cub context
 // list` prints it in its SELECTED column.
@@ -148,17 +157,25 @@ func applyContextOverride() error {
 	return nil
 }
 
-func globalPreRun(cmd *cobra.Command, args []string) error {
-	runningCommandPath = cmd.CommandPath()
+// applyDebugFlag reconciles the --debug flag with $CONFIGHUB_DEBUG in both
+// directions: the flag is exported so child cub processes and plugins inherit
+// it, and an inherited variable turns the flag on.
+func applyDebugFlag() error {
 	if debug {
-		err := os.Setenv("CONFIGHUB_DEBUG", "1")
-		if err != nil {
-			return err
-		}
-	} else if os.Getenv("CONFIGHUB_DEBUG") == "1" {
+		return os.Setenv("CONFIGHUB_DEBUG", "1")
+	}
+	if os.Getenv("CONFIGHUB_DEBUG") == "1" {
 		// Required for the new goclientnew.Client Debug mode
 		fmt.Printf("cub Debug mode enabled. version: %s, buildDate: %s\n", BuildTag, BuildDate)
 		debug = true
+	}
+	return nil
+}
+
+func globalPreRun(cmd *cobra.Command, args []string) error {
+	runningCommandPath = cmd.CommandPath()
+	if err := applyDebugFlag(); err != nil {
+		return err
 	}
 	if err := applyContextOverride(); err != nil {
 		return err
@@ -183,9 +200,6 @@ func main() {
 	if err != nil {
 		failOnError(err)
 	}
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "Debug output")
-	rootCmd.PersistentFlags().StringVar(&globalContextFlag, "context", "", "The context to use for this command")
-
 	// Add --help-overview flag
 	var helpOverview bool
 	rootCmd.Flags().BoolVar(&helpOverview, "help-overview", false, "Show detailed overview instead of standard help")
@@ -232,11 +246,10 @@ func main() {
 	if err != nil {
 		// If the error is "unknown command" at the root level, try plugin resolution.
 		if cmd == rootCmd && isUnknownCommandError(err) {
-			// Apply context override manually since PersistentPreRunE may not have run.
-			if overrideErr := applyContextOverride(); overrideErr != nil {
-				failOnError(overrideErr)
+			pluginArgs, prepErr := preparePluginInvocation(os.Args[1:])
+			if prepErr != nil {
+				failOnError(prepErr)
 			}
-			pluginArgs := extractPluginArgs(os.Args[1:])
 			found, pluginErr := handlePluginCommand(pluginArgs)
 			if found {
 				// The command resolved to a plugin but failed to exec — show why.
@@ -254,27 +267,68 @@ func isUnknownCommandError(err error) bool {
 	return strings.Contains(err.Error(), "unknown command")
 }
 
-// extractPluginArgs returns the arguments intended for plugin resolution by
-// stripping known persistent flags (--context, --debug) from os.Args.
-func extractPluginArgs(args []string) []string {
-	var result []string
-	skip := false
-	for _, arg := range args {
-		if skip {
-			skip = false
-			continue
-		}
-		if arg == "--debug" {
-			continue
-		}
-		if arg == "--context" {
-			skip = true // skip next arg (the value)
-			continue
-		}
-		if strings.HasPrefix(arg, "--context=") {
-			continue
-		}
-		result = append(result, arg)
+// preparePluginInvocation applies cub's own flags for a plugin invocation and
+// returns the arguments that belong to the plugin.
+//
+// Cobra never parses flags for a command it does not know: ExecuteC fails in
+// Find, before ParseFlags runs, so when main reaches the plugin path --context
+// and --debug are still unset and the persistent pre-run has not run. Parsing
+// them here is what makes `cub --context staging demo up` reach staging, and it
+// is the only place the root's flags are parsed on this path.
+//
+// The root's persistent flags are honored wherever they appear, before or after
+// the plugin name, exactly as they are for a built-in command. That makes their
+// names reserved: a plugin cannot define its own --context, which is the right
+// outcome, since the flag should mean the same thing everywhere under cub.
+func preparePluginInvocation(args []string) ([]string, error) {
+	rootFlags, pluginArgs := splitPluginArgs(args)
+	if err := rootCmd.PersistentFlags().Parse(rootFlags); err != nil {
+		return nil, err
 	}
-	return result
+	if err := applyDebugFlag(); err != nil {
+		return nil, err
+	}
+	if err := applyContextOverride(); err != nil {
+		return nil, err
+	}
+	return pluginArgs, nil
+}
+
+// splitPluginArgs separates the root's persistent flags from everything else.
+// Which flags count is read from rootCmd.PersistentFlags, so a flag added there
+// is carried over without a change here. Both spellings of a valued flag are
+// recognized (--context x and --context=x), a flag with a shorthand by its
+// shorthand too, and a bare -- ends the scan: it and everything after it belong
+// to the plugin untouched.
+func splitPluginArgs(args []string) (rootFlags, pluginArgs []string) {
+	fs := rootCmd.PersistentFlags()
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--" {
+			pluginArgs = append(pluginArgs, args[i:]...)
+			break
+		}
+		var flag *pflag.Flag
+		hasValue := false
+		switch {
+		case strings.HasPrefix(arg, "--"):
+			name := arg[2:]
+			if eq := strings.IndexByte(name, '='); eq >= 0 {
+				name, hasValue = name[:eq], true
+			}
+			flag = fs.Lookup(name)
+		case strings.HasPrefix(arg, "-") && len(arg) == 2:
+			flag = fs.ShorthandLookup(arg[1:])
+		}
+		if flag == nil {
+			pluginArgs = append(pluginArgs, arg)
+			continue
+		}
+		rootFlags = append(rootFlags, arg)
+		if !hasValue && flag.NoOptDefVal == "" && i+1 < len(args) {
+			i++
+			rootFlags = append(rootFlags, args[i])
+		}
+	}
+	return rootFlags, pluginArgs
 }

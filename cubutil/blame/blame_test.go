@@ -1,7 +1,7 @@
 // Copyright (C) ConfigHub, Inc.
 // SPDX-License-Identifier: MIT
 
-package main
+package blame
 
 import (
 	"strings"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/confighub/sdk/core/configkit/yamlkit"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/google/uuid"
 )
 
 func TestAuthoredPath(t *testing.T) {
@@ -40,8 +41,8 @@ func TestAuthoredPath(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := authoredPath(tt.path); got != tt.want {
-				t.Errorf("authoredPath(%q) = %q, want %q", tt.path, got, tt.want)
+			if got := AuthoredPath(tt.path); got != tt.want {
+				t.Errorf("AuthoredPath(%q) = %q, want %q", tt.path, got, tt.want)
 			}
 		})
 	}
@@ -207,7 +208,7 @@ func TestExpandBlameValue(t *testing.T) {
 			"- name: server\n  image: frontend:v1\n")
 		found := false
 		for _, l := range leaves {
-			if authoredPath(l.Path) == "spec.template.spec.containers.?name=server.image" {
+			if AuthoredPath(l.Path) == "spec.template.spec.containers.?name=server.image" {
 				found = true
 				if l.Value != "frontend:v1" {
 					t.Errorf("image = %q, want frontend:v1", l.Value)
@@ -228,18 +229,19 @@ func TestExpandBlameValue(t *testing.T) {
 }
 
 func TestFilterBlameFields(t *testing.T) {
-	fields := []*blameField{
+	fields := []*Field{
 		{ResourceType: "apps/v1/Deployment", ResourceName: "ns/frontend", Path: "spec.replicas"},
 		{ResourceType: "apps/v1/Deployment", ResourceName: "ns/frontend", Path: "spec.template.spec.containers.?name=server.image"},
 		{ResourceType: "v1/Service", ResourceName: "ns/frontend", Path: "spec.ports.0.port"},
 		{ResourceType: "apps/v1/Deployment", ResourceName: "ns/frontend", Path: "$comment$head$apiVersion"},
+		{ResourceType: "apps/v1/Deployment", ResourceName: "ns/frontend", Path: "spec.template.spec.$comment$head$imagePullSecrets"},
 	}
 
-	t.Run("comment pseudo-fields are hidden by default", func(t *testing.T) {
-		got := filterBlameFields(fields, "", "", false)
+	t.Run("comment pseudo-fields are hidden by default, at any depth", func(t *testing.T) {
+		got := Filter(fields, "", "", false)
 		for _, f := range got {
-			if f.Path == "$comment$head$apiVersion" {
-				t.Error("a comment field should not be reported by default")
+			if strings.Contains(f.Path, "$comment$") {
+				t.Errorf("comment field %s should not be reported by default", f.Path)
 			}
 		}
 		if len(got) != 3 {
@@ -248,20 +250,20 @@ func TestFilterBlameFields(t *testing.T) {
 	})
 
 	t.Run("--show-comments keeps them", func(t *testing.T) {
-		if got := filterBlameFields(fields, "", "", true); len(got) != 4 {
-			t.Errorf("kept %d fields, want 4", len(got))
+		if got := Filter(fields, "", "", true); len(got) != 5 {
+			t.Errorf("kept %d fields, want 5", len(got))
 		}
 	})
 
 	t.Run("--path matches a substring", func(t *testing.T) {
-		got := filterBlameFields(fields, "image", "", false)
+		got := Filter(fields, "image", "", false)
 		if len(got) != 1 || got[0].Path != "spec.template.spec.containers.?name=server.image" {
 			t.Errorf("got %+v, want just the image field", got)
 		}
 	})
 
 	t.Run("--resource matches type or name", func(t *testing.T) {
-		if got := filterBlameFields(fields, "", "v1/Service", false); len(got) != 1 {
+		if got := Filter(fields, "", "v1/Service", false); len(got) != 1 {
 			t.Errorf("kept %d fields for the Service, want 1", len(got))
 		}
 	})
@@ -340,7 +342,7 @@ func TestOverlayBlameLeaves(t *testing.T) {
 
 	got := map[string]string{}
 	for _, leaf := range merged {
-		got[authoredPath(leaf.Path)] = leaf.Value
+		got[AuthoredPath(leaf.Path)] = leaf.Value
 	}
 	if got["spec.template.spec.containers.?name=server.image"] != "new" {
 		t.Errorf("the newer value should win, got %+v", got)
@@ -357,16 +359,132 @@ func TestOverlayBlameLeaves(t *testing.T) {
 // function, merge, Link or Trigger, and was shown with nothing at all. The Revision says
 // which operation made it.
 func TestBlameSetByFallsBackToSource(t *testing.T) {
-	plain := &goclientnew.ExtendedMutation{Mutation: &goclientnew.Mutation{FunctionInvocation: &goclientnew.FunctionInvocation{}}}
-	if got := blameSetBy(plain, "UpdateUnit", "UpdateUnit"); got != "UpdateUnit" {
+	if got := blameSetBy(&Origin{Description: "UpdateUnit", Source: "UpdateUnit"}, ""); got != "UpdateUnit" {
 		t.Errorf("a plain update should be named by its Revision's Source, got %q", got)
 	}
-	if got := blameSetBy(plain, "MergeExternal; from stdin", "MergeExternal"); got != "stdin" {
+	if got := blameSetBy(&Origin{Description: "MergeExternal; from stdin", Source: "MergeExternal"}, ""); got != "stdin" {
 		t.Errorf("an external merge should still be named by its source, got %q", got)
 	}
-	fn := &goclientnew.ExtendedMutation{Mutation: &goclientnew.Mutation{
-		FunctionInvocation: &goclientnew.FunctionInvocation{FunctionName: "set-replicas"}}}
-	if got := blameSetBy(fn, "", "Invoke"); got != "set-replicas" {
+	if got := blameSetBy(&Origin{Function: "set-replicas", Source: "Invoke"}, ""); got != "set-replicas" {
 		t.Errorf("a function should be named over the Source, got %q", got)
+	}
+	if got := blameSetBy(&Origin{Source: "CloneUnit"}, "base/web"); got != "merge from base/web" {
+		t.Errorf("a merge should be named by the unit it took from, got %q", got)
+	}
+}
+
+// TestBlameSetByNamesTheLinkOverItsFunction: a Link or Trigger chose the function it ran, so
+// it is what made the change, and the function is how. A TransformPaths Link that set an
+// image was reported as set-image-reference-by-uri, which named no Link to look at.
+func TestBlameSetByNamesTheLinkOverItsFunction(t *testing.T) {
+	const fn = "set-image-reference-by-uri"
+	if got := blameSetBy(&Origin{Function: fn, Link: "ui-stable-image", Source: "TransformPaths"}, ""); got != "link ui-stable-image" {
+		t.Errorf("a Link's change should be named by the Link, got %q", got)
+	}
+	if got := blameSetBy(&Origin{Function: fn, Trigger: "platform/pin-images", Source: "Invoke"}, ""); got != "trigger platform/pin-images" {
+		t.Errorf("a Trigger's change should be named by the Trigger, got %q", got)
+	}
+}
+
+// TestBlameLinkTarget: a Link's resolve is followed upstream to the field it read, and only
+// where the record says which field that was.
+func TestBlameLinkTarget(t *testing.T) {
+	resource := &goclientnew.ResourceInfo{ResourceType: "registrybot.confighub.com/v1alpha3", ResourceName: "confighub-ui"}
+	transform := func(paths []goclientnew.NamedPath, getters []goclientnew.NamedFunctionResult) *goclientnew.ExtendedMutation {
+		return &goclientnew.ExtendedMutation{
+			Mutation: &goclientnew.Mutation{MergeEndRevisionNum: 79},
+			Link:     &goclientnew.Link{UpdateType: "TransformPaths", UpstreamPaths: paths, UpstreamGetters: getters},
+		}
+	}
+
+	one := transform([]goclientnew.NamedPath{{Name: "tag", Path: "streams.stable.tag", Resource: resource}}, nil)
+	if got, follow := blameLinkTarget(one); !follow || got == nil || got.path != "streams.stable.tag" || got.resourceName != "confighub-ui" {
+		t.Errorf("a TransformPaths Link with one upstream path should be followed to it, got %+v", got)
+	}
+	two := transform([]goclientnew.NamedPath{
+		{Name: "repo", Path: "spec.repo", Resource: resource}, {Name: "tag", Path: "streams.stable.tag", Resource: resource},
+	}, nil)
+	if got, follow := blameLinkTarget(two); follow {
+		t.Errorf("with two upstream paths the value came from both, and the walk should stop, got %+v", got)
+	}
+	getter := transform([]goclientnew.NamedPath{{Name: "tag", Path: "streams.stable.tag", Resource: resource}},
+		[]goclientnew.NamedFunctionResult{{Name: "hash"}})
+	if got, follow := blameLinkTarget(getter); follow {
+		t.Errorf("an upstream getter computes from more than one field, and the walk should stop, got %+v", got)
+	}
+
+	provided := &goclientnew.ExtendedMutation{
+		Mutation: &goclientnew.Mutation{
+			MergeEndRevisionNum: 3,
+			ProvidedPath:        "metadata.name",
+			ProvidedResource:    &goclientnew.ResourceInfoType2{ResourceType: "v1/Namespace", ResourceName: "/prod"},
+		},
+		Link: &goclientnew.Link{UpdateType: "NeedsProvides"},
+	}
+	if got, follow := blameLinkTarget(provided); !follow || got == nil || got.path != "metadata.name" || got.resourceType != "v1/Namespace" {
+		t.Errorf("a needs/provides resolve should be followed to the path it recorded, got %+v", got)
+	}
+
+	insert := &goclientnew.ExtendedMutation{
+		Mutation: &goclientnew.Mutation{MergeEndRevisionNum: 2},
+		Link:     &goclientnew.Link{UpdateType: "Insert"},
+	}
+	if got, follow := blameLinkTarget(insert); follow {
+		t.Errorf("an Insert reads a whole document and has no field to follow, got %+v", got)
+	}
+
+	invocation := uuid.New()
+	upsert := &goclientnew.ExtendedMutation{
+		Mutation: &goclientnew.Mutation{MergeEndRevisionNum: 2},
+		Link:     &goclientnew.Link{UpdateType: "Upsert"},
+	}
+	// An Upsert written before Upserts recorded a merge source.
+	if got, follow := blameLinkTarget(upsert); !follow || got != nil {
+		t.Errorf("an Upsert that copied resources should be followed to the same field, got %+v, %v", got, follow)
+	}
+	upsert.Link.TransformInvocationID = &invocation
+	if got, follow := blameLinkTarget(upsert); follow {
+		t.Errorf("an Upsert that ran a transform has no field to follow, got %+v", got)
+	}
+}
+
+// TestBlameResolveDescription: a resolve written before Mutations recorded the upstream
+// Revision named it only in its change description.
+func TestBlameResolveDescription(t *testing.T) {
+	for description, want := range map[string][]string{
+		"Transformed from revision 73 of unit registry-facts/confighubai-confighub-ui": {"73", "registry-facts", "confighubai-confighub-ui"},
+		"Inserted from revision 2 of unit infra/policy":                                {"2", "infra", "policy"},
+		"Upserted from revision 9 of unit base/web":                                    {"9", "base", "web"},
+		"Updated to revision 4 of unit base/web":                                       nil,
+		"Bump the image":                                                               nil,
+	} {
+		match := blameResolveDescription.FindStringSubmatch(description)
+		if want == nil {
+			if match != nil {
+				t.Errorf("%q should not match, got %v", description, match)
+			}
+			continue
+		}
+		if match == nil || match[1] != want[0] || match[2] != want[1] || match[3] != want[2] {
+			t.Errorf("%q: got %v, want %v", description, match, want)
+		}
+	}
+}
+
+func TestBlameTransformedByLink(t *testing.T) {
+	invocation := uuid.New()
+	for name, tc := range map[string]struct {
+		link *goclientnew.Link
+		want bool
+	}{
+		"no link":                 {nil, false},
+		"upsert as is":            {&goclientnew.Link{UpdateType: "Upsert"}, false},
+		"upsert with a transform": {&goclientnew.Link{UpdateType: "Upsert", TransformInvocationID: &invocation}, true},
+		"nil transform id":        {&goclientnew.Link{UpdateType: "Upsert", TransformInvocationID: &uuid.Nil}, false},
+	} {
+		em := &goclientnew.ExtendedMutation{Mutation: &goclientnew.Mutation{}, Link: tc.link}
+		if got := blameTransformedByLink(em); got != tc.want {
+			t.Errorf("%s: got %v, want %v", name, got, tc.want)
+		}
 	}
 }

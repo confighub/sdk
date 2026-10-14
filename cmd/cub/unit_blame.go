@@ -4,48 +4,10 @@
 package main
 
 import (
-	"encoding/json"
-	"io"
-	"log/slog"
-	"sort"
-	"strings"
-	"time"
-
 	"github.com/cockroachdb/errors"
-	"github.com/confighub/sdk/core/function/api"
-	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/cubutil/blame"
 	"github.com/spf13/cobra"
 )
-
-// Blame answers "who set this field, when, and why" for every field of a Unit,
-// which the pieces on their own do not.
-//
-// MutationSources says which Mutation last wrote each path; a Mutation says what
-// operation it was; a Revision says who ran it, when, and what they called it. The
-// join across the three is what a reader wants and what none of them is.
-//
-// Two things the join alone still gets wrong, both handled here:
-//
-//   - MutationSources only holds the paths something has written *since the
-//     resource arrived*. Everything the resource arrived with -- most of a chart's
-//     output -- is covered by one resource-level entry and has no path of its own.
-//     So the field list comes from the data, flattened by running compute-mutations
-//     against an empty document, and a path with no entry of its own falls back to
-//     the resource-level entry.
-//
-//   - A value that arrived by clone or merge is credited to the merge, which names
-//     the upstream Unit and not what set the value there. Following MergeSourceID
-//     into that Unit at the Revision the merge took, and repeating, is what turns
-//     "merge from apptique-base" into "the chart", "the base", or "this variant".
-//     A promotion copies the upstream Revision's description down, so the walk often
-//     terminates immediately; a clone does not, so it usually does not.
-//
-// Nothing here is Kubernetes-specific. A Unit is Kubernetes/YAML, AppConfig/JSON,
-// TOML, INI, Properties, Env, or ConfigHub/YAML, and its data is in that format --
-// so the toolchain decides both which executor reads the data and which resource
-// provider names an array's merge keys. Only the *values* MutationSources records
-// are uniformly YAML, whatever the Unit's format, which is what lets one expansion
-// serve every toolchain.
 
 var unitBlameArgs struct {
 	path         string
@@ -54,11 +16,6 @@ var unitBlameArgs struct {
 	upstreamMax  int
 	showInternal bool
 }
-
-// blameMaxUpstreamDepth bounds the walk. Variant chains are shallow -- base, prod
-// base, deployment -- so a walk longer than this means a cycle or a surprise, and
-// stopping is better than reading forever.
-const blameMaxUpstreamDepth = 8
 
 var unitBlameCmd = &cobra.Command{
 	Use:   "blame <unit>",
@@ -73,22 +30,56 @@ shows the fields, one per line, with the history joined onto each. It is the ans
 A value that arrived from upstream is followed to where it was actually set. A field a
 variant took from its base reads as the base's change, and a field the base took from a
 rendered chart reads as that chart -- so "did the chart set this, or did we?" is one
-command rather than three. Pass --no-upstream to report only this unit's own record,
-which names the upstream unit without reading it.
+command rather than three.
+
+A value a link resolved from another unit is followed into that unit the same way, to the
+field the link read: a needs/provides binding's provided path, or the one upstream path of a
+TransformPaths link. An Upsert link that copies the upstream's resources is followed as a
+merge is. A TransformPaths link that reads several paths or uses a getter, and an Upsert or
+Insert link that runs a transform invocation, computed the value from more than one field,
+and the walk ends at the link. 'cub unit path' shows the link either way.
+
+Pass --no-upstream to report only this unit's own record, which names the upstream unit
+without reading it.
 
 Columns:
+  REF       the field's short reference: pass it to 'cub unit path' for everything
+            recorded about the field. The same field has the same REF in every revision of
+            the unit and in every variant of it
+  FLAGS     one letter for each thing there is to know about the field, explained below
   PATH      the field, in the same path syntax functions and links use
-  VALUE     what is there now
-  SET BY    the function, external source, link, or trigger that wrote it, or otherwise
+  SET BY    the link, trigger, function, or external source that wrote it, or otherwise
             the operation that made the revision, such as UpdateUnit
+  USER      who made that change; "automation" for one made by no user
   WHERE     the space whose change it was, after following upstream
   REV       that space's revision number
   WHEN      how long ago
 
-A field marked "*" is a protected local override: this unit claims it, and a merge from
-upstream leaves it alone. A field marked "!" is guarded: reasons are recorded for the value
-it holds, and an operation has to be cleared for them before it may overwrite it. Use
---verbose to see the reasons. A field can be both.
+-o wide adds VALUE, what is there now; FUNCTION, the function a link or trigger ran; MUT, the
+mutation number; VIA, the change in this unit that brought a value set upstream, such as the
+upgrade or the link that resolved it; and CHANGE ORDER, the ChangeOrder that made the change
+in this unit.
+
+Flags:
+  P  protected: a local override, which a merge from upstream leaves alone
+  G  guarded: reasons are recorded for the value it holds, and an operation has to be
+     cleared for them before it may overwrite it
+  X  conflict: a merge or resolve dropped an upstream change to the field
+  F  finding: a link's resolve could not do what it names here
+  E  validation error: a validating trigger failed a check that names the field, which
+     blocks a release
+  W  validation warning: a validating trigger with --warn failed a check that names the field
+  U  an upgrade from upstream brought the value to this unit, through an UpgradeUnit link
+  L  another link set the value in this unit, by resolving or merging
+  T  a trigger set the value in this unit
+  C  the change in this unit was made by a ChangeOrder
+  N  not released: the value changed after the unit's last release, or the unit has never
+     been released. Never shown in a space with no release target, which has nothing to
+     release
+
+The last five are about the change in this unit, which for a value set upstream is the
+merge that brought it here rather than the change SET BY names. --verbose prints the guard
+reasons, conflicts, findings, and failed checks under each field.
 
 Every toolchain is read: a Kubernetes manifest, and equally an AppConfig JSON, YAML,
 TOML, INI, Properties, or Env unit, or a ConfigHub one. The unit's data is read in its
@@ -98,7 +89,7 @@ where it does not.
 
 Use --path to ask about one field, --resource to restrict to one resource, and --verbose
 to see each change description and the full upstream chain rather than its end. -o json
-emits one object per field.
+emits one object per field. 'cub variant blame' does the same for every unit of a variant.
 
 Examples:
 `+"```"+`
@@ -113,6 +104,12 @@ Examples:
 
   # This unit's own record, without reading upstream.
   cub unit blame --space apptique-dev deployment-frontend --no-upstream
+
+  # With the values, functions, and ChangeOrders.
+  cub unit blame --space apptique-dev deployment-frontend -o wide
+
+  # Everything about one field, by the REF blame printed for it.
+  cub unit path --space apptique-dev deployment-frontend 3f9a2c1
 `+"```"+`
 `, ""),
 	Args: cobra.MaximumNArgs(1),
@@ -127,60 +124,12 @@ func init() {
 		"only fields of this resource, as <type>/<name> or <name>")
 	unitBlameCmd.Flags().BoolVar(&unitBlameArgs.noUpstream, "no-upstream", false,
 		"report this unit's own record without following a merge to where the value was set")
-	unitBlameCmd.Flags().IntVar(&unitBlameArgs.upstreamMax, "upstream-depth", blameMaxUpstreamDepth,
+	unitBlameCmd.Flags().IntVar(&unitBlameArgs.upstreamMax, "upstream-depth", blame.MaxUpstreamDepth,
 		"how many upstream units to follow before giving up")
 	unitBlameCmd.Flags().BoolVar(&unitBlameArgs.showInternal, "show-comments", false,
 		"include the comment-carrying pseudo-fields ($comment$...) that hold YAML comments")
 	enableOptionalSpace(unitBlameCmd)
 	unitCmd.AddCommand(unitBlameCmd)
-}
-
-// blameOrigin is one hop of a field's history: a change, in the unit and space it
-// was made in.
-type blameOrigin struct {
-	SpaceSlug   string    `json:",omitempty"`
-	UnitSlug    string    `json:",omitempty"`
-	RevisionNum int64     `json:",omitempty"`
-	MutationNum int64     `json:",omitempty"`
-	SetBy       string    `json:",omitempty"`
-	Description string    `json:",omitempty"`
-	User        string    `json:",omitempty"`
-	When        time.Time `json:",omitempty"`
-	// upstreamUnit is set when this hop credits a merge: the unit the walk continues
-	// into, as the Mutation's expansion already resolved it. Nil at the hop that
-	// actually set the value, and at one whose upstream is no longer readable.
-	upstreamUnit        *goclientnew.Unit
-	upstreamRevisionNum int64
-}
-
-// blameField is one field and everything known about how it got its value. Chain
-// runs from this unit outwards; Origin is its last hop, which is the answer.
-type blameField struct {
-	ResourceType string
-	ResourceName string
-	// Path is the authored form -- what someone would pass to a function or a link.
-	Path  string
-	Value string
-	// storedPath is the same field as MutationSources keys it, anchored segments and
-	// all. Only the lookups use it: an anchor is positional bookkeeping, and printing
-	// one would hand the reader a path that is not the one they should type.
-	storedPath string
-	// resourceNameCore is the resource's name without its scope, which is how the
-	// upstream walk matches a resource a variant has renamed.
-	resourceNameCore string
-	Protected        bool
-	// Guards are the reasons recorded for this field: its own, and every annotated ancestor's,
-	// which is what an operation writing here has to be cleared for.
-	Guards map[string]string `json:",omitempty"`
-	Chain  []*blameOrigin    `json:",omitempty"`
-}
-
-// Origin is the hop that actually set the value: the end of the chain.
-func (f *blameField) Origin() *blameOrigin {
-	if len(f.Chain) == 0 {
-		return nil
-	}
-	return f.Chain[len(f.Chain)-1]
 }
 
 func runUnitBlame(cmd *cobra.Command, args []string) error {
@@ -192,333 +141,19 @@ func runUnitBlame(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fields, err := blameUnit(unit.Unit, unitBlameArgs.upstreamMax)
+	resolver := blame.NewResolver(cubClient, blame.Options{
+		MaxUpstreamDepth: unitBlameArgs.upstreamMax,
+		NoUpstream:       unitBlameArgs.noUpstream,
+	})
+	fields, err := resolver.Unit(ctx, unit.Unit)
 	if err != nil {
 		return err
 	}
-	fields = filterBlameFields(fields, unitBlameArgs.path, unitBlameArgs.resource, unitBlameArgs.showInternal)
+	fields = blame.Filter(fields, unitBlameArgs.path, unitBlameArgs.resource, unitBlameArgs.showInternal)
 
 	if renderPayload(fields) {
 		return nil
 	}
-	displayBlame(fields)
+	displayBlame(fields, false)
 	return nil
-}
-
-// blameUnit builds the field list for one unit: flatten the data, credit each field
-// to the mutation that wrote it, then follow each merge to where the value was set.
-func blameUnit(unit *goclientnew.Unit, upstreamMax int) ([]*blameField, error) {
-	mutationSources, err := fetchUnitMutationSources(unit.SpaceID, unit.UnitID)
-	if err != nil {
-		return nil, err
-	}
-	if mutationSources == nil || len(*mutationSources) == 0 {
-		return nil, nil
-	}
-	data, err := fetchUnitData(unit.SpaceID, unit.UnitID)
-	if err != nil {
-		return nil, err
-	}
-
-	flattened, err := flattenUnitFields(data, unit.ToolchainType)
-	if err != nil {
-		return nil, err
-	}
-
-	// Resources are matched in their records across the API versions of their types. Without a
-	// provider for the toolchain they are matched by their exact types.
-	identifier, _ := blameResourceProvider(unit.ToolchainType)
-	resolver := newBlameResolver(upstreamMax)
-	fields := make([]*blameField, 0, len(flattened))
-	// The annotation table travels on the Unit, so no second fetch. A Unit that has never been
-	// guarded has none, which is the common case and costs a nil check per field.
-	var annotations goclientnew.PathAnnotationList
-	if unit.PathAnnotations != nil {
-		annotations = *unit.PathAnnotations
-	}
-
-	for _, f := range flattened {
-		info, protected := creditPath(identifier, *mutationSources, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath)
-		f.Protected = protected
-		// Keyed by the authored path, which is the form the annotation table stores: its
-		// paths are canonical, so they carry no anchor to strip.
-		f.Guards = blameGuardsForPath(identifier, annotations, f.ResourceType, f.ResourceName, f.resourceNameCore, f.Path)
-		if info != nil {
-			chain, err := resolver.walk(unit, *info, f.ResourceType, f.ResourceName, f.resourceNameCore, f.storedPath, 0)
-			if err != nil {
-				return nil, err
-			}
-			f.Chain = chain
-		}
-		fields = append(fields, f)
-	}
-	return fields, nil
-}
-
-// flattenUnitFields turns the unit's configuration into one entry per field, with
-// its current value.
-//
-// The flattening is compute-mutations run locally against a skeleton of each
-// resource's identity: identical identity means the resources match, so the diff is
-// per-path rather than one whole-resource add, and every remaining field comes back
-// as an Add. Doing it this way rather than walking the YAML here is what keeps the
-// paths identical to the ones MutationSources, functions, and links use -- including
-// the associative segments ("?name=server") that a naive walk would render as
-// indices.
-func flattenUnitFields(data, toolchainType string) ([]*blameField, error) {
-	if toolchainType == "" {
-		return nil, errors.New("unit has no toolchain type, so its data cannot be read")
-	}
-	provider, err := blameResourceProvider(toolchainType)
-	if err != nil {
-		return nil, err
-	}
-
-	// Empty "previous" data: nothing pairs with it, so every resource comes back as
-	// one whole-resource Add whose value is the resource as YAML -- the same shape
-	// for a Deployment and for a JSON settings file -- and is expanded to leaves
-	// below. Two reasons it is empty rather than a skeleton of each resource's
-	// identity, which would make compute-mutations report the leaves directly:
-	//
-	//   - a skeleton only exists where the resource has an identity to build one
-	//     from, and an AppConfig resource is "NoSchema"/"NoName";
-	//   - a skeleton has to be written in the Unit's own format, and "{}" is a
-	//     document in YAML and JSON but a syntax error in TOML and Properties.
-	//
-	// The empty string is the one empty document every toolchain reads.
-	//
-	// The flattening is how blame reads the fields, not something the reader asked to
-	// watch, and the shared function handler logs every invocation at Info. Quiet it
-	// for the duration rather than making the library quieter for everyone.
-	restore := quietSlog()
-	resp, err := invokeLocalFunction(data, "compute-mutations", []string{"", "0"}, toolchainType)
-	restore()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to flatten the unit's fields")
-	}
-	if resp == nil || !resp.Success {
-		message := "compute-mutations reported no result"
-		if resp != nil && len(resp.ErrorMessages) > 0 {
-			message = strings.Join(resp.ErrorMessages, "; ")
-		}
-		return nil, errors.New(message)
-	}
-
-	raw, ok := resp.Outputs[api.OutputTypeResourceMutationList]
-	if !ok || len(raw) == 0 {
-		return nil, nil
-	}
-	var mutations api.ResourceMutationList
-	if err := json.Unmarshal(raw, &mutations); err != nil {
-		return nil, errors.Wrap(err, "failed to read the flattened fields")
-	}
-
-	fields := make([]*blameField, 0)
-	for i := range mutations {
-		rm := &mutations[i]
-		resourceType := string(rm.Resource.ResourceType)
-		leaves := expandBlameValue(provider, resourceType, "", rm.ResourceMutationInfo.Value)
-
-		// A path entry, where one exists, is the newer word on that field than the
-		// whole-resource value: last writer wins, as elsewhere.
-		for path, info := range rm.PathMutationMap {
-			leaves = overlayBlameLeaves(leaves,
-				expandBlameValue(provider, resourceType, string(path), info.Value))
-		}
-
-		sort.Slice(leaves, func(a, b int) bool { return leaves[a].Path < leaves[b].Path })
-		for _, leaf := range leaves {
-			fields = append(fields, &blameField{
-				ResourceType:     resourceType,
-				ResourceName:     string(rm.Resource.ResourceName),
-				resourceNameCore: string(rm.Resource.ResourceNameWithoutScope),
-				Path:             authoredPath(leaf.Path),
-				storedPath:       leaf.Path,
-				Value:            leaf.Value,
-			})
-		}
-	}
-	return fields, nil
-}
-
-// overlayBlameLeaves replaces the leaves a newer value covers, keyed by authored
-// path so the two sides agree whether an associative segment carries its anchor.
-func overlayBlameLeaves(base, newer []blameLeaf) []blameLeaf {
-	if len(newer) == 0 {
-		return base
-	}
-	replaced := make(map[string]struct{}, len(newer))
-	for _, leaf := range newer {
-		replaced[authoredPath(leaf.Path)] = struct{}{}
-	}
-	merged := make([]blameLeaf, 0, len(base)+len(newer))
-	for _, leaf := range base {
-		if _, ok := replaced[authoredPath(leaf.Path)]; !ok {
-			merged = append(merged, leaf)
-		}
-	}
-	return append(merged, newer...)
-}
-
-// quietSlog raises the default log level to Error and returns a function putting it
-// back.
-func quietSlog() func() {
-	previous := slog.Default()
-	slog.SetDefault(slog.New(slog.NewTextHandler(io.Discard, nil)))
-	return func() { slog.SetDefault(previous) }
-}
-
-// creditPath finds the MutationSources entry that wrote a path: its own, the closest
-// ancestor's, or the resource-level entry covering everything the resource arrived with.
-//
-// The ancestor is what credits a value that arrived inside a larger one. A change that
-// adds an array element or a map records one entry for the whole of it, not one per leaf,
-// so a leaf of an env var added later has no entry of its own; without the ancestor it
-// falls through to the resource and reads as having arrived when the Unit was created.
-func creditPath(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore, path string) (*goclientnew.MutationInfo, bool) {
-	rm := matchBlameResource(identifier, mutationSources, resourceType, resourceName, resourceNameCore)
-	if rm != nil {
-		if info := lookupPathMutation(rm.PathMutationMap, path); info != nil {
-			return info, info.Protected
-		}
-		if info := lookupAncestorMutation(rm.PathMutationMap, path); info != nil {
-			return info, info.Protected
-		}
-		if rm.ResourceMutationInfo != nil && rm.ResourceMutationInfo.MutationType != nil &&
-			*rm.ResourceMutationInfo.MutationType != goclientnew.None {
-			return rm.ResourceMutationInfo, rm.ResourceMutationInfo.Protected
-		}
-	}
-	return nil, false
-}
-
-// lookupPathMutation finds a path's entry, by the key as given and then by authored
-// form.
-//
-// Whether an associative segment carries its ";@N" anchor depends on what wrote the
-// entry, and the two forms address the same field. Comparing the authored form of
-// each is what lets a field flattened here find the mutation that set it -- without
-// it every path falls through to its resource-level entry, and every value in a
-// variant reads as "arrived with the clone".
-func lookupPathMutation(pathMutationMap *goclientnew.MutationMap, path string) *goclientnew.MutationInfo {
-	if pathMutationMap == nil {
-		return nil
-	}
-	if info, ok := (*pathMutationMap)[path]; ok &&
-		info.MutationType != nil && *info.MutationType != goclientnew.None {
-		return &info
-	}
-	wanted := authoredPath(path)
-	for key, info := range *pathMutationMap {
-		if info.MutationType == nil || *info.MutationType == goclientnew.None {
-			continue
-		}
-		if authoredPath(key) == wanted {
-			return &info
-		}
-	}
-	return nil
-}
-
-// lookupAncestorMutation finds the entry of the closest ancestor of a path that wrote a
-// value there. A Delete is passed over: a value present now was not written by removing
-// what held it.
-func lookupAncestorMutation(pathMutationMap *goclientnew.MutationMap, path string) *goclientnew.MutationInfo {
-	segments := strings.Split(path, ".")
-	for n := len(segments) - 1; n > 0; n-- {
-		info := lookupPathMutation(pathMutationMap, strings.Join(segments[:n], "."))
-		if info != nil && *info.MutationType != goclientnew.Delete {
-			return info
-		}
-	}
-	return nil
-}
-
-// matchBlameResource finds the entry for a resource, by name and then by name
-// without its scope, when that names one resource -- the rule every lookup of a
-// stored record follows (api.ResourceIndex).
-//
-// The second try is what makes the upstream walk work at all: a variant fills in the
-// namespace its base left as a placeholder, so the same resource is
-// "apptique/frontend" here and "confighubplaceholder/frontend" upstream. Matching on
-// the scoped name alone would stop every walk at the clone.
-func matchBlameResource(identifier api.ResourceIdentifier, mutationSources goclientnew.ResourceMutationList, resourceType, resourceName, resourceNameCore string) *goclientnew.ResourceMutation {
-	resources := make([]*goclientnew.ResourceInfo, len(mutationSources))
-	for i := range mutationSources {
-		resources[i] = mutationSources[i].Resource
-	}
-	if i, found := matchBlameResourceInfo(identifier, resources, resourceType, resourceName, resourceNameCore); found {
-		return &mutationSources[i]
-	}
-	return nil
-}
-
-// matchBlameResourceInfo finds a resource among recorded ones as api.ResourceIndex does.
-// A nil entry is no resource.
-func matchBlameResourceInfo(identifier api.ResourceIdentifier, recorded []*goclientnew.ResourceInfo,
-	resourceType, resourceName, resourceNameCore string) (int, bool) {
-	var resources []api.ResourceInfo
-	var positions []int
-	for i, resource := range recorded {
-		if resource == nil {
-			continue
-		}
-		resources = append(resources, api.ResourceInfo{
-			ResourceType:             api.ResourceType(resource.ResourceType),
-			ResourceName:             api.ResourceName(resource.ResourceName),
-			ResourceNameWithoutScope: api.ResourceName(resource.ResourceNameWithoutScope),
-		})
-		positions = append(positions, i)
-	}
-	position, found := api.NewResourceIndex(identifier, resources).Find(api.ResourceInfo{
-		ResourceType:             api.ResourceType(resourceType),
-		ResourceName:             api.ResourceName(resourceName),
-		ResourceNameWithoutScope: api.ResourceName(resourceNameCore),
-	})
-	if !found {
-		return 0, false
-	}
-	return positions[position], true
-}
-
-// authoredPath renders a stored path the way someone would type it: an associative
-// segment keeps its selector and drops the ";@N" anchor, which is positional
-// bookkeeping the merge engine keeps and no command accepts.
-func authoredPath(path string) string {
-	if !strings.Contains(path, ";@") {
-		return path
-	}
-	segments := strings.Split(path, ".")
-	for i, segment := range segments {
-		if !strings.HasPrefix(segment, "?") {
-			continue
-		}
-		if selector, _, found := strings.Cut(segment, ";@"); found {
-			segments[i] = selector
-		}
-	}
-	return strings.Join(segments, ".")
-}
-
-// filterBlameFields applies --path, --resource, and the comment-field rule.
-func filterBlameFields(fields []*blameField, pathFilter, resourceFilter string, showInternal bool) []*blameField {
-	kept := make([]*blameField, 0, len(fields))
-	for _, f := range fields {
-		// The "$comment$..." pseudo-fields carry YAML comments rather than
-		// configuration. They are real mutations, but nobody reading a blame table
-		// is asking who wrote a comment.
-		if !showInternal && strings.HasPrefix(f.Path, "$comment$") {
-			continue
-		}
-		if pathFilter != "" && !strings.Contains(f.Path, pathFilter) {
-			continue
-		}
-		if resourceFilter != "" &&
-			!strings.Contains(f.ResourceType+"/"+f.ResourceName, resourceFilter) &&
-			!strings.Contains(f.ResourceName, resourceFilter) {
-			continue
-		}
-		kept = append(kept, f)
-	}
-	return kept
 }

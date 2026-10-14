@@ -37,7 +37,7 @@ LIB_MODULES = ./function-impl ./worker-function-impl \
 	./configkit/yqkit ./configkit/tomlkit ./configkit/inikit \
 	./configkit/k8skit ./configkit/propkit ./configkit/appyamlkit \
 	./configkit/jsonkit ./configkit/envkit ./configkit/textkit \
-	./cliutil ./k8sutil
+	./cliutil ./k8sutil ./cubutil
 CMD_MODULES = ./cmd/cub ./cmd/cub-worker ./cmd/functionsrv ./cmd/fctl ./cmd/k8s-mf
 # All sibling modules that need prep (mod download/tidy)
 SIBLING_MODULES = $(LIB_MODULES) $(CMD_MODULES)
