@@ -8851,7 +8851,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -9061,7 +9061,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -9282,7 +9282,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -9400,7 +9400,10 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                Declarations:
+                Commands:
+                  additionalProperties:
+                    nullable: true
+                    type: object
                   description: ""
                   nullable: true
                   type: object
@@ -25839,7 +25842,7 @@ paths:
           An example conjunction is:
           `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 
-          Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+          Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 
           The whole string must be query-encoded.
         in: query
@@ -26064,8 +26067,8 @@ paths:
             claims it and polls it; callers run the commands it declares on it, each
             as a CommandRun; it subscribes to events and bookmarks how far it has
             read. It owns no identity: a ServiceAccount claims it by holding Claim
-            on it. Its Declarations and Subscriptions are set by whoever manages it,
-            not by the client.'
+            on it. Its Commands and Subscriptions are set by whoever manages it, not
+            by the client.'
         "400":
           content:
             application/json:
@@ -26323,7 +26326,10 @@ paths:
                     to attach information to entities.
                   nullable: true
                   type: object
-                Declarations:
+                Commands:
+                  additionalProperties:
+                    nullable: true
+                    type: object
                   description: ""
                   nullable: true
                   type: object
@@ -26395,8 +26401,8 @@ paths:
             claims it and polls it; callers run the commands it declares on it, each
             as a CommandRun; it subscribes to events and bookmarks how far it has
             read. It owns no identity: a ServiceAccount claims it by holding Claim
-            on it. Its Declarations and Subscriptions are set by whoever manages it,
-            not by the client.'
+            on it. Its Commands and Subscriptions are set by whoever manages it, not
+            by the client.'
         "400":
           content:
             application/json:
@@ -26485,8 +26491,8 @@ paths:
             claims it and polls it; callers run the commands it declares on it, each
             as a CommandRun; it subscribes to events and bookmarks how far it has
             read. It owns no identity: a ServiceAccount claims it by holding Claim
-            on it. Its Declarations and Subscriptions are set by whoever manages it,
-            not by the client.'
+            on it. Its Commands and Subscriptions are set by whoever manages it, not
+            by the client.'
         "400":
           content:
             application/json:
@@ -52724,7 +52730,7 @@ components:
       description: 'A Channel is a mailbox between ConfigHub and one bot. A client
         claims it and polls it; callers run the commands it declares on it, each as
         a CommandRun; it subscribes to events and bookmarks how far it has read. It
-        owns no identity: a ServiceAccount claims it by holding Claim on it. Its Declarations
+        owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands
         and Subscriptions are set by whoever manages it, not by the client.'
       properties:
         Annotations:
@@ -52757,6 +52763,16 @@ components:
           format: uuid
           readOnly: true
           type: string
+        Commands:
+          additionalProperties:
+            $ref: '#/components/schemas/CommandSignature'
+          description: The commands the channel handles, by name, each with its signature.
+            Set here, out of band; a connecting client verifies its handlers against
+            them.
+          type: object
+          x-confighub-where:
+            dataType: JSON
+          x-go-type-skip-optional-pointer: true
         Condition:
           description: Claimed while a client holds the lease, Unclaimed otherwise.
           enum:
@@ -52777,14 +52793,6 @@ components:
           x-confighub-where:
             dataType: time
           x-go-type-skip-optional-pointer: true
-        Declarations:
-          allOf:
-          - $ref: '#/components/schemas/ChannelDeclarations'
-          description: The commands the channel handles, by name, each with its signature.
-            Set here, out of band; a connecting client verifies its handlers against
-            them.
-          x-confighub-where:
-            dataType: JSON
         DeleteGates:
           additionalProperties:
             type: boolean
@@ -52936,14 +52944,6 @@ components:
           $ref: '#/components/schemas/Channel'
         Error:
           $ref: '#/components/schemas/ResponseError'
-      type: object
-    ChannelDeclarations:
-      properties:
-        Commands:
-          additionalProperties:
-            $ref: '#/components/schemas/CommandSignature'
-          type: object
-          x-go-type-skip-optional-pointer: true
       type: object
     ChannelLease:
       description: 'ChannelLease is the lease a client holds on a Channel: its ClaimToken,

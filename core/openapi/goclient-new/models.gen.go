@@ -1370,7 +1370,7 @@ type ChangeWorkflowStage struct {
 	WhereSpace string `json:"WhereSpace,omitempty" yaml:"WhereSpace,omitempty"`
 }
 
-// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Declarations and Subscriptions are set by whoever manages it, not by the client.
+// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 type Channel struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
 	Annotations map[string]string `json:"Annotations,omitempty" yaml:"Annotations,omitempty"`
@@ -1384,14 +1384,14 @@ type Channel struct {
 	// ClaimToken The token of the lease currently held.
 	ClaimToken *openapi_types.UUID `json:"ClaimToken,omitempty" yaml:"ClaimToken,omitempty"`
 
+	// Commands The commands the channel handles, by name, each with its signature. Set here, out of band; a connecting client verifies its handlers against them.
+	Commands map[string]CommandSignature `json:"Commands,omitempty" yaml:"Commands,omitempty"`
+
 	// Condition Claimed while a client holds the lease, Unclaimed otherwise.
 	Condition ChannelCondition `json:"Condition,omitempty" yaml:"Condition,omitempty"`
 
 	// CreatedAt The timestamp when the entity was created in "2023-01-01T12:00:00Z" format.
 	CreatedAt time.Time `json:"CreatedAt,omitempty" yaml:"CreatedAt,omitempty"`
-
-	// Declarations The commands the channel handles, by name, each with its signature. Set here, out of band; a connecting client verifies its handlers against them.
-	Declarations *ChannelDeclarations `json:"Declarations,omitempty" yaml:"Declarations,omitempty"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion.
 	DeleteGates map[string]bool `json:"DeleteGates,omitempty" yaml:"DeleteGates,omitempty"`
@@ -1450,14 +1450,9 @@ type ChannelCondition string
 
 // ChannelCreateOrUpdateResponse defines model for ChannelCreateOrUpdateResponse.
 type ChannelCreateOrUpdateResponse struct {
-	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Declarations and Subscriptions are set by whoever manages it, not by the client.
+	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
-}
-
-// ChannelDeclarations defines model for ChannelDeclarations.
-type ChannelDeclarations struct {
-	Commands map[string]CommandSignature `json:"Commands,omitempty" yaml:"Commands,omitempty"`
 }
 
 // ChannelLease ChannelLease is the lease a client holds on a Channel: its ClaimToken, carried by every poll and release, and the TTL in seconds a poll renews it for.
@@ -2038,7 +2033,7 @@ type ExtendedChangeWorkflow struct {
 
 // ExtendedChannel defines model for ExtendedChannel.
 type ExtendedChannel struct {
-	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Declarations and Subscriptions are set by whoever manages it, not by the client.
+	// Channel A Channel is a mailbox between ConfigHub and one bot. A client claims it and polls it; callers run the commands it declares on it, each as a CommandRun; it subscribes to events and bookmarks how far it has read. It owns no identity: a ServiceAccount claims it by holding Claim on it. Its Commands and Subscriptions are set by whoever manages it, not by the client.
 	Channel *Channel       `json:"Channel,omitempty" yaml:"Channel,omitempty"`
 	Error   *ResponseError `json:"Error,omitempty" yaml:"Error,omitempty"`
 
@@ -9951,7 +9946,7 @@ type BulkDeleteChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10047,7 +10042,7 @@ type ListAllChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -10137,8 +10132,8 @@ type ListAllChannelsParams struct {
 // BulkPatchChannelsApplicationMergePatchPlusJSONBody defines parameters for BulkPatchChannels.
 type BulkPatchChannelsApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations  *map[string]*string     `json:"Annotations" yaml:"Annotations"`
-	Declarations *map[string]interface{} `json:"Declarations" yaml:"Declarations"`
+	Annotations *map[string]*string                 `json:"Annotations" yaml:"Annotations"`
+	Commands    *map[string]*map[string]interface{} `json:"Commands" yaml:"Commands"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`
@@ -10198,7 +10193,7 @@ type BulkPatchChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15821,7 +15816,7 @@ type ListChannelsParams struct {
 	// An example conjunction is:
 	// `CreatedAt >= '2025-01-07' AND Slug = 'test' AND Labels.mykey = 'myvalue'`.
 	//
-	// Supported attributes for filtering on Channel: Annotations, ChannelID, Condition, CreatedAt, Declarations, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
+	// Supported attributes for filtering on Channel: Annotations, ChannelID, Commands, Condition, CreatedAt, DeleteGates, DisplayName, EventPosition, HiddenReason, IPAddress, Labels, LastMessage, LastSeenAt, OrganizationID, Permissions, Slug, SpaceID, Subscriptions, UpdatedAt.
 	//
 	// The whole string must be query-encoded.
 	Where *string `form:"where,omitempty" json:"where,omitempty" yaml:"where,omitempty"`
@@ -15942,8 +15937,8 @@ type GetChannelParams struct {
 // PatchChannelApplicationMergePatchPlusJSONBody defines parameters for PatchChannel.
 type PatchChannelApplicationMergePatchPlusJSONBody struct {
 	// Annotations An optional map of Annotation key/value pairs for tools to attach information to entities.
-	Annotations  *map[string]*string     `json:"Annotations" yaml:"Annotations"`
-	Declarations *map[string]interface{} `json:"Declarations" yaml:"Declarations"`
+	Annotations *map[string]*string                 `json:"Annotations" yaml:"Annotations"`
+	Commands    *map[string]*map[string]interface{} `json:"Commands" yaml:"Commands"`
 
 	// DeleteGates An optional set of gates that, if any is present, will block deletion
 	DeleteGates *map[string]*bool `json:"DeleteGates" yaml:"DeleteGates"`

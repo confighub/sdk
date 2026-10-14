@@ -508,14 +508,14 @@
       "ChannelID": {
         "dataType": "uuid"
       },
+      "Commands": {
+        "dataType": "JSON"
+      },
       "Condition": {
         "dataType": "string"
       },
       "CreatedAt": {
         "dataType": "time"
-      },
-      "Declarations": {
-        "dataType": "JSON"
       },
       "DeleteGates": {
         "dataType": "map[string]bool"

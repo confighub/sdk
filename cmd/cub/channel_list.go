@@ -23,14 +23,14 @@ Examples:
   cub channel list
 
   # The channels declaring a command
-  cub channel list --where "Declarations.Commands ? 'preview.deploy'"
+  cub channel list --where "Commands ? 'preview.deploy'"
 `+"```"+`
 `, ""),
 	Annotations: map[string]string{"OrgLevel": ""},
 	RunE:        channelListCmdRun,
 }
 
-var defaultChannelColumns = []string{"Channel.Slug", "Space.Slug", "Channel.Condition", "Channel.LastSeenAt", "Channel.EventPosition", "Channel.Declarations"}
+var defaultChannelColumns = []string{"Channel.Slug", "Space.Slug", "Channel.Condition", "Channel.LastSeenAt", "Channel.EventPosition", "Channel.Commands"}
 
 const channelListInclude = "SpaceID"
 
@@ -112,7 +112,7 @@ func displayExtendedChannelList(channels []*goclientnew.ExtendedChannel) {
 			string(channel.Channel.Condition),
 			lastSeen,
 			fmt.Sprintf("%d", channel.Channel.EventPosition),
-			commandNamesToString(channel.Channel.Declarations),
+			commandNamesToString(channel.Channel.Commands),
 		})
 	}
 	table.Render()

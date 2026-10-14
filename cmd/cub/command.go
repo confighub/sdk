@@ -320,13 +320,10 @@ func resolveRunChannel(command string) (*runTarget, error) {
 		if err != nil {
 			return nil, err
 		}
-		if channel.Channel.Declarations == nil {
-			return nil, fmt.Errorf("channel %s declares no commands", channel.Channel.Slug)
-		}
-		signature, declared := channel.Channel.Declarations.Commands[command]
+		signature, declared := channel.Channel.Commands[command]
 		if !declared {
-			names := make([]string, 0, len(channel.Channel.Declarations.Commands))
-			for name := range channel.Channel.Declarations.Commands {
+			names := make([]string, 0, len(channel.Channel.Commands))
+			for name := range channel.Channel.Commands {
 				names = append(names, name)
 			}
 			sort.Strings(names)

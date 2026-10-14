@@ -12,7 +12,7 @@ import (
 
 var channelCreateArgs struct {
 	permissions   []string
-	declarations  string
+	commands      string
 	subscriptions string
 }
 
@@ -22,9 +22,10 @@ var channelCreateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Long: getCommandHelp(`Create a Channel in a space.
 
-Its declarations, the commands it handles, and its subscriptions, the events it watches, are
-fields of the channel: give them in the JSON --from-stdin or --filename takes, or with
---declarations and --subscriptions, each a JSON file or - for stdin. The caller is given Manage.
+Its commands, the ones it handles, and its subscriptions, the events it watches, are fields
+of the channel: give them in the JSON --from-stdin or --filename takes, or with --commands
+and --subscriptions, each a JSON file or - for stdin. The commands are a JSON object keyed by
+command name, each value its signature. The caller is given Manage.
 Nobody is given Claim; grant it to the service account that will run the bot.
 
 Examples:
@@ -32,8 +33,8 @@ Examples:
   # Create a channel and let a service account claim it
   cub channel create --space previews preview-bot --permission Claim:serviceaccount:preview-bot
 
-  # Create a channel declaring what its bot handles, from the declaration the bot prints
-  preview-bot --print-declaration | cub channel create --space previews preview-bot --declarations -
+  # Create a channel declaring what its bot handles, from the commands the bot prints
+  preview-bot --print-commands | cub channel create --space previews preview-bot --commands -
 `+"```"+`
 `, ""),
 	RunE: channelCreateCmdRun,
@@ -42,7 +43,7 @@ Examples:
 func init() {
 	addStandardCreateFlags(channelCreateCmd)
 	channelCreateCmd.Flags().StringSliceVar(&channelCreateArgs.permissions, "permission", []string{}, permissionCreateHelp)
-	channelCreateCmd.Flags().StringVar(&channelCreateArgs.declarations, "declarations", "", "the commands the channel handles, as a JSON file or - for stdin")
+	channelCreateCmd.Flags().StringVar(&channelCreateArgs.commands, "commands", "", "the commands the channel handles, as a JSON object by name, in a file or - for stdin")
 	channelCreateCmd.Flags().StringVar(&channelCreateArgs.subscriptions, "subscriptions", "", "the events the channel watches, as a JSON file or - for stdin")
 	channelCmd.AddCommand(channelCreateCmd)
 }
@@ -80,8 +81,8 @@ func channelCreateCmdRun(_ *cobra.Command, args []string) error {
 	if err := applyPermissions(channelCreateArgs.permissions, &newBody.Permissions); err != nil {
 		return err
 	}
-	if channelCreateArgs.declarations != "" {
-		if err := readJSONFlag(channelCreateArgs.declarations, &newBody.Declarations); err != nil {
+	if channelCreateArgs.commands != "" {
+		if err := readJSONFlag(channelCreateArgs.commands, &newBody.Commands); err != nil {
 			return err
 		}
 	}

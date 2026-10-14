@@ -173,7 +173,7 @@ func (l *Listener) Channel() *goclientnew.Channel {
 }
 
 // Run drives the listener until ctx is done, or until something it cannot recover from. It
-// resolves the Channel, then loops: claim with backoff, verify the declarations once, poll
+// resolves the Channel, then loops: claim with backoff, verify the commands once, poll
 // until the lease dies, and on shutdown drain, report and release.
 func (l *Listener) Run(ctx context.Context) error {
 	if err := l.resolve(ctx); err != nil {
@@ -263,7 +263,7 @@ func (l *Listener) resolve(ctx context.Context) error {
 	return fmt.Errorf("resolve channel %s: %d channels have that slug; name the space as space/slug, or the channel by its ID", l.ref.Name, len(candidates))
 }
 
-// verify compares the Channel's declarations to the handlers: a declared command with no
+// verify compares the Channel's commands to the handlers: a declared command with no
 // handler is fatal, since every run of it would be Rejected; a handler for an undeclared
 // command is a warning, since nothing resolves to it.
 func (l *Listener) verify(ctx context.Context) error {
@@ -275,8 +275,8 @@ func (l *Listener) verify(ctx context.Context) error {
 	}
 	l.channel = resolved.Channel
 	declared := map[string]bool{}
-	if l.channel.Declarations != nil {
-		for name := range l.channel.Declarations.Commands {
+	{
+		for name := range l.channel.Commands {
 			declared[name] = true
 		}
 	}

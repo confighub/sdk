@@ -48,7 +48,7 @@ func newFakeChannel(t *testing.T, declared ...string) (*fakeChannel, *httptest.S
 	for _, name := range declared {
 		commands[name] = goclientnew.CommandSignature{}
 	}
-	f.channel = goclientnew.Channel{ChannelID: f.id, SpaceID: f.space, Slug: "bot", Declarations: &goclientnew.ChannelDeclarations{Commands: commands}}
+	f.channel = goclientnew.Channel{ChannelID: f.id, SpaceID: f.space, Slug: "bot", Commands: commands}
 	mux := http.NewServeMux()
 	prefix := fmt.Sprintf("/api/space/%s/channel/%s", f.space, f.id)
 	mux.HandleFunc("/api/channel", func(w http.ResponseWriter, r *http.Request) {

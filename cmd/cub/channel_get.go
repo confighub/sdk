@@ -25,7 +25,7 @@ Examples:
   cub channel get previews/preview-bot
 
   # Just what it declares
-  cub channel get previews/preview-bot -o jq=.Channel.Declarations
+  cub channel get previews/preview-bot -o jq=.Channel.Commands
 `+"```"+`
 `, ""),
 	RunE: channelGetCmdRun,
@@ -65,7 +65,7 @@ func displayExtendedChannelDetails(extendedChannel *goclientnew.ExtendedChannel)
 		view.Append([]string{"IP Address", channel.IPAddress})
 	}
 	view.Append([]string{"Event Position", fmt.Sprintf("%d", channel.EventPosition)})
-	view.Append([]string{"Commands", commandNamesToString(channel.Declarations)})
+	view.Append([]string{"Commands", commandNamesToString(channel.Commands)})
 	view.Append([]string{"Subscriptions", subscriptionsToString(channel.Subscriptions)})
 	view.Append([]string{"Created At", channel.CreatedAt.String()})
 	view.Append([]string{"Updated At", channel.UpdatedAt.String()})
@@ -80,12 +80,12 @@ func displayChannelDetails(channel *goclientnew.Channel) {
 	displayExtendedChannelDetails(&goclientnew.ExtendedChannel{Channel: channel})
 }
 
-func commandNamesToString(declarations *goclientnew.ChannelDeclarations) string {
-	if declarations == nil || len(declarations.Commands) == 0 {
+func commandNamesToString(commands map[string]goclientnew.CommandSignature) string {
+	if len(commands) == 0 {
 		return ""
 	}
-	names := make([]string, 0, len(declarations.Commands))
-	for name := range declarations.Commands {
+	names := make([]string, 0, len(commands))
+	for name := range commands {
 		names = append(names, name)
 	}
 	sort.Strings(names)

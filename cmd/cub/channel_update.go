@@ -18,7 +18,7 @@ import (
 
 var channelUpdateArgs struct {
 	permissions   []string
-	declarations  string
+	commands      string
 	subscriptions string
 	eventPosition int64
 }
@@ -29,14 +29,15 @@ var channelUpdateCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	Long: getCommandHelp(`Update a Channel.
 
-Changing who may claim it requires Claim on the channel. Its declarations and subscriptions are
-fields like any other: --declarations and --subscriptions each take a JSON file or - for stdin.
+Changing who may claim it requires Claim on the channel. Its commands and subscriptions are fields
+like any other: --commands and --subscriptions each take a JSON file or - for stdin; --commands
+replaces the whole set, so a command left out is dropped.
 --event-position moves its bookmark, to replay events or to skip them.
 
 Examples:
 `+"```"+`
   # Replace what the channel declares with what its bot prints
-  preview-bot --print-declaration | cub channel update --patch previews/preview-bot --declarations -
+  preview-bot --print-commands | cub channel update --patch previews/preview-bot --commands -
 
   # Let a service account claim it
   cub channel update --patch previews/preview-bot --permission Claim:serviceaccount:preview-bot
@@ -56,7 +57,7 @@ func init() {
 	enableOptionalSpace(channelUpdateCmd)
 	channelUpdateCmd.Flags().BoolVar(&isPatch, "patch", false, "use patch API")
 	channelUpdateCmd.Flags().StringSliceVar(&channelUpdateArgs.permissions, "permission", []string{}, permissionUpdateHelp)
-	channelUpdateCmd.Flags().StringVar(&channelUpdateArgs.declarations, "declarations", "", "the commands the channel handles, as a JSON file or - for stdin")
+	channelUpdateCmd.Flags().StringVar(&channelUpdateArgs.commands, "commands", "", "the commands the channel handles, as a JSON object by name, in a file or - for stdin; replaces the set")
 	channelUpdateCmd.Flags().StringVar(&channelUpdateArgs.subscriptions, "subscriptions", "", "the events the channel watches, as a JSON file or - for stdin")
 	channelUpdateCmd.Flags().Int64Var(&channelUpdateArgs.eventPosition, "event-position", 0, "move the channel's bookmark into the event log")
 	enableWhereFlag(channelUpdateCmd)
@@ -94,15 +95,18 @@ func channelUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := validateStdinFlags(); err != nil {
 		return err
 	}
-	if channelUpdateArgs.declarations == "-" && channelUpdateArgs.subscriptions == "-" {
-		return errors.New("only one of --declarations and --subscriptions can read stdin")
+	if channelUpdateArgs.commands == "-" && channelUpdateArgs.subscriptions == "-" {
+		return errors.New("only one of --commands and --subscriptions can read stdin")
 	}
 
-	var declarations *goclientnew.ChannelDeclarations
-	if channelUpdateArgs.declarations != "" {
-		declarations = &goclientnew.ChannelDeclarations{}
-		if err := readJSONFlag(channelUpdateArgs.declarations, declarations); err != nil {
+	commandsGiven := channelUpdateArgs.commands != ""
+	var commands map[string]goclientnew.CommandSignature
+	if commandsGiven {
+		if err := readJSONFlag(channelUpdateArgs.commands, &commands); err != nil {
 			return err
+		}
+		if commands == nil {
+			commands = map[string]goclientnew.CommandSignature{}
 		}
 	}
 	var subscriptions []goclientnew.EventSubscription
@@ -116,8 +120,8 @@ func channelUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	}
 	positionChanged := cmd.Flags().Changed("event-position")
 	enhancer := func(patchMap map[string]interface{}) {
-		if declarations != nil {
-			patchMap["Declarations"] = declarations
+		if commandsGiven {
+			patchMap["Commands"] = commands
 		}
 		if channelUpdateArgs.subscriptions != "" {
 			patchMap["Subscriptions"] = subscriptions
@@ -140,35 +144,26 @@ func channelUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	currentChannel := currentEnvelope.Channel
 
 	if isPatch {
-		// A merge patch merges maps, so a patch that replaces the declarations has to name
-		// every command it drops as null; the same for subscriptions, which the server
-		// replaces as a list anyway.
-		if declarations != nil && currentChannel.Declarations != nil {
-			if declarations.Commands == nil {
-				declarations.Commands = map[string]goclientnew.CommandSignature{}
+		// A merge patch merges maps, so a patch that replaces the commands has to name every
+		// command it drops as null; the same for subscriptions, which the server replaces as a
+		// list anyway.
+		if commandsGiven {
+			merged := map[string]any{}
+			for name, signature := range commands {
+				merged[name] = signature
 			}
-			dropped := map[string]any{}
-			for name := range currentChannel.Declarations.Commands {
-				if _, kept := declarations.Commands[name]; !kept {
-					dropped[name] = nil
+			for name := range currentChannel.Commands {
+				if _, kept := commands[name]; !kept {
+					merged[name] = nil
 				}
 			}
-			if len(dropped) > 0 {
-				commands := map[string]any{}
-				for name, signature := range declarations.Commands {
-					commands[name] = signature
+			enhancer = func(patchMap map[string]interface{}) {
+				patchMap["Commands"] = merged
+				if channelUpdateArgs.subscriptions != "" {
+					patchMap["Subscriptions"] = subscriptions
 				}
-				for name := range dropped {
-					commands[name] = nil
-				}
-				enhancer = func(patchMap map[string]interface{}) {
-					patchMap["Declarations"] = map[string]any{"Commands": commands}
-					if channelUpdateArgs.subscriptions != "" {
-						patchMap["Subscriptions"] = subscriptions
-					}
-					if positionChanged {
-						patchMap["EventPosition"] = channelUpdateArgs.eventPosition
-					}
+				if positionChanged {
+					patchMap["EventPosition"] = channelUpdateArgs.eventPosition
 				}
 			}
 		}
@@ -218,8 +213,8 @@ func channelUpdateCmdRun(cmd *cobra.Command, args []string) error {
 	if err := applyPermissions(channelUpdateArgs.permissions, &newBody.Permissions); err != nil {
 		return err
 	}
-	if declarations != nil {
-		newBody.Declarations = declarations
+	if commandsGiven {
+		newBody.Commands = commands
 	}
 	if channelUpdateArgs.subscriptions != "" {
 		newBody.Subscriptions = subscriptions
