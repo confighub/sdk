@@ -27,6 +27,12 @@ type Handler func(ctx context.Context, run *Run) (json.RawMessage, error)
 // EventHandler reacts to one event the Channel subscribes to. Events are handled in delivery
 // order on the poll goroutine, so a slow handler delays the next poll, which is the
 // backpressure a bookmark that advances on delivery wants.
+//
+// Delivery is best effort: the bookmark advances as events are delivered, so a handler can
+// miss an event (a lost response, a process that dies mid-batch, a server that died before
+// emitting, a reader behind the retention window), and nothing marks the gap. A reaction is a
+// way to act sooner, never the source of truth: reconcile from state on start and on a
+// schedule, and let a missed event cost latency rather than correctness.
 type EventHandler func(ctx context.Context, event *goclientnew.EventLog)
 
 // Rejection is the error a Handler returns to report a run Rejected rather than Failed: the

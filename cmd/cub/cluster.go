@@ -14,8 +14,8 @@ const (
 	clusterAnnotationHost      = "confighub.com/cluster-host"
 	clusterAnnotationArgoPort  = "confighub.com/cluster-argo-port"
 	// clusterAnnotationController names the controller `cub cluster up`
-	// installed, clusterControllerArgo or clusterControllerSveltos, on the
-	// cluster Space and its OCI target.
+	// installed, clusterControllerArgo, clusterControllerSveltos or
+	// clusterControllerFlux, on the cluster Space and its OCI target.
 	clusterAnnotationController = "confighub.com/cluster-controller"
 	// clusterAnnotationSveltosPort is the Sveltos dashboard's NodePort, the
 	// counterpart of clusterAnnotationArgoPort.
@@ -50,6 +50,23 @@ const (
 	// profiles, so `cub variant create --target` gives a deployment's profile the
 	// same one as the root.
 	clusterAnnotationSveltosPollInterval = "confighub.com/sveltos-poll-interval"
+
+	// clusterAnnotationFluxAppsSpace is the Flux counterpart of
+	// clusterAnnotationArgoAppsSpace: stamped on a Flux cluster's OCI target, it
+	// names the apps Space holding the root and child Flux Units, where `cub
+	// variant create --target` adds a deployment's OCIRepository and
+	// Kustomization.
+	clusterAnnotationFluxAppsSpace = "confighub.com/flux-apps-space"
+
+	// clusterAnnotationFluxPollInterval records, on a Flux cluster's OCI target,
+	// the OCIRepositories' poll interval (spec.interval), so `cub variant create
+	// --target` gives a deployment's OCIRepository the same one as the root.
+	clusterAnnotationFluxPollInterval = "confighub.com/flux-poll-interval"
+
+	// clusterAnnotationArgobot is "true" on the OCI target of a cluster `cub
+	// cluster up` installed argobot in. With Flux it decides when a deployment's
+	// Units are released (see createVariantFluxApp).
+	clusterAnnotationArgobot = "confighub.com/cluster-argobot"
 )
 
 // Slugs of the ConfigHub entities `cub cluster up` creates. The target lives in
@@ -80,6 +97,7 @@ const (
 const (
 	clusterControllerArgo    = "argo"
 	clusterControllerSveltos = "sveltos"
+	clusterControllerFlux    = "flux"
 )
 
 // Default search range and window size for NodePort allocation. The window

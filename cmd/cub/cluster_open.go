@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 
@@ -31,6 +32,9 @@ For a cluster from "cub cluster up --controller sveltos", this opens the Sveltos
 dashboard instead, and copies a login token to your clipboard. The token is
 created each time from the cluster's platform-admin ServiceAccount, and is valid
 for 24 hours. --print-password prints it instead.
+
+A cluster from "cub cluster up --controller flux" has no UI to open, so this
+prints the commands that show Flux's state instead.
 
 The cluster name may be given as an argument or with --name, and can be omitted
 when this host has exactly one cub-managed cluster. `+"`cub cluster list`"+` shows the
@@ -90,12 +94,15 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	// the password; each has its own fallback below when it is absent.
 	env := clusterReadEnvFile(name)
 
-	sveltos, space, err := clusterOpenIsSveltos(name, env)
+	controller, space, err := clusterOpenController(name, env)
 	if err != nil {
 		return err
 	}
-	if sveltos {
+	switch controller {
+	case clusterControllerSveltos:
 		return clusterOpenSveltos(out, name, env, space, printPassword)
+	case clusterControllerFlux:
+		return clusterOpenFlux(out, name)
 	}
 
 	url, err := clusterArgoURL(name, env)
@@ -132,23 +139,42 @@ func clusterOpenRun(out io.Writer, name string, printPassword bool) error {
 	return nil
 }
 
-// clusterOpenIsSveltos reports whether the cluster runs Sveltos rather than Argo
-// CD. The env file answers without a round-trip: `cub cluster up` writes
-// SVELTOS_DASHBOARD for a Sveltos cluster and ARGOCD_SERVER for an Argo one.
-// Without either, the cluster Space's controller annotation decides, and the
-// Space is returned for the caller's own fallbacks.
-func clusterOpenIsSveltos(name string, env map[string]string) (bool, *clusterSpace, error) {
+// clusterOpenController returns the controller the cluster runs. The env file
+// answers without a round-trip: `cub cluster up` writes SVELTOS_DASHBOARD for a
+// Sveltos cluster and ARGOCD_SERVER for an Argo one. Without either, as for a
+// Flux cluster, the cluster Space's controller annotation decides, and the
+// Space is returned for the caller's own fallbacks. A cluster with no Space is
+// taken to be an Argo one.
+func clusterOpenController(name string, env map[string]string) (string, *clusterSpace, error) {
 	switch {
 	case env["SVELTOS_DASHBOARD"] != "":
-		return true, nil, nil
+		return clusterControllerSveltos, nil, nil
 	case env["ARGOCD_SERVER"] != "":
-		return false, nil, nil
+		return clusterControllerArgo, nil, nil
 	}
 	space, err := clusterSpaceByName(name)
 	if err != nil {
-		return false, nil, err
+		return "", nil, err
 	}
-	return space != nil && space.Controller == clusterControllerSveltos, space, nil
+	if space == nil {
+		return clusterControllerArgo, nil, nil
+	}
+	return space.Controller, space, nil
+}
+
+// clusterOpenFlux tells how to look at a Flux cluster, which has no UI to open.
+func clusterOpenFlux(out io.Writer, name string) error {
+	if printURL {
+		return fmt.Errorf("cluster %q runs Flux, which has no UI", name)
+	}
+	fmt.Fprintf(out, "Cluster %q runs Flux, which has no UI. See its state with:\n", name)
+	fmt.Fprintf(out, "  source %s\n", clusterEnvFilePath(name))
+	if _, err := exec.LookPath("flux"); err == nil {
+		fmt.Fprintf(out, "  flux get all -A\n")
+		return nil
+	}
+	fmt.Fprintf(out, "  %s\n", clusterFluxStatusCommand())
+	return nil
 }
 
 // clusterOpenSveltos opens a Sveltos cluster's dashboard with a fresh login

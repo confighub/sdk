@@ -138,8 +138,12 @@ cluster from "cub cluster up --controller sveltos" (a target carrying
 confighub.com/sveltos-apps-space), it adds a Sveltos ClusterProfile unit instead, but does not
 republish the apps space: a ClusterProfile whose Release does not exist yet fails, and Sveltos then
 backs it off. The new space's first "cub release publish" republishes the apps space with it, and
-the cluster's root ClusterProfile applies it. This is a no-op for ordinary targets; use
---no-argo-app to skip it. Publish the deployment's own release
+the cluster's root ClusterProfile applies it. For a cluster from "cub cluster up --controller flux"
+(a target carrying confighub.com/flux-apps-space), it adds a unit holding a Flux OCIRepository and
+Kustomization. With argobot on the cluster, the apps space is republished at once, as for Argo CD;
+with --no-argobot, the new space's first "cub release publish" republishes it, as for Sveltos, since
+Flux backs off an OCIRepository whose Release does not exist yet. This is a no-op for ordinary
+targets; use --no-argo-app to skip it. Publish the deployment's own release
 ("cub release publish <new-space>") to make its configuration go live.
 
 Examples:
@@ -203,7 +207,7 @@ func init() {
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.spaceDeleteGates, "space-delete-gate", []string{}, "delete gate key[=true] to set on the new space (repeatable); merged onto the delete gates copied from the upstream space")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDeleteGates, "unit-delete-gate", []string{}, "delete gate key[=true] to set on every cloned unit (repeatable); e.g. --unit-delete-gate critical to protect a prod variant")
 	variantCreateCmd.Flags().StringSliceVar(&variantCreateArgs.unitDestroyGates, "unit-destroy-gate", []string{}, "destroy gate key[=true] to set on every cloned unit (repeatable); destroy gates are unit-only (spaces have no destroy gates)")
-	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application, or Sveltos ClusterProfile, when --target is a cub-cluster target")
+	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.noArgoApp, "no-argo-app", false, "skip auto-creating the Argo CD Application, Sveltos ClusterProfile, or Flux OCIRepository and Kustomization, when --target is a cub-cluster target")
 	variantCreateCmd.Flags().BoolVar(&variantCreateArgs.syncback, "syncback", false, "also link each cloned unit back to its upstream unit, with a MergeUnits link in the upstream space, so changes made in the variant can be merged back into the upstream units (see the draft workflow in the long help)")
 	variantCreateCmd.Flags().StringVar(&variantCreateArgs.includeOutgoingLinksWhere, "include-outgoing-links-where", "", "where expression selecting which of the upstream units' links to units in other spaces to copy onto the clones; each copy keeps the original unit as its to-unit, so the variant reads from the same producers. Links within the cloned space are always copied and retargeted at the clones")
 	enableWaitFlag(variantCreateCmd)
@@ -328,6 +332,10 @@ func variantCreateCmdRun(cmd *cobra.Command, args []string) (retErr error) {
 		// The Sveltos counterpart: a target from `cub cluster up --controller
 		// sveltos` carries confighub.com/sveltos-apps-space instead.
 		if _, err := createVariantSveltosProfile(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
+			return err
+		}
+		// And the Flux one: confighub.com/flux-apps-space.
+		if _, err := createVariantFluxApp(cmd.OutOrStdout(), target, newSpace, *targetID); err != nil {
 			return err
 		}
 	}

@@ -50,6 +50,12 @@ const (
 	clusterArgobotSveltosBaseVariant = "sveltos-base"
 	clusterArgobotSveltosBaseSpace   = "argobot-sveltos-base"
 	clusterArgobotSveltosOCIRef      = "oci://ghcr.io/confighub/configs/argobot-sveltos"
+	// The Flux counterparts, for argobot's Flux deployment
+	// (manifests/flux/argobot.yaml in its repository), which needs RBAC of its
+	// own.
+	clusterArgobotFluxBaseVariant = "flux-base"
+	clusterArgobotFluxBaseSpace   = "argobot-flux-base"
+	clusterArgobotFluxOCIRef      = "oci://ghcr.io/confighub/configs/argobot-flux"
 	// clusterArgobotNamespace is the namespace argobot's manifests deploy into.
 	clusterArgobotNamespace = "argobot"
 	// clusterArgobotUnitSlug is the Unit holding argobot's Deployment. The bundle
@@ -121,14 +127,16 @@ func clusterInstallArgobotStep(out io.Writer, opts clusterUpOptions, dep cluster
 		return err
 	}
 
-	sveltos := opts.controller == clusterControllerSveltos
-	if sveltos {
+	switch opts.controller {
+	case clusterControllerSveltos:
 		fmt.Fprintln(out, "\nInstalling argobot (event-driven Sveltos redeploy)...")
-	} else {
+	case clusterControllerFlux:
+		fmt.Fprintln(out, "\nInstalling argobot (event-driven Flux reconciliation)...")
+	default:
 		fmt.Fprintln(out, "\nInstalling argobot (event-driven Argo CD sync)...")
 	}
 	return clusterInstallArgobot(out, clusterArgobotOptions{
-		sveltos:              sveltos,
+		controller:           opts.controller,
 		clusterName:          opts.name,
 		clusterSpaceID:       dep.clusterSpaceID,
 		clusterSpaceSlug:     opts.spaceSlug,
@@ -208,7 +216,7 @@ stringData:
 // clusterArgobotOptions carries everything the argobot install needs from the
 // surrounding `cub cluster up` run.
 type clusterArgobotOptions struct {
-	sveltos              bool            // install argobot's Sveltos deployment, from its own base
+	controller           string          // the cluster's controller; argobot's Sveltos and Flux deployments come from bases of their own
 	clusterName          string          // cluster name; also the argobot variant name
 	clusterSpaceID       uuid.UUID       // the cluster Space, where argobot's Channel is created
 	clusterSpaceSlug     string          // its slug, the Space part of argobot's CONFIGHUB_CHANNEL
@@ -239,8 +247,11 @@ type clusterArgobotOptions struct {
 func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 	argobotSpace := clusterArgobotComponent + "-" + o.clusterName
 	baseVariant, baseSpace := clusterArgobotBaseVariant, clusterArgobotBaseSpace
-	if o.sveltos {
+	switch o.controller {
+	case clusterControllerSveltos:
 		baseVariant, baseSpace = clusterArgobotSveltosBaseVariant, clusterArgobotSveltosBaseSpace
+	case clusterControllerFlux:
+		baseVariant, baseSpace = clusterArgobotFluxBaseVariant, clusterArgobotFluxBaseSpace
 	}
 
 	// 1. Ensure the shared base component exists, installed from argobot's
@@ -327,8 +338,13 @@ func clusterInstallArgobot(out io.Writer, o clusterArgobotOptions) error {
 		return fmt.Errorf("apply argobot secret: %w", err)
 	}
 
-	if o.sveltos {
+	switch o.controller {
+	case clusterControllerSveltos:
 		fmt.Fprintf(out, "argobot installed: variant %q, Sveltos ClusterProfile %q, channel %q\n",
+			argobotSpace, argobotSpace, channelRef)
+		return nil
+	case clusterControllerFlux:
+		fmt.Fprintf(out, "argobot installed: variant %q, Flux Kustomization %q, channel %q\n",
 			argobotSpace, argobotSpace, channelRef)
 		return nil
 	}

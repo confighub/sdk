@@ -58,9 +58,9 @@ func TestClusterSveltosEnvFileOpensDashboard(t *testing.T) {
 	// says the cluster runs Sveltos, and where its dashboard is.
 	env := clusterParseEnvFile(clusterBuildSveltosEnvFile("mycluster", "/tmp/mycluster.kubeconfig", 30002))
 
-	sveltos, _, err := clusterOpenIsSveltos("mycluster", env)
-	if err != nil || !sveltos {
-		t.Fatalf("clusterOpenIsSveltos() = %v, %v; want a Sveltos cluster from the env file", sveltos, err)
+	controller, _, err := clusterOpenController("mycluster", env)
+	if err != nil || controller != clusterControllerSveltos {
+		t.Fatalf("clusterOpenController() = %q, %v; want a Sveltos cluster from the env file", controller, err)
 	}
 	got, err := clusterSveltosDashboardEndpoint("mycluster", env, nil)
 	if err != nil || got != "http://localhost:30002" {
@@ -68,8 +68,8 @@ func TestClusterSveltosEnvFileOpensDashboard(t *testing.T) {
 	}
 
 	argoEnv := clusterParseEnvFile(clusterBuildEnvFile("mycluster", "/tmp/mycluster.kubeconfig", 30042, "pw"))
-	if sveltos, _, err := clusterOpenIsSveltos("mycluster", argoEnv); err != nil || sveltos {
-		t.Errorf("clusterOpenIsSveltos() = %v, %v for an Argo env file; want Argo", sveltos, err)
+	if controller, _, err := clusterOpenController("mycluster", argoEnv); err != nil || controller != clusterControllerArgo {
+		t.Errorf("clusterOpenController() = %q, %v for an Argo env file; want Argo", controller, err)
 	}
 }
 

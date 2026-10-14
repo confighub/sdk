@@ -24,10 +24,11 @@ var clusterDownCmd = &cobra.Command{
 kubeconfig/env file. By default the ConfigHub side is left in place — the
 cluster Space with its OCI target and argobot's Channel, the apps Space holding
 the Argo Application Units (or, for a --controller sveltos cluster, the Sveltos
-ClusterProfile Units), any deployment Spaces bound to the target, and the
-cluster's service account. That config outlives the cluster and can be
-re-applied to a new one, so tearing down the live cluster does not throw it
-away.
+ClusterProfile Units, and for a --controller flux cluster, the Flux
+OCIRepository and Kustomization Units), any deployment Spaces bound to the
+target, and the cluster's service account. That config outlives the cluster and
+can be re-applied to a new one, so tearing down the live cluster does not throw
+it away.
 
 Pass --delete-config to also delete that config: down removes every Space whose
 release target is the cluster's OCI target (the apps Space, the argobot variant
@@ -103,10 +104,7 @@ func clusterDownRun(out io.Writer, name string, force, deleteConfig bool) error 
 			return err
 		}
 	case match != nil:
-		appsSlug, appsKind := match.SpaceSlug+clusterArgoAppsSuffix, "Argo Application Units"
-		if match.Controller == clusterControllerSveltos {
-			appsSlug, appsKind = match.SpaceSlug+clusterSveltosAppsSuffix, "Sveltos ClusterProfile Units"
-		}
+		appsSlug, appsKind := match.SpaceSlug+clusterAppsSuffix(match.Controller), clusterAppsKind(match.Controller)
 		argobotSlug := clusterArgobotComponent + "-" + match.ClusterName
 		serviceAccountSlug := clusterServiceAccountSlug(match.ClusterName)
 		fmt.Fprintf(out, "\nLeft the ConfigHub config in place: space %q (OCI target + argobot channel),\n"+

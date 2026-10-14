@@ -47,7 +47,7 @@ type clusterListRow struct {
 	spaceSlug   string // present if matching Space found in current context
 	portRange   string
 	controller  string // from the Space; empty when there is none
-	uiPort      string // the controller UI's NodePort: Argo CD's, or the Sveltos dashboard's
+	uiPort      string // the controller UI's NodePort: Argo CD's, or the Sveltos dashboard's; none for Flux
 	createdAt   time.Time
 }
 
@@ -90,9 +90,13 @@ func clusterListRun(out io.Writer) error {
 		r.spaceSlug = s.SpaceSlug
 		r.portRange = s.PortRange
 		r.controller = s.Controller
-		r.uiPort = s.ArgoPort
-		if s.Controller == clusterControllerSveltos {
+		switch s.Controller {
+		case clusterControllerSveltos:
 			r.uiPort = s.SveltosPort
+		case clusterControllerFlux:
+			// Flux has no UI.
+		default:
+			r.uiPort = s.ArgoPort
 		}
 		r.createdAt = s.CreatedAt
 	}

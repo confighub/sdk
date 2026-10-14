@@ -15,8 +15,10 @@ import (
 
 	"github.com/confighub/sdk/core/cubapi"
 	goclientnew "github.com/confighub/sdk/core/openapi/goclient-new"
+	"github.com/confighub/sdk/core/third_party/gaby"
 	"github.com/confighub/sdk/core/worker/api"
 	"github.com/confighub/sdk/core/workerapi"
+	funcimpl "github.com/confighub/sdk/function-impl"
 )
 
 var unitCreateCmd = &cobra.Command{
@@ -461,6 +463,12 @@ func runSingleUnitCreate(args []string) error {
 		newParams.MergeExternalSource = &unitCreateArgs.mergeExternalSource
 	}
 
+	if configDataSupplied {
+		if err := checkConfigData(newUnit.ToolchainType, configData); err != nil {
+			return fmt.Errorf("%s is not valid %s, so the unit was not created: %w", args[1], newUnit.ToolchainType, err)
+		}
+	}
+
 	newParams.DryRun = dryRunParam()
 	unitRes, err := cubClientNew.CreateUnitWithResponse(ctx, spaceID, newParams, *newUnit)
 	if cubapi.IsAPIError(err, unitRes) {
@@ -695,4 +703,21 @@ func bulkCreateUnits(params *goclientnew.BulkCreateUnitsParams, patchJSON []byte
 		return bulkRes.JSON207, 207, nil
 	}
 	return nil, 0, fmt.Errorf("unexpected response from bulk create API")
+}
+
+// checkConfigData reads configuration as the server does when it is written to a Unit, so that
+// data the server would refuse is refused before the Unit is created, rather than after, when the
+// Unit is left in place without it. A toolchain with no converter here is not checked.
+func checkConfigData(toolchain, data string) error {
+	toolchainType := workerapi.ToolchainType(toolchain)
+	converter, ok := funcimpl.NewStandardExecutor([]workerapi.ToolchainType{toolchainType}, false).GetConverter(toolchainType)
+	if !ok || data == "" {
+		return nil
+	}
+	yamlData, err := converter.NativeToYAML([]byte(data))
+	if err != nil {
+		return err
+	}
+	_, err = gaby.ParseAll(yamlData)
+	return err
 }

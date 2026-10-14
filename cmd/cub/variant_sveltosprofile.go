@@ -100,6 +100,16 @@ func createVariantSveltosProfile(out io.Writer, target *goclientnew.Target, vari
 // not release to a cub-cluster Sveltos target, whose apps Space has no Unit for
 // it, or whose Unit was released already.
 func publishVariantSveltosProfile(out io.Writer, spaceID uuid.UUID) error {
+	return publishVariantAppsUnit(out, spaceID, clusterAnnotationSveltosAppsSpace, "Sveltos ClusterProfile", nil)
+}
+
+// publishVariantAppsUnit republishes the apps Space named by the
+// appsSpaceAnnotation of the release target of the Space spaceID, when that
+// apps Space holds a Unit for the Space that has not been released yet. kind
+// names the Unit's object in the message. deferred, when not nil, says whether
+// the target is one whose Units wait for this publish; for any other it is a
+// no-op.
+func publishVariantAppsUnit(out io.Writer, spaceID uuid.UUID, appsSpaceAnnotation, kind string, deferred func(*goclientnew.Target) bool) error {
 	space, err := resolveSpace(spaceID.String(), "SpaceID,Slug,ReleaseTargetID")
 	if err != nil {
 		return err
@@ -114,22 +124,22 @@ func publishVariantSveltosProfile(out io.Writer, spaceID uuid.UUID) error {
 	if err != nil {
 		return nil
 	}
-	appsSpaceSlug := target.Target.Annotations[clusterAnnotationSveltosAppsSpace]
-	if appsSpaceSlug == "" {
+	appsSpaceSlug := target.Target.Annotations[appsSpaceAnnotation]
+	if appsSpaceSlug == "" || (deferred != nil && !deferred(target.Target)) {
 		return nil
 	}
 	appsSpace, err := resolveSpace(appsSpaceSlug, "SpaceID")
 	if err != nil {
-		return fmt.Errorf("resolve sveltos-apps space %q from target annotation: %w", appsSpaceSlug, err)
+		return fmt.Errorf("resolve apps space %q from target annotation %s: %w", appsSpaceSlug, appsSpaceAnnotation, err)
 	}
 	unit, err := resolveUnit(space.Space.Slug, appsSpace.Space.SpaceID.String(), "UnitID,HeadRevisionNum,LastReleasedRevisionNum")
 	if err != nil || unit.Unit.LastReleasedRevisionNum >= unit.Unit.HeadRevisionNum {
-		// No ClusterProfile Unit for this Space, or it is released already.
+		// No Unit for this Space, or it is released already.
 		return nil
 	}
 
 	if !quiet && !isAlternativeOutput() {
-		fmt.Fprintf(out, "Publishing apps space %q Release, with Sveltos ClusterProfile %q...\n", appsSpaceSlug, space.Space.Slug)
+		fmt.Fprintf(out, "Publishing apps space %q Release, with %s %q...\n", appsSpaceSlug, kind, space.Space.Slug)
 	}
 	return clusterPublishRelease(appsSpace.Space.SpaceID)
 }

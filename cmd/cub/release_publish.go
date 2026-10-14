@@ -70,6 +70,10 @@ manifest records the name, so it can only be set here.
 Publishing a Space that is unchanged since its latest published Release succeeds
 without creating a Release, and reports "No change".
 
+A Release that would bundle no Units is refused when the Space's latest published
+Release bundles some: a GitOps controller pulling the Space deletes everything the
+previous Release deployed, and reports success.
+
 Examples:
 `+"```"+`
   cub release publish my-space
@@ -205,6 +209,10 @@ func releasePublishCmdRun(cmd *cobra.Command, args []string) error {
 	displayCreateResults(release, "release", release.ReleaseID.String(), release.ReleaseID.String(), displayReleaseDetails)
 
 	// A variant deployed to a `cub cluster up --controller sveltos` cluster has
-	// its ClusterProfile released only now that its first Release exists.
-	return publishVariantSveltosProfile(cmd.OutOrStdout(), space.Space.SpaceID)
+	// its ClusterProfile released only now that its first Release exists, and one
+	// deployed to a `--controller flux` cluster without argobot its Flux Unit.
+	if err := publishVariantSveltosProfile(cmd.OutOrStdout(), space.Space.SpaceID); err != nil {
+		return err
+	}
+	return publishVariantFluxApp(cmd.OutOrStdout(), space.Space.SpaceID)
 }

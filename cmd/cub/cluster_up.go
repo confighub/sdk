@@ -27,7 +27,7 @@ var clusterUpArgs struct {
 
 var clusterUpCmd = &cobra.Command{
 	Use:   "up",
-	Short: "Bring up a kind cluster wired to ConfigHub via Argo CD or Sveltos",
+	Short: "Bring up a kind cluster wired to ConfigHub via Argo CD, Sveltos or Flux",
 	Long: `Creates a kind cluster, installs Argo CD into it, and provisions the
 ConfigHub side across two Spaces:
 
@@ -60,7 +60,8 @@ The cluster's identity on the ConfigHub side is one service account, "argo-<name
 with no organization role: the OCI target grants its user View, ViewChildren and
 EditChildren, which is exactly the cluster's deployment path. Argo CD pulls the
 cluster's Releases with a long-lived token of it (the argocd/confighub-oci-creds
-Secret; with --controller sveltos, projectsveltos/confighub-gateway), and argobot
+Secret; with --controller sveltos, projectsveltos/confighub-gateway; with
+--controller flux, flux-system/confighub-oci), and argobot
 authenticates as it with a key (the argobot/argobot-secrets Secret). Both are
 issued here and handed straight to the cluster; ConfigHub keeps
 the public half of the key and a revocable record of the token
@@ -92,6 +93,19 @@ with --no-argobot, where polling is all there is. The Sveltos dashboard is reach
 http://localhost:<dashboard-port>, and logs in with a token from the
 platform-admin ServiceAccount.
 
+With --controller flux, Flux is installed instead, and the apps Space is
+<name>-flux-apps. Its root Unit is an OCIRepository and Kustomization, both
+named confighub-root, that pull and apply the apps Space's own Release, so each
+Unit added there, holding an OCIRepository and Kustomization that pull and
+apply a deployment Space's Release, becomes a deployment Flux runs; "cub variant
+create --target" adds one per deployment. argobot is installed in its Flux mode,
+from its own base Space ("argobot-flux-base"): on each deploy it requests a
+reconciliation of the matching OCIRepository, and it reports live status from
+the Kustomizations. The OCIRepositories also poll for a new Release themselves:
+every 10 minutes with argobot, every minute with --no-argobot. Flux has no UI;
+the whole NodePort window is left for your apps, and
+"kubectl -n flux-system get ocirepository,kustomization" shows Flux's state.
+
 Use --mount HOST[:CONTAINER] (repeatable) to bind-mount host directories
 into the cluster node.`,
 	RunE: clusterUpCmdRun,
@@ -99,13 +113,13 @@ into the cluster node.`,
 
 func init() {
 	clusterUpCmd.Flags().StringVar(&clusterUpArgs.name, "name", "", "cluster name (auto-generated if empty)")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", or + \"-sveltos-apps\" with --controller sveltos (defaults to <name>)")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controller, "controller", clusterControllerArgo, "controller to install and wire to ConfigHub: argo (Argo CD) or sveltos (Sveltos)")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.spaceSlug, "space", "", "ConfigHub space slug for the cluster's target and argobot channel (the \"target prefix\"); the apps space is this slug + \"-argo-apps\", + \"-sveltos-apps\" with --controller sveltos, or + \"-flux-apps\" with --controller flux (defaults to <name>)")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.controller, "controller", clusterControllerArgo, "controller to install and wire to ConfigHub: argo (Argo CD), sveltos (Sveltos) or flux (Flux)")
 	clusterUpCmd.Flags().StringArrayVar(&clusterUpArgs.mounts, "mount", nil, "host:container bind mount (repeatable; container path defaults to /mnt/<basename>)")
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the Argo NodePort; skip the user-app NodePort window")
-	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync, or Sveltos redeploy, bot)")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPorts, "no-ports", false, "only reserve the controller UI's NodePort (none for Flux); skip the user-app NodePort window")
+	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noArgobot, "no-argobot", false, "skip installing argobot (the event-driven Argo CD sync, Sveltos redeploy, or Flux reconciliation, bot)")
 	clusterUpCmd.Flags().BoolVar(&clusterUpArgs.noPlaceholderGate, "no-placeholder-gate", false, "skip the default vet-placeholders Trigger, allowing Releases with unfilled confighubplaceholder values to be published to this cluster")
-	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+")")
+	clusterUpCmd.Flags().StringVar(&clusterUpArgs.argobotOCI, "argobot-oci", clusterArgobotOCIRef, "OCI reference of argobot's config bundle, or a local file or directory of its manifests (default with --controller sveltos: "+clusterArgobotSveltosOCIRef+", with --controller flux: "+clusterArgobotFluxOCIRef+")")
 	clusterCmd.AddCommand(clusterUpCmd)
 }
 
@@ -133,8 +147,13 @@ func clusterUpCmdRun(cmd *cobra.Command, args []string) error {
 		if !cmd.Flags().Changed("argobot-oci") {
 			argobotOCIRef = clusterArgobotSveltosOCIRef
 		}
+	case clusterControllerFlux:
+		if !cmd.Flags().Changed("argobot-oci") {
+			argobotOCIRef = clusterArgobotFluxOCIRef
+		}
 	default:
-		return fmt.Errorf("--controller %q: must be %s or %s", clusterUpArgs.controller, clusterControllerArgo, clusterControllerSveltos)
+		return fmt.Errorf("--controller %q: must be %s, %s or %s", clusterUpArgs.controller,
+			clusterControllerArgo, clusterControllerSveltos, clusterControllerFlux)
 	}
 	return clusterUpRun(cmd.OutOrStdout(), clusterUpOptions{
 		name:              clusterUpArgs.name,
@@ -205,11 +224,7 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	if opts.spaceSlug == "" {
 		opts.spaceSlug = opts.name
 	}
-	sveltos := opts.controller == clusterControllerSveltos
-	appsSlug := opts.spaceSlug + clusterArgoAppsSuffix
-	if sveltos {
-		appsSlug = opts.spaceSlug + clusterSveltosAppsSuffix
-	}
+	appsSlug := opts.spaceSlug + clusterAppsSuffix(opts.controller)
 
 	if _, err := os.Stat(clusterKubeconfigPath(opts.name)); err == nil {
 		return fmt.Errorf("kubeconfig %s already exists; cluster %q may already be cub-managed", clusterKubeconfigPath(opts.name), opts.name)
@@ -259,25 +274,38 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 
 	// Reserve a port window: first port = the controller UI's NodePort
 	// (argocd-server, or the Sveltos dashboard), the rest (if any) =
-	// user-allocatable NodePorts.
+	// user-allocatable NodePorts. Flux has no UI, so the whole window is the
+	// user's, and --no-ports leaves none.
+	hasUI := opts.controller != clusterControllerFlux
 	windowSize := clusterPortRangeSize
 	if opts.noPorts {
-		windowSize = 1
+		windowSize = 0
+		if hasUI {
+			windowSize = 1
+		}
 	}
-	bound, err := clusterBoundHostPorts(ctx)
-	if err != nil {
-		return fmt.Errorf("probe docker for bound ports: %w", err)
+	var (
+		startPort, uiPort int
+		ports             []clusterPortMapping
+		portRange         string
+	)
+	if windowSize > 0 {
+		bound, err := clusterBoundHostPorts(ctx)
+		if err != nil {
+			return fmt.Errorf("probe docker for bound ports: %w", err)
+		}
+		startPort, err = clusterPickFreePortWindow(bound, clusterPortRangeStart, clusterPortRangeEnd, windowSize)
+		if err != nil {
+			return err
+		}
+		if hasUI {
+			uiPort = startPort
+		}
+		for p := startPort; p < startPort+windowSize; p++ {
+			ports = append(ports, clusterPortMapping{HostPort: p, ContainerPort: p})
+		}
+		portRange = fmt.Sprintf("%d-%d", startPort, startPort+windowSize-1)
 	}
-	startPort, err := clusterPickFreePortWindow(bound, clusterPortRangeStart, clusterPortRangeEnd, windowSize)
-	if err != nil {
-		return err
-	}
-	uiPort := startPort
-	ports := make([]clusterPortMapping, 0, windowSize)
-	for p := startPort; p < startPort+windowSize; p++ {
-		ports = append(ports, clusterPortMapping{HostPort: p, ContainerPort: p})
-	}
-	portRange := fmt.Sprintf("%d-%d", startPort, startPort+windowSize-1)
 
 	fmt.Fprintf(out, "Creating kind cluster %q (kubeconfig: %s)...\n", opts.name, kubeconfigPath)
 	if _, err := clusterKindCreate(ctx, opts.name, kubeconfigPath, ports, opts.mounts, out); err != nil {
@@ -305,12 +333,18 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}()
 
 	var adminPassword string
-	if sveltos {
+	switch opts.controller {
+	case clusterControllerSveltos:
 		fmt.Fprintln(out, "Installing Sveltos...")
 		if err := clusterSveltosInstall(ctx, kubeconfigPath, uiPort, out); err != nil {
 			return err
 		}
-	} else {
+	case clusterControllerFlux:
+		fmt.Fprintln(out, "Installing Flux...")
+		if err := clusterFluxInstall(ctx, kubeconfigPath, out); err != nil {
+			return err
+		}
+	default:
 		fmt.Fprintln(out, "Installing Argo CD...")
 		adminPassword, err = clusterArgoInstall(ctx, kubeconfigPath, uiPort, out)
 		if err != nil {
@@ -327,12 +361,15 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	annotations := map[string]string{
 		clusterAnnotationName:       opts.name,
 		clusterAnnotationHost:       hostname,
-		clusterAnnotationPortRange:  portRange,
 		clusterAnnotationController: opts.controller,
 	}
-	if sveltos {
+	if portRange != "" {
+		annotations[clusterAnnotationPortRange] = portRange
+	}
+	switch opts.controller {
+	case clusterControllerSveltos:
 		annotations[clusterAnnotationSveltosPort] = fmt.Sprintf("%d", uiPort)
-	} else {
+	case clusterControllerArgo:
 		annotations[clusterAnnotationArgoPort] = fmt.Sprintf("%d", uiPort)
 	}
 	spaceID, err := clusterCreateSpace(opts.spaceSlug, opts.spaceSlug,
@@ -396,15 +433,23 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	// A Sveltos target carries sveltos-apps-space instead, from which `cub
 	// variant create --target` adds a ClusterProfile rather than an Argo
 	// Application. Its URL-TargetUI links to the Sveltos dashboard's page for that
-	// ClusterProfile, which is named after the Space.
+	// ClusterProfile, which is named after the Space. A Flux target carries
+	// flux-apps-space, and no URL-TargetUI, since Flux has no UI.
 	targetAnnotations := map[string]string{
 		clusterAnnotationController: opts.controller,
 	}
-	if sveltos {
+	if !opts.noArgobot {
+		targetAnnotations[clusterAnnotationArgobot] = "true"
+	}
+	switch opts.controller {
+	case clusterControllerSveltos:
 		targetAnnotations[clusterAnnotationTargetUI] = clusterSveltosTargetUI(uiPort)
 		targetAnnotations[clusterAnnotationSveltosAppsSpace] = appsSlug
 		targetAnnotations[clusterAnnotationSveltosPollInterval] = clusterSveltosPollInterval(!opts.noArgobot)
-	} else {
+	case clusterControllerFlux:
+		targetAnnotations[clusterAnnotationFluxAppsSpace] = appsSlug
+		targetAnnotations[clusterAnnotationFluxPollInterval] = clusterFluxPollInterval(!opts.noArgobot)
+	default:
 		targetAnnotations[clusterAnnotationTargetUI] = fmt.Sprintf("http://localhost:%d/applications/argocd/{slug}", uiPort)
 		targetAnnotations[clusterAnnotationArgoAppsSpace] = appsSlug
 	}
@@ -419,14 +464,11 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 
 	// The apps Space holds the root app-of-apps and every child Argo Application
 	// Unit, or with Sveltos the root ClusterProfile and every child
-	// ClusterProfile Unit. Its release target is the OCI target in the cluster
+	// ClusterProfile Unit, or with Flux the root and every child OCIRepository
+	// and Kustomization. Its release target is the OCI target in the cluster
 	// Space above — a cross-Space reference, so the apps Space (the config
 	// bundle) never points its release target at a target inside itself.
-	appsKind := "Argo Application Units"
-	if sveltos {
-		appsKind = "Sveltos ClusterProfile Units"
-	}
-	fmt.Fprintf(out, "Creating ConfigHub space %q (%s)...\n", appsSlug, appsKind)
+	fmt.Fprintf(out, "Creating ConfigHub space %q (%s)...\n", appsSlug, clusterAppsKind(opts.controller))
 	appsSpaceID, err := clusterCreateSpace(appsSlug, appsSlug, nil, nil)
 	if err != nil {
 		return err
@@ -472,13 +514,20 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 	}
 
 	var rootManifest []byte
-	if sveltos {
+	switch opts.controller {
+	case clusterControllerSveltos:
 		if err := clusterSveltosApplyOCICreds(ctx, kubeconfigPath, pullToken, out); err != nil {
 			return err
 		}
 		fmt.Fprintf(out, "Creating root ClusterProfile Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
 		rootManifest = clusterSveltosRootProfileManifest(rootRepoURL, clusterSveltosPollInterval(!opts.noArgobot), ociInsecure)
-	} else {
+	case clusterControllerFlux:
+		if err := clusterFluxApplyOCICreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, out); err != nil {
+			return err
+		}
+		fmt.Fprintf(out, "Creating root OCIRepository and Kustomization Unit %q in apps space %q...\n", clusterRootUnitSlug, appsSlug)
+		rootManifest = clusterFluxRootManifest(rootRepoURL, clusterFluxPollInterval(!opts.noArgobot), ociInsecure)
+	default:
 		if err := clusterArgoApplyOCIRepoCreds(ctx, kubeconfigPath, ociURLForArgo, pullToken, ociInsecure, out); err != nil {
 			return err
 		}
@@ -526,9 +575,14 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		return err
 	}
 
-	envContents := clusterBuildEnvFile(opts.name, kubeconfigPath, uiPort, adminPassword)
-	if sveltos {
+	var envContents string
+	switch opts.controller {
+	case clusterControllerSveltos:
 		envContents = clusterBuildSveltosEnvFile(opts.name, kubeconfigPath, uiPort)
+	case clusterControllerFlux:
+		envContents = clusterBuildFluxEnvFile(opts.name, kubeconfigPath)
+	default:
+		envContents = clusterBuildEnvFile(opts.name, kubeconfigPath, uiPort, adminPassword)
 	}
 	if err := os.WriteFile(envFilePath, []byte(envContents), 0o600); err != nil {
 		return fmt.Errorf("write env file: %w", err)
@@ -542,10 +596,15 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		opts.spaceSlug, clusterTargetSlug,
 		serviceAccountSlug,
 		appsSlug, clusterRootUnitSlug)
-	if !opts.noArgobot && sveltos {
-		fmt.Fprintf(out, "  argobot:    %s-%s (Sveltos ClusterProfile; redeploys on publish), channel %s/%s\n", clusterArgobotComponent, opts.name, opts.spaceSlug, clusterArgobotChannelSlug)
-	} else if !opts.noArgobot {
-		fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode), channel %s/%s\n", clusterArgobotComponent, opts.name, opts.spaceSlug, clusterArgobotChannelSlug)
+	if !opts.noArgobot {
+		switch opts.controller {
+		case clusterControllerSveltos:
+			fmt.Fprintf(out, "  argobot:    %s-%s (Sveltos ClusterProfile; redeploys on publish), channel %s/%s\n", clusterArgobotComponent, opts.name, opts.spaceSlug, clusterArgobotChannelSlug)
+		case clusterControllerFlux:
+			fmt.Fprintf(out, "  argobot:    %s-%s (Flux Kustomization; reconciles on publish), channel %s/%s\n", clusterArgobotComponent, opts.name, opts.spaceSlug, clusterArgobotChannelSlug)
+		default:
+			fmt.Fprintf(out, "  argobot:    %s-%s (Argo app; kubernetes sync mode), channel %s/%s\n", clusterArgobotComponent, opts.name, opts.spaceSlug, clusterArgobotChannelSlug)
+		}
 	}
 	if opts.noPlaceholderGate {
 		fmt.Fprintf(out, "  gates:      none (--no-placeholder-gate); Triggers added to space %q gate the\n              target once you run 'cub target update --space %s target --refresh-triggers'\n",
@@ -554,15 +613,21 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 		fmt.Fprintf(out, "  gates:      %s/%s (vet-placeholders) — blocks publishing a Release with\n              unfilled confighubplaceholder values to this cluster\n",
 			opts.spaceSlug, clusterGateTriggerSlug)
 	}
-	if sveltos {
+	switch opts.controller {
+	case clusterControllerSveltos:
 		fmt.Fprintf(out, "\nSveltos dashboard: http://localhost:%d\n", uiPort)
 		fmt.Fprintf(out, "Log in with a token from:\n  KUBECONFIG=%s kubectl create token %s --duration=24h\n", kubeconfigPath, clusterSveltosDashboardAccount)
-	} else {
+	case clusterControllerFlux:
+		fmt.Fprintf(out, "\nFlux has no UI. See its state with:\n  KUBECONFIG=%s %s\n", kubeconfigPath, clusterFluxStatusCommand())
+	default:
 		fmt.Fprintf(out, "\nArgo CD: http://localhost:%d  (admin / %s)\n", uiPort, adminPassword)
 		fmt.Fprintf(out, "Reopen it later with the password on your clipboard:\n  cub cluster open %s\n", opts.name)
 	}
-	if len(ports) > 1 {
+	switch {
+	case hasUI && len(ports) > 1:
 		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (%s uses %d; rest are open)\n", startPort, startPort+windowSize-1, opts.controller, uiPort)
+	case !hasUI && len(ports) > 0:
+		fmt.Fprintf(out, "\nUser NodePort window: %d-%d (all open)\n", startPort, startPort+windowSize-1)
 	}
 	if len(opts.mounts) > 0 {
 		fmt.Fprintf(out, "\nHost mounts (host → node, accessible to pods via hostPath):\n")
@@ -570,10 +635,22 @@ func clusterUpRun(out io.Writer, opts clusterUpOptions) error {
 			fmt.Fprintf(out, "  %s → %s\n", m.HostPath, m.ContainerPath)
 		}
 	}
-	if sveltos {
+	switch opts.controller {
+	case clusterControllerSveltos:
 		fmt.Fprintf(out, "\nLoad the cluster into your shell:\n  source %s\n", envFilePath)
 		fmt.Fprintf(out, "\nDeploy an app to this cluster:\n  1. cub variant create <name> <base-space> --target %s/%s [--namespace <ns>]\n  2. cub release publish <name>\nStep 1 clones <base-space> into a deployment space bound to the cluster's\ntarget and adds its Sveltos ClusterProfile to the apps space %q; step 2\nmakes the deployment's config go live and, the first time, republishes the\napps space so the root profile applies the ClusterProfile. See\n\"cub variant create --help\".\n",
 			opts.spaceSlug, clusterTargetSlug, appsSlug)
+		return nil
+	case clusterControllerFlux:
+		fmt.Fprintf(out, "\nLoad the cluster into your shell:\n  source %s\n", envFilePath)
+		fmt.Fprintf(out, "\nDeploy an app to this cluster:\n  1. cub variant create <name> <base-space> --target %s/%s [--namespace <ns>]\n  2. cub release publish <name>\nStep 1 clones <base-space> into a deployment space bound to the cluster's\ntarget and adds its Flux OCIRepository and Kustomization to the apps space\n%q; step 2 makes the deployment's config go live. ",
+			opts.spaceSlug, clusterTargetSlug, appsSlug)
+		if opts.noArgobot {
+			fmt.Fprintf(out, "Without argobot, step 2\nalso republishes the apps space the first time, so the root applies them.\n")
+		} else {
+			fmt.Fprintf(out, "Step 1 republishes\nthe apps space, and argobot deploys step 2's Release at once.\n")
+		}
+		fmt.Fprintf(out, "See \"cub variant create --help\".\n")
 		return nil
 	}
 	fmt.Fprintf(out, "\nLoad the cluster + Argo creds into your shell:\n  source %s\n", envFilePath)
@@ -591,6 +668,39 @@ func clusterBuildSveltosEnvFile(name, kubeconfigPath string, dashboardPort int) 
 export KUBECONFIG=%s
 export SVELTOS_DASHBOARD=http://localhost:%d
 `, name, clusterEnvFilePath(name), kubeconfigPath, dashboardPort)
+}
+
+// clusterBuildFluxEnvFile renders the shell-source env file for a cluster
+// running Flux, which has no UI to point at.
+func clusterBuildFluxEnvFile(name, kubeconfigPath string) string {
+	return fmt.Sprintf(`# cub cluster: %s
+# Source this file: source %s
+export KUBECONFIG=%s
+`, name, clusterEnvFilePath(name), kubeconfigPath)
+}
+
+// clusterAppsSuffix returns the suffix of the apps Space of a cluster running
+// controller.
+func clusterAppsSuffix(controller string) string {
+	switch controller {
+	case clusterControllerSveltos:
+		return clusterSveltosAppsSuffix
+	case clusterControllerFlux:
+		return clusterFluxAppsSuffix
+	}
+	return clusterArgoAppsSuffix
+}
+
+// clusterAppsKind describes the Units in the apps Space of a cluster running
+// controller.
+func clusterAppsKind(controller string) string {
+	switch controller {
+	case clusterControllerSveltos:
+		return "Sveltos ClusterProfile Units"
+	case clusterControllerFlux:
+		return "Flux OCIRepository and Kustomization Units"
+	}
+	return "Argo Application Units"
 }
 
 // clusterBuildEnvFile renders the shell-source env file for a cluster.
